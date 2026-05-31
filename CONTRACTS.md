@@ -58,7 +58,7 @@ Protocols: `TwitchAPIProviding`, `ChatSource`, `ThirdPartyEmoteSource`, `EmoteEv
 - `AppLogger` (`Embr/App/AppLogger.swift`) — `AppLogger.log(_:_:category:)`, plus `.debug/.info/.warn/.error(_:category:)`.
 - `LogCategory` enum: `app, auth, api, eventsub, chat, emote, playback, persistence, ui`.
 - `AppContainer` (`Embr/App/AppContainer.swift`) — the DI graph. Lazily exposes: `logger`, `transport: HTTPTransport`, `auth: AuthService`, `api: TwitchAPIClient`, `emotes: EmoteService`, `images: ImageLoading`, `playback: PlaybackResolver`, `database: DatabaseManager`, `settings: SettingsStore`. A module's concrete service MUST be named exactly as referenced here.
-- `ImageLoading` protocol (`Embr/Services/ImageLoading.swift`) — `func image(for: URL, scale: CGFloat) async -> UIImage?`, `func animatedImage(for: URL) async -> AnimatedImage?`, `func prefetch(_ urls: [URL])`.
+- `ImageLoading` protocol (`Embr/Services/ImageLoading.swift`) — `func image(for: URL, targetScale: CGFloat) async -> UIImage?`, `func emoteImage(for: Emote, scale: EmoteScale) async -> UIImage?`, `func badgeImage(for: Badge, scale: EmoteScale) async -> UIImage?`, `func prefetch(_ urls: [URL])`, `func cachedImage(for: URL) -> UIImage?`. (Animated content returns an `SDAnimatedImage` subclass of `UIImage`.)
 - `VideoPlaying` protocol (`Embr/Features/Channel/Video/VideoPlaying.swift`) — `var view: UIView { get }`, `func load(_ resolution: PlaybackResolution)`, `func play()/pause()`, `func setQuality(_ quality: StreamQuality)`, `var statePublisher: AnyPublisher<VideoState, Never> { get }`.
 - `Theme` (`Embr/App/Theme.swift`) — semantic `UIColor`s.
 

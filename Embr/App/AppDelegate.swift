@@ -1,0 +1,40 @@
+import UIKit
+import EmbrCore
+
+@main
+final class AppDelegate: UIResponder, UIApplicationDelegate {
+    private let didFirstRunKey = "didFirstRun"
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        performFirstRunIfNeeded()
+        _ = AppContainer.shared
+        AppLogger.shared.info("app launched", category: .app)
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(
+            name: "Default Configuration",
+            sessionRole: connectingSceneSession.role
+        )
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+
+    private func performFirstRunIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: didFirstRunKey) else { return }
+        Task {
+            await AppContainer.shared.auth.logout()
+            AppLogger.shared.info("first run: wiped stale credentials", category: .app)
+        }
+        defaults.set(true, forKey: didFirstRunKey)
+    }
+}

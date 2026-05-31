@@ -14,6 +14,12 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 
 This repo was built on Linux, so **the UIKit app layer is written but unverified** — it has not been compiled. `EmbrCore` (the parsing/merge/HLS logic) and the Worker are verified.
 
+### Status (at initial build)
+
+- `EmbrCore` — ~3.8k LOC, **95 tests / 14 suites green** (`swift test`, Linux).
+- `Embr` app — ~8.5k LOC across 56 files, **syntax-clean** (`swiftc -parse`), house-style clean (0 `@Published`, 0 storyboards, programmatic UIKit). **Not yet type-checked** — open in Xcode 26 on a Mac (`scripts/ios-build.sh`) and expect to resolve a first round of cross-module/concurrency errors. Known item to watch: `@MainActor` players conforming to the non-isolated `VideoPlaying` protocol (relies on Swift 6.2 isolated conformances).
+- `workers/` — Hono Worker, **tsc clean + 22 vitest tests green**.
+
 ## Architecture
 
 - **Chat receive:** EventSub WebSocket, `channel.chat.message` (+ notification/clear/delete). Structured JSON → `ChatMessage`. No IRC tag parsing.
