@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "embr",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+
+  // KV namespace caching the minted Twitch app-access-token.
+  // Replace the placeholder id with a real one:
+  //   wrangler kv namespace create TOKENS
+  "kv_namespaces": [
+    {
+      "binding": "TOKENS",
+      "id": "00000000000000000000000000000000"
+    }
+  ],
+
+  // Non-secret vars may be set here. Secrets are NOT stored in this file.
+  // Provide locally via .dev.vars (see .dev.vars.example), and in prod via:
+  //   wrangler secret put TWITCH_CLIENT_ID
+  //   wrangler secret put TWITCH_CLIENT_SECRET
+  "vars": {}
+}
