@@ -1,0 +1,26 @@
+# Xcode / xcodegen
+*.xcodeproj
+*.xcworkspace
+!default.xcworkspace
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Secrets / local config
+Embr/Secrets.swift
+.env.local
+
+# Worker
+workers/node_modules/
+workers/.dev.vars
+workers/.wrangler/
+workers/dist/
+
+# macOS
+.DS_Store

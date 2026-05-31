@@ -1,0 +1,90 @@
+name: Embr
+options:
+  bundleIdPrefix: com.guitaripod
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "18.0"
+  groupSortPosition: top
+
+packages:
+  EmbrCore:
+    path: .
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: "7.0.0"
+  SDWebImage:
+    url: https://github.com/SDWebImage/SDWebImage
+    from: "5.19.0"
+  SDWebImageWebPCoder:
+    url: https://github.com/SDWebImage/SDWebImageWebPCoder
+    from: "0.14.0"
+
+targets:
+  Embr:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Embr
+        excludes:
+          - "Secrets.example.swift"
+    dependencies:
+      - package: EmbrCore
+        product: EmbrCore
+      - package: GRDB
+        product: GRDB
+      - package: SDWebImage
+        product: SDWebImage
+      - package: SDWebImageWebPCoder
+        product: SDWebImageWebPCoder
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${EMBR_BUNDLE_ID}
+        PRODUCT_NAME: Embr
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ${EMBR_TEAM_ID}
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+    info:
+      path: Embr/Info.plist
+      properties:
+        CFBundleDisplayName: Embr
+        CFBundleShortVersionString: "0.1.0"
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
+        UIBackgroundModes:
+          - audio
+        UIViewControllerBasedStatusBarAppearance: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleURLName: ${EMBR_BUNDLE_ID}
+            CFBundleURLSchemes:
+              - embr
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+
+schemes:
+  Embr:
+    build:
+      targets:
+        Embr: all
+    run:
+      config: Debug
+    test:
+      config: Debug
