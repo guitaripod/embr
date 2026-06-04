@@ -68,6 +68,11 @@ final class SettingsViewController: UIViewController {
         self.auth = auth
         super.init(nibName: nil, bundle: nil)
         title = "Settings"
+        tabBarItem = UITabBarItem(
+            title: "Settings",
+            image: UIImage(systemName: "gearshape"),
+            selectedImage: UIImage(systemName: "gearshape.fill")
+        )
     }
 
     @available(*, unavailable)
@@ -111,7 +116,7 @@ final class SettingsViewController: UIViewController {
             elementKind: UICollectionView.elementKindSectionHeader
         ) { header, _, indexPath in
             guard let section = Section(rawValue: indexPath.section) else { return }
-            var content = UIListContentConfiguration.groupedHeader()
+            var content = UIListContentConfiguration.header()
             content.text = section.title
             header.contentConfiguration = content
         }
@@ -177,14 +182,7 @@ final class SettingsViewController: UIViewController {
         case .theme:
             content.text = "Theme"
             cell.contentConfiguration = content
-            let control = UISegmentedControl(items: ["System", "Light", "Dark"])
-            control.selectedSegmentIndex = themeIndex(settings.theme)
-            control.addAction(UIAction { [weak self] action in
-                guard let segmented = action.sender as? UISegmentedControl else { return }
-                let theme = Self.theme(forIndex: segmented.selectedSegmentIndex)
-                self?.store.update { $0.theme = theme }
-            }, for: .valueChanged)
-            cell.accessories = [.customView(configuration: .init(customView: control, placement: .trailing()))]
+            cell.accessories = [.customView(configuration: .init(customView: themeButton(selected: settings.theme), placement: .trailing()))]
 
         case .accentPurple:
             switchRow(cell, &content, title: "Use Twitch Purple Accent", isOn: settings.accentUsesTwitchPurple) { store, on in
@@ -213,10 +211,10 @@ final class SettingsViewController: UIViewController {
             }
         case .messageScale:
             sliderRow(
-                cell, &content,
+                cell,
                 title: "Message Scale",
                 value: settings.messageScale, range: 0.75...1.5, step: 0.05,
-                valueText: String(format: "%.2fx", settings.messageScale)
+                format: { String(format: "%.2fx", $0) }
             ) { store, value in
                 store.update { $0.messageScale = value }
             }
@@ -265,10 +263,10 @@ final class SettingsViewController: UIViewController {
             }
         case .chatDelaySeconds:
             sliderRow(
-                cell, &content,
+                cell,
                 title: "Chat Delay",
                 value: settings.chatDelaySeconds, range: 0...10, step: 0.5,
-                valueText: String(format: "%.1fs", settings.chatDelaySeconds)
+                format: { String(format: "%.1fs", $0) }
             ) { store, value in
                 store.update { $0.chatDelaySeconds = value }
             }
@@ -338,29 +336,25 @@ final class SettingsViewController: UIViewController {
 
     private func sliderRow(
         _ cell: UICollectionViewListCell,
-        _ content: inout UIListContentConfiguration,
         title: String,
         value: Double,
         range: ClosedRange<Double>,
         step: Double,
-        valueText: String,
+        format: @escaping (Double) -> String,
         action: @escaping (SettingsStore, Double) -> Void
     ) {
-        content.text = title
-        content.secondaryText = valueText
-        cell.contentConfiguration = content
-        let slider = UISlider()
-        slider.minimumValue = Float(range.lowerBound)
-        slider.maximumValue = Float(range.upperBound)
-        slider.value = Float(value)
-        slider.minimumTrackTintColor = Theme.accent
-        slider.widthAnchor.constraint(equalToConstant: 160).isActive = true
-        slider.addAction(UIAction { [weak self] act in
-            guard let self, let s = act.sender as? UISlider else { return }
-            let snapped = (Double(s.value) / step).rounded() * step
-            action(self.store, min(max(snapped, range.lowerBound), range.upperBound))
-        }, for: .valueChanged)
-        cell.accessories = [.customView(configuration: .init(customView: slider, placement: .trailing()))]
+        cell.accessories = []
+        cell.contentConfiguration = SliderRowConfiguration(
+            title: title,
+            value: value,
+            range: range,
+            step: step,
+            format: format,
+            commit: { [weak self] snapped in
+                guard let self else { return }
+                action(self.store, snapped)
+            }
+        )
     }
 
     private func stepperRow(
@@ -388,20 +382,19 @@ final class SettingsViewController: UIViewController {
         cell.accessories = [.customView(configuration: .init(customView: stepper, placement: .trailing()))]
     }
 
-    private func themeIndex(_ theme: Settings.ThemePreference) -> Int {
-        switch theme {
-        case .system: return 0
-        case .light: return 1
-        case .dark: return 2
-        }
-    }
-
-    private static func theme(forIndex index: Int) -> Settings.ThemePreference {
-        switch index {
-        case 1: return .light
-        case 2: return .dark
-        default: return .system
-        }
+    private func themeButton(selected: Settings.ThemePreference) -> UIButton {
+        let options: [(String, Settings.ThemePreference)] = [("System", .system), ("Light", .light), ("Dark", .dark)]
+        var configuration = UIButton.Configuration.plain()
+        configuration.baseForegroundColor = Theme.secondaryText
+        let button = UIButton(configuration: configuration)
+        button.menu = UIMenu(children: options.map { title, preference in
+            UIAction(title: title, state: preference == selected ? .on : .off) { [weak self] _ in
+                self?.store.update { $0.theme = preference }
+            }
+        })
+        button.showsMenuAsPrimaryAction = true
+        button.changesSelectionAsPrimaryAction = true
+        return button
     }
 
     private static var versionString: String {
@@ -431,10 +424,24 @@ final class SettingsViewController: UIViewController {
     private func performAccountAction() {
         switch authState {
         case .authenticated:
-            Task { await auth.logout() }
+            confirmLogout()
         case .anonymous:
             login()
         }
+    }
+
+    private func confirmLogout() {
+        let alert = UIAlertController(title: "Log Out?", message: "You'll return to browsing as a guest.", preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Log Out", style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.auth.logout() }
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        }
+        present(alert, animated: true)
     }
 
     private func login() {
@@ -451,6 +458,15 @@ final class SettingsViewController: UIViewController {
 }
 
 extension SettingsViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
+        switch dataSource.itemIdentifier(for: indexPath) {
+        case .defaultQuality, .github, .accountAction:
+            return true
+        default:
+            return false
+        }
+    }
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         defer { collectionView.deselectItem(at: indexPath, animated: true) }
         guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
@@ -464,5 +480,103 @@ extension SettingsViewController: UICollectionViewDelegate {
         default:
             break
         }
+    }
+}
+
+private struct SliderRowConfiguration: UIContentConfiguration {
+    var title: String
+    var value: Double
+    var range: ClosedRange<Double>
+    var step: Double
+    var format: (Double) -> String
+    var commit: (Double) -> Void
+
+    func makeContentView() -> UIView & UIContentView {
+        SliderRowView(self)
+    }
+
+    func updated(for state: UIConfigurationState) -> SliderRowConfiguration { self }
+}
+
+@MainActor
+private final class SliderRowView: UIView, UIContentView {
+    private let titleLabel = UILabel()
+    private let valueLabel = UILabel()
+    private let slider = UISlider()
+    private var current: SliderRowConfiguration
+
+    var configuration: UIContentConfiguration {
+        get { current }
+        set {
+            guard let config = newValue as? SliderRowConfiguration else { return }
+            current = config
+            apply(config)
+        }
+    }
+
+    init(_ configuration: SliderRowConfiguration) {
+        self.current = configuration
+        super.init(frame: .zero)
+        preservesSuperviewLayoutMargins = true
+        build()
+        apply(configuration)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func build() {
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = Theme.primaryText
+
+        valueLabel.font = .preferredFont(forTextStyle: .subheadline)
+        valueLabel.adjustsFontForContentSizeCategory = true
+        valueLabel.textColor = Theme.secondaryText
+        valueLabel.textAlignment = .right
+        valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        slider.minimumTrackTintColor = Theme.accent
+        slider.addTarget(self, action: #selector(sliderChanged), for: .valueChanged)
+        slider.addTarget(self, action: #selector(sliderCommitted), for: [.touchUpInside, .touchUpOutside])
+
+        let header = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        header.axis = .horizontal
+        header.spacing = 8
+
+        let stack = UIStackView(arrangedSubviews: [header, slider])
+        stack.axis = .vertical
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 11),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -11),
+            stack.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
+        ])
+    }
+
+    private func apply(_ config: SliderRowConfiguration) {
+        titleLabel.text = config.title
+        slider.minimumValue = Float(config.range.lowerBound)
+        slider.maximumValue = Float(config.range.upperBound)
+        slider.value = Float(config.value)
+        valueLabel.text = config.format(config.value)
+    }
+
+    private func snappedValue() -> Double {
+        let raw = Double(slider.value)
+        let stepped = (raw / current.step).rounded() * current.step
+        return min(max(stepped, current.range.lowerBound), current.range.upperBound)
+    }
+
+    @objc private func sliderChanged() {
+        valueLabel.text = current.format(snappedValue())
+    }
+
+    @objc private func sliderCommitted() {
+        current.commit(snappedValue())
     }
 }

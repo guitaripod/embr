@@ -30,6 +30,12 @@ final class SettingsStore {
         schedulePersist(next)
     }
 
+    func flush() {
+        pendingWrite?.cancel()
+        pendingWrite = nil
+        persist(current)
+    }
+
     private func schedulePersist(_ settings: Settings) {
         pendingWrite?.cancel()
         let work = DispatchWorkItem { [weak self] in

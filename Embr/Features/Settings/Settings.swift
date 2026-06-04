@@ -33,6 +33,8 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var hapticsEnabled: Bool
     var shareCrashLogs: Bool
 
+    var chatOnly: Bool?
+
     static let `default` = Settings(
         theme: .system,
         accentUsesTwitchPurple: true,
@@ -57,7 +59,8 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         keepScreenAwake: true,
         openLinksInApp: true,
         hapticsEnabled: true,
-        shareCrashLogs: false
+        shareCrashLogs: false,
+        chatOnly: false
     )
 
     func thirdPartyEmotesEnabled(_ provider: EmoteProvider) -> Bool {
