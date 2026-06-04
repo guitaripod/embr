@@ -1,20 +1,48 @@
 import UIKit
+import AuthenticationServices
 import Combine
 import EmbrCore
+import SafariServices
 
 @MainActor
 final class ChannelViewController: UIViewController {
     private let channel: ChannelInfo
     private let auth: AuthService
+    private let store: SettingsStore
 
     private var chatController: ChatViewController?
+    private var videoController: VideoViewController?
+    private var chatLoggedIn: Bool?
+    private var isChatOnly = false
+    private var cancellables = Set<AnyCancellable>()
+
+    private lazy var chatOnlyItem = UIBarButtonItem(
+        image: UIImage(systemName: "bubble.left.and.bubble.right"),
+        style: .plain,
+        target: self,
+        action: #selector(toggleChatOnly)
+    )
+
+    private lazy var videosItem = UIBarButtonItem(
+        image: UIImage(systemName: "film.stack"),
+        style: .plain,
+        target: self,
+        action: #selector(showVideos)
+    )
+
+    @objc private func showVideos() {
+        navigationController?.pushViewController(
+            ChannelVideosViewController(broadcasterID: channel.id, channelName: channel.broadcasterName),
+            animated: true
+        )
+    }
 
     private let containerStack = UIStackView()
     private let videoContainer = UIView()
     private let chatContainer = UIView()
     private let dividerHandle = UIView()
-
-    private var cancellables = Set<AnyCancellable>()
+    private let infoView = StreamInfoView()
+    private var gameToOpen: GameCategory?
 
     private var chatWidthFraction: CGFloat = 0.32
     private var landscapeWidthConstraint: NSLayoutConstraint?
@@ -22,10 +50,12 @@ final class ChannelViewController: UIViewController {
     private var isVideoFullscreen = false
     private let chatOverlay = UIView()
 
-    init(channel: ChannelInfo, auth: AuthService = AuthService.shared) {
+    init(channel: ChannelInfo, auth: AuthService = AuthService.shared, store: SettingsStore = .shared) {
         self.channel = channel
         self.auth = auth
+        self.store = store
         super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
     }
 
     @available(*, unavailable)
@@ -35,12 +65,93 @@ final class ChannelViewController: UIViewController {
         [.portrait, .landscapeLeft, .landscapeRight]
     }
 
+    override var prefersStatusBarHidden: Bool { isLandscape }
+    override var prefersHomeIndicatorAutoHidden: Bool { isLandscape }
+    override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation { .fade }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = Theme.background
         title = channel.broadcasterName
+        navigationItem.largeTitleDisplayMode = .never
+        isChatOnly = store.current.chatOnly ?? false
+        navigationItem.rightBarButtonItems = [chatOnlyItem, videosItem]
+        updateChatOnlyButton()
         setUpLayout()
         loadChildren()
+        loadStreamInfo()
+        observeAuth()
+        WatchHistoryStore.shared.record(id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
+    }
+
+    private func loadStreamInfo() {
+        infoView.configure(channel: channel)
+        gameToOpen = channel.gameName.isEmpty ? nil : GameCategory(id: channel.gameID, name: channel.gameName, boxArtURLTemplate: "")
+        infoView.onTapGame = { [weak self] in
+            guard let self, let game = self.gameToOpen else { return }
+            self.navigationController?.pushViewController(TopViewController(mode: .game(game), api: AppContainer.shared.api), animated: true)
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            guard let stream = try? await AppContainer.shared.api.streams(userIDs: [self.channel.id]).first else { return }
+            self.infoView.configure(stream: stream)
+            if !stream.gameName.isEmpty {
+                self.gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
+            }
+        }
+    }
+
+    @objc private func toggleChatOnly() {
+        setChatOnly(!isChatOnly)
+    }
+
+    private func updateChatOnlyButton() {
+        chatOnlyItem.image = UIImage(systemName: isChatOnly ? "tv" : "bubble.left.and.bubble.right")
+        chatOnlyItem.accessibilityLabel = isChatOnly ? "Show Video" : "Chat Only"
+    }
+
+    private func setChatOnly(_ on: Bool) {
+        guard on != isChatOnly else { return }
+        Haptics.selection(store)
+        isChatOnly = on
+        store.update { $0.chatOnly = on }
+        updateChatOnlyButton()
+        videoController?.setStreamActive(!on)
+        if on {
+            videoContainer.removeConstraints(videoAspectConstraints)
+            videoAspectConstraints = []
+        }
+        videoContainer.isHidden = on
+        applyOrientation(isLandscape: isLandscape)
+    }
+
+    private func observeAuth() {
+        auth.statePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                MainActor.assumeIsolated { self?.handleAuthChange(state) }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleAuthChange(_ state: AuthState) {
+        let user: AuthenticatedUser?
+        switch state {
+        case .anonymous: user = nil
+        case .authenticated(let authed): user = authed
+        }
+        guard let current = chatLoggedIn, current != (user != nil) else { return }
+        reattachChat(user: user)
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -64,11 +175,14 @@ final class ChannelViewController: UIViewController {
         chatContainer.backgroundColor = Theme.background
 
         containerStack.addArrangedSubview(videoContainer)
+        containerStack.addArrangedSubview(infoView)
         containerStack.addArrangedSubview(chatContainer)
 
         dividerHandle.translatesAutoresizingMaskIntoConstraints = false
         dividerHandle.backgroundColor = Theme.surfaceElevated
         dividerHandle.addGestureRecognizer(dividerPan)
+
+        videoContainer.isHidden = isChatOnly
 
         NSLayoutConstraint.activate([
             containerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -81,13 +195,21 @@ final class ChannelViewController: UIViewController {
     }
 
     private func applyOrientation(isLandscape landscape: Bool) {
+        navigationController?.setNavigationBarHidden(landscape, animated: true)
+        videoController?.setBackButtonHidden(navigationController != nil && !landscape)
+        infoView.isHidden = landscape
         if landscape {
             containerStack.axis = .horizontal
-            installDivider()
             landscapeWidthConstraint?.isActive = false
-            let constraint = chatContainer.widthAnchor.constraint(equalTo: containerStack.widthAnchor, multiplier: chatWidthFraction)
-            constraint.isActive = true
-            landscapeWidthConstraint = constraint
+            if isChatOnly {
+                removeDivider()
+                landscapeWidthConstraint = nil
+            } else {
+                installDivider()
+                let constraint = chatContainer.widthAnchor.constraint(equalTo: containerStack.widthAnchor, multiplier: chatWidthFraction)
+                constraint.isActive = true
+                landscapeWidthConstraint = constraint
+            }
             videoContainer.removeConstraints(videoAspectConstraints)
             videoAspectConstraints = []
         } else {
@@ -95,7 +217,7 @@ final class ChannelViewController: UIViewController {
             removeDivider()
             landscapeWidthConstraint?.isActive = false
             landscapeWidthConstraint = nil
-            applyPortraitVideoAspect()
+            if !isChatOnly { applyPortraitVideoAspect() }
         }
         view.layoutIfNeeded()
     }
@@ -144,9 +266,10 @@ final class ChannelViewController: UIViewController {
     }
 
     func setVideoFullscreen(_ fullscreen: Bool) {
-        guard fullscreen != isVideoFullscreen, let chat = chatController else { return }
-        isVideoFullscreen = fullscreen
-        if fullscreen {
+        let immersive = fullscreen && isLandscape && !isChatOnly
+        guard immersive != isVideoFullscreen, let chat = chatController else { return }
+        isVideoFullscreen = immersive
+        if immersive {
             installChatOverlay(chat: chat)
         } else {
             removeChatOverlay(chat: chat)
@@ -187,7 +310,7 @@ final class ChannelViewController: UIViewController {
     }
 
     private func loadChildren() {
-        let video = VideoViewController(source: .live(login: channel.broadcasterLogin))
+        let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
         video.onFullscreenChange = { [weak self] fullscreen in
             self?.setVideoFullscreen(fullscreen)
         }
@@ -201,17 +324,20 @@ final class ChannelViewController: UIViewController {
             video.view.bottomAnchor.constraint(equalTo: videoContainer.bottomAnchor)
         ])
         video.didMove(toParent: self)
+        videoController = video
+        video.setBackButtonHidden(navigationController != nil && !isLandscape)
 
         Task { [weak self] in
             guard let self else { return }
             let user = await self.auth.currentUser()
-            self.attachChat(loggedIn: user != nil)
+            self.attachChat(user: user)
         }
     }
 
-    private func attachChat(loggedIn: Bool) {
+    private func attachChat(user: AuthenticatedUser?) {
+        let loggedIn = user != nil
         let room = AppContainer.shared.makeChatRoom(channel: channel, loggedIn: loggedIn)
-        let viewModel = ChatViewModel(room: room)
+        let viewModel = ChatViewModel(room: room, currentUserLogin: user?.login)
         let chat = ChatViewController(viewModel: viewModel, isAnonymous: !loggedIn)
         chat.delegate = self
         addChild(chat)
@@ -225,12 +351,30 @@ final class ChannelViewController: UIViewController {
         ])
         chat.didMove(toParent: self)
         chatController = chat
+        chatLoggedIn = loggedIn
+    }
+
+    private func reattachChat(user: AuthenticatedUser?) {
+        if isVideoFullscreen {
+            isVideoFullscreen = false
+            chatOverlay.removeFromSuperview()
+            chatContainer.isHidden = false
+        }
+        if let existing = chatController {
+            existing.endSession()
+            existing.willMove(toParent: nil)
+            existing.view.removeFromSuperview()
+            existing.removeFromParent()
+            chatController = nil
+        }
+        attachChat(user: user)
     }
 }
 
 extension ChannelViewController: ChatViewControllerDelegate {
     func chatViewController(_ controller: ChatViewController, didTapUsername user: ChatUser) {
-        AppLogger.shared.debug("Tapped username \(user.login)", category: .ui)
+        Haptics.selection()
+        present(ProfileSheetViewController(login: user.login, navigator: navigationController), animated: true)
     }
 
     func chatViewController(_ controller: ChatViewController, didTapEmote emote: Emote) {
@@ -238,10 +382,25 @@ extension ChannelViewController: ChatViewControllerDelegate {
     }
 
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL) {
-        UIApplication.shared.open(url)
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return }
+        let safari = SFSafariViewController(url: url)
+        safari.preferredControlTintColor = Theme.accent
+        present(safari, animated: true)
     }
 
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage) {
         controller.beginReply(to: message)
+    }
+
+    func chatViewControllerDidRequestLogin(_ controller: ChatViewController) {
+        guard let anchor = view.window else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.auth.login(presentationAnchor: anchor)
+            } catch {
+                AppLogger.shared.warn("channel chat login failed: \(error)", category: .auth)
+            }
+        }
     }
 }
