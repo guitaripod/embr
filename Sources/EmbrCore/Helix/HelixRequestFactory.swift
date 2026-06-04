@@ -134,6 +134,18 @@ public struct HelixRequestFactory: Sendable {
         )
     }
 
+    public func schedule(broadcasterID: String, first: Int = 25, after: String? = nil, token: String) -> HTTPRequest {
+        get(
+            "schedule",
+            items: [
+                ("broadcaster_id", broadcasterID),
+                ("first", String(first)),
+                ("after", after)
+            ],
+            token: token
+        )
+    }
+
     public func globalEmotes(token: String) -> HTTPRequest {
         get("chat/emotes/global", items: [], token: token)
     }

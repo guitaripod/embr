@@ -128,6 +128,39 @@ struct IRCMapperTests {
     }
 }
 
+@Suite("IRC roomstate")
+struct IRCRoomStateTests {
+    @Test func parsesFullJoinSnapshot() {
+        let msg = IRCMessage.parse("@emote-only=1;followers-only=10;r9k=1;slow=30;subs-only=1 :tmi.twitch.tv ROOMSTATE #c")!
+        let state = IRCMapper.roomState(from: msg, merging: RoomState())
+        #expect(state.emoteOnly)
+        #expect(state.followersOnly == 10)
+        #expect(state.uniqueChat)
+        #expect(state.slowMode == 30)
+        #expect(state.subscribersOnly)
+    }
+
+    @Test func mergesDeltaPreservingAbsentTags() {
+        let base = RoomState(emoteOnly: true)
+        let msg = IRCMessage.parse("@slow=30 :tmi.twitch.tv ROOMSTATE #c")!
+        let state = IRCMapper.roomState(from: msg, merging: base)
+        #expect(state.emoteOnly)
+        #expect(state.slowMode == 30)
+    }
+
+    @Test func mapsFollowersOnlyConvention() {
+        let off = IRCMapper.roomState(from: IRCMessage.parse("@followers-only=-1 :tmi.twitch.tv ROOMSTATE #c")!, merging: RoomState(followersOnly: 5))
+        #expect(off.followersOnly == nil)
+        let any = IRCMapper.roomState(from: IRCMessage.parse("@followers-only=0 :tmi.twitch.tv ROOMSTATE #c")!, merging: RoomState())
+        #expect(any.followersOnly == 0)
+    }
+
+    @Test func mapsSlowZeroToOff() {
+        let state = IRCMapper.roomState(from: IRCMessage.parse("@slow=0 :tmi.twitch.tv ROOMSTATE #c")!, merging: RoomState(slowMode: 30))
+        #expect(state.slowMode == nil)
+    }
+}
+
 @Suite("Recent messages backfill")
 struct RecentMessagesParserTests {
     private static let lines = [

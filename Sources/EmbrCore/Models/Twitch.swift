@@ -109,6 +109,7 @@ public struct ChannelInfo: Sendable, Equatable, Hashable, Identifiable {
     public let title: String
     public let language: String
     public let tags: [String]
+    public let isLive: Bool
 
     public init(
         id: String,
@@ -118,7 +119,8 @@ public struct ChannelInfo: Sendable, Equatable, Hashable, Identifiable {
         gameName: String,
         title: String,
         language: String,
-        tags: [String] = []
+        tags: [String] = [],
+        isLive: Bool = false
     ) {
         self.id = id
         self.broadcasterLogin = broadcasterLogin
@@ -128,6 +130,7 @@ public struct ChannelInfo: Sendable, Equatable, Hashable, Identifiable {
         self.title = title
         self.language = language
         self.tags = tags
+        self.isLive = isLive
     }
 }
 
@@ -219,5 +222,33 @@ public struct FollowedChannel: Sendable, Equatable, Hashable, Identifiable {
         self.broadcasterLogin = broadcasterLogin
         self.broadcasterName = broadcasterName
         self.followedAt = followedAt
+    }
+}
+
+public struct ScheduleSegment: Sendable, Equatable, Hashable, Identifiable {
+    public let id: String
+    public let startTime: Date
+    public let endTime: Date?
+    public let title: String
+    public let categoryName: String?
+    public let isRecurring: Bool
+    public let canceledUntil: Date?
+
+    public init(
+        id: String,
+        startTime: Date,
+        endTime: Date? = nil,
+        title: String,
+        categoryName: String? = nil,
+        isRecurring: Bool = false,
+        canceledUntil: Date? = nil
+    ) {
+        self.id = id
+        self.startTime = startTime
+        self.endTime = endTime
+        self.title = title
+        self.categoryName = categoryName
+        self.isRecurring = isRecurring
+        self.canceledUntil = canceledUntil
     }
 }
