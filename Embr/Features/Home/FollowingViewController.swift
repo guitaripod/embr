@@ -4,15 +4,34 @@ import EmbrCore
 
 @MainActor
 final class FollowingViewController: UIViewController {
+    private enum Section: Hashable { case live, offline }
+    private enum Item: Hashable {
+        case stream(LiveStream)
+        case channel(FollowedChannel)
+    }
+
     private let auth: AuthService
     private let api: TwitchAPIProviding
 
     private var viewModel: StreamListViewModel?
     private var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, LiveStream>!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let refreshControl = UIRefreshControl()
-    private let emptyView = EmptyStateView(symbol: "heart.slash", message: "No followed channels are live right now.")
+    private let emptyView = EmptyStateView(symbol: "heart.slash", message: "You don't follow any channels yet.")
     private let signInView = EmptyStateView(symbol: "person.crop.circle.badge.exclamationmark", message: "Sign in to see channels you follow.")
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.color = Theme.secondaryText
+        return indicator
+    }()
+    private static let emptyMessage = "You don't follow any channels yet."
+
+    private var liveStreams: [LiveStream] = []
+    private var followedChannels: [FollowedChannel] = []
+    private var avatars: [String: URL] = [:]
+    private var userID: String?
+    private var channelsTask: Task<Void, Never>?
 
     private var cancellables = Set<AnyCancellable>()
     private var hasLoaded = false
@@ -44,15 +63,19 @@ final class FollowingViewController: UIViewController {
     }
 
     private func bootstrap() {
+        loadingIndicator.startAnimating()
         Task { [weak self] in
             guard let self else { return }
             guard let user = await self.auth.currentUser() else {
+                self.loadingIndicator.stopAnimating()
                 self.signInView.isHidden = false
                 return
             }
             self.signInView.isHidden = true
+            self.userID = user.id
             self.bind(userID: user.id)
             self.viewModel?.load()
+            self.loadFollowedChannels()
         }
     }
 
@@ -62,7 +85,7 @@ final class FollowingViewController: UIViewController {
         model.streamsSubject
             .receive(on: DispatchQueue.main)
             .sink { [weak self] streams in
-                MainActor.assumeIsolated { self?.apply(streams) }
+                MainActor.assumeIsolated { self?.applyLive(streams) }
             }
             .store(in: &cancellables)
         model.loadingSubject
@@ -79,11 +102,47 @@ final class FollowingViewController: UIViewController {
             .store(in: &cancellables)
     }
 
+    private func loadFollowedChannels() {
+        guard let userID else { return }
+        channelsTask?.cancel()
+        channelsTask = Task { [weak self] in
+            guard let self else { return }
+            var collected: [FollowedChannel] = []
+            var cursor: String?
+            var pages = 0
+            repeat {
+                guard let page = try? await self.api.followedChannels(userID: userID, after: cursor, first: 100) else { break }
+                collected.append(contentsOf: page.items)
+                cursor = page.cursor
+                pages += 1
+            } while cursor != nil && pages < 3 && !Task.isCancelled
+            if Task.isCancelled { return }
+            self.followedChannels = collected
+            self.rebuild()
+            self.loadAvatars()
+        }
+    }
+
+    private func loadAvatars() {
+        let liveIDs = Set(liveStreams.map(\.userID))
+        let offlineIDs = followedChannels.map(\.id).filter { !liveIDs.contains($0) && avatars[$0] == nil }
+        guard !offlineIDs.isEmpty else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            for chunk in stride(from: 0, to: offlineIDs.count, by: 100).map({ Array(offlineIDs[$0..<min($0 + 100, offlineIDs.count)]) }) {
+                guard let users = try? await self.api.users(ids: chunk) else { continue }
+                for user in users { if let url = user.profileImageURL { self.avatars[user.id] = url } }
+                if Task.isCancelled { return }
+                self.reconfigureOffline()
+            }
+        }
+    }
+
     private func setUpCollectionView() {
-        let layout = StreamListLayout.make()
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
+        collectionView.alwaysBounceVertical = true
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         collectionView.refreshControl = refreshControl
@@ -97,12 +156,70 @@ final class FollowingViewController: UIViewController {
         ])
     }
 
+    private func makeLayout() -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
+            MainActor.assumeIsolated {
+                if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .offline {
+                    return Self.offlineSection()
+                }
+                return Self.liveSection(environment: environment)
+            }
+        }
+    }
+
+    private static func headerItem() -> NSCollectionLayoutBoundarySupplementaryItem {
+        NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(34)),
+            elementKind: SectionHeaderView.elementKind, alignment: .top)
+    }
+
+    private static func liveSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
+        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .fractionalHeight(1.0)))
+        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
+            repeatingSubitem: item, count: columns)
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0)
+        section.boundarySupplementaryItems = [headerItem()]
+        return section
+    }
+
+    private static func offlineSection() -> NSCollectionLayoutSection {
+        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(56)))
+        let group = NSCollectionLayoutGroup.vertical(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(56)),
+            subitems: [item])
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 16, trailing: 0)
+        section.boundarySupplementaryItems = [headerItem()]
+        return section
+    }
+
     private func setUpDataSource() {
-        let registration = UICollectionView.CellRegistration<StreamCell, LiveStream> { cell, _, stream in
+        let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { cell, _, stream in
             cell.configure(with: stream)
         }
-        dataSource = UICollectionViewDiffableDataSource<Int, LiveStream>(collectionView: collectionView) { collectionView, indexPath, stream in
-            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: stream)
+        let channelRegistration = UICollectionView.CellRegistration<FollowedChannelCell, FollowedChannel> { [weak self] cell, _, channel in
+            cell.configure(with: channel, avatarURL: self?.avatars[channel.id])
+        }
+        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { collectionView, indexPath, item in
+            switch item {
+            case .stream(let stream):
+                return collectionView.dequeueConfiguredReusableCell(using: streamRegistration, for: indexPath, item: stream)
+            case .channel(let channel):
+                return collectionView.dequeueConfiguredReusableCell(using: channelRegistration, for: indexPath, item: channel)
+            }
+        }
+        let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { [weak self] view, _, indexPath in
+            let section = self?.dataSource.sectionIdentifier(for: indexPath.section)
+            view.configure(title: section == .offline ? "Channels" : "Live")
+        }
+        dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
+            collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
         }
     }
 
@@ -118,15 +235,47 @@ final class FollowingViewController: UIViewController {
                 state.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32)
             ])
         }
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(loadingIndicator)
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
     }
 
-    private func apply(_ streams: [LiveStream]) {
+    private func applyLive(_ streams: [LiveStream]) {
+        liveStreams = streams
+        rebuild()
+        loadAvatars()
+    }
+
+    private func rebuild() {
         hasLoaded = true
-        var snapshot = NSDiffableDataSourceSnapshot<Int, LiveStream>()
-        snapshot.appendSections([0])
-        snapshot.appendItems(streams, toSection: 0)
+        loadingIndicator.stopAnimating()
+        let liveIDs = Set(liveStreams.map(\.userID))
+        let offline = followedChannels
+            .filter { !liveIDs.contains($0.id) }
+            .sorted { $0.broadcasterName.localizedCaseInsensitiveCompare($1.broadcasterName) == .orderedAscending }
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        if !liveStreams.isEmpty {
+            snapshot.appendSections([.live])
+            snapshot.appendItems(liveStreams.map(Item.stream), toSection: .live)
+        }
+        if !offline.isEmpty {
+            snapshot.appendSections([.offline])
+            snapshot.appendItems(offline.map(Item.channel), toSection: .offline)
+        }
         dataSource.apply(snapshot, animatingDifferences: true)
-        emptyView.isHidden = !streams.isEmpty
+        emptyView.setMessage(Self.emptyMessage)
+        emptyView.onRetry = nil
+        emptyView.isHidden = !(liveStreams.isEmpty && offline.isEmpty)
+    }
+
+    private func reconfigureOffline() {
+        var snapshot = dataSource.snapshot()
+        guard snapshot.sectionIdentifiers.contains(.offline) else { return }
+        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .offline))
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func handleLoading(_ loading: Bool) {
@@ -135,27 +284,55 @@ final class FollowingViewController: UIViewController {
     }
 
     private func handleError(_ message: String) {
+        loadingIndicator.stopAnimating()
         refreshControl.endRefreshing()
-        emptyView.isHidden = (viewModel?.currentStreams.isEmpty == false)
+        guard liveStreams.isEmpty, followedChannels.isEmpty else { return }
+        emptyView.setMessage(message)
+        emptyView.onRetry = { [weak self] in
+            self?.viewModel?.load()
+            self?.loadFollowedChannels()
+        }
+        emptyView.isHidden = false
     }
 
     @objc private func refresh() {
+        Haptics.selection()
         viewModel?.load()
+        loadFollowedChannels()
     }
 }
 
 extension FollowingViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        guard let stream = dataSource.itemIdentifier(for: indexPath) else { return }
-        navigationController?.pushViewController(ChannelViewController(channel: StreamRouting.channel(from: stream)), animated: true)
+        guard let item = dataSource.itemIdentifier(for: indexPath) else { return }
+        Haptics.selection()
+        switch item {
+        case .stream(let stream):
+            navigationController?.pushViewController(ChannelViewController(channel: StreamRouting.channel(from: stream)), animated: true)
+        case .channel(let channel):
+            let info = ChannelInfo(id: channel.id, broadcasterLogin: channel.broadcasterLogin, broadcasterName: channel.broadcasterName, gameID: "", gameName: "", title: "", language: "")
+            navigationController?.pushViewController(ChannelViewController(channel: info), animated: true)
+        }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        switch dataSource.itemIdentifier(for: indexPath) {
+        case .stream(let stream):
+            return ChannelActions.configuration(login: stream.userLogin, broadcasterID: stream.userID, name: stream.userName, from: self)
+        case .channel(let channel):
+            return ChannelActions.configuration(login: channel.broadcasterLogin, broadcasterID: channel.id, name: channel.broadcasterName, from: self)
+        case .none:
+            return nil
+        }
     }
 }
 
 extension FollowingViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
-        guard let max = indexPaths.map(\.item).max() else { return }
-        let count = dataSource.snapshot().numberOfItems(inSection: 0)
+        let liveItems = indexPaths.filter { dataSource.sectionIdentifier(for: $0.section) == .live }
+        guard let max = liveItems.map(\.item).max() else { return }
+        let count = liveStreams.count
         if max >= count - 6 {
             viewModel?.loadMore()
         }

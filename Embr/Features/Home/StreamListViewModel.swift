@@ -15,43 +15,60 @@ enum StreamRouting {
             tags: stream.tags
         )
     }
+
+    static func channel(from channel: WatchedChannel) -> ChannelInfo {
+        ChannelInfo(
+            id: channel.id,
+            broadcasterLogin: channel.login,
+            broadcasterName: channel.name,
+            gameID: "",
+            gameName: "",
+            title: "",
+            language: ""
+        )
+    }
 }
 
+@MainActor
 enum StreamListLayout {
     static func make() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
-            let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
-            let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                heightDimension: .fractionalHeight(1.0)
-            ))
-            item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
-            let group = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
-                repeatingSubitem: item,
-                count: columns
-            )
-            let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
-            return section
+            MainActor.assumeIsolated {
+                let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
+                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
+                    heightDimension: .fractionalHeight(1.0)
+                ))
+                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+                let group = NSCollectionLayoutGroup.horizontal(
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
+                    repeatingSubitem: item,
+                    count: columns
+                )
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
+                return section
+            }
         }
     }
 
     static func grid(columns: Int) -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, _ in
-            let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                heightDimension: .fractionalHeight(1.0)
-            ))
-            item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
-            let group = NSCollectionLayoutGroup.horizontal(
-                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(220)),
-                repeatingSubitem: item,
-                count: columns
-            )
-            let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
-            return section
+            MainActor.assumeIsolated {
+                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
+                    heightDimension: .fractionalHeight(1.0)
+                ))
+                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
+                let group = NSCollectionLayoutGroup.horizontal(
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(220)),
+                    repeatingSubitem: item,
+                    count: columns
+                )
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+                return section
+            }
         }
     }
 }
@@ -60,6 +77,11 @@ enum StreamListLayout {
 final class EmptyStateView: UIView {
     private let iconView = UIImageView()
     private let label = UILabel()
+    private let retryButton = UIButton(type: .system)
+
+    var onRetry: (() -> Void)? {
+        didSet { retryButton.isHidden = onRetry == nil }
+    }
 
     init(symbol: String, message: String) {
         super.init(frame: .zero)
@@ -74,7 +96,15 @@ final class EmptyStateView: UIView {
         label.textAlignment = .center
         label.numberOfLines = 0
 
-        let stack = UIStackView(arrangedSubviews: [iconView, label])
+        var configuration = UIButton.Configuration.tinted()
+        configuration.title = "Retry"
+        configuration.cornerStyle = .large
+        configuration.baseForegroundColor = Theme.accent
+        retryButton.configuration = configuration
+        retryButton.isHidden = true
+        retryButton.addAction(UIAction { [weak self] _ in self?.onRetry?() }, for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [iconView, label, retryButton])
         stack.axis = .vertical
         stack.spacing = 12
         stack.alignment = .center
@@ -86,6 +116,10 @@ final class EmptyStateView: UIView {
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
+
+        iconView.isAccessibilityElement = false
+        isAccessibilityElement = true
+        accessibilityLabel = message
     }
 
     @available(*, unavailable)
@@ -93,6 +127,7 @@ final class EmptyStateView: UIView {
 
     func setMessage(_ message: String) {
         label.text = message
+        accessibilityLabel = message
     }
 }
 
@@ -149,10 +184,11 @@ final class StreamListViewModel {
         isLoading = true
         loadingSubject.send(true)
         defer {
-            guard generation == self.generation else { return }
-            isLoading = false
-            loadingSubject.send(false)
-            loadTask = nil
+            if generation == self.generation {
+                isLoading = false
+                loadingSubject.send(false)
+                loadTask = nil
+            }
         }
         do {
             let page = try await page(after: replacing ? nil : cursor)
@@ -171,7 +207,7 @@ final class StreamListViewModel {
         } catch {
             guard !Task.isCancelled, generation == self.generation else { return }
             AppLogger.shared.warn("Stream list load failed: \(error)", category: .api)
-            errorSubject.send(Self.describe(error))
+            errorSubject.send(describe(error))
         }
     }
 
@@ -186,10 +222,12 @@ final class StreamListViewModel {
         }
     }
 
-    private static func describe(_ error: Error) -> String {
+    private func describe(_ error: Error) -> String {
         guard let apiError = error as? APIError else { return "Could not load streams" }
         switch apiError {
-        case .unauthorized: return "Sign in to see this"
+        case .unauthorized:
+            if case .followed = kind { return "Sign in to see this" }
+            return "Couldn't load streams — try again."
         case .rateLimited: return "Slow down — too many requests"
         case .network: return "Network error"
         case .timeout: return "Request timed out"

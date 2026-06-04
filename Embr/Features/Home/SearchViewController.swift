@@ -26,6 +26,12 @@ final class SearchViewController: UIViewController {
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let emptyView = EmptyStateView(symbol: "magnifyingglass", message: "Search for channels and categories.")
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.color = Theme.secondaryText
+        return indicator
+    }()
 
     private var searchTask: Task<Void, Never>?
     private var debounce: Task<Void, Never>?
@@ -58,6 +64,7 @@ final class SearchViewController: UIViewController {
         searchController.obscuresBackgroundDuringPresentation = false
         searchController.searchBar.placeholder = "Channels & categories"
         searchController.searchBar.autocapitalizationType = .none
+        searchController.searchBar.scopeButtonTitles = ["All", "Live"]
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
@@ -119,13 +126,16 @@ final class SearchViewController: UIViewController {
             content.secondaryText = channel.gameName.isEmpty ? channel.title : channel.gameName
             content.textProperties.color = Theme.primaryText
             content.secondaryTextProperties.color = Theme.secondaryText
-            content.image = UIImage(systemName: "play.tv")
-            content.imageProperties.tintColor = Theme.accent
+            content.image = UIImage(systemName: channel.isLive ? "dot.radiowaves.left.and.right" : "play.tv")
+            content.imageProperties.tintColor = channel.isLive ? Theme.liveDot : Theme.secondaryText
             cell.contentConfiguration = content
             var background = UIBackgroundConfiguration.listCell()
             background.backgroundColor = .clear
             cell.backgroundConfiguration = background
             cell.accessories = [.disclosureIndicator()]
+            cell.isAccessibilityElement = true
+            cell.accessibilityLabel = channel.isLive ? "\(channel.broadcasterName), live" : channel.broadcasterName
+            cell.accessibilityTraits = .button
         }
         let categoryRegistration = UICollectionView.CellRegistration<CategoryCell, GameCategory> { cell, _, category in
             cell.configure(with: category)
@@ -158,11 +168,15 @@ final class SearchViewController: UIViewController {
     private func setUpEmptyState() {
         emptyView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(emptyView)
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(loadingIndicator)
         NSLayoutConstraint.activate([
             emptyView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
-            emptyView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32)
+            emptyView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 
@@ -177,15 +191,25 @@ final class SearchViewController: UIViewController {
         }
         searchTask?.cancel()
         let api = self.api
+        let liveOnly = searchController.searchBar.selectedScopeButtonIndex == 1
+        emptyView.isHidden = true
+        loadingIndicator.startAnimating()
         searchTask = Task { [weak self] in
-            async let channelsResult = try? api.searchChannels(query: trimmed, liveOnly: false, after: nil, first: 12)
-            async let categoriesResult = try? api.searchCategories(query: trimmed, after: nil, first: 12)
-            let channels = await channelsResult?.items ?? []
-            let categories = await categoriesResult?.items ?? []
+            async let channelsResult = try? api.searchChannels(query: trimmed, liveOnly: liveOnly, after: nil, first: 12)
+            async let categoriesResult = liveOnly ? nil : (try? api.searchCategories(query: trimmed, after: nil, first: 12))
+            let channelsPage = await channelsResult
+            let categoriesPage = await categoriesResult
             if Task.isCancelled { return }
             guard let self else { return }
+            self.loadingIndicator.stopAnimating()
+            let channels = channelsPage?.items ?? []
+            let categories = categoriesPage?.items ?? []
             self.applyResults(channels: channels, categories: categories)
-            self.emptyView.setMessage("No results for \"\(trimmed)\".")
+            if channelsPage == nil && categoriesPage == nil {
+                self.emptyView.setMessage("Couldn't search — check your connection.")
+            } else {
+                self.emptyView.setMessage("No results for \"\(trimmed)\".")
+            }
             self.emptyView.isHidden = !(channels.isEmpty && categories.isEmpty)
         }
     }
@@ -226,5 +250,10 @@ extension SearchViewController: UICollectionViewDelegate {
         case .category(let category):
             navigationController?.pushViewController(TopViewController(mode: .game(category), api: api), animated: true)
         }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard case let .channel(channel)? = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        return ChannelActions.configuration(login: channel.broadcasterLogin, broadcasterID: channel.id, name: channel.broadcasterName, from: self)
     }
 }

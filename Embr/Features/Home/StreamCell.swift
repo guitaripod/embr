@@ -8,6 +8,7 @@ final class StreamCell: UICollectionViewCell {
     private let thumbnail = UIImageView()
     private let liveBadge = LiveBadgeView()
     private let viewerBadge = ViewerCountView()
+    private let uptimeBadge = UptimeBadgeView()
     private let titleLabel = UILabel()
     private let userLabel = UILabel()
     private let gameLabel = UILabel()
@@ -31,6 +32,16 @@ final class StreamCell: UICollectionViewCell {
         backgroundConfiguration = background
     }
 
+    override var isHighlighted: Bool {
+        didSet {
+            guard isHighlighted != oldValue else { return }
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.97, y: 0.97) : .identity
+                self.alpha = self.isHighlighted ? 0.88 : 1
+            }
+        }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         imageTask?.cancel()
@@ -43,11 +54,22 @@ final class StreamCell: UICollectionViewCell {
         currentStreamID = stream.id
         titleLabel.text = stream.title
         userLabel.text = stream.userName
-        gameLabel.text = stream.gameName.isEmpty ? nil : stream.gameName
-        gameLabel.isHidden = stream.gameName.isEmpty
+        let game = stream.isMature ? "🔞 " + stream.gameName : stream.gameName
+        gameLabel.text = stream.gameName.isEmpty ? (stream.isMature ? "🔞 Mature" : nil) : game
+        gameLabel.isHidden = stream.gameName.isEmpty && !stream.isMature
         liveBadge.isHidden = false
         viewerBadge.setCount(stream.viewerCount)
+        uptimeBadge.setStart(stream.startedAt)
         loadThumbnail(stream)
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        var parts = [stream.userName, "live"]
+        if !stream.title.isEmpty { parts.append(stream.title) }
+        if !stream.gameName.isEmpty { parts.append(stream.gameName) }
+        parts.append("\(stream.viewerCount) viewers")
+        if stream.isMature { parts.append("mature audiences") }
+        accessibilityLabel = parts.joined(separator: ", ")
     }
 
     private func loadThumbnail(_ stream: LiveStream) {
@@ -78,15 +100,21 @@ final class StreamCell: UICollectionViewCell {
         thumbnail.layer.cornerRadius = 10
         thumbnail.layer.cornerCurve = .continuous
 
-        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
+        titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = Theme.primaryText
         titleLabel.numberOfLines = 2
+        titleLabel.lineBreakMode = .byTruncatingTail
 
-        userLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        userLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .regular))
+        userLabel.adjustsFontForContentSizeCategory = true
         userLabel.textColor = Theme.secondaryText
+        userLabel.numberOfLines = 1
 
-        gameLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        gameLabel.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: .systemFont(ofSize: 12, weight: .regular))
+        gameLabel.adjustsFontForContentSizeCategory = true
         gameLabel.textColor = Theme.secondaryText
+        gameLabel.numberOfLines = 1
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, userLabel, gameLabel])
         textStack.axis = .vertical
@@ -95,10 +123,12 @@ final class StreamCell: UICollectionViewCell {
 
         liveBadge.translatesAutoresizingMaskIntoConstraints = false
         viewerBadge.translatesAutoresizingMaskIntoConstraints = false
+        uptimeBadge.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(thumbnail)
         thumbnail.addSubview(liveBadge)
         thumbnail.addSubview(viewerBadge)
+        thumbnail.addSubview(uptimeBadge)
         contentView.addSubview(textStack)
 
         NSLayoutConstraint.activate([
@@ -109,9 +139,14 @@ final class StreamCell: UICollectionViewCell {
 
             liveBadge.topAnchor.constraint(equalTo: thumbnail.topAnchor, constant: 8),
             liveBadge.leadingAnchor.constraint(equalTo: thumbnail.leadingAnchor, constant: 8),
+            liveBadge.trailingAnchor.constraint(lessThanOrEqualTo: thumbnail.trailingAnchor, constant: -8),
 
             viewerBadge.bottomAnchor.constraint(equalTo: thumbnail.bottomAnchor, constant: -8),
             viewerBadge.leadingAnchor.constraint(equalTo: thumbnail.leadingAnchor, constant: 8),
+            viewerBadge.trailingAnchor.constraint(lessThanOrEqualTo: thumbnail.trailingAnchor, constant: -8),
+
+            uptimeBadge.topAnchor.constraint(equalTo: thumbnail.topAnchor, constant: 8),
+            uptimeBadge.trailingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: -8),
 
             textStack.topAnchor.constraint(equalTo: thumbnail.bottomAnchor, constant: 8),
             textStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
@@ -163,6 +198,57 @@ private final class LiveBadgeView: UIView {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+}
+
+@MainActor
+private final class UptimeBadgeView: UIView {
+    private let icon = UIImageView()
+    private let label = UILabel()
+
+    init() {
+        super.init(frame: .zero)
+        backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        layer.cornerRadius = 4
+        layer.cornerCurve = .continuous
+
+        icon.image = UIImage(systemName: "clock")
+        icon.tintColor = .white
+        icon.contentMode = .scaleAspectFit
+
+        label.font = .monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .white
+
+        let stack = UIStackView(arrangedSubviews: [icon, label])
+        stack.axis = .horizontal
+        stack.spacing = 4
+        stack.alignment = .center
+        stack.isUserInteractionEnabled = false
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 3, leading: 6, bottom: 3, trailing: 6)
+        addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 10),
+            icon.heightAnchor.constraint(equalToConstant: 10)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setStart(_ start: Date) {
+        let elapsed = Date().timeIntervalSince(start)
+        guard elapsed > 0 else { isHidden = true; return }
+        isHidden = false
+        let hours = Int(elapsed) / 3600
+        let minutes = (Int(elapsed) % 3600) / 60
+        label.text = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+    }
 }
 
 @MainActor

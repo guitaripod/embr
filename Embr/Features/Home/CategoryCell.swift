@@ -27,6 +27,16 @@ final class CategoryCell: UICollectionViewCell {
         backgroundConfiguration = background
     }
 
+    override var isHighlighted: Bool {
+        didSet {
+            guard isHighlighted != oldValue else { return }
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.95, y: 0.95) : .identity
+                self.alpha = self.isHighlighted ? 0.88 : 1
+            }
+        }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         imageTask?.cancel()
@@ -38,6 +48,9 @@ final class CategoryCell: UICollectionViewCell {
     func configure(with category: GameCategory) {
         currentCategoryID = category.id
         nameLabel.text = category.name
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = category.name
         loadBoxArt(category)
     }
 
@@ -69,9 +82,11 @@ final class CategoryCell: UICollectionViewCell {
         boxArt.layer.cornerRadius = 8
         boxArt.layer.cornerCurve = .continuous
 
-        nameLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        nameLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .semibold))
+        nameLabel.adjustsFontForContentSizeCategory = true
         nameLabel.textColor = Theme.primaryText
         nameLabel.numberOfLines = 2
+        nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(boxArt)
