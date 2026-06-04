@@ -84,6 +84,28 @@ describe('stripAds', () => {
     expect(out).toBe(input);
   });
 
+  it('removes the per-segment PROGRAM-DATE-TIME of a dropped ad segment', () => {
+    const input = [
+      '#EXTM3U',
+      '#EXT-X-PROGRAM-DATE-TIME:2024-01-01T00:00:00Z',
+      '#EXTINF:2.000,live',
+      'seg0.ts',
+      '#EXT-X-PROGRAM-DATE-TIME:2024-01-01T00:00:02Z',
+      '#EXTINF:2.000,Amazon|123',
+      'ad0.ts',
+      '#EXT-X-PROGRAM-DATE-TIME:2024-01-01T00:00:04Z',
+      '#EXTINF:2.000,live',
+      'seg1.ts',
+    ].join('\n');
+
+    const out = stripAds(input);
+    expect(out).not.toContain('ad0.ts');
+    expect(out).not.toContain('2024-01-01T00:00:02Z');
+    expect(out).toContain('2024-01-01T00:00:00Z');
+    expect(out).toContain('2024-01-01T00:00:04Z');
+    expect(out.split('\n').filter((l) => l.startsWith('#EXT-X-PROGRAM-DATE-TIME'))).toHaveLength(2);
+  });
+
   it('matches ad DATERANGE by ID prefix when CLASS is absent', () => {
     const input = [
       '#EXTM3U',
@@ -157,5 +179,21 @@ describe('rewriteUris', () => {
     const out = rewriteUris(media, base, proxyBase);
     const abs = 'https://usher.ttvnw.net/api/channel/hls/init.mp4';
     expect(out).toContain(`URI="${proxyBase}?src=${encodeURIComponent(abs)}"`);
+  });
+
+  it('absolutizes media-playlist segments without proxying when proxyBase is null', () => {
+    const media = [
+      '#EXTM3U',
+      '#EXT-X-MAP:URI="init.mp4"',
+      '#EXTINF:2.0,live',
+      'seg0.ts',
+      '#EXT-X-TWITCH-PREFETCH:https://video.example/p.ts',
+    ].join('\n');
+
+    const out = rewriteUris(media, base, null);
+    expect(out).toContain('https://usher.ttvnw.net/api/channel/hls/seg0.ts');
+    expect(out).toContain('URI="https://usher.ttvnw.net/api/channel/hls/init.mp4"');
+    expect(out).toContain('#EXT-X-TWITCH-PREFETCH:https://video.example/p.ts');
+    expect(out).not.toContain('/hls/proxy');
   });
 });

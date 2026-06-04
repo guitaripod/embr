@@ -127,6 +127,7 @@ function playbackVariables(kind: PlaybackKind): Record<string, unknown> {
     isVod: kind.type === 'vod',
     vodID: kind.type === 'vod' ? kind.id : '',
     playerType: 'site',
+    platform: 'web',
   };
 }
 

@@ -80,6 +80,9 @@ export function stripAds(playlist: string): string {
       }
       const isAd = amazon || inAdWindow;
       if (isAd) {
+        while (out.length > 0 && (out[out.length - 1] ?? '').replace(/\r$/, '').startsWith('#EXT-X-PROGRAM-DATE-TIME')) {
+          out.pop();
+        }
         const uriEnd = nextSegmentURIIndex(lines, i + 1);
         i = uriEnd - 1;
         consumedFirstAdSegment = true;
@@ -125,25 +128,30 @@ function resolveURI(uri: string, base: string): string {
   }
 }
 
-function proxied(absoluteURI: string, proxyBase: string): string {
-  return `${proxyBase}?src=${encodeURIComponent(absoluteURI)}`;
+function proxied(absoluteURI: string, proxyBase: string | null): string {
+  return proxyBase === null ? absoluteURI : `${proxyBase}?src=${encodeURIComponent(absoluteURI)}`;
 }
 
 const URI_ATTR_TAGS = ['#EXT-X-MEDIA', '#EXT-X-MAP', '#EXT-X-KEY', '#EXT-X-PART', '#EXT-X-PRELOAD-HINT'];
 
-function rewriteUriAttribute(line: string, base: string, proxyBase: string): string {
+function rewriteUriAttribute(line: string, base: string, proxyBase: string | null): string {
   return line.replace(/URI="([^"]*)"/g, (_full, uri: string) => {
     const abs = resolveURI(uri, base);
     return `URI="${proxied(abs, proxyBase)}"`;
   });
 }
 
-/// Rewrites every child playlist/segment reference to route back through the proxy.
+/// Rewrites child playlist/segment references in an HLS playlist.
 ///
-/// `base` resolves relative URIs to absolute upstream URLs; `proxyBase` is this
-/// worker's `/hls/proxy` endpoint. Handles bare URI lines, `#EXT-X-TWITCH-PREFETCH`
-/// targets, and `URI="..."` attributes on MEDIA/MAP/KEY/PART tags.
-export function rewriteUris(playlist: string, base: string, proxyBase: string): string {
+/// `base` resolves relative URIs to absolute upstream URLs. When `proxyBase` is a
+/// string, references are routed back through this worker's `/hls/proxy` endpoint
+/// (used for master playlists so each variant's media playlist gets ad-stripped).
+/// When `proxyBase` is `null`, references are only made absolute and point straight
+/// at Twitch's CDN (used for media playlists so binary segments download directly
+/// instead of being corrupted by a text-mode proxy round-trip).
+/// Handles bare URI lines, `#EXT-X-TWITCH-PREFETCH` targets, and `URI="..."`
+/// attributes on MEDIA/MAP/KEY/PART tags.
+export function rewriteUris(playlist: string, base: string, proxyBase: string | null): string {
   const lines = playlist.split('\n');
   const out: string[] = [];
 

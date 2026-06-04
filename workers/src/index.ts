@@ -111,19 +111,21 @@ app.post('/auth/refresh', async (c) => {
 
 app.get('/auth/app-token', async (c) => {
   try {
+    const now = Math.floor(Date.now() / 1000);
     const cached = await c.env.TOKENS.get(APP_TOKEN_KEY, 'json');
     if (cached !== null) {
-      const value = cached as AppTokenResponse;
-      return c.json(value);
+      const value = cached as { accessToken: string; expiresAt: number };
+      const remaining = Math.max(60, value.expiresAt - now);
+      return c.json({ accessToken: value.accessToken, expiresIn: remaining } satisfies AppTokenResponse);
     }
     const payload = await clientCredentials(c.env.TWITCH_CLIENT_ID, c.env.TWITCH_CLIENT_SECRET);
-    const response: AppTokenResponse = {
-      accessToken: payload.access_token,
-      expiresIn: payload.expires_in,
-    };
     const ttl = Math.max(60, payload.expires_in - APP_TOKEN_SKEW_SECONDS);
-    await c.env.TOKENS.put(APP_TOKEN_KEY, JSON.stringify(response), { expirationTtl: ttl });
-    return c.json(response);
+    await c.env.TOKENS.put(
+      APP_TOKEN_KEY,
+      JSON.stringify({ accessToken: payload.access_token, expiresAt: now + payload.expires_in }),
+      { expirationTtl: ttl },
+    );
+    return c.json({ accessToken: payload.access_token, expiresIn: payload.expires_in } satisfies AppTokenResponse);
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
@@ -140,32 +142,48 @@ app.get('/auth/login-url', (c) => {
   return c.json(response);
 });
 
+const APP_CALLBACK_SCHEME = 'embr://auth/callback';
+
+app.get('/auth/callback', (c) => {
+  const incoming = new URL(c.req.url);
+  const target = new URL(APP_CALLBACK_SCHEME);
+  incoming.searchParams.forEach((value, key) => target.searchParams.set(key, value));
+  return new Response(null, { status: 302, headers: { Location: target.toString() } });
+});
+
 function proxyURLFor(c: { req: { url: string } }): { proxyBase: string } {
   const here = new URL(c.req.url);
   return { proxyBase: `${here.origin}/hls/proxy` };
 }
 
+/// Confirms the usher master is reachable before handing the app a URL.
+/// Offline/ended/sub-gated channels still mint a token but 404 at usher, so this
+/// surfaces a real 404 the app renders as "Channel Offline" instead of a retry loop.
+async function playbackResponse(c: { req: { url: string } }, usher: string): Promise<Response> {
+  const check = await fetch(usher, { headers: { Accept: '*/*' } });
+  await check.body?.cancel();
+  if (!check.ok) {
+    return fail(check.status === 404 ? 404 : 502, `stream unavailable (${check.status})`);
+  }
+  const { proxyBase } = proxyURLFor(c);
+  const response: PlaybackResponse = { url: `${proxyBase}?src=${encodeURIComponent(usher)}` };
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 app.get('/playback/vod/:id', async (c) => {
-  const id = c.req.param('id');
   try {
-    const usher = await resolveVodPlayback(id);
-    const { proxyBase } = proxyURLFor(c);
-    const url = `${proxyBase}?src=${encodeURIComponent(usher)}`;
-    const response: PlaybackResponse = { url };
-    return c.json(response);
+    return await playbackResponse(c, await resolveVodPlayback(c.req.param('id')));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
 });
 
 app.get('/playback/:login', async (c) => {
-  const login = c.req.param('login');
   try {
-    const usher = await resolveLivePlayback(login);
-    const { proxyBase } = proxyURLFor(c);
-    const url = `${proxyBase}?src=${encodeURIComponent(usher)}`;
-    const response: PlaybackResponse = { url };
-    return c.json(response);
+    return await playbackResponse(c, await resolveLivePlayback(c.req.param('login')));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
@@ -194,11 +212,14 @@ app.get('/hls/proxy', async (c) => {
     const text = await upstream.text();
     const { proxyBase } = proxyURLFor(c);
 
-    let playlist = text;
+    let playlist: string;
     if (isMediaPlaylist(text)) {
-      playlist = stripAds(text);
+      const stripped = stripAds(text);
+      const safe = stripped.includes('#EXTINF') ? stripped : text;
+      playlist = rewriteUris(safe, target.toString(), null);
+    } else {
+      playlist = rewriteUris(text, target.toString(), proxyBase);
     }
-    playlist = rewriteUris(playlist, target.toString(), proxyBase);
 
     return new Response(playlist, {
       status: 200,
