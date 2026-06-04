@@ -30,15 +30,16 @@ if ! xcodebuild \
     -scheme Embr \
     -destination "$DESTINATION" \
     -configuration Debug \
+    -allowProvisioningUpdates \
     build 2>&1 | tee "$LOG"; then
   echo "==> BUILD FAILED — extracting errors:" >&2
   grep -E "error:|actor-isolated|nonisolated|Sendable|FAILED|Cannot find" "$LOG" >&2 || true
   exit 1
 fi
 
-APP="$(find ~/Library/Developer/Xcode/DerivedData -name 'Embr.app' -path '*Debug-iphoneos*' -print 2>/dev/null | head -1)"
+APP="$(find ~/Library/Developer/Xcode/DerivedData -name 'Embr.app' -path '*Debug-iphoneos*' -not -path '*Index.noindex*' -print 2>/dev/null | head -1)"
 if [ -z "$APP" ]; then
-  APP="$(find ~/Library/Developer/Xcode/DerivedData -name 'Embr.app' -print 2>/dev/null | head -1)"
+  APP="$(find ~/Library/Developer/Xcode/DerivedData -name 'Embr.app' -not -path '*Index.noindex*' -print 2>/dev/null | head -1)"
 fi
 if [ -z "$APP" ]; then
   echo "error: built Embr.app not found in DerivedData" >&2

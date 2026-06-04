@@ -12,6 +12,11 @@ xcuserdata/
 .swiftpm/
 Package.resolved
 
+# sourcekit-lsp / xcode-build-server
+buildServer.json
+.bsp/
+.compile
+
 # Secrets / local config
 Embr/Secrets.swift
 .env.local
