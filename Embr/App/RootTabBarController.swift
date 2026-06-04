@@ -10,6 +10,11 @@ final class RootTabBarController: UITabBarController {
     private var isLoggedIn = false
     private var hasBuiltTabs = false
 
+    private lazy var topNav = wrap(TopViewController())
+    private lazy var searchNav = wrap(SearchViewController())
+    private lazy var settingsNav = wrap(SettingsViewController())
+    private var followingNav: UINavigationController?
+
     init(auth: AuthService = AuthService.shared) {
         self.auth = auth
         super.init(nibName: nil, bundle: nil)
@@ -50,41 +55,30 @@ final class RootTabBarController: UITabBarController {
         hasBuiltTabs = true
         var controllers: [UIViewController] = []
         if isLoggedIn {
-            controllers.append(wrap(FollowingViewController()))
+            let following = followingNav ?? wrap(FollowingViewController())
+            followingNav = following
+            controllers.append(following)
+        } else {
+            followingNav = nil
         }
-        controllers.append(wrap(TopViewController()))
-        controllers.append(wrap(SearchViewController()))
-        controllers.append(wrap(SettingsViewController()))
+        controllers.append(contentsOf: [topNav, searchNav, settingsNav])
+        let previous = selectedViewController
         setViewControllers(controllers, animated: false)
+        if let previous, controllers.contains(where: { $0 === previous }) {
+            selectedViewController = previous
+        }
     }
 
     private func wrap(_ controller: UIViewController) -> UINavigationController {
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = true
+        navigation.navigationBar.tintColor = Theme.accent
         navigation.tabBarItem = controller.tabBarItem
-        applyNavigationBarAppearance(to: navigation.navigationBar)
         return navigation
     }
 
     private func applyBarAppearance() {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemChromeMaterial)
-        appearance.backgroundColor = Theme.background.withAlphaComponent(0.6)
-        tabBar.standardAppearance = appearance
-        tabBar.scrollEdgeAppearance = appearance
         tabBar.tintColor = Theme.accent
-    }
-
-    private func applyNavigationBarAppearance(to navigationBar: UINavigationBar) {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemChromeMaterial)
-        appearance.backgroundColor = Theme.background.withAlphaComponent(0.6)
-        navigationBar.standardAppearance = appearance
-        navigationBar.compactAppearance = appearance
-        navigationBar.scrollEdgeAppearance = appearance
-        navigationBar.tintColor = Theme.accent
     }
 }
 

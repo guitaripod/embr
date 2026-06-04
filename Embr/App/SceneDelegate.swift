@@ -15,8 +15,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
-        applyAppearance()
-
         let window = UIWindow(windowScene: windowScene)
         window.tintColor = Theme.accent
         window.backgroundColor = Theme.background
@@ -34,6 +32,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         handle(URLContexts)
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        SettingsStore.shared.flush()
     }
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
@@ -63,17 +65,4 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         presenter.present(onboarding, animated: false)
     }
 
-    private func applyAppearance() {
-        let tabBarAppearance = UITabBarAppearance()
-        tabBarAppearance.configureWithDefaultBackground()
-        tabBarAppearance.backgroundColor = Theme.surface
-        UITabBar.appearance().standardAppearance = tabBarAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-
-        let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.configureWithDefaultBackground()
-        navBarAppearance.backgroundColor = Theme.surface
-        UINavigationBar.appearance().standardAppearance = navBarAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
-    }
 }

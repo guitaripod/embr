@@ -4,6 +4,7 @@ import EmbrCore
 final class DeepLinkRouter {
     private let api: TwitchAPIProviding
 
+    @MainActor
     init(api: TwitchAPIProviding = AppContainer.shared.api) {
         self.api = api
     }

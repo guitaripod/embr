@@ -27,6 +27,18 @@ enum Theme {
 
     static func readableUsernameColor(_ color: ChatColor?) -> UIColor {
         guard let color else { return accent }
-        return UIColor(red: CGFloat(color.red) / 255.0, green: CGFloat(color.green) / 255.0, blue: CGFloat(color.blue) / 255.0, alpha: 1.0)
+        let base = UIColor(red: CGFloat(color.red) / 255.0, green: CGFloat(color.green) / 255.0, blue: CGFloat(color.blue) / 255.0, alpha: 1.0)
+        return UIColor { traits in readable(base, dark: traits.userInterfaceStyle == .dark) }
+    }
+
+    private static func readable(_ color: UIColor, dark: Bool) -> UIColor {
+        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+        guard color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return color }
+        if dark {
+            brightness = max(brightness, 0.6)
+        } else {
+            brightness = min(brightness, 0.7)
+        }
+        return UIColor(hue: hue, saturation: saturation, brightness: brightness, alpha: alpha)
     }
 }
