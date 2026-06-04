@@ -74,7 +74,8 @@ final class OnboardingViewController: UIViewController {
         NSLayoutConstraint.activate([
             container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 32),
             container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -32),
-            container.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            container.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            container.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             connectButton.heightAnchor.constraint(equalToConstant: 52),
             guestButton.heightAnchor.constraint(equalToConstant: 52)
         ])

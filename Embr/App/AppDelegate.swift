@@ -31,10 +31,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     private func performFirstRunIfNeeded() {
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: didFirstRunKey) else { return }
-        Task {
-            await AppContainer.shared.auth.logout()
-            AppLogger.shared.info("first run: wiped stale credentials", category: .app)
-        }
+        KeychainTokenStore.shared.clearSync()
         defaults.set(true, forKey: didFirstRunKey)
+        AppLogger.shared.info("first run: wiped stale credentials", category: .app)
     }
 }

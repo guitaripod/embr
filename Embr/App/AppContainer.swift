@@ -7,6 +7,10 @@ struct Configuration: Sendable {
     let redirectURI: String
     let recentMessagesBaseURL: URL
 
+    var twitchRedirectURI: String {
+        workerBaseURL.appendingPathComponent("auth/callback").absoluteString
+    }
+
     static let current = Configuration(
         twitchClientID: Secrets.twitchClientID,
         workerBaseURL: URL(string: Secrets.workerBaseURL) ?? URL(string: "https://embr.example.workers.dev")!,

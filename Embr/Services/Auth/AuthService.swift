@@ -11,6 +11,7 @@ actor AuthService: AuthControlling {
     private let transport: HTTPTransport
     private let clientID: String
     private let redirectURI: String
+    private let callbackScheme: String
 
     private var credentials: StoredCredentials?
     private var loadedFromStore = false
@@ -32,7 +33,8 @@ actor AuthService: AuthControlling {
         self.worker = worker
         self.transport = transport
         self.clientID = Configuration.current.twitchClientID
-        self.redirectURI = Configuration.current.redirectURI
+        self.redirectURI = Configuration.current.twitchRedirectURI
+        self.callbackScheme = Self.scheme(from: Configuration.current.redirectURI) ?? "embr"
         Task { await self.bootstrap() }
     }
 
@@ -117,7 +119,7 @@ actor AuthService: AuthControlling {
 
     private func prepareLogin() async throws -> LoginRequest {
         let state = UUID().uuidString
-        let scheme = Self.scheme(from: redirectURI) ?? "embr"
+        let scheme = callbackScheme
         let authorizeURL = try await worker.loginURL(redirectURI: redirectURI, state: state)
         return LoginRequest(authorizeURL: authorizeURL, redirectURI: redirectURI, scheme: scheme, state: state)
     }
@@ -187,10 +189,24 @@ actor AuthService: AuthControlling {
             }
         } catch APIError.unauthorized {
             AppLogger.shared.warn("hourly validate rejected token, attempting refresh", category: .auth)
-            _ = try? await validAccessToken()
+            do {
+                _ = try await validAccessToken()
+            } catch {
+                await signOutInvalid()
+            }
         } catch {
             AppLogger.shared.warn("hourly validate failed: \(error)", category: .auth)
         }
+    }
+
+    private func signOutInvalid() async {
+        credentials = nil
+        appToken = nil
+        validateTask?.cancel()
+        validateTask = nil
+        await store.clear()
+        publish(.anonymous)
+        AppLogger.shared.warn("stored credentials are invalid, signed out", category: .auth)
     }
 
     private func validate(accessToken: String) async throws -> TokenValidation {

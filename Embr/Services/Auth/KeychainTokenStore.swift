@@ -37,6 +37,10 @@ final class KeychainTokenStore: TokenStoring {
         }
     }
 
+    func clearSync() {
+        queue.sync { self.deleteSync() }
+    }
+
     private func readSync() -> StoredCredentials? {
         var query = baseQuery()
         query[kSecReturnData as String] = true
