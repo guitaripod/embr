@@ -8,6 +8,7 @@ final class ChatViewModel {
     let connectionSubject = PassthroughSubject<ConnectionStatus, Never>()
     let roomStateSubject = PassthroughSubject<RoomState, Never>()
     let catalogSubject = PassthroughSubject<EmoteCatalog, Never>()
+    let noticeSubject = PassthroughSubject<SystemNotice, Never>()
 
     private let room: ChatRoom
 
@@ -17,10 +18,11 @@ final class ChatViewModel {
 
     init(
         room: ChatRoom,
-        settings: SettingsStore = SettingsStore.shared
+        settings: SettingsStore = SettingsStore.shared,
+        currentUserLogin: String? = nil
     ) {
         self.room = room
-        self.store = MessageStore(settings: settings.current)
+        self.store = MessageStore(settings: settings.current, currentUserLogin: currentUserLogin)
     }
 
     var currentReplyParentID: String? { replyParentID }
@@ -97,6 +99,8 @@ final class ChatViewModel {
             roomStateSubject.send(state)
         case .connection(let status):
             connectionSubject.send(status)
+        case .notice(let notice):
+            noticeSubject.send(notice)
         }
     }
 }
@@ -106,19 +110,22 @@ private actor MessageStore {
     private var index: [String: Int] = [:]
     private var paused = false
     private var pausedNewCount = 0
+    private var frozenRows: [ChatRow] = []
 
     private var catalog = EmoteCatalog()
     private var badges = BadgeCatalog()
     private var settings: Settings
     private var width: CGFloat = 0
     private var layout: MessageLayout?
+    private let currentUserLogin: String?
 
     private let capacity = 5000
     private let trimFraction = 0.2
-    private let liveWindow = 100
+    private let liveWindow = 500
 
-    init(settings: Settings) {
+    init(settings: Settings, currentUserLogin: String?) {
         self.settings = settings
+        self.currentUserLogin = currentUserLogin
     }
 
     func updateWidth(_ width: CGFloat) {
@@ -138,8 +145,10 @@ private actor MessageStore {
         self.paused = paused
         if !paused {
             pausedNewCount = 0
+            frozenRows = []
             return liveSnapshot()
         }
+        frozenRows = Array(rows.suffix(liveWindow))
         return frozenSnapshot()
     }
 
@@ -166,6 +175,9 @@ private actor MessageStore {
     func applyModeration(_ state: ModerationState, messageID: String) -> ChatSnapshot? {
         guard let position = index[messageID] else { return nil }
         rows[position] = rows[position].withModeration(state)
+        if paused, let i = frozenRows.firstIndex(where: { $0.message.id == messageID }) {
+            frozenRows[i] = frozenRows[i].withModeration(state)
+        }
         return currentSnapshot()
     }
 
@@ -175,12 +187,22 @@ private actor MessageStore {
             rows[position] = rows[position].withModeration(.timedOut)
             changed = true
         }
+        if paused {
+            for i in frozenRows.indices where frozenRows[i].message.author.id == userID {
+                frozenRows[i] = frozenRows[i].withModeration(.timedOut)
+            }
+        }
         return changed ? currentSnapshot() : nil
     }
 
     func clearChat() -> ChatSnapshot? {
         for position in rows.indices {
             rows[position] = rows[position].withModeration(.deleted)
+        }
+        if paused {
+            for i in frozenRows.indices {
+                frozenRows[i] = frozenRows[i].withModeration(.deleted)
+            }
         }
         return currentSnapshot()
     }
@@ -205,7 +227,7 @@ private actor MessageStore {
 
     private func rebuildLayout() {
         guard width > 0 else { return }
-        layout = MessageLayout(width: width, settings: settings, catalog: catalog, badges: badges)
+        layout = MessageLayout(width: width, settings: settings, catalog: catalog, badges: badges, currentUserLogin: currentUserLogin)
         for position in rows.indices {
             rows[position] = ChatRow(message: rows[position].message, laidOut: layout?.layout(rows[position].message))
         }
@@ -235,6 +257,6 @@ private actor MessageStore {
     }
 
     private func frozenSnapshot() -> ChatSnapshot {
-        ChatSnapshot(rows: Array(rows.suffix(liveWindow)), isPaused: true, newCount: pausedNewCount)
+        ChatSnapshot(rows: frozenRows, isPaused: true, newCount: pausedNewCount)
     }
 }

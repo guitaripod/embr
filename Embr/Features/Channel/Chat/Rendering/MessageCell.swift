@@ -17,6 +17,12 @@ final class MessageCell: UICollectionViewCell {
 
     private weak var animator: EmoteAnimator?
     private var laidOut: LaidOutMessage?
+    private var message: ChatMessage?
+
+    var onTapUser: ((ChatUser) -> Void)?
+    var onTapEmote: ((Emote) -> Void)?
+    var onTapLink: ((URL) -> Void)?
+    var onSwipeReply: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,6 +38,57 @@ final class MessageCell: UICollectionViewCell {
 
         replyPreview.isHidden = true
         contentView.addSubview(replyPreview)
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        contentView.addGestureRecognizer(tap)
+
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeReply))
+        swipe.direction = .right
+        contentView.addGestureRecognizer(swipe)
+    }
+
+    @objc private func handleSwipeReply() {
+        guard onSwipeReply != nil else { return }
+        Haptics.impact(.light)
+        UIView.animate(withDuration: 0.12, animations: {
+            self.contentView.transform = self.contentView.transform.concatenating(CGAffineTransform(translationX: 16, y: 0))
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.18) {
+                self.contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
+            }
+        })
+        onSwipeReply?()
+    }
+
+    @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
+        guard let laidOut, let message else { return }
+        let point = recognizer.location(in: contentView)
+        for placement in laidOut.emotePlacements where placement.frame.contains(point) {
+            onTapEmote?(placement.emote)
+            return
+        }
+        guard laidOut.textWidth > 0 else { return }
+        let local = CGPoint(x: point.x - laidOut.textOrigin.x, y: point.y - laidOut.textOrigin.y)
+        guard local.x >= 0, local.y >= 0 else { return }
+        let storage = NSTextStorage(attributedString: laidOut.attributedText)
+        let manager = NSLayoutManager()
+        let container = NSTextContainer(size: CGSize(width: laidOut.textWidth, height: .greatestFiniteMagnitude))
+        container.lineFragmentPadding = 0
+        container.lineBreakMode = .byWordWrapping
+        storage.addLayoutManager(manager)
+        manager.addTextContainer(container)
+        manager.ensureLayout(for: container)
+        var fraction: CGFloat = 0
+        let glyphIndex = manager.glyphIndex(for: local, in: container, fractionOfDistanceThroughGlyph: &fraction)
+        let charIndex = manager.characterIndexForGlyph(at: glyphIndex)
+        if NSLocationInRange(charIndex, laidOut.usernameRange) {
+            onTapUser?(message.author)
+            return
+        }
+        for link in laidOut.links where NSLocationInRange(charIndex, link.range) {
+            onTapLink?(link.url)
+            return
+        }
     }
 
     @available(*, unavailable)
@@ -39,12 +96,22 @@ final class MessageCell: UICollectionViewCell {
 
     func configure(with laidOut: LaidOutMessage, message: ChatMessage, images: ImageLoading, animator: EmoteAnimator) {
         self.laidOut = laidOut
+        self.message = message
         self.animator = animator
 
-        highlightView.isHidden = !laidOut.isHighlighted
-        highlightView.backgroundColor = laidOut.isHighlighted ? Theme.highlightedMessage : .clear
+        let highlight = laidOut.mentionsCurrentUser || laidOut.isHighlighted || laidOut.isAnnouncement
+        highlightView.isHidden = !highlight
+        highlightView.backgroundColor = laidOut.mentionsCurrentUser ? Theme.mentionBackground : Theme.highlightedMessage
 
-        textLabel.attributedText = laidOut.attributedText
+        if message.moderation == .visible {
+            textLabel.attributedText = laidOut.attributedText
+            contentView.alpha = 1
+        } else {
+            let muted = NSMutableAttributedString(attributedString: laidOut.attributedText)
+            muted.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: NSRange(location: 0, length: muted.length))
+            textLabel.attributedText = muted
+            contentView.alpha = 0.4
+        }
 
         if let reply = message.reply {
             replyPreview.isHidden = false
@@ -57,6 +124,34 @@ final class MessageCell: UICollectionViewCell {
         configureBadges(laidOut.badgePlacements, images: images)
 
         setNeedsLayout()
+    }
+
+    /// An upright bitmap of the cell content for a context-menu preview, immune to the
+    /// inverted (scaleY:-1) transform. `CALayer.render(in:)` ignores the layer's own
+    /// transform (so contentView's flip is dropped → upright) while still drawing
+    /// sublayers at their manual frames. Target a NON-flipped container at the cell's
+    /// on-screen center.
+    func makeUprightContextPreview(in container: UIView, center: CGPoint) -> UITargetedPreview? {
+        layoutIfNeeded()
+        let bounds = contentView.bounds
+        guard bounds.width > 1, bounds.height > 1 else { return nil }
+        for view in emoteViews where !view.isHidden {
+            if view.layer.contents == nil, let cgImage = view.image?.cgImage {
+                view.layer.contents = cgImage
+            }
+        }
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.opaque = false
+        let image = UIGraphicsImageRenderer(bounds: bounds, format: format).image { ctx in
+            contentView.layer.render(in: ctx.cgContext)
+        }
+        let imageView = UIImageView(image: image)
+        imageView.frame = bounds
+        imageView.alpha = contentView.alpha
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 0), cornerRadius: 4)
+        return UITargetedPreview(view: imageView, parameters: parameters, target: UIPreviewTarget(container: container, center: center))
     }
 
     private func configureEmotes(_ placements: [LaidOutMessage.EmotePlacement], images: ImageLoading, animator: EmoteAnimator) {
@@ -172,7 +267,14 @@ final class MessageCell: UICollectionViewCell {
         textLabel.attributedText = nil
         replyPreview.isHidden = true
         highlightView.isHidden = true
+        contentView.alpha = 1
         laidOut = nil
+        message = nil
         animator = nil
+        onTapUser = nil
+        onTapEmote = nil
+        onTapLink = nil
+        onSwipeReply = nil
+        contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
     }
 }

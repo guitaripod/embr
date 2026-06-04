@@ -9,6 +9,7 @@ enum ChatRoomEvent: Sendable {
     case clearChat
     case roomState(RoomState)
     case connection(ConnectionStatus)
+    case notice(SystemNotice)
 }
 
 actor ChatRoom {
@@ -159,6 +160,7 @@ actor ChatRoom {
             continuation?.yield(.connection(status))
         case .notice(let notice):
             logger.info("chat notice: \(notice.text)", category: .chat)
+            continuation?.yield(.notice(notice))
         }
     }
 

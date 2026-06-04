@@ -8,6 +8,7 @@ protocol ChatViewControllerDelegate: AnyObject {
     func chatViewController(_ controller: ChatViewController, didTapEmote emote: Emote)
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL)
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage)
+    func chatViewControllerDidRequestLogin(_ controller: ChatViewController)
 }
 
 @MainActor
@@ -21,13 +22,16 @@ final class ChatViewController: UIViewController {
 
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, ChatRow>!
-    private lazy var inputView = ChatInputView(images: images)
+    private lazy var composer = ChatInputView(images: images)
+    private lazy var guestBar = GuestChatBar()
     private let statusBar = ConnectionStatusBar()
     private let newMessagesPill = NewMessagesPill()
     private let searchField = UISearchTextField()
+    private let emptyLabel = UILabel()
 
     private var cancellables = Set<AnyCancellable>()
     private var isPaused = false
+    private var pausedForMenu = false
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
 
@@ -65,6 +69,10 @@ final class ChatViewController: UIViewController {
         lastLayoutWidth = width
         viewModel.updateWidth(width)
         collectionView.collectionViewLayout.invalidateLayout()
+    }
+
+    func endSession() {
+        viewModel.stop()
     }
 
     func routeUsernameTap(_ user: ChatUser) {
@@ -108,6 +116,22 @@ final class ChatViewController: UIViewController {
             if let laidOut = row.laidOut {
                 cell.configure(with: laidOut, message: row.message, images: self.images, animator: self.animator)
             }
+            cell.onTapUser = { [weak self] user in
+                guard let self else { return }
+                self.delegate?.chatViewController(self, didTapUsername: user)
+            }
+            cell.onTapEmote = { [weak self] emote in
+                guard let self else { return }
+                self.delegate?.chatViewController(self, didTapEmote: emote)
+            }
+            cell.onTapLink = { [weak self] url in
+                guard let self else { return }
+                self.delegate?.chatViewController(self, didTapLink: url)
+            }
+            cell.onSwipeReply = self.isAnonymous ? nil : { [weak self] in
+                guard let self else { return }
+                self.delegate?.chatViewController(self, didRequestReplyTo: row.message)
+            }
         }
         dataSource = UICollectionViewDiffableDataSource<Int, ChatRow>(collectionView: collectionView) { collectionView, indexPath, row in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: row)
@@ -115,6 +139,17 @@ final class ChatViewController: UIViewController {
     }
 
     private func setUpOverlays() {
+        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyLabel.text = "Waiting for messages…"
+        emptyLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        emptyLabel.textColor = Theme.secondaryText
+        emptyLabel.textAlignment = .center
+        view.insertSubview(emptyLabel, belowSubview: collectionView)
+        NSLayoutConstraint.activate([
+            emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+
         statusBar.translatesAutoresizingMaskIntoConstraints = false
         statusBar.isHidden = true
         view.addSubview(statusBar)
@@ -143,26 +178,42 @@ final class ChatViewController: UIViewController {
             newMessagesPill.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             newMessagesPill.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: -12)
         ])
+
+        view.bringSubviewToFront(statusBar)
     }
 
     private func setUpInput() {
-        inputView.translatesAutoresizingMaskIntoConstraints = false
-        inputView.delegate = self
-        inputView.isHidden = isAnonymous
-        view.addSubview(inputView)
+        guard !isAnonymous else {
+            setUpGuestBar()
+            return
+        }
+        composer.translatesAutoresizingMaskIntoConstraints = false
+        composer.delegate = self
+        view.addSubview(composer)
 
-        let bottom = inputView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        let bottom = composer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         inputBottomConstraint = bottom
 
-        let collectionBottom = isAnonymous
-            ? collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            : collectionView.bottomAnchor.constraint(equalTo: inputView.topAnchor)
-
         NSLayoutConstraint.activate([
-            inputView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            inputView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            composer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            composer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottom,
-            collectionBottom
+            collectionView.bottomAnchor.constraint(equalTo: composer.topAnchor)
+        ])
+    }
+
+    private func setUpGuestBar() {
+        guestBar.translatesAutoresizingMaskIntoConstraints = false
+        guestBar.onLogin = { [weak self] in
+            guard let self else { return }
+            self.delegate?.chatViewControllerDidRequestLogin(self)
+        }
+        view.addSubview(guestBar)
+        NSLayoutConstraint.activate([
+            guestBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            guestBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            guestBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: guestBar.topAnchor)
         ])
     }
 
@@ -193,7 +244,11 @@ final class ChatViewController: UIViewController {
         viewModel.roomStateSubject
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                MainActor.assumeIsolated { self?.statusBar.update(roomState: state) }
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.statusBar.update(roomState: state)
+                    if !self.isAnonymous { self.composer.setRoomState(state) }
+                }
             }
             .store(in: &cancellables)
 
@@ -201,15 +256,24 @@ final class ChatViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] catalog in
                 MainActor.assumeIsolated {
-                    self?.catalog = catalog
-                    self?.inputView.setCatalog(catalog)
+                    guard let self else { return }
+                    self.catalog = catalog
+                    if !self.isAnonymous { self.composer.setCatalog(catalog) }
                 }
+            }
+            .store(in: &cancellables)
+
+        viewModel.noticeSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notice in
+                MainActor.assumeIsolated { self?.statusBar.showNotice(notice) }
             }
             .store(in: &cancellables)
     }
 
     private func apply(_ snapshot: ChatSnapshot) {
         isPaused = snapshot.isPaused
+        emptyLabel.isHidden = !snapshot.rows.isEmpty
         for row in snapshot.rows {
             chatterIndex[row.message.author.login.lowercased()] = row.message.author.displayName
         }
@@ -251,8 +315,8 @@ final class ChatViewController: UIViewController {
     private func handleKeyboard(_ note: Notification) {
         guard let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
               let durationValue = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else { return }
-        let endFrame = frameValue.cgRectValue
-        let overlap = max(0, view.bounds.height - view.safeAreaInsets.bottom - endFrame.minY)
+        let endFrame = view.convert(frameValue.cgRectValue, from: nil)
+        let overlap = max(0, view.bounds.maxY - view.safeAreaInsets.bottom - endFrame.minY)
         inputBottomConstraint?.constant = -overlap
         UIView.animate(withDuration: durationValue.doubleValue) { self.view.layoutIfNeeded() }
     }
@@ -297,8 +361,56 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: false)
-        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
-        delegate?.chatViewController(self, didRequestReplyTo: row.message)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfiguration configuration: UIContextMenuConfiguration, highlightPreviewForItemAt indexPath: IndexPath) -> UITargetedPreview? {
+        makePreview(for: indexPath)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfiguration configuration: UIContextMenuConfiguration, dismissalPreviewForItemAt indexPath: IndexPath) -> UITargetedPreview? {
+        makePreview(for: indexPath)
+    }
+
+    private func makePreview(for indexPath: IndexPath) -> UITargetedPreview? {
+        guard let cell = collectionView.cellForItem(at: indexPath) as? MessageCell else { return nil }
+        let center = collectionView.convert(cell.center, to: view)
+        return cell.makeUprightContextPreview(in: view, center: center)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, willDisplayContextMenu configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionAnimating?) {
+        guard !isPaused else { return }
+        pausedForMenu = true
+        isPaused = true
+        viewModel.setPaused(true)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, willEndContextMenuInteraction configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionAnimating?) {
+        guard pausedForMenu else { return }
+        pausedForMenu = false
+        guard collectionView.contentOffset.y <= 8 else { return }
+        isPaused = false
+        viewModel.setPaused(false)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let row = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        return UIContextMenuConfiguration(identifier: indexPath as NSCopying, previewProvider: nil) { [weak self] _ in
+            guard let self else { return nil }
+            var actions: [UIAction] = []
+            if !self.isAnonymous {
+                actions.append(UIAction(title: "Reply", image: UIImage(systemName: "arrowshape.turn.up.left")) { [weak self] _ in
+                    guard let self else { return }
+                    self.delegate?.chatViewController(self, didRequestReplyTo: row.message)
+                })
+            }
+            actions.append(UIAction(title: "Copy Message", image: UIImage(systemName: "doc.on.doc")) { _ in
+                UIPasteboard.general.string = row.message.plainText
+            })
+            actions.append(UIAction(title: "Copy @\(row.message.author.login)", image: UIImage(systemName: "person")) { _ in
+                UIPasteboard.general.string = "@\(row.message.author.login)"
+            })
+            return UIMenu(children: actions)
+        }
     }
 }
 
@@ -311,12 +423,15 @@ extension ChatViewController: ChatInputViewDelegate {
                 let result = try await self.viewModel.send(text)
                 input.setSending(false)
                 if result.isSent {
+                    Haptics.notify(.success)
                     input.clear()
                     input.hideReply()
                 } else {
+                    Haptics.notify(.error)
                     input.showDropReason(result.dropReason ?? "Message rejected")
                 }
             } catch {
+                Haptics.notify(.error)
                 input.setSending(false)
                 input.showDropReason(Self.describe(error))
                 AppLogger.shared.warn("Chat send failed: \(error)", category: .chat)
@@ -351,10 +466,19 @@ extension ChatViewController: ChatInputViewDelegate {
         input.hideReply()
     }
 
+    func chatInputDidRequestEmotePicker(_ input: ChatInputView) {
+        let picker = EmotePickerViewController(catalog: catalog) { [weak input] name in
+            input?.insertEmote(name)
+        }
+        present(picker, animated: true)
+    }
+
     func beginReply(to message: ChatMessage) {
+        guard !isAnonymous else { return }
+        Haptics.impact(.light)
         viewModel.setReply(parentID: message.id)
-        inputView.showReply(displayName: message.author.displayName, text: message.plainText)
-        inputView.becomeFirstResponder()
+        composer.showReply(displayName: message.author.displayName, text: message.plainText)
+        composer.becomeFirstResponder()
     }
 
     private func emoteSuggestions(matching query: String) -> [AutocompleteSuggestion] {
@@ -386,6 +510,9 @@ private final class ConnectionStatusBar: UIView {
     private let icon = UIImageView()
     private let label = UILabel()
     private let roomStateLabel = UILabel()
+    private let statusRow = UIStackView()
+    private var noticeDismiss: DispatchWorkItem?
+    private var lastStatus: ConnectionStatus = .idle
 
     init() {
         super.init(frame: .zero)
@@ -395,11 +522,36 @@ private final class ConnectionStatusBar: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    func showNotice(_ notice: SystemNotice) {
+        show(
+            text: notice.text,
+            symbol: notice.isError ? "exclamationmark.triangle.fill" : "info.circle",
+            pulse: false,
+            color: notice.isError ? .systemRed : Theme.secondaryText
+        )
+        noticeDismiss?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.noticeDismiss = nil
+            self.applyStatus(self.lastStatus)
+        }
+        noticeDismiss = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: work)
+    }
+
     func update(_ status: ConnectionStatus) {
+        lastStatus = status
+        noticeDismiss?.cancel()
+        noticeDismiss = nil
+        applyStatus(status)
+    }
+
+    private func applyStatus(_ status: ConnectionStatus) {
         switch status {
         case .idle, .connected:
-            isHidden = true
+            statusRow.isHidden = true
             icon.removeAllSymbolEffects()
+            updateContainerVisibility()
         case .connecting:
             show(text: "Connecting…", symbol: "dot.radiowaves.left.and.right", pulse: true, color: Theme.slowMode)
         case .reconnecting(let attempt):
@@ -418,16 +570,22 @@ private final class ConnectionStatusBar: UIView {
         if roomState.uniqueChat { parts.append("Unique") }
         roomStateLabel.text = parts.joined(separator: " · ")
         roomStateLabel.isHidden = parts.isEmpty
+        updateContainerVisibility()
     }
 
     private func show(text: String, symbol: String, pulse: Bool, color: UIColor) {
-        isHidden = false
+        statusRow.isHidden = false
         label.text = text
         label.textColor = color
         icon.image = UIImage(systemName: symbol)
         icon.tintColor = color
         icon.removeAllSymbolEffects()
         if pulse { icon.addSymbolEffect(.pulse, options: .repeating) }
+        updateContainerVisibility()
+    }
+
+    private func updateContainerVisibility() {
+        isHidden = statusRow.isHidden && roomStateLabel.isHidden
     }
 
     private func setUp() {
@@ -438,10 +596,12 @@ private final class ConnectionStatusBar: UIView {
         roomStateLabel.textColor = Theme.secondaryText
         roomStateLabel.isHidden = true
 
-        let statusRow = UIStackView(arrangedSubviews: [icon, label])
+        statusRow.addArrangedSubview(icon)
+        statusRow.addArrangedSubview(label)
         statusRow.axis = .horizontal
         statusRow.spacing = 6
         statusRow.alignment = .center
+        statusRow.isHidden = true
 
         let stack = UIStackView(arrangedSubviews: [statusRow, roomStateLabel])
         stack.axis = .vertical
@@ -517,4 +677,54 @@ private final class NewMessagesPill: UIControl {
     @objc private func tapped() {
         onTap?()
     }
+}
+
+@MainActor
+private final class GuestChatBar: UIView {
+    var onLogin: (() -> Void)?
+    private let loginButton = UIButton(type: .system)
+
+    init() {
+        super.init(frame: .zero)
+        backgroundColor = Theme.surface
+
+        let icon = UIImageView(image: UIImage(systemName: "bubble.left.and.bubble.right"))
+        icon.tintColor = Theme.secondaryText
+        icon.contentMode = .scaleAspectFit
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+
+        let label = UILabel()
+        label.text = "Log in to chat"
+        label.font = .systemFont(ofSize: 15, weight: .medium)
+        label.textColor = Theme.secondaryText
+
+        var configuration = UIButton.Configuration.tinted()
+        configuration.title = "Log In"
+        configuration.cornerStyle = .large
+        configuration.baseForegroundColor = Theme.accent
+        loginButton.configuration = configuration
+        loginButton.setContentHuggingPriority(.required, for: .horizontal)
+        loginButton.addAction(UIAction { [weak self] _ in self?.onLogin?() }, for: .touchUpInside)
+
+        let row = UIStackView(arrangedSubviews: [icon, label, loginButton])
+        row.axis = .horizontal
+        row.spacing = 10
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.isLayoutMarginsRelativeArrangement = true
+        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 12)
+        addSubview(row)
+
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: topAnchor),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 20),
+            icon.heightAnchor.constraint(equalToConstant: 20)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
 }

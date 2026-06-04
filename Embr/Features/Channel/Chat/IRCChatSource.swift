@@ -12,6 +12,7 @@ actor IRCChatSource: ChatSource {
     private var generation = 0
     private var continuation: AsyncStream<ChatEvent>.Continuation?
     private var buffer = ""
+    private var roomState = RoomState()
     private var attempt = 0
     private var stopped = false
 
@@ -49,6 +50,7 @@ actor IRCChatSource: ChatSource {
         guard !stopped else { return }
         teardownSocket()
         buffer = ""
+        roomState = RoomState()
         continuation?.yield(.connection(attempt == 0 ? .connecting : .reconnecting(attempt: attempt)))
 
         let session = self.session ?? URLSession(configuration: .default)
@@ -140,12 +142,39 @@ actor IRCChatSource: ChatSource {
             if let messageID = message.tags["target-msg-id"], !messageID.isEmpty {
                 continuation?.yield(.deleteMessage(messageID: messageID))
             }
+        case "ROOMSTATE":
+            roomState = IRCMapper.roomState(from: message, merging: roomState)
+            continuation?.yield(.roomState(roomState))
+        case "NOTICE":
+            emitNotice(from: message)
         case "RECONNECT":
             scheduleReconnect()
         case "366":
             onJoined()
         default:
             break
+        }
+    }
+
+    private func emitNotice(from message: IRCMessage) {
+        let text = message.parameters.last ?? ""
+        guard !text.isEmpty else { return }
+        let msgID = message.tags["msg-id"]
+        continuation?.yield(.notice(SystemNotice(messageID: msgID, text: text, isError: Self.isErrorNotice(msgID))))
+    }
+
+    /// Twitch IRC `NOTICE` msg-id values that signal the channel can't be watched/chatted,
+    /// so the guest preview should surface them as errors. Logged-out NOTICEs often omit the
+    /// tag, so an absent or unknown id is treated as informational.
+    private static func isErrorNotice(_ msgID: String?) -> Bool {
+        guard let msgID else { return false }
+        switch msgID {
+        case "msg_channel_suspended", "msg_banned", "msg_timedout", "msg_rejected",
+             "msg_rejected_mandatory", "msg_ratelimit", "msg_room_not_found",
+             "msg_channel_blocked", "tos_ban", "msg_suspended", "msg_verified_email":
+            return true
+        default:
+            return false
         }
     }
 

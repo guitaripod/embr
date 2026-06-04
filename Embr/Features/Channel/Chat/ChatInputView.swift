@@ -6,6 +6,7 @@ protocol ChatInputViewDelegate: AnyObject {
     func chatInput(_ input: ChatInputView, didSubmit text: String)
     func chatInput(_ input: ChatInputView, suggestionsFor token: AutocompleteToken) -> [AutocompleteSuggestion]
     func chatInputDidCancelReply(_ input: ChatInputView)
+    func chatInputDidRequestEmotePicker(_ input: ChatInputView)
 }
 
 enum AutocompleteToken: Equatable {
@@ -22,6 +23,7 @@ final class ChatInputView: UIView {
     private let autocomplete: EmoteAutocompleteView
     private let inputRow = UIStackView()
     private let textView: EmoteTextView
+    private let emoteButton = UIButton(type: .system)
     private let sendButton = UIButton(type: .system)
     private let spinner = UIActivityIndicatorView(style: .medium)
     private let dropReasonLabel = UILabel()
@@ -52,6 +54,21 @@ final class ChatInputView: UIView {
         isSending = sending
     }
 
+    func setRoomState(_ state: RoomState) {
+        textView.placeholder = Self.placeholder(for: state)
+    }
+
+    private static func placeholder(for state: RoomState) -> String {
+        var parts: [String] = []
+        if state.emoteOnly { parts.append("emote-only") }
+        if state.subscribersOnly { parts.append("subs-only") }
+        if let seconds = state.followersOnly { parts.append(seconds == 0 ? "followers-only" : "followers \(seconds)m") }
+        if let slow = state.slowMode { parts.append("slow \(slow)s") }
+        if state.uniqueChat { parts.append("unique") }
+        guard !parts.isEmpty else { return "Send a message" }
+        return "Send a message · " + parts.joined(separator: ", ")
+    }
+
     func showDropReason(_ reason: String?) {
         dropReasonLabel.text = reason
         dropReasonLabel.isHidden = (reason == nil)
@@ -61,6 +78,15 @@ final class ChatInputView: UIView {
         textView.reset()
         refreshAutocomplete()
         showDropReason(nil)
+    }
+
+    func insertEmote(_ name: String) {
+        textView.insertEmoteName(name)
+        refreshAutocomplete()
+    }
+
+    @objc private func emoteTapped() {
+        delegate?.chatInputDidRequestEmotePicker(self)
     }
 
     func showReply(displayName: String, text: String) {
@@ -136,6 +162,7 @@ final class ChatInputView: UIView {
         textView.isScrollEnabled = false
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
         textView.onTextChange = { [weak self] in self?.refreshAutocomplete() }
+        textView.placeholder = "Send a message"
         textView.translatesAutoresizingMaskIntoConstraints = false
 
         var config = UIButton.Configuration.plain()
@@ -153,10 +180,20 @@ final class ChatInputView: UIView {
         sendContainer.addSubview(sendButton)
         sendContainer.addSubview(spinner)
 
+        var emoteConfig = UIButton.Configuration.plain()
+        emoteConfig.image = UIImage(systemName: "face.smiling")
+        emoteButton.configuration = emoteConfig
+        emoteButton.tintColor = Theme.secondaryText
+        emoteButton.translatesAutoresizingMaskIntoConstraints = false
+        emoteButton.accessibilityLabel = "Emotes"
+        emoteButton.addTarget(self, action: #selector(emoteTapped), for: .touchUpInside)
+
+        inputRow.addArrangedSubview(emoteButton)
         inputRow.addArrangedSubview(textView)
         inputRow.addArrangedSubview(sendContainer)
 
         NSLayoutConstraint.activate([
+            emoteButton.widthAnchor.constraint(equalToConstant: 38),
             textView.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
             textView.heightAnchor.constraint(lessThanOrEqualToConstant: 120),
             sendContainer.widthAnchor.constraint(equalToConstant: 44),
@@ -282,16 +319,31 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     private let images: ImageLoading
     private var catalog = EmoteCatalog()
     private var loadTasks: [String: Task<Void, Never>] = [:]
+    private let placeholderLabel = UILabel()
 
     init(images: ImageLoading) {
         self.images = images
         super.init(frame: .zero, textContainer: nil)
         delegate = self
         allowsEditingTextAttributes = false
+        placeholderLabel.font = .systemFont(ofSize: 16)
+        placeholderLabel.textColor = Theme.secondaryText
+        placeholderLabel.numberOfLines = 1
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(placeholderLabel)
+        NSLayoutConstraint.activate([
+            placeholderLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 15),
+            placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
+            placeholderLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8)
+        ])
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    var placeholder: String = "" {
+        didSet { placeholderLabel.text = placeholder }
+    }
 
     func setCatalog(_ catalog: EmoteCatalog) {
         self.catalog = catalog
@@ -309,6 +361,7 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
         attributedText = NSAttributedString(string: "", attributes: defaultAttributes)
         typingAttributes = defaultAttributes
         selectedRange = NSRange(location: 0, length: 0)
+        placeholderLabel.isHidden = false
     }
 
     func replaceCurrentToken(with replacement: String) {
@@ -320,6 +373,18 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
         let rebuilt = String(source[source.startIndex..<tokenStart]) + replacement + String(source[caretIndex...])
         let newCaret = source.distance(from: source.startIndex, to: tokenStart) + replacement.count
         render(plain: rebuilt, caret: newCaret)
+    }
+
+    func insertEmoteName(_ text: String) {
+        let source = plainText
+        let caret = min(caretPlainOffset(), source.count)
+        let caretIndex = source.index(source.startIndex, offsetBy: caret)
+        let prefix = String(source[source.startIndex..<caretIndex])
+        let suffix = String(source[caretIndex...])
+        let spacer = (prefix.isEmpty || prefix.hasSuffix(" ")) ? "" : " "
+        let inserted = spacer + text + " "
+        render(plain: prefix + inserted + suffix, caret: caret + inserted.count)
+        onTextChange?()
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -365,6 +430,7 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
         attributedText = mutable
         typingAttributes = defaultAttributes
         selectedRange = NSRange(location: min(caretLocation, mutable.length), length: 0)
+        placeholderLabel.isHidden = mutable.length > 0
     }
 
     private func loadAttachment(_ attachment: EmoteTextAttachment, emote: Emote) {

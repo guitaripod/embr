@@ -18,6 +18,7 @@ struct MessageLayout {
     private let timestampFont: UIFont
     private let emoteScale: EmoteScale
     private let lineSpacing: CGFloat
+    private let currentUserLogin: String?
 
     private let horizontalInset: CGFloat = 8
     private let verticalInset: CGFloat = 4
@@ -25,7 +26,7 @@ struct MessageLayout {
     private let emoteSidePadding: CGFloat = 1
     private let replyLineHeight: CGFloat = 16
 
-    init(width: CGFloat, settings: Settings, catalog: EmoteCatalog, badges: BadgeCatalog) {
+    init(width: CGFloat, settings: Settings, catalog: EmoteCatalog, badges: BadgeCatalog, currentUserLogin: String? = nil) {
         let resolved: MessageLayoutSettings = settings
         let fontSize = resolved.chatMessageFontSize
         self.width = width
@@ -34,6 +35,7 @@ struct MessageLayout {
         self.showsTimestamps = resolved.chatShowsTimestamps
         self.emoteScale = resolved.chatPreferredEmoteScale
         self.lineSpacing = resolved.chatLineSpacing
+        self.currentUserLogin = currentUserLogin
         self.font = .systemFont(ofSize: fontSize)
         self.usernameFont = .boldSystemFont(ofSize: fontSize)
         self.timestampFont = .monospacedDigitSystemFont(ofSize: fontSize - 2, weight: .regular)
@@ -52,6 +54,16 @@ struct MessageLayout {
         let attributed = NSMutableAttributedString()
         var usernameRange = NSRange(location: 0, length: 0)
 
+        if let notice = message.notice {
+            attributed.append(NSAttributedString(string: noticeSymbol(notice.kind) + " " + notice.systemMessage, attributes: [
+                .font: usernameFont,
+                .foregroundColor: Theme.accent,
+            ]))
+            if !message.fragments.isEmpty {
+                attributed.append(NSAttributedString(string: "\n", attributes: [.font: font]))
+            }
+        }
+
         if showsTimestamps {
             let stamp = Self.timestampString(message.timestamp)
             attributed.append(NSAttributedString(string: stamp + " ", attributes: [
@@ -60,22 +72,27 @@ struct MessageLayout {
             ]))
         }
 
+        let showsAuthorLine = message.notice == nil || !message.fragments.isEmpty
         let usernameColor = Theme.readableUsernameColor(message.author.color)
-        let usernameStart = attributed.length
-        let separator = message.isAction ? " " : ": "
-        attributed.append(NSAttributedString(string: message.author.displayName, attributes: [
-            .font: usernameFont,
-            .foregroundColor: usernameColor,
-        ]))
-        usernameRange = NSRange(location: usernameStart, length: attributed.length - usernameStart)
-        attributed.append(NSAttributedString(string: separator, attributes: [
-            .font: usernameFont,
-            .foregroundColor: usernameColor,
-        ]))
+        if showsAuthorLine {
+            let usernameStart = attributed.length
+            let separator = message.isAction ? " " : ": "
+            attributed.append(NSAttributedString(string: message.author.displayName, attributes: [
+                .font: usernameFont,
+                .foregroundColor: usernameColor,
+            ]))
+            usernameRange = NSRange(location: usernameStart, length: attributed.length - usernameStart)
+            attributed.append(NSAttributedString(string: separator, attributes: [
+                .font: usernameFont,
+                .foregroundColor: usernameColor,
+            ]))
+        }
 
         let bodyColor = message.isAction ? usernameColor : Theme.primaryText
         let tokens = MessageTokenizer.tokens(for: message, catalog: catalog)
         var emoteTokens: [(emote: Emote, attributedIndex: Int)] = []
+        var links: [LaidOutMessage.LinkSpan] = []
+        var mentionsCurrentUser = false
 
         for token in tokens {
             switch token {
@@ -85,16 +102,21 @@ struct MessageLayout {
                     .foregroundColor: bodyColor,
                 ]))
             case .mention(let ref):
+                if let login = currentUserLogin, ref.displayName.lowercased() == login.lowercased() {
+                    mentionsCurrentUser = true
+                }
                 attributed.append(NSAttributedString(string: "@\(ref.displayName)", attributes: [
                     .font: usernameFont,
                     .foregroundColor: Theme.accent,
                 ]))
-            case .link(_, let raw):
+            case .link(let url, let raw):
+                let start = attributed.length
                 attributed.append(NSAttributedString(string: raw, attributes: [
                     .font: font,
                     .foregroundColor: Theme.link,
                     .underlineStyle: NSUnderlineStyle.single.rawValue,
                 ]))
+                links.append(.init(range: NSRange(location: start, length: attributed.length - start), url: url))
             case .cheermote(let ref):
                 attributed.append(NSAttributedString(string: ref.text, attributes: [
                     .font: usernameFont,
@@ -107,6 +129,10 @@ struct MessageLayout {
             }
         }
 
+        if !mentionsCurrentUser, let login = currentUserLogin {
+            mentionsCurrentUser = message.plainText.lowercased().contains("@" + login.lowercased())
+        }
+
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = lineSpacing
         paragraph.lineBreakMode = .byWordWrapping
@@ -114,17 +140,11 @@ struct MessageLayout {
 
         let textOriginX = horizontalInset + badgePrefixWidth
         let textWidth = max(1, availableWidth - badgePrefixWidth)
-        let textBounds = attributed.boundingRect(
-            with: CGSize(width: textWidth, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            context: nil
-        )
-        let textHeight = ceil(textBounds.height)
         let textOriginY = verticalInset + replyHeight
 
-        let emotePlacements = resolveEmotePlacements(
-            emoteTokens: emoteTokens,
+        let (textHeight, emotePlacements) = layoutText(
             attributed: attributed,
+            emoteTokens: emoteTokens,
             textWidth: textWidth,
             originX: textOriginX,
             originY: textOriginY
@@ -147,9 +167,28 @@ struct MessageLayout {
             emotePlacements: emotePlacements,
             badgePlacements: badgePlacements,
             usernameRange: usernameRange,
+            links: links,
+            textWidth: textWidth,
             replyHeight: replyHeight,
-            isHighlighted: isHighlighted
+            isHighlighted: isHighlighted,
+            mentionsCurrentUser: mentionsCurrentUser,
+            isAnnouncement: message.notice?.kind == .announcement
         )
+    }
+
+    private func noticeSymbol(_ kind: NoticeKind) -> String {
+        switch kind {
+        case .sub, .resub, .subGift, .communitySubGift, .giftPaidUpgrade, .primePaidUpgrade:
+            return "★"
+        case .raid, .unraid:
+            return "⚑"
+        case .announcement:
+            return "📣"
+        case .payItForward, .charityDonation, .bitsBadgeTier:
+            return "✦"
+        case .other:
+            return "✦"
+        }
     }
 
     private var lineHeight: CGFloat {
@@ -170,15 +209,13 @@ struct MessageLayout {
         return NSAttributedString(attachment: attachment)
     }
 
-    private func resolveEmotePlacements(
-        emoteTokens: [(emote: Emote, attributedIndex: Int)],
+    private func layoutText(
         attributed: NSAttributedString,
+        emoteTokens: [(emote: Emote, attributedIndex: Int)],
         textWidth: CGFloat,
         originX: CGFloat,
         originY: CGFloat
-    ) -> [LaidOutMessage.EmotePlacement] {
-        guard !emoteTokens.isEmpty else { return [] }
-
+    ) -> (height: CGFloat, emotePlacements: [LaidOutMessage.EmotePlacement]) {
         let layoutManager = NSLayoutManager()
         let textStorage = NSTextStorage(attributedString: attributed)
         let textContainer = NSTextContainer(size: CGSize(width: textWidth, height: .greatestFiniteMagnitude))
@@ -187,6 +224,10 @@ struct MessageLayout {
         layoutManager.addTextContainer(textContainer)
         textStorage.addLayoutManager(layoutManager)
         layoutManager.ensureLayout(for: textContainer)
+
+        let height = ceil(layoutManager.usedRect(for: textContainer).height)
+
+        guard !emoteTokens.isEmpty else { return (height, []) }
 
         var placements: [LaidOutMessage.EmotePlacement] = []
         var lastNonZeroFrame: CGRect?
@@ -215,7 +256,7 @@ struct MessageLayout {
             }
         }
 
-        return placements
+        return (height, placements)
     }
 
     private func resolveBadgePlacements(

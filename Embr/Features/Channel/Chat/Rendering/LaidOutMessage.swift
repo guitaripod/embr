@@ -12,6 +12,11 @@ struct LaidOutMessage: Sendable {
         let frame: CGRect
     }
 
+    struct LinkSpan: Sendable {
+        let range: NSRange
+        let url: URL
+    }
+
     let height: CGFloat
     let width: CGFloat
     let attributedText: NSAttributedString
@@ -19,8 +24,12 @@ struct LaidOutMessage: Sendable {
     let emotePlacements: [EmotePlacement]
     let badgePlacements: [BadgePlacement]
     let usernameRange: NSRange
+    let links: [LinkSpan]
+    let textWidth: CGFloat
     let replyHeight: CGFloat
     let isHighlighted: Bool
+    let mentionsCurrentUser: Bool
+    let isAnnouncement: Bool
 
     init(
         height: CGFloat,
@@ -30,8 +39,12 @@ struct LaidOutMessage: Sendable {
         emotePlacements: [EmotePlacement],
         badgePlacements: [BadgePlacement],
         usernameRange: NSRange,
+        links: [LinkSpan] = [],
+        textWidth: CGFloat = 0,
         replyHeight: CGFloat,
-        isHighlighted: Bool
+        isHighlighted: Bool,
+        mentionsCurrentUser: Bool = false,
+        isAnnouncement: Bool = false
     ) {
         self.height = height
         self.width = width
@@ -40,8 +53,12 @@ struct LaidOutMessage: Sendable {
         self.emotePlacements = emotePlacements
         self.badgePlacements = badgePlacements
         self.usernameRange = usernameRange
+        self.links = links
+        self.textWidth = textWidth
         self.replyHeight = replyHeight
         self.isHighlighted = isHighlighted
+        self.mentionsCurrentUser = mentionsCurrentUser
+        self.isAnnouncement = isAnnouncement
     }
 }
 
