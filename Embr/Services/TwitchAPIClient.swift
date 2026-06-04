@@ -99,6 +99,13 @@ final class TwitchAPIClient: TwitchAPIProviding {
         return try page(response, decoding: FollowedChannelDTO.self, map: Self.followedChannel)
     }
 
+    func schedule(broadcasterID: String) async throws -> [ScheduleSegment] {
+        let token = try await browseToken()
+        let response = try await perform(factory.schedule(broadcasterID: broadcasterID, token: token))
+        let decoded = try TwitchJSON.decode(ScheduleEnvelopeDTO.self, from: response.body)
+        return (decoded.data.segments ?? []).map(Self.scheduleSegment)
+    }
+
     func globalEmotes() async throws -> [Emote] {
         let token = try await browseToken()
         let response = try await perform(factory.globalEmotes(token: token))
@@ -261,7 +268,8 @@ private extension TwitchAPIClient {
             gameName: dto.gameName,
             title: dto.title,
             language: "",
-            tags: dto.tags ?? []
+            tags: dto.tags ?? [],
+            isLive: dto.isLive
         )
     }
 
@@ -327,6 +335,18 @@ private extension TwitchAPIClient {
             broadcasterLogin: dto.broadcasterLogin,
             broadcasterName: dto.broadcasterName,
             followedAt: dto.followedAt
+        )
+    }
+
+    static func scheduleSegment(_ dto: ScheduleSegmentDTO) -> ScheduleSegment {
+        ScheduleSegment(
+            id: dto.id,
+            startTime: dto.startTime,
+            endTime: dto.endTime,
+            title: dto.title,
+            categoryName: dto.category?.name,
+            isRecurring: dto.isRecurring ?? false,
+            canceledUntil: dto.canceledUntil
         )
     }
 
@@ -557,6 +577,39 @@ private struct FollowedChannelDTO: Decodable, Sendable {
         case broadcasterName = "broadcaster_name"
         case followedAt = "followed_at"
     }
+}
+
+private struct ScheduleEnvelopeDTO: Decodable, Sendable {
+    let data: ScheduleDataDTO
+}
+
+private struct ScheduleDataDTO: Decodable, Sendable {
+    let segments: [ScheduleSegmentDTO]?
+}
+
+private struct ScheduleSegmentDTO: Decodable, Sendable {
+    let id: String
+    let startTime: Date
+    let endTime: Date?
+    let title: String
+    let canceledUntil: Date?
+    let category: ScheduleCategoryDTO?
+    let isRecurring: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case title
+        case canceledUntil = "canceled_until"
+        case category
+        case isRecurring = "is_recurring"
+    }
+}
+
+private struct ScheduleCategoryDTO: Decodable, Sendable {
+    let id: String?
+    let name: String?
 }
 
 private struct EmoteImagesDTO: Decodable, Sendable {

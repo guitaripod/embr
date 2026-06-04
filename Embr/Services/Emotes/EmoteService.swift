@@ -10,11 +10,13 @@ actor EmoteService: EmoteCataloging {
     private let ffz: ThirdPartyEmoteSource
 
     private let ttl: TimeInterval = 600
+    private let retryTTL: TimeInterval = 15
 
     private struct CacheEntry {
         let emotes: EmoteCatalog
         let badges: BadgeCatalog
         let storedAt: Date
+        let isEmpty: Bool
     }
 
     private var globalCache: CacheEntry?
@@ -53,10 +55,16 @@ actor EmoteService: EmoteCataloging {
         var catalog = EmoteCatalog()
         catalog.setGlobal(merged)
 
+        let twitchBadgeDict = twitchBadgeMap(await twitchBadges)
         var badgeCatalog = BadgeCatalog()
-        badgeCatalog.setTwitch(twitchBadgeMap(await twitchBadges))
+        badgeCatalog.setTwitch(twitchBadgeDict)
 
-        let entry = CacheEntry(emotes: catalog, badges: badgeCatalog, storedAt: Date())
+        let entry = CacheEntry(
+            emotes: catalog,
+            badges: badgeCatalog,
+            storedAt: Date(),
+            isEmpty: merged.isEmpty && twitchBadgeDict.isEmpty
+        )
         globalCache = entry
         AppLogger.shared.info("Loaded \(merged.count) global emotes", category: .emote)
         return (catalog, badgeCatalog)
@@ -66,6 +74,8 @@ actor EmoteService: EmoteCataloging {
         if let cached = channelCache[broadcasterID], !isStale(cached) {
             return (cached.emotes, cached.badges)
         }
+
+        let globalLoad = await loadGlobal()
 
         async let twitchEmotes = fetchTwitchChannelEmotes(broadcasterID: broadcasterID)
         async let sevenEmotes = sevenTV.fetchChannel(twitchUserID: broadcasterID)
@@ -80,24 +90,29 @@ actor EmoteService: EmoteCataloging {
             .frankerFaceZ: await ffzEmotes
         ])
 
-        var catalog = EmoteCatalog(global: globalCache?.emotes.global ?? [:])
+        var catalog = EmoteCatalog(global: globalLoad.emotes.global)
         catalog.setChannel(merged)
 
-        var twitch = globalCache?.badges.twitch ?? [:]
+        var twitch = globalLoad.badges.twitch
         for (key, badge) in twitchBadgeMap(await channelBadges) {
             twitch[key] = badge
         }
         var badgeCatalog = BadgeCatalog()
         badgeCatalog.setTwitch(twitch)
 
-        let entry = CacheEntry(emotes: catalog, badges: badgeCatalog, storedAt: Date())
+        let entry = CacheEntry(
+            emotes: catalog,
+            badges: badgeCatalog,
+            storedAt: Date(),
+            isEmpty: globalLoad.emotes.global.isEmpty
+        )
         channelCache[broadcasterID] = entry
         AppLogger.shared.info("Loaded \(merged.count) channel emotes for \(login)", category: .emote)
         return (catalog, badgeCatalog)
     }
 
     private func isStale(_ entry: CacheEntry) -> Bool {
-        Date().timeIntervalSince(entry.storedAt) > ttl
+        Date().timeIntervalSince(entry.storedAt) > (entry.isEmpty ? retryTTL : ttl)
     }
 
     private func twitchBadgeMap(_ badges: [Badge]) -> [String: Badge] {
