@@ -31,6 +31,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
     var statePublisher: AnyPublisher<VideoState, Never> { stateSubject.eraseToAnyPublisher() }
     var latencyPublisher: AnyPublisher<TimeInterval?, Never> { latencySubject.eraseToAnyPublisher() }
+    var adBreakPublisher: AnyPublisher<TimeInterval?, Never> { adBreakSubject.eraseToAnyPublisher() }
 
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?
@@ -39,7 +40,12 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private let player = AVPlayer()
     private let stateSubject = CurrentValueSubject<VideoState, Never>(.idle)
     private let latencySubject = CurrentValueSubject<TimeInterval?, Never>(nil)
+    private let adBreakSubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let logger: AppLogger
+
+    private let metadataCollector = AVPlayerItemMetadataCollector()
+    private var adRanges: [AdRange] = []
+    private var adTimeObserver: Any?
 
     private var currentItem: AVPlayerItem?
     private var resolution: PlaybackResolution?
@@ -55,7 +61,53 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         super.init()
         player.automaticallyWaitsToMinimizeStalling = true
         playerView.player = player
+        metadataCollector.setDelegate(self, queue: .main)
+        observeAudioSession()
         configurePictureInPicture()
+    }
+
+    private var audioObservers: [NSObjectProtocol] = []
+
+    private func observeAudioSession() {
+        let center = NotificationCenter.default
+        audioObservers.append(center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] note in
+            let typeValue = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let optionsValue = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt
+            MainActor.assumeIsolated { self?.handleInterruption(typeValue: typeValue, optionsValue: optionsValue) }
+        })
+        audioObservers.append(center.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] note in
+            let reasonValue = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+            MainActor.assumeIsolated { self?.handleRouteChange(reasonValue: reasonValue) }
+        })
+    }
+
+    private func handleInterruption(typeValue: UInt?, optionsValue: UInt?) {
+        guard let typeValue, let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+        switch type {
+        case .began:
+            player.pause()
+        case .ended:
+            if let optionsValue, AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
+                try? AVAudioSession.sharedInstance().setActive(true)
+                player.play()
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleRouteChange(reasonValue: UInt?) {
+        guard let reasonValue,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
+              reason == .oldDeviceUnavailable else { return }
+        player.pause()
+    }
+
+    func seekToLive() {
+        guard let item = currentItem,
+              let range = item.seekableTimeRanges.last?.timeRangeValue,
+              range.duration.seconds > 0 else { return }
+        player.seek(to: range.end, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
     func load(_ resolution: PlaybackResolution) {
@@ -118,6 +170,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         player.pause()
         player.replaceCurrentItem(with: nil)
         pictureInPictureController = nil
+        adBreakSubject.send(nil)
         stateSubject.send(.idle)
         deactivateAudioSession()
         logger.info("HLS teardown", category: .playback)
@@ -155,6 +208,11 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         currentItem = item
         item.preferredPeakBitRate = peakBitRate(for: currentQuality)
 
+        item.add(metadataCollector)
+        adRanges = []
+        adBreakSubject.send(nil)
+        installAdTimeObserver()
+
         observers.append(item.observe(\.status, options: [.initial, .new]) { [weak self] _, _ in
             Task { @MainActor in self?.handleStatus() }
         })
@@ -174,19 +232,22 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             Task { @MainActor in self?.reflectTimeControlStatus() }
         })
 
+        let itemID = ObjectIdentifier(item)
         notificationObservers.append(NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
             queue: .main
-        ) { [weak self] notification in
-            MainActor.assumeIsolated { self?.itemDidPlayToEnd(notification) }
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.itemDidPlayToEnd(itemID: itemID) }
         })
         notificationObservers.append(NotificationCenter.default.addObserver(
             forName: .AVPlayerItemFailedToPlayToEndTime,
             object: item,
             queue: .main
         ) { [weak self] notification in
-            MainActor.assumeIsolated { self?.itemFailedToPlayToEnd(notification) }
+            let message = (notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error)?
+                .localizedDescription ?? "Playback stalled"
+            MainActor.assumeIsolated { self?.itemFailedToPlayToEnd(itemID: itemID, message: message) }
         })
     }
 
@@ -222,15 +283,13 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         }
     }
 
-    private func itemDidPlayToEnd(_ notification: Notification) {
-        guard (notification.object as? AVPlayerItem) === currentItem else { return }
+    private func itemDidPlayToEnd(itemID: ObjectIdentifier) {
+        guard let currentItem, ObjectIdentifier(currentItem) == itemID else { return }
         stateSubject.send(.ended)
     }
 
-    private func itemFailedToPlayToEnd(_ notification: Notification) {
-        guard (notification.object as? AVPlayerItem) === currentItem else { return }
-        let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
-        let message = error?.localizedDescription ?? "Playback stalled"
+    private func itemFailedToPlayToEnd(itemID: ObjectIdentifier, message: String) {
+        guard let currentItem, ObjectIdentifier(currentItem) == itemID else { return }
         stateSubject.send(.error(message))
         logger.error("HLS failed to play to end: \(message)", category: .playback)
     }
@@ -310,16 +369,74 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
     }
 
+    private func installAdTimeObserver() {
+        if let adTimeObserver {
+            player.removeTimeObserver(adTimeObserver)
+            self.adTimeObserver = nil
+        }
+        let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        adTimeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.evaluateAdBreak() }
+        }
+    }
+
+    private func evaluateAdBreak() {
+        guard let item = currentItem, let now = item.currentDate() else {
+            adBreakSubject.send(nil)
+            return
+        }
+        let active = adRanges.first { range in
+            guard let end = range.end else { return false }
+            return range.start <= now && now < end
+        }
+        guard let active, let end = active.end else {
+            adBreakSubject.send(nil)
+            return
+        }
+        adBreakSubject.send(max(0, end.timeIntervalSince(now)))
+    }
+
     private func detachObservers() {
         observers.forEach { $0.invalidate() }
         observers.removeAll()
         notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
         notificationObservers.removeAll()
+        if let adTimeObserver {
+            player.removeTimeObserver(adTimeObserver)
+            self.adTimeObserver = nil
+        }
+        currentItem?.remove(metadataCollector)
     }
 
-    deinit {
+    isolated deinit {
         latencyTimer?.invalidate()
+        if let adTimeObserver { player.removeTimeObserver(adTimeObserver) }
         observers.forEach { $0.invalidate() }
         notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        audioObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+}
+
+private let twitchStitchedAdClass = "twitch-stitched-ad"
+
+private struct AdRange: Sendable {
+    let start: Date
+    let end: Date?
+}
+
+extension HLSVideoPlayer: AVPlayerItemMetadataCollectorPushDelegate {
+    nonisolated func metadataCollector(
+        _ metadataCollector: AVPlayerItemMetadataCollector,
+        didCollect metadataGroups: [AVDateRangeMetadataGroup],
+        indexesOfNewGroups: IndexSet,
+        indexesOfModifiedGroups: IndexSet
+    ) {
+        let ranges = metadataGroups
+            .filter { $0.classifyingLabel == twitchStitchedAdClass }
+            .map { AdRange(start: $0.startDate, end: $0.endDate) }
+        MainActor.assumeIsolated {
+            self.adRanges = ranges
+            self.evaluateAdBreak()
+        }
     }
 }

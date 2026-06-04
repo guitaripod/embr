@@ -6,6 +6,7 @@ import EmbrCore
 enum VideoSource: Sendable, Equatable {
     case live(login: String)
     case vod(id: String)
+    case clip(url: URL)
 }
 
 @MainActor
@@ -17,6 +18,7 @@ final class VideoViewController: UIViewController {
     private let player: VideoPlaying
     private let resolver: PlaybackResolving
     private let logger: AppLogger
+    private let store: SettingsStore
     private let feedback = UIImpactFeedbackGenerator(style: .medium)
 
     private let overlay = VideoOverlayView()
@@ -24,22 +26,31 @@ final class VideoViewController: UIViewController {
     private var resolveTask: Task<Void, Never>?
 
     private var currentState: VideoState = .idle
-    private var isMuted = false
     private var isImmersive = false
+    private var liveReloadAttempts = 0
+    private var isResolving = false
+    private var resolveGeneration = 0
+    private var isMuted = false
 
     private var dragStartCenter: CGPoint = .zero
     private lazy var swipeDown = UIPanGestureRecognizer(target: self, action: #selector(handleSwipeDown(_:)))
+
+    private var streamActive: Bool
 
     init(
         source: VideoSource,
         player: VideoPlaying = HLSVideoPlayer(),
         resolver: PlaybackResolving = PlaybackResolver.shared,
-        logger: AppLogger = .shared
+        logger: AppLogger = .shared,
+        store: SettingsStore = .shared,
+        active: Bool = true
     ) {
         self.source = source
         self.player = player
         self.resolver = resolver
         self.logger = logger
+        self.store = store
+        self.streamActive = active
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -50,22 +61,18 @@ final class VideoViewController: UIViewController {
         [.portrait, .landscapeLeft, .landscapeRight]
     }
 
-    override var prefersHomeIndicatorAutoHidden: Bool { isLandscape }
-    override var prefersStatusBarHidden: Bool { isLandscape }
-    override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation { .fade }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
         installPlayerView()
         installOverlay()
         bind()
-        resolveAndLoad()
+        if streamActive { resolveAndLoad() }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        UIApplication.shared.isIdleTimerDisabled = true
+        UIApplication.shared.isIdleTimerDisabled = store.current.keepScreenAwake
         feedback.prepare()
     }
 
@@ -77,6 +84,25 @@ final class VideoViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         player.view.frame = view.bounds
+    }
+
+    func setBackButtonHidden(_ hidden: Bool) {
+        overlay.setBackButtonHidden(hidden)
+    }
+
+    func setStreamActive(_ active: Bool) {
+        guard active != streamActive else { return }
+        streamActive = active
+        guard active else {
+            player.pause()
+            return
+        }
+        switch currentState {
+        case .idle, .ended, .error:
+            resolveAndLoad()
+        default:
+            player.play()
+        }
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -141,6 +167,13 @@ final class VideoViewController: UIViewController {
                 self?.overlay.setLatency(latency)
             }
             .store(in: &cancellables)
+
+        player.adBreakPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] remaining in
+                self?.overlay.updateAdCountdown(remaining)
+            }
+            .store(in: &cancellables)
     }
 
     private func apply(_ state: VideoState) {
@@ -149,8 +182,10 @@ final class VideoViewController: UIViewController {
         case .loading, .buffering:
             overlay.setBuffering(true)
         case .playing:
+            overlay.clearError()
             overlay.setBuffering(false)
             overlay.setPlaying(true)
+            liveReloadAttempts = 0
         case .paused:
             overlay.setBuffering(false)
             overlay.setPlaying(false)
@@ -160,24 +195,51 @@ final class VideoViewController: UIViewController {
         case .error(let message):
             overlay.setBuffering(false)
             overlay.setPlaying(false)
-            presentError(message)
+            handlePlaybackError(message)
         }
+    }
+
+    private func handlePlaybackError(_ message: String) {
+        guard !isResolving else { return }
+        if case .live = source, liveReloadAttempts < 1 {
+            liveReloadAttempts += 1
+            logger.warn("Live playback error, re-resolving once: \(message)", category: .playback)
+            resolveAndLoad()
+            return
+        }
+        overlay.showError("Playback stopped.", symbol: "exclamationmark.triangle", canRetry: true)
     }
 
     private func resolveAndLoad() {
         resolveTask?.cancel()
+        overlay.clearError()
         overlay.setBuffering(true)
+        isResolving = true
+        resolveGeneration += 1
+        let generation = resolveGeneration
         resolveTask = Task { [weak self] in
             guard let self else { return }
             do {
                 let resolution = try await self.resolve()
-                if Task.isCancelled { return }
+                if Task.isCancelled || generation != self.resolveGeneration { return }
+                self.isResolving = false
                 self.player.load(resolution)
             } catch {
-                if Task.isCancelled { return }
+                if Task.isCancelled || generation != self.resolveGeneration { return }
+                self.isResolving = false
                 self.logger.error("Video resolve failed: \(error.localizedDescription)", category: .playback)
-                self.apply(.error("Could not load stream"))
+                self.presentResolveFailure(error)
             }
+        }
+    }
+
+    private func presentResolveFailure(_ error: Error) {
+        overlay.setPlaying(false)
+        let apiError = error as? APIError
+        if apiError == .notFound || apiError == .forbidden {
+            overlay.showError("This channel isn't live right now.", symbol: "tv.slash", canRetry: true)
+        } else {
+            overlay.showError("Couldn't load the stream.", symbol: "exclamationmark.triangle", canRetry: true)
         }
     }
 
@@ -187,18 +249,9 @@ final class VideoViewController: UIViewController {
             return try await resolver.resolveLive(channelLogin: login)
         case .vod(let id):
             return try await resolver.resolveVOD(videoID: id)
+        case .clip(let url):
+            return PlaybackResolution(masterPlaylistURL: url, qualities: [], expiresAt: nil)
         }
-    }
-
-    private func presentError(_ message: String) {
-        let alert = UIAlertController(title: "Playback Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Retry", style: .default) { [weak self] _ in
-            self?.resolveAndLoad()
-        })
-        alert.addAction(UIAlertAction(title: "Close", style: .cancel) { [weak self] _ in
-            self?.dismissSelf()
-        })
-        present(alert, animated: true)
     }
 
     private func presentQualityPicker(from sourceView: UIView) {
@@ -298,6 +351,7 @@ extension VideoViewController: VideoOverlayViewDelegate {
         case .playing, .buffering, .loading:
             player.pause()
         default:
+            if case .live = source { player.seekToLive() }
             player.play()
         }
     }
@@ -308,6 +362,17 @@ extension VideoViewController: VideoOverlayViewDelegate {
 
     func videoOverlayDidTapPictureInPicture(_ overlay: VideoOverlayView) {
         triggerPictureInPicture()
+    }
+
+    func videoOverlayDidTapRetry(_ overlay: VideoOverlayView) {
+        liveReloadAttempts = 0
+        resolveAndLoad()
+    }
+
+    func videoOverlayDidTapMute(_ overlay: VideoOverlayView) {
+        isMuted.toggle()
+        player.setMuted(isMuted)
+        overlay.setMuted(isMuted)
     }
 }
 
@@ -323,7 +388,7 @@ extension VideoViewController: UIGestureRecognizerDelegate {
     }
 }
 
-extension VideoViewController: AVPictureInPictureControllerDelegate {
+extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         logger.error("PiP failed: \(error.localizedDescription)", category: .playback)
     }

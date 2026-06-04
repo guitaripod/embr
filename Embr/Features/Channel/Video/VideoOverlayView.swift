@@ -1,12 +1,16 @@
 import UIKit
 
+@MainActor
 protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapBack(_ overlay: VideoOverlayView)
     func videoOverlayDidTapPlayPause(_ overlay: VideoOverlayView)
     func videoOverlayDidTapQuality(_ overlay: VideoOverlayView, from sourceView: UIView)
     func videoOverlayDidTapPictureInPicture(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapRetry(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapMute(_ overlay: VideoOverlayView)
 }
 
+@MainActor
 final class VideoOverlayView: UIView {
 
     weak var delegate: VideoOverlayViewDelegate?
@@ -14,6 +18,7 @@ final class VideoOverlayView: UIView {
     private let autoHideInterval: TimeInterval = 5.0
     private var hideTimer: Timer?
     private(set) var controlsVisible = true
+    private var isBuffering = false
 
     private let dimmingView = UIView()
     private let topBar = UIStackView()
@@ -22,9 +27,28 @@ final class VideoOverlayView: UIView {
     private let backButton = VideoOverlayView.makeButton(symbol: "chevron.left")
     private let pipButton = VideoOverlayView.makeButton(symbol: "pip.enter")
     private let qualityButton = VideoOverlayView.makeButton(symbol: "slider.horizontal.3")
+    private let muteButton = VideoOverlayView.makeButton(symbol: "speaker.wave.2.fill")
     private let playPauseButton = VideoOverlayView.makeButton(symbol: "pause.fill", pointSize: 34)
 
     private let bufferingIndicator = UIActivityIndicatorView(style: .large)
+
+    private let errorStack = UIStackView()
+    private let errorIcon = UIImageView()
+    private let errorLabel = UILabel()
+    private let retryButton = UIButton(type: .system)
+    private var errorActive = false
+
+    private let adBadge: PaddedLabel = {
+        let label = PaddedLabel()
+        label.font = .monospacedDigitSystemFont(ofSize: 13, weight: .bold)
+        label.textColor = .black
+        label.backgroundColor = .systemYellow
+        label.layer.cornerRadius = 6
+        label.layer.cornerCurve = .continuous
+        label.layer.masksToBounds = true
+        label.isHidden = true
+        return label
+    }()
 
     private let latencyLabel: UILabel = {
         let label = UILabel()
@@ -58,6 +82,7 @@ final class VideoOverlayView: UIView {
         let symbol = playing ? "pause.fill" : "play.fill"
         let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
         playPauseButton.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
+        playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
         liveBadge.isHidden = !playing
         if playing {
             liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
@@ -67,11 +92,39 @@ final class VideoOverlayView: UIView {
     }
 
     func setBuffering(_ buffering: Bool) {
-        if buffering {
+        let target = buffering && !errorActive
+        guard target != isBuffering else { return }
+        isBuffering = target
+        if target {
             bufferingIndicator.startAnimating()
         } else {
             bufferingIndicator.stopAnimating()
         }
+        UIView.animate(withDuration: 0.2) { self.applyCenterButtonVisibility() }
+    }
+
+    private func applyCenterButtonVisibility() {
+        let visible = controlsVisible && !isBuffering && !errorActive
+        playPauseButton.alpha = visible ? 1.0 : 0.0
+        playPauseButton.isUserInteractionEnabled = visible
+    }
+
+    func showError(_ message: String, symbol: String, canRetry: Bool) {
+        errorActive = true
+        setBuffering(false)
+        errorIcon.image = UIImage(systemName: symbol)
+        errorLabel.text = message
+        retryButton.isHidden = !canRetry
+        errorStack.isHidden = false
+        cancelAutoHide()
+        setControls(visible: true, animated: true)
+    }
+
+    func clearError() {
+        guard errorActive else { return }
+        errorActive = false
+        errorStack.isHidden = true
+        applyCenterButtonVisibility()
     }
 
     func setLatency(_ latency: TimeInterval?) {
@@ -85,6 +138,19 @@ final class VideoOverlayView: UIView {
     func setPictureInPictureEnabled(_ enabled: Bool) {
         pipButton.isEnabled = enabled
         pipButton.alpha = enabled ? 1.0 : 0.4
+    }
+
+    func setBackButtonHidden(_ hidden: Bool) {
+        backButton.isHidden = hidden
+    }
+
+    func updateAdCountdown(_ remaining: TimeInterval?) {
+        guard let remaining else {
+            adBadge.isHidden = true
+            return
+        }
+        adBadge.isHidden = false
+        adBadge.text = "Ad · \(Int(remaining.rounded(.up)))s"
     }
 
     func showControls(thenHide: Bool = true) {
@@ -112,7 +178,7 @@ final class VideoOverlayView: UIView {
             self.dimmingView.alpha = target
             self.topBar.alpha = target
             self.bottomBar.alpha = target
-            self.playPauseButton.alpha = target
+            self.applyCenterButtonVisibility()
         }
         if animated {
             UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut], animations: work)
@@ -124,7 +190,7 @@ final class VideoOverlayView: UIView {
     private func scheduleAutoHide() {
         cancelAutoHide()
         let timer = Timer(timeInterval: autoHideInterval, repeats: false) { [weak self] _ in
-            self?.hideControls()
+            MainActor.assumeIsolated { self?.hideControls() }
         }
         RunLoop.main.add(timer, forMode: .common)
         hideTimer = timer
@@ -159,6 +225,7 @@ final class VideoOverlayView: UIView {
         let bottomSpacer = UIView()
         bottomSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         bottomBar.addArrangedSubview(bottomSpacer)
+        bottomBar.addArrangedSubview(muteButton)
         bottomBar.addArrangedSubview(qualityButton)
         bottomBar.addArrangedSubview(pipButton)
         addSubview(bottomBar)
@@ -170,6 +237,42 @@ final class VideoOverlayView: UIView {
         bufferingIndicator.hidesWhenStopped = true
         bufferingIndicator.translatesAutoresizingMaskIntoConstraints = false
         addSubview(bufferingIndicator)
+
+        errorIcon.contentMode = .scaleAspectFit
+        errorIcon.tintColor = .white
+        errorIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+        errorLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        errorLabel.textColor = .white
+        errorLabel.textAlignment = .center
+        errorLabel.numberOfLines = 0
+        var retryConfig = UIButton.Configuration.tinted()
+        retryConfig.title = "Retry"
+        retryConfig.cornerStyle = .large
+        retryConfig.baseForegroundColor = .white
+        retryButton.configuration = retryConfig
+        retryButton.addTarget(self, action: #selector(didTapRetry), for: .touchUpInside)
+        errorStack.axis = .vertical
+        errorStack.alignment = .center
+        errorStack.spacing = 12
+        errorStack.isHidden = true
+        errorStack.translatesAutoresizingMaskIntoConstraints = false
+        errorStack.addArrangedSubview(errorIcon)
+        errorStack.addArrangedSubview(errorLabel)
+        errorStack.addArrangedSubview(retryButton)
+        addSubview(errorStack)
+
+        adBadge.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(adBadge)
+
+        NSLayoutConstraint.activate([
+            errorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
+            errorStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            errorStack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
+            errorStack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -24),
+
+            adBadge.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -12),
+            adBadge.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 44),
+        ])
 
         NSLayoutConstraint.activate([
             dimmingView.topAnchor.constraint(equalTo: topAnchor),
@@ -201,6 +304,15 @@ final class VideoOverlayView: UIView {
         playPauseButton.addTarget(self, action: #selector(didTapPlayPause), for: .touchUpInside)
         qualityButton.addTarget(self, action: #selector(didTapQuality), for: .touchUpInside)
         pipButton.addTarget(self, action: #selector(didTapPip), for: .touchUpInside)
+        muteButton.addTarget(self, action: #selector(didTapMute), for: .touchUpInside)
+
+        backButton.accessibilityLabel = "Back"
+        playPauseButton.accessibilityLabel = "Play"
+        qualityButton.accessibilityLabel = "Quality"
+        pipButton.accessibilityLabel = "Picture in Picture"
+        muteButton.accessibilityLabel = "Mute"
+        liveBadge.isAccessibilityElement = true
+        liveBadge.accessibilityLabel = "Live"
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
         addGestureRecognizer(tap)
@@ -228,6 +340,24 @@ final class VideoOverlayView: UIView {
         delegate?.videoOverlayDidTapPictureInPicture(self)
     }
 
+    @objc private func didTapRetry() {
+        delegate?.videoOverlayDidTapRetry(self)
+    }
+
+    @objc private func didTapMute() {
+        scheduleAutoHide()
+        delegate?.videoOverlayDidTapMute(self)
+    }
+
+    func setMuted(_ muted: Bool) {
+        let symbol = muted ? "speaker.slash.fill" : "speaker.wave.2.fill"
+        muteButton.setImage(
+            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
+            for: .normal
+        )
+        muteButton.accessibilityLabel = muted ? "Unmute" : "Mute"
+    }
+
     private static func makeButton(symbol: String, pointSize: CGFloat = 18) -> UIButton {
         var configuration = UIButton.Configuration.plain()
         configuration.image = UIImage(
@@ -240,7 +370,20 @@ final class VideoOverlayView: UIView {
         return button
     }
 
-    deinit {
+    isolated deinit {
         hideTimer?.invalidate()
+    }
+}
+
+private final class PaddedLabel: UILabel {
+    private let insets = UIEdgeInsets(top: 3, left: 9, bottom: 3, right: 9)
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: insets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(width: size.width + insets.left + insets.right, height: size.height + insets.top + insets.bottom)
     }
 }
