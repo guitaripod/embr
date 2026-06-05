@@ -6,7 +6,6 @@ protocol ChatInputViewDelegate: AnyObject {
     func chatInput(_ input: ChatInputView, didSubmit text: String)
     func chatInput(_ input: ChatInputView, suggestionsFor token: AutocompleteToken) -> [AutocompleteSuggestion]
     func chatInputDidCancelReply(_ input: ChatInputView)
-    func chatInputDidRequestEmotePicker(_ input: ChatInputView)
 }
 
 enum AutocompleteToken: Equatable {
@@ -30,6 +29,14 @@ final class ChatInputView: UIView {
 
     private let images: ImageLoading
     private var catalog = EmoteCatalog()
+    private var showingEmoteKeyboard = false
+    private lazy var emoteKeyboard: EmoteKeyboardView = {
+        let keyboard = EmoteKeyboardView(images: images)
+        keyboard.onInsert = { [weak self] name in self?.insertEmote(name) }
+        keyboard.onBackspace = { [weak self] in self?.handleBackspace() }
+        keyboard.onSwitchToKeyboard = { [weak self] in self?.switchToSystemKeyboard() }
+        return keyboard
+    }()
     private var isSending = false {
         didSet { updateSendState() }
     }
@@ -85,8 +92,42 @@ final class ChatInputView: UIView {
         refreshAutocomplete()
     }
 
+    private func handleBackspace() {
+        textView.deleteBackward()
+        refreshAutocomplete()
+    }
+
     @objc private func emoteTapped() {
-        delegate?.chatInputDidRequestEmotePicker(self)
+        if showingEmoteKeyboard {
+            switchToSystemKeyboard()
+        } else {
+            showEmoteKeyboard()
+        }
+    }
+
+    private func showEmoteKeyboard() {
+        showingEmoteKeyboard = true
+        emoteKeyboard.setCatalog(catalog)
+        textView.inputView = emoteKeyboard
+        updateEmoteButtonIcon()
+        if textView.isFirstResponder {
+            textView.reloadInputViews()
+        } else {
+            textView.becomeFirstResponder()
+        }
+    }
+
+    private func switchToSystemKeyboard() {
+        guard showingEmoteKeyboard else { return }
+        showingEmoteKeyboard = false
+        textView.inputView = nil
+        updateEmoteButtonIcon()
+        if textView.isFirstResponder { textView.reloadInputViews() }
+    }
+
+    private func updateEmoteButtonIcon() {
+        emoteButton.configuration?.image = UIImage(systemName: showingEmoteKeyboard ? "keyboard" : "face.smiling")
+        emoteButton.accessibilityLabel = showingEmoteKeyboard ? "Keyboard" : "Emotes"
     }
 
     func showReply(displayName: String, text: String) {
@@ -104,7 +145,16 @@ final class ChatInputView: UIView {
     }
 
     private func setUp() {
-        backgroundColor = Theme.surface
+        backgroundColor = Glass.isAvailable ? .clear : Theme.surface
+
+        let glass = Glass.view()
+        addSubview(glass)
+        NSLayoutConstraint.activate([
+            glass.topAnchor.constraint(equalTo: topAnchor),
+            glass.bottomAnchor.constraint(equalTo: bottomAnchor),
+            glass.leadingAnchor.constraint(equalTo: leadingAnchor),
+            glass.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
 
         container.translatesAutoresizingMaskIntoConstraints = false
         container.axis = .vertical
@@ -140,7 +190,7 @@ final class ChatInputView: UIView {
 
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: topAnchor),
-            container.bottomAnchor.constraint(equalTo: bottomAnchor),
+            container.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
             container.leadingAnchor.constraint(equalTo: leadingAnchor),
             container.trailingAnchor.constraint(equalTo: trailingAnchor),
             autocomplete.heightAnchor.constraint(equalToConstant: 44)
@@ -162,6 +212,8 @@ final class ChatInputView: UIView {
         textView.isScrollEnabled = false
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
         textView.onTextChange = { [weak self] in self?.refreshAutocomplete() }
+        textView.onReturn = { [weak self] in self?.sendTapped() }
+        textView.onEndEditing = { [weak self] in self?.switchToSystemKeyboard() }
         textView.placeholder = "Send a message"
         textView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -169,6 +221,8 @@ final class ChatInputView: UIView {
         config.image = UIImage(systemName: "paperplane.fill")
         sendButton.configuration = config
         sendButton.tintColor = Theme.accent
+        sendButton.isEnabled = false
+        sendButton.alpha = 0.35
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
@@ -206,6 +260,7 @@ final class ChatInputView: UIView {
     }
 
     private func refreshAutocomplete() {
+        updateSendAvailability()
         guard let token = currentToken() else {
             autocomplete.update([])
             return
@@ -244,13 +299,18 @@ final class ChatInputView: UIView {
         if isSending {
             spinner.startAnimating()
             sendButton.isHidden = true
-            sendButton.isEnabled = false
         } else {
             spinner.stopAnimating()
             sendButton.isHidden = false
-            sendButton.isEnabled = true
-            sendButton.imageView?.addSymbolEffect(.bounce, options: .nonRepeating)
         }
+        updateSendAvailability()
+    }
+
+    private func updateSendAvailability() {
+        let hasText = !textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let enabled = hasText && !isSending
+        sendButton.isEnabled = enabled
+        sendButton.alpha = enabled ? 1 : 0.35
     }
 }
 
@@ -315,6 +375,8 @@ private final class ReplyComposerBar: UIView {
 @MainActor
 private final class EmoteTextView: UITextView, UITextViewDelegate {
     var onTextChange: (() -> Void)?
+    var onReturn: (() -> Void)?
+    var onEndEditing: (() -> Void)?
 
     private let images: ImageLoading
     private var catalog = EmoteCatalog()
@@ -326,6 +388,14 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
         super.init(frame: .zero, textContainer: nil)
         delegate = self
         allowsEditingTextAttributes = false
+        autocorrectionType = .no
+        autocapitalizationType = .none
+        smartQuotesType = .no
+        smartDashesType = .no
+        smartInsertDeleteType = .no
+        spellCheckingType = .no
+        returnKeyType = .send
+        enablesReturnKeyAutomatically = true
         placeholderLabel.font = .systemFont(ofSize: 16)
         placeholderLabel.textColor = Theme.secondaryText
         placeholderLabel.numberOfLines = 1
@@ -390,6 +460,20 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         render(plain: plainText, caret: caretPlainOffset())
         onTextChange?()
+    }
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        guard text.contains("\n") else { return true }
+        if text == "\n" {
+            onReturn?()
+        } else {
+            textView.insertText(text.replacingOccurrences(of: "\n", with: " "))
+        }
+        return false
+    }
+
+    func textViewDidEndEditing(_ textView: UITextView) {
+        onEndEditing?()
     }
 
     private var defaultAttributes: [NSAttributedString.Key: Any] {

@@ -101,6 +101,10 @@ final class ChatViewController: UIViewController {
         collectionView.alwaysBounceVertical = true
         collectionView.keyboardDismissMode = .interactive
         collectionView.contentInsetAdjustmentBehavior = .never
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboardOnTap))
+        dismissTap.cancelsTouchesInView = false
+        dismissTap.delegate = self
+        collectionView.addGestureRecognizer(dismissTap)
         view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
@@ -191,7 +195,7 @@ final class ChatViewController: UIViewController {
         composer.delegate = self
         view.addSubview(composer)
 
-        let bottom = composer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        let bottom = composer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         inputBottomConstraint = bottom
 
         NSLayoutConstraint.activate([
@@ -312,13 +316,23 @@ final class ChatViewController: UIViewController {
         viewModel.search(searchField.text ?? "")
     }
 
+    @objc private func dismissKeyboardOnTap() {
+        view.endEditing(true)
+    }
+
     private func handleKeyboard(_ note: Notification) {
         guard let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
               let durationValue = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else { return }
         let endFrame = view.convert(frameValue.cgRectValue, from: nil)
-        let overlap = max(0, view.bounds.maxY - view.safeAreaInsets.bottom - endFrame.minY)
+        let overlap = max(0, view.bounds.maxY - endFrame.minY)
         inputBottomConstraint?.constant = -overlap
         UIView.animate(withDuration: durationValue.doubleValue) { self.view.layoutIfNeeded() }
+    }
+}
+
+extension ChatViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
     }
 }
 
@@ -466,13 +480,6 @@ extension ChatViewController: ChatInputViewDelegate {
         input.hideReply()
     }
 
-    func chatInputDidRequestEmotePicker(_ input: ChatInputView) {
-        let picker = EmotePickerViewController(catalog: catalog) { [weak input] name in
-            input?.insertEmote(name)
-        }
-        present(picker, animated: true)
-    }
-
     func beginReply(to message: ChatMessage) {
         guard !isAnonymous else { return }
         Haptics.impact(.light)
@@ -589,7 +596,19 @@ private final class ConnectionStatusBar: UIView {
     }
 
     private func setUp() {
-        backgroundColor = Theme.surface.withAlphaComponent(0.95)
+        if Glass.isAvailable {
+            backgroundColor = .clear
+            let glass = Glass.view()
+            addSubview(glass)
+            NSLayoutConstraint.activate([
+                glass.topAnchor.constraint(equalTo: topAnchor),
+                glass.bottomAnchor.constraint(equalTo: bottomAnchor),
+                glass.leadingAnchor.constraint(equalTo: leadingAnchor),
+                glass.trailingAnchor.constraint(equalTo: trailingAnchor)
+            ])
+        } else {
+            backgroundColor = Theme.surface.withAlphaComponent(0.95)
+        }
         icon.contentMode = .scaleAspectFit
         label.font = .systemFont(ofSize: 13, weight: .medium)
         roomStateLabel.font = .systemFont(ofSize: 11, weight: .regular)
@@ -642,10 +661,24 @@ private final class NewMessagesPill: UIControl {
     }
 
     private func setUp() {
-        backgroundColor = Theme.accent
         layer.cornerRadius = 16
         layer.cornerCurve = .continuous
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
+
+        if Glass.isAvailable {
+            backgroundColor = .clear
+            let glass = Glass.view(cornerRadius: 16, tint: Theme.accent, interactive: true)
+            glass.isUserInteractionEnabled = false
+            addSubview(glass)
+            NSLayoutConstraint.activate([
+                glass.topAnchor.constraint(equalTo: topAnchor),
+                glass.bottomAnchor.constraint(equalTo: bottomAnchor),
+                glass.leadingAnchor.constraint(equalTo: leadingAnchor),
+                glass.trailingAnchor.constraint(equalTo: trailingAnchor)
+            ])
+        } else {
+            backgroundColor = Theme.accent
+        }
 
         icon.image = UIImage(systemName: "arrow.down")
         icon.tintColor = .white
