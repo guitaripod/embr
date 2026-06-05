@@ -11,8 +11,11 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     var statePublisher: AnyPublisher<VideoState, Never> { stateSubject.eraseToAnyPublisher() }
     var latencyPublisher: AnyPublisher<TimeInterval?, Never> { latencySubject.eraseToAnyPublisher() }
     var adBreakPublisher: AnyPublisher<TimeInterval?, Never> { Empty().eraseToAnyPublisher() }
+    var progressPublisher: AnyPublisher<PlaybackProgress, Never> { Empty().eraseToAnyPublisher() }
 
     func seekToLive() {}
+    func seek(to seconds: TimeInterval) {}
+    func setRate(_ rate: Float) {}
 
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?

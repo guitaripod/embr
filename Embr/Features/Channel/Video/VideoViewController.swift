@@ -13,6 +13,7 @@ enum VideoSource: Sendable, Equatable {
 final class VideoViewController: UIViewController {
 
     var onFullscreenChange: ((Bool) -> Void)?
+    var onDoubleTapToggleChat: (() -> Void)?
 
     private let source: VideoSource
     private let player: VideoPlaying
@@ -31,6 +32,18 @@ final class VideoViewController: UIViewController {
     private var isResolving = false
     private var resolveGeneration = 0
     private var isMuted = false
+    private var lastProgress: PlaybackProgress = .empty
+    private var currentRate: Float = 1.0
+    private var mutedBeforeAd: Bool?
+    private var adActive = false
+    private var adGraceWork: DispatchWorkItem?
+
+    private var isSeekableSource: Bool {
+        switch source {
+        case .live: return false
+        case .vod, .clip: return true
+        }
+    }
 
     private var dragStartCenter: CGPoint = .zero
     private lazy var swipeDown = UIPanGestureRecognizer(target: self, action: #selector(handleSwipeDown(_:)))
@@ -72,8 +85,17 @@ final class VideoViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        OrientationCoordinator.mask = [.portrait, .landscapeLeft, .landscapeRight]
         UIApplication.shared.isIdleTimerDisabled = store.current.keepScreenAwake
         feedback.prepare()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        OrientationCoordinator.mask = .portrait
+        if isLandscape, let scene = view.window?.windowScene {
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -121,7 +143,46 @@ final class VideoViewController: UIViewController {
     private func setImmersive(_ immersive: Bool) {
         guard immersive != isImmersive else { return }
         isImmersive = immersive
+        overlay.setFullscreen(immersive)
         onFullscreenChange?(immersive)
+    }
+
+    private func toggleFullscreen() {
+        OrientationCoordinator.mask = [.portrait, .landscapeLeft, .landscapeRight]
+        guard let scene = view.window?.windowScene else { return }
+        let target: UIInterfaceOrientationMask = isLandscape ? .portrait : .landscapeRight
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { error in
+            AppLogger.shared.warn("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
+        }
+    }
+
+    private func presentSpeedPicker(from sourceView: UIView) {
+        let rates: [Float] = [0.5, 1.0, 1.25, 1.5, 2.0]
+        let sheet = UIAlertController(title: "Playback Speed", message: nil, preferredStyle: .actionSheet)
+        for rate in rates {
+            let title = rate == 1.0 ? "Normal" : Self.rateText(rate)
+            let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.applyRate(rate)
+            }
+            action.setValue(rate == currentRate, forKey: "checked")
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceView.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func applyRate(_ rate: Float) {
+        currentRate = rate
+        player.setRate(rate)
+        overlay.setSpeed(rate == 1.0 ? nil : Self.rateText(rate))
+    }
+
+    private static func rateText(_ rate: Float) -> String {
+        rate == rate.rounded() ? String(format: "%.0fx", rate) : String(format: "%gx", rate)
     }
 
     private func installPlayerView() {
@@ -149,6 +210,8 @@ final class VideoViewController: UIViewController {
             overlay.setPictureInPictureEnabled(false)
         }
 
+        overlay.setSeekable(isSeekableSource)
+
         swipeDown.delegate = self
         view.addGestureRecognizer(swipeDown)
     }
@@ -171,9 +234,49 @@ final class VideoViewController: UIViewController {
         player.adBreakPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] remaining in
-                self?.overlay.updateAdCountdown(remaining)
+                self?.handleAdBreak(remaining)
             }
             .store(in: &cancellables)
+
+        player.progressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] progress in
+                guard let self else { return }
+                self.lastProgress = progress
+                self.overlay.setProgress(progress)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleAdBreak(_ remaining: TimeInterval?) {
+        if let remaining {
+            adGraceWork?.cancel()
+            adGraceWork = nil
+            overlay.updateAdCountdown(remaining)
+            if !adActive {
+                adActive = true
+                mutedBeforeAd = isMuted
+                player.setMuted(true)
+                logger.info("ad break started", category: .playback)
+            }
+        } else if adActive, adGraceWork == nil {
+            let work = DispatchWorkItem { [weak self] in self?.endAdSession() }
+            adGraceWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: work)
+        }
+    }
+
+    private func endAdSession() {
+        adGraceWork = nil
+        guard adActive else { return }
+        adActive = false
+        overlay.updateAdCountdown(nil)
+        if let prior = mutedBeforeAd {
+            player.setMuted(prior)
+            mutedBeforeAd = nil
+        }
+        logger.info("ad break ended", category: .playback)
+        if case .live = source { player.seekToLive() }
     }
 
     private func apply(_ state: VideoState) {
@@ -201,11 +304,18 @@ final class VideoViewController: UIViewController {
 
     private func handlePlaybackError(_ message: String) {
         guard !isResolving else { return }
-        if case .live = source, liveReloadAttempts < 1 {
-            liveReloadAttempts += 1
-            logger.warn("Live playback error, re-resolving once: \(message)", category: .playback)
-            resolveAndLoad()
-            return
+        if case .live = source {
+            if adActive {
+                logger.info("ad-break reload: \(message)", category: .playback)
+                resolveAndLoad()
+                return
+            }
+            if liveReloadAttempts < 1 {
+                liveReloadAttempts += 1
+                logger.warn("Live playback error, re-resolving once: \(message)", category: .playback)
+                resolveAndLoad()
+                return
+            }
         }
         overlay.showError("Playback stopped.", symbol: "exclamationmark.triangle", canRetry: true)
     }
@@ -374,6 +484,35 @@ extension VideoViewController: VideoOverlayViewDelegate {
         player.setMuted(isMuted)
         overlay.setMuted(isMuted)
     }
+
+    func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView) {
+        toggleFullscreen()
+    }
+
+    func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView) {
+        presentSpeedPicker(from: sourceView)
+    }
+
+    func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView) {}
+
+    func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval) {
+        player.seek(to: seconds)
+    }
+
+    func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool) {
+        if isImmersive, let onDoubleTapToggleChat {
+            onDoubleTapToggleChat()
+            return
+        }
+        if isSeekableSource {
+            let delta: TimeInterval = forward ? 10 : -10
+            let target = max(0, min(lastProgress.current + delta, lastProgress.duration > 0 ? lastProgress.duration : .greatestFiniteMagnitude))
+            player.seek(to: target)
+            overlay.flashSeek(seconds: 10, forward: forward)
+        } else {
+            overlay.toggleControls()
+        }
+    }
 }
 
 extension VideoViewController: UIGestureRecognizerDelegate {
@@ -385,6 +524,11 @@ extension VideoViewController: UIGestureRecognizerDelegate {
         guard gestureRecognizer === swipeDown else { return true }
         let velocity = swipeDown.velocity(in: view)
         return abs(velocity.y) > abs(velocity.x)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard gestureRecognizer === swipeDown else { return true }
+        return !overlay.isScrubberTouch(touch)
     }
 }
 

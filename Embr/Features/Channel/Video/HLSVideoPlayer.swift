@@ -32,6 +32,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     var statePublisher: AnyPublisher<VideoState, Never> { stateSubject.eraseToAnyPublisher() }
     var latencyPublisher: AnyPublisher<TimeInterval?, Never> { latencySubject.eraseToAnyPublisher() }
     var adBreakPublisher: AnyPublisher<TimeInterval?, Never> { adBreakSubject.eraseToAnyPublisher() }
+    var progressPublisher: AnyPublisher<PlaybackProgress, Never> { progressSubject.eraseToAnyPublisher() }
 
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?
@@ -41,6 +42,8 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private let stateSubject = CurrentValueSubject<VideoState, Never>(.idle)
     private let latencySubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let adBreakSubject = CurrentValueSubject<TimeInterval?, Never>(nil)
+    private let progressSubject = CurrentValueSubject<PlaybackProgress, Never>(.empty)
+    private var preferredRate: Float = 1.0
     private let logger: AppLogger
 
     private let metadataCollector = AVPlayerItemMetadataCollector()
@@ -110,6 +113,17 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         player.seek(to: range.end, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
+    func seek(to seconds: TimeInterval) {
+        guard seconds.isFinite, seconds >= 0 else { return }
+        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    func setRate(_ rate: Float) {
+        preferredRate = rate
+        player.defaultRate = rate
+        if player.timeControlStatus == .playing { player.rate = rate }
+    }
+
     func load(_ resolution: PlaybackResolution) {
         self.resolution = resolution
         availableQualities = resolution.qualities
@@ -171,6 +185,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         player.replaceCurrentItem(with: nil)
         pictureInPictureController = nil
         adBreakSubject.send(nil)
+        progressSubject.send(.empty)
         stateSubject.send(.idle)
         deactivateAudioSession()
         logger.info("HLS teardown", category: .playback)
@@ -375,9 +390,23 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             self.adTimeObserver = nil
         }
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
-        adTimeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.evaluateAdBreak() }
+        adTimeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            MainActor.assumeIsolated {
+                self?.evaluateAdBreak()
+                self?.emitProgress(time)
+            }
         }
+    }
+
+    private func emitProgress(_ time: CMTime) {
+        guard let item = currentItem else {
+            progressSubject.send(.empty)
+            return
+        }
+        let duration = item.duration
+        let hasDuration = duration.isNumeric && duration.seconds.isFinite && duration.seconds > 0
+        let current = time.seconds.isFinite ? max(0, time.seconds) : 0
+        progressSubject.send(PlaybackProgress(current: current, duration: hasDuration ? duration.seconds : 0, isLive: !hasDuration))
     }
 
     private func evaluateAdBreak() {
@@ -434,7 +463,11 @@ extension HLSVideoPlayer: AVPlayerItemMetadataCollectorPushDelegate {
         let ranges = metadataGroups
             .filter { $0.classifyingLabel == twitchStitchedAdClass }
             .map { AdRange(start: $0.startDate, end: $0.endDate) }
+        let labels = Set(metadataGroups.compactMap { $0.classifyingLabel }).sorted()
         MainActor.assumeIsolated {
+            if !labels.isEmpty {
+                self.logger.info("HLS metadata labels=\(labels) adRanges=\(ranges.count)", category: .playback)
+            }
             self.adRanges = ranges
             self.evaluateAdBreak()
         }

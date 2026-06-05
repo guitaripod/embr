@@ -8,6 +8,11 @@ protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapPictureInPicture(_ overlay: VideoOverlayView)
     func videoOverlayDidTapRetry(_ overlay: VideoOverlayView)
     func videoOverlayDidTapMute(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView)
+    func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView)
+    func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval)
+    func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool)
 }
 
 @MainActor
@@ -28,7 +33,19 @@ final class VideoOverlayView: UIView {
     private let pipButton = VideoOverlayView.makeButton(symbol: "pip.enter")
     private let qualityButton = VideoOverlayView.makeButton(symbol: "slider.horizontal.3")
     private let muteButton = VideoOverlayView.makeButton(symbol: "speaker.wave.2.fill")
+    private let fullscreenButton = VideoOverlayView.makeButton(symbol: "arrow.up.left.and.arrow.down.right")
+    private let speedButton = VideoOverlayView.makeButton(symbol: "speedometer")
     private let playPauseButton = VideoOverlayView.makeButton(symbol: "pause.fill", pointSize: 34)
+
+    private let scrubRow = UIStackView()
+    private let scrubber = UISlider()
+    private let currentTimeLabel = VideoOverlayView.makeTimeLabel()
+    private let durationLabel = VideoOverlayView.makeTimeLabel()
+    private let seekFlashLabel = VideoOverlayView.makeFlashLabel()
+    private var isScrubbing = false
+    private var isSeekable = false
+    private var knownDuration: TimeInterval = 0
+    private var seekFlashCenterX: NSLayoutConstraint?
 
     private let bufferingIndicator = UIActivityIndicatorView(style: .large)
 
@@ -38,17 +55,11 @@ final class VideoOverlayView: UIView {
     private let retryButton = UIButton(type: .system)
     private var errorActive = false
 
-    private let adBadge: PaddedLabel = {
-        let label = PaddedLabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 13, weight: .bold)
-        label.textColor = .black
-        label.backgroundColor = .systemYellow
-        label.layer.cornerRadius = 6
-        label.layer.cornerCurve = .continuous
-        label.layer.masksToBounds = true
-        label.isHidden = true
-        return label
-    }()
+    private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
+    private let adIcon = UIImageView(image: UIImage(systemName: "hourglass"))
+    private let adTitleLabel = UILabel()
+    private let adCountdownLabel = UILabel()
+    private let adSubtitleLabel = UILabel()
 
     private let latencyLabel: UILabel = {
         let label = UILabel()
@@ -146,11 +157,13 @@ final class VideoOverlayView: UIView {
 
     func updateAdCountdown(_ remaining: TimeInterval?) {
         guard let remaining else {
-            adBadge.isHidden = true
+            adCover.isHidden = true
             return
         }
-        adBadge.isHidden = false
-        adBadge.text = "Ad · \(Int(remaining.rounded(.up)))s"
+        adCover.isHidden = false
+        adCountdownLabel.text = "\(max(1, Int(remaining.rounded(.up))))s"
+        bringSubviewToFront(adCover)
+        bringSubviewToFront(topBar)
     }
 
     func showControls(thenHide: Bool = true) {
@@ -178,6 +191,7 @@ final class VideoOverlayView: UIView {
             self.dimmingView.alpha = target
             self.topBar.alpha = target
             self.bottomBar.alpha = target
+            self.scrubRow.alpha = self.isSeekable ? target : 0
             self.applyCenterButtonVisibility()
         }
         if animated {
@@ -218,6 +232,22 @@ final class VideoOverlayView: UIView {
         topBar.addArrangedSubview(latencyLabel)
         addSubview(topBar)
 
+        scrubber.minimumTrackTintColor = .systemRed
+        scrubber.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
+        scrubber.setThumbImage(Self.thumbImage(diameter: 12), for: .normal)
+        scrubber.setThumbImage(Self.thumbImage(diameter: 18), for: .highlighted)
+        scrubber.isContinuous = true
+
+        scrubRow.axis = .horizontal
+        scrubRow.alignment = .center
+        scrubRow.spacing = 10
+        scrubRow.translatesAutoresizingMaskIntoConstraints = false
+        scrubRow.addArrangedSubview(currentTimeLabel)
+        scrubRow.addArrangedSubview(scrubber)
+        scrubRow.addArrangedSubview(durationLabel)
+        scrubRow.isHidden = true
+        addSubview(scrubRow)
+
         bottomBar.axis = .horizontal
         bottomBar.alignment = .center
         bottomBar.spacing = 16
@@ -225,13 +255,19 @@ final class VideoOverlayView: UIView {
         let bottomSpacer = UIView()
         bottomSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         bottomBar.addArrangedSubview(bottomSpacer)
+        bottomBar.addArrangedSubview(speedButton)
         bottomBar.addArrangedSubview(muteButton)
         bottomBar.addArrangedSubview(qualityButton)
         bottomBar.addArrangedSubview(pipButton)
+        bottomBar.addArrangedSubview(fullscreenButton)
+        speedButton.isHidden = true
         addSubview(bottomBar)
 
         playPauseButton.translatesAutoresizingMaskIntoConstraints = false
         addSubview(playPauseButton)
+
+        seekFlashLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(seekFlashLabel)
 
         bufferingIndicator.color = .white
         bufferingIndicator.hidesWhenStopped = true
@@ -261,8 +297,7 @@ final class VideoOverlayView: UIView {
         errorStack.addArrangedSubview(retryButton)
         addSubview(errorStack)
 
-        adBadge.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(adBadge)
+        buildAdCover()
 
         NSLayoutConstraint.activate([
             errorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
@@ -270,8 +305,10 @@ final class VideoOverlayView: UIView {
             errorStack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
             errorStack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -24),
 
-            adBadge.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -12),
-            adBadge.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 44),
+            adCover.topAnchor.constraint(equalTo: topAnchor),
+            adCover.leadingAnchor.constraint(equalTo: leadingAnchor),
+            adCover.trailingAnchor.constraint(equalTo: trailingAnchor),
+            adCover.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
 
         NSLayoutConstraint.activate([
@@ -288,6 +325,14 @@ final class VideoOverlayView: UIView {
             bottomBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 12),
             bottomBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -12),
 
+            scrubRow.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 14),
+            scrubRow.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -14),
+            scrubRow.bottomAnchor.constraint(equalTo: bottomBar.topAnchor, constant: -2),
+
+            seekFlashLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            seekFlashLabel.widthAnchor.constraint(equalToConstant: 72),
+            seekFlashLabel.heightAnchor.constraint(equalToConstant: 44),
+
             playPauseButton.centerXAnchor.constraint(equalTo: centerXAnchor),
             playPauseButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
@@ -297,6 +342,57 @@ final class VideoOverlayView: UIView {
             liveBadge.widthAnchor.constraint(equalToConstant: 22),
             liveBadge.heightAnchor.constraint(equalToConstant: 22)
         ])
+
+        let flashCenter = seekFlashLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
+        flashCenter.isActive = true
+        seekFlashCenterX = flashCenter
+    }
+
+    private static func thumbImage(diameter: CGFloat) -> UIImage {
+        UIGraphicsImageRenderer(size: CGSize(width: diameter, height: diameter)).image { _ in
+            UIColor.white.setFill()
+            UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
+        }
+    }
+
+    private func buildAdCover() {
+        adCover.translatesAutoresizingMaskIntoConstraints = false
+        adCover.isHidden = true
+        adCover.isUserInteractionEnabled = false
+        addSubview(adCover)
+
+        adIcon.tintColor = .white
+        adIcon.contentMode = .scaleAspectFit
+        adIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 30, weight: .regular)
+
+        adTitleLabel.text = "Ad break"
+        adTitleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        adTitleLabel.textColor = .white
+        adTitleLabel.textAlignment = .center
+
+        adCountdownLabel.font = .monospacedDigitSystemFont(ofSize: 40, weight: .bold)
+        adCountdownLabel.textColor = .white
+        adCountdownLabel.textAlignment = .center
+
+        adSubtitleLabel.text = "Your stream resumes automatically"
+        adSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        adSubtitleLabel.textColor = UIColor.white.withAlphaComponent(0.7)
+        adSubtitleLabel.textAlignment = .center
+        adSubtitleLabel.numberOfLines = 0
+
+        let stack = UIStackView(arrangedSubviews: [adIcon, adTitleLabel, adCountdownLabel, adSubtitleLabel])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 6
+        stack.setCustomSpacing(2, after: adCountdownLabel)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        adCover.contentView.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: adCover.contentView.centerYAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -24)
+        ])
     }
 
     private func configureActions() {
@@ -305,21 +401,37 @@ final class VideoOverlayView: UIView {
         qualityButton.addTarget(self, action: #selector(didTapQuality), for: .touchUpInside)
         pipButton.addTarget(self, action: #selector(didTapPip), for: .touchUpInside)
         muteButton.addTarget(self, action: #selector(didTapMute), for: .touchUpInside)
+        fullscreenButton.addTarget(self, action: #selector(didTapFullscreen), for: .touchUpInside)
+        speedButton.addTarget(self, action: #selector(didTapSpeed), for: .touchUpInside)
+        scrubber.addTarget(self, action: #selector(scrubBegan), for: .touchDown)
+        scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
+        scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside])
 
         backButton.accessibilityLabel = "Back"
         playPauseButton.accessibilityLabel = "Play"
         qualityButton.accessibilityLabel = "Quality"
         pipButton.accessibilityLabel = "Picture in Picture"
         muteButton.accessibilityLabel = "Mute"
+        fullscreenButton.accessibilityLabel = "Fullscreen"
+        speedButton.accessibilityLabel = "Playback Speed"
         liveBadge.isAccessibilityElement = true
         liveBadge.accessibilityLabel = "Live"
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        addGestureRecognizer(doubleTap)
         addGestureRecognizer(tap)
+        tap.require(toFail: doubleTap)
     }
 
     @objc private func didTapBackground() {
         toggleControls()
+    }
+
+    @objc private func didDoubleTap(_ recognizer: UITapGestureRecognizer) {
+        let forward = recognizer.location(in: self).x > bounds.midX
+        delegate?.videoOverlay(self, didDoubleTapForward: forward)
     }
 
     @objc private func didTapBack() {
@@ -349,6 +461,93 @@ final class VideoOverlayView: UIView {
         delegate?.videoOverlayDidTapMute(self)
     }
 
+    @objc private func didTapFullscreen() {
+        scheduleAutoHide()
+        delegate?.videoOverlayDidTapFullscreen(self)
+    }
+
+    @objc private func didTapSpeed() {
+        scheduleAutoHide()
+        delegate?.videoOverlayDidTapSpeed(self, from: speedButton)
+    }
+
+    @objc private func scrubBegan() {
+        isScrubbing = true
+        cancelAutoHide()
+        delegate?.videoOverlayDidBeginScrubbing(self)
+    }
+
+    @objc private func scrubChanged() {
+        currentTimeLabel.text = Self.formatTime(TimeInterval(scrubber.value) * knownDuration)
+    }
+
+    @objc private func scrubEnded() {
+        isScrubbing = false
+        if knownDuration > 0 {
+            delegate?.videoOverlay(self, didCommitScrubTo: TimeInterval(scrubber.value) * knownDuration)
+        }
+        scheduleAutoHide()
+    }
+
+    func isScrubberTouch(_ touch: UITouch) -> Bool {
+        guard !scrubRow.isHidden, let touched = touch.view else { return false }
+        return touched === scrubber || touched.isDescendant(of: scrubRow)
+    }
+
+    func setSeekable(_ seekable: Bool) {
+        isSeekable = seekable
+        scrubRow.isHidden = !seekable
+        speedButton.isHidden = !seekable
+    }
+
+    func setProgress(_ progress: PlaybackProgress) {
+        guard isSeekable, !isScrubbing else { return }
+        knownDuration = progress.duration
+        scrubber.isEnabled = progress.duration > 0
+        durationLabel.text = Self.formatTime(progress.duration)
+        currentTimeLabel.text = Self.formatTime(progress.current)
+        if progress.duration > 0 {
+            scrubber.value = Float(min(1, max(0, progress.current / progress.duration)))
+        }
+    }
+
+    func setFullscreen(_ fullscreen: Bool) {
+        let symbol = fullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
+        fullscreenButton.setImage(
+            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
+            for: .normal
+        )
+    }
+
+    func setSpeed(_ text: String?) {
+        var config = speedButton.configuration ?? .plain()
+        config.title = text
+        config.attributedTitle = text.map {
+            var attr = AttributedString($0)
+            attr.font = .monospacedDigitSystemFont(ofSize: 12, weight: .bold)
+            return attr
+        }
+        config.imagePadding = 3
+        speedButton.configuration = config
+    }
+
+    func flashSeek(seconds: Int, forward: Bool) {
+        seekFlashLabel.text = (forward ? "+" : "−") + "\(seconds)s"
+        seekFlashCenterX?.constant = (forward ? 1 : -1) * bounds.width * 0.28
+        seekFlashLabel.layer.removeAllAnimations()
+        seekFlashLabel.alpha = 1
+        UIView.animate(withDuration: 0.45, delay: 0.2, options: [.curveEaseOut]) {
+            self.seekFlashLabel.alpha = 0
+        }
+    }
+
+    private static func formatTime(_ seconds: TimeInterval) -> String {
+        guard seconds.isFinite, seconds >= 0 else { return "0:00" }
+        let total = Int(seconds.rounded())
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
     func setMuted(_ muted: Bool) {
         let symbol = muted ? "speaker.slash.fill" : "speaker.wave.2.fill"
         muteButton.setImage(
@@ -356,6 +555,28 @@ final class VideoOverlayView: UIView {
             for: .normal
         )
         muteButton.accessibilityLabel = muted ? "Unmute" : "Mute"
+    }
+
+    private static func makeTimeLabel() -> UILabel {
+        let label = UILabel()
+        label.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .white
+        label.text = "0:00"
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return label
+    }
+
+    private static func makeFlashLabel() -> UILabel {
+        let label = UILabel()
+        label.font = .monospacedDigitSystemFont(ofSize: 16, weight: .bold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.55)
+        label.layer.cornerRadius = 22
+        label.layer.masksToBounds = true
+        label.alpha = 0
+        return label
     }
 
     private static func makeButton(symbol: String, pointSize: CGFloat = 18) -> UIButton {
@@ -375,15 +596,3 @@ final class VideoOverlayView: UIView {
     }
 }
 
-private final class PaddedLabel: UILabel {
-    private let insets = UIEdgeInsets(top: 3, left: 9, bottom: 3, right: 9)
-
-    override func drawText(in rect: CGRect) {
-        super.drawText(in: rect.inset(by: insets))
-    }
-
-    override var intrinsicContentSize: CGSize {
-        let size = super.intrinsicContentSize
-        return CGSize(width: size.width + insets.left + insets.right, height: size.height + insets.top + insets.bottom)
-    }
-}
