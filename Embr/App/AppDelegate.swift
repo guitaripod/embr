@@ -1,9 +1,17 @@
 import UIKit
 import EmbrCore
 
+enum OrientationCoordinator {
+    nonisolated(unsafe) static var mask: UIInterfaceOrientationMask = .portrait
+}
+
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     private let didFirstRunKey = "didFirstRun"
+
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        OrientationCoordinator.mask
+    }
 
     func application(
         _ application: UIApplication,

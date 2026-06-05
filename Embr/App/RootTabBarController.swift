@@ -15,6 +15,10 @@ final class RootTabBarController: UITabBarController {
     private lazy var settingsNav = wrap(SettingsViewController())
     private var followingNav: UINavigationController?
 
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        OrientationCoordinator.mask
+    }
+
     init(auth: AuthService = AuthService.shared) {
         self.auth = auth
         super.init(nibName: nil, bundle: nil)
