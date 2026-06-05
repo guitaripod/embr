@@ -90,6 +90,7 @@ final class SettingsViewController: UIViewController {
     private func configureCollectionView() {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
         config.headerMode = .supplementary
+        config.footerMode = .supplementary
         let layout = UICollectionViewCompositionalLayout.list(using: config)
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = Theme.background
@@ -120,8 +121,30 @@ final class SettingsViewController: UIViewController {
             content.text = section.title
             header.contentConfiguration = content
         }
-        dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
-            collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
+        let footerRegistration = UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
+            elementKind: UICollectionView.elementKindSectionFooter
+        ) { footer, _, indexPath in
+            guard let section = Section(rawValue: indexPath.section), let text = Self.footerText(for: section) else {
+                footer.contentConfiguration = nil
+                return
+            }
+            var content = UIListContentConfiguration.footer()
+            content.text = text
+            footer.contentConfiguration = content
+        }
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            let registration = kind == UICollectionView.elementKindSectionFooter ? footerRegistration : headerRegistration
+            return collectionView.dequeueConfiguredReusableSupplementary(using: registration, for: indexPath)
+        }
+    }
+
+    private static func footerText(for section: Section) -> String? {
+        switch section {
+        case .general: return "Appearance, link handling, and haptic feedback across the app."
+        case .chat: return "Readability, message size, and which emote sets load in chat."
+        case .video: return "Stream quality, autoplay, and how chat stays in sync with the video."
+        case .account: return "Sign in with Twitch to follow channels and join chat."
+        case .about: return "Embr is an independent, open-source Twitch client. Not affiliated with Twitch."
         }
     }
 
@@ -177,6 +200,11 @@ final class SettingsViewController: UIViewController {
         cell.backgroundConfiguration = UIBackgroundConfiguration.listCell()
         var content = cell.defaultContentConfiguration()
         let settings = store.current
+        let tile = Self.iconImage(for: row)
+        content.image = tile
+        content.imageProperties.maximumSize = CGSize(width: 29, height: 29)
+        content.imageProperties.reservedLayoutSize = CGSize(width: 29, height: 29)
+        content.imageToTextPadding = 12
 
         switch row {
         case .theme:
@@ -211,7 +239,7 @@ final class SettingsViewController: UIViewController {
             }
         case .messageScale:
             sliderRow(
-                cell,
+                cell, icon: tile,
                 title: "Message Scale",
                 value: settings.messageScale, range: 0.75...1.5, step: 0.05,
                 format: { String(format: "%.2fx", $0) }
@@ -220,10 +248,10 @@ final class SettingsViewController: UIViewController {
             }
         case .fontSizeDelta:
             stepperRow(
-                cell, &content,
+                cell, icon: tile,
                 title: "Font Size Adjustment",
                 value: Double(settings.fontSizeDelta), range: -4...8, step: 1,
-                valueText: settings.fontSizeDelta >= 0 ? "+\(settings.fontSizeDelta)" : "\(settings.fontSizeDelta)"
+                format: { $0 >= 0 ? "+\(Int($0))" : "\(Int($0))" }
             ) { store, value in
                 store.update { $0.fontSizeDelta = Int(value.rounded()) }
             }
@@ -263,7 +291,7 @@ final class SettingsViewController: UIViewController {
             }
         case .chatDelaySeconds:
             sliderRow(
-                cell,
+                cell, icon: tile,
                 title: "Chat Delay",
                 value: settings.chatDelaySeconds, range: 0...10, step: 0.5,
                 format: { String(format: "%.1fs", $0) }
@@ -336,6 +364,7 @@ final class SettingsViewController: UIViewController {
 
     private func sliderRow(
         _ cell: UICollectionViewListCell,
+        icon: UIImage,
         title: String,
         value: Double,
         range: ClosedRange<Double>,
@@ -345,6 +374,7 @@ final class SettingsViewController: UIViewController {
     ) {
         cell.accessories = []
         cell.contentConfiguration = SliderRowConfiguration(
+            icon: icon,
             title: title,
             value: value,
             range: range,
@@ -359,27 +389,27 @@ final class SettingsViewController: UIViewController {
 
     private func stepperRow(
         _ cell: UICollectionViewListCell,
-        _ content: inout UIListContentConfiguration,
+        icon: UIImage,
         title: String,
         value: Double,
         range: ClosedRange<Double>,
         step: Double,
-        valueText: String,
+        format: @escaping (Double) -> String,
         action: @escaping (SettingsStore, Double) -> Void
     ) {
-        content.text = title
-        content.secondaryText = valueText
-        cell.contentConfiguration = content
-        let stepper = UIStepper()
-        stepper.minimumValue = range.lowerBound
-        stepper.maximumValue = range.upperBound
-        stepper.stepValue = step
-        stepper.value = value
-        stepper.addAction(UIAction { [weak self] act in
-            guard let self, let s = act.sender as? UIStepper else { return }
-            action(self.store, s.value)
-        }, for: .valueChanged)
-        cell.accessories = [.customView(configuration: .init(customView: stepper, placement: .trailing()))]
+        cell.accessories = []
+        cell.contentConfiguration = StepperRowConfiguration(
+            icon: icon,
+            title: title,
+            value: value,
+            range: range,
+            step: step,
+            format: format,
+            commit: { [weak self] value in
+                guard let self else { return }
+                action(self.store, value)
+            }
+        )
     }
 
     private func themeButton(selected: Settings.ThemePreference) -> UIButton {
@@ -395,6 +425,51 @@ final class SettingsViewController: UIViewController {
         button.showsMenuAsPrimaryAction = true
         button.changesSelectionAsPrimaryAction = true
         return button
+    }
+
+    private static func iconImage(for row: Row) -> UIImage {
+        let spec: (String, UIColor)
+        switch row {
+        case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
+        case .accentPurple: spec = ("paintpalette.fill", Theme.accent)
+        case .openLinksInApp: spec = ("safari.fill", .systemBlue)
+        case .haptics: spec = ("hand.tap.fill", .systemPink)
+        case .shareCrashLogs: spec = ("ladybug.fill", .systemRed)
+        case .showTimestamps: spec = ("clock.fill", .systemGray)
+        case .compactChat: spec = ("rectangle.compress.vertical", .systemTeal)
+        case .messageScale: spec = ("textformat.size", .systemIndigo)
+        case .fontSizeDelta: spec = ("character.cursor.ibeam", .systemIndigo)
+        case .showDeletedMessages: spec = ("trash.fill", .systemGray)
+        case .highlightMentions: spec = ("at", Theme.accent)
+        case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
+        case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
+        case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
+        case .defaultQuality: spec = ("slider.horizontal.3", .systemBlue)
+        case .defaultToHighest: spec = ("4k.tv.fill", .systemBlue)
+        case .autoplay: spec = ("play.fill", .systemGreen)
+        case .chatDelaySeconds: spec = ("timer", .systemOrange)
+        case .autoSyncChatDelay: spec = ("arrow.triangle.2.circlepath", .systemTeal)
+        case .keepScreenAwake: spec = ("sun.max.fill", .systemYellow)
+        case .accountStatus: spec = ("person.crop.circle.fill", Theme.accent)
+        case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
+        case .version: spec = ("info.circle.fill", .systemGray)
+        case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
+        }
+        return iconTile(spec.0, spec.1)
+    }
+
+    private static func iconTile(_ symbol: String, _ color: UIColor) -> UIImage {
+        let size = CGSize(width: 29, height: 29)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            let rect = CGRect(origin: .zero, size: size)
+            color.setFill()
+            UIBezierPath(roundedRect: rect, cornerRadius: 7).fill()
+            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+            guard let symbolImage = UIImage(systemName: symbol, withConfiguration: config)?
+                .withTintColor(.white, renderingMode: .alwaysOriginal) else { return }
+            let s = symbolImage.size
+            symbolImage.draw(in: CGRect(x: (size.width - s.width) / 2, y: (size.height - s.height) / 2, width: s.width, height: s.height))
+        }
     }
 
     private static var versionString: String {
@@ -484,6 +559,7 @@ extension SettingsViewController: UICollectionViewDelegate {
 }
 
 private struct SliderRowConfiguration: UIContentConfiguration {
+    var icon: UIImage?
     var title: String
     var value: Double
     var range: ClosedRange<Double>
@@ -500,6 +576,7 @@ private struct SliderRowConfiguration: UIContentConfiguration {
 
 @MainActor
 private final class SliderRowView: UIView, UIContentView {
+    private let iconView = UIImageView()
     private let titleLabel = UILabel()
     private let valueLabel = UILabel()
     private let slider = UISlider()
@@ -526,6 +603,9 @@ private final class SliderRowView: UIView, UIContentView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func build() {
+        iconView.contentMode = .center
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+
         titleLabel.font = .preferredFont(forTextStyle: .body)
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = Theme.primaryText
@@ -545,20 +625,28 @@ private final class SliderRowView: UIView, UIContentView {
         header.axis = .horizontal
         header.spacing = 8
 
-        let stack = UIStackView(arrangedSubviews: [header, slider])
-        stack.axis = .vertical
-        stack.spacing = 6
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        let textStack = UIStackView(arrangedSubviews: [header, slider])
+        textStack.axis = .vertical
+        textStack.spacing = 6
+
+        let row = UIStackView(arrangedSubviews: [iconView, textStack])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 11),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -11),
-            stack.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
+            iconView.widthAnchor.constraint(equalToConstant: 29),
+            iconView.heightAnchor.constraint(equalToConstant: 29),
+            row.topAnchor.constraint(equalTo: topAnchor, constant: 11),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -11),
+            row.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
         ])
     }
 
     private func apply(_ config: SliderRowConfiguration) {
+        iconView.image = config.icon
         titleLabel.text = config.title
         slider.minimumValue = Float(config.range.lowerBound)
         slider.maximumValue = Float(config.range.upperBound)
@@ -578,5 +666,132 @@ private final class SliderRowView: UIView, UIContentView {
 
     @objc private func sliderCommitted() {
         current.commit(snappedValue())
+    }
+}
+
+private struct StepperRowConfiguration: UIContentConfiguration {
+    var icon: UIImage?
+    var title: String
+    var value: Double
+    var range: ClosedRange<Double>
+    var step: Double
+    var format: (Double) -> String
+    var commit: (Double) -> Void
+
+    func makeContentView() -> UIView & UIContentView { StepperRowView(self) }
+    func updated(for state: UIConfigurationState) -> StepperRowConfiguration { self }
+}
+
+@MainActor
+private final class StepperRowView: UIView, UIContentView {
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let valueLabel = UILabel()
+    private let minusButton = UIButton(type: .system)
+    private let plusButton = UIButton(type: .system)
+    private var current: StepperRowConfiguration
+    private var liveValue: Double
+
+    var configuration: UIContentConfiguration {
+        get { current }
+        set {
+            guard let config = newValue as? StepperRowConfiguration else { return }
+            current = config
+            liveValue = config.value
+            apply(config)
+        }
+    }
+
+    init(_ configuration: StepperRowConfiguration) {
+        self.current = configuration
+        self.liveValue = configuration.value
+        super.init(frame: .zero)
+        preservesSuperviewLayoutMargins = true
+        build()
+        apply(configuration)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func build() {
+        iconView.contentMode = .center
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = Theme.primaryText
+        titleLabel.numberOfLines = 1
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        titleLabel.lineBreakMode = .byTruncatingTail
+
+        valueLabel.font = .monospacedDigitSystemFont(ofSize: 17, weight: .semibold)
+        valueLabel.textColor = Theme.primaryText
+        valueLabel.textAlignment = .center
+        valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        configureStepperButton(minusButton, symbol: "minus")
+        configureStepperButton(plusButton, symbol: "plus")
+        minusButton.addAction(UIAction { [weak self] _ in self?.step(by: -1) }, for: .touchUpInside)
+        plusButton.addAction(UIAction { [weak self] _ in self?.step(by: 1) }, for: .touchUpInside)
+
+        let control = UIStackView(arrangedSubviews: [minusButton, valueLabel, plusButton])
+        control.axis = .horizontal
+        control.alignment = .center
+        control.spacing = 2
+        control.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        control.setContentCompressionResistancePriority(.required, for: .horizontal)
+        control.backgroundColor = Theme.surfaceElevated
+        control.layer.cornerRadius = 9
+        control.layer.cornerCurve = .continuous
+        control.isLayoutMarginsRelativeArrangement = true
+        control.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 3, leading: 6, bottom: 3, trailing: 6)
+
+        let row = UIStackView(arrangedSubviews: [iconView, titleLabel, control])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            iconView.widthAnchor.constraint(equalToConstant: 29),
+            iconView.heightAnchor.constraint(equalToConstant: 29),
+            valueLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 34),
+            row.topAnchor.constraint(equalTo: topAnchor, constant: 9),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -9),
+            row.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
+        ])
+    }
+
+    private func configureStepperButton(_ button: UIButton, symbol: String) {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .bold))
+        config.baseForegroundColor = Theme.accent
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        button.configuration = config
+    }
+
+    private func apply(_ config: StepperRowConfiguration) {
+        iconView.image = config.icon
+        titleLabel.text = config.title
+        valueLabel.text = config.format(liveValue)
+        updateButtonStates()
+    }
+
+    private func step(by direction: Double) {
+        let next = min(max(liveValue + current.step * direction, current.range.lowerBound), current.range.upperBound)
+        guard next != liveValue else { return }
+        liveValue = next
+        valueLabel.text = current.format(liveValue)
+        updateButtonStates()
+        Haptics.selection()
+        current.commit(liveValue)
+    }
+
+    private func updateButtonStates() {
+        minusButton.isEnabled = liveValue > current.range.lowerBound
+        plusButton.isEnabled = liveValue < current.range.upperBound
     }
 }
