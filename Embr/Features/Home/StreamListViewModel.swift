@@ -37,15 +37,16 @@ enum StreamListLayout {
                 let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
                 let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                    heightDimension: .fractionalHeight(1.0)
+                    heightDimension: .estimated(320)
                 ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
                 let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
                     repeatingSubitem: item,
                     count: columns
                 )
                 let section = NSCollectionLayoutSection(group: group)
+                section.interGroupSpacing = 6
                 section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
                 return section
             }
@@ -142,6 +143,7 @@ final class StreamListViewModel {
     let streamsSubject = PassthroughSubject<[LiveStream], Never>()
     let loadingSubject = PassthroughSubject<Bool, Never>()
     let errorSubject = PassthroughSubject<String, Never>()
+    let avatarsSubject = PassthroughSubject<Void, Never>()
 
     private let kind: ListKind
     private let api: TwitchAPIProviding
@@ -154,6 +156,9 @@ final class StreamListViewModel {
     private var loadTask: Task<Void, Never>?
     private var generation = 0
 
+    private(set) var avatars: [String: URL] = [:]
+    private var avatarTask: Task<Void, Never>?
+
     init(kind: ListKind, api: TwitchAPIProviding = TwitchAPIClient.shared, pageSize: Int = 25) {
         self.kind = kind
         self.api = api
@@ -162,8 +167,29 @@ final class StreamListViewModel {
 
     var currentStreams: [LiveStream] { streams }
 
+    func avatarURL(for userID: String) -> URL? { avatars[userID] }
+
+    private func fetchAvatars(for streams: [LiveStream], generation: Int) {
+        let missing = streams.map(\.userID).filter { avatars[$0] == nil }
+        guard !missing.isEmpty else { return }
+        avatarTask?.cancel()
+        avatarTask = Task { [weak self] in
+            guard let self else { return }
+            for start in stride(from: 0, to: missing.count, by: 100) {
+                let chunk = Array(missing[start..<min(start + 100, missing.count)])
+                guard let users = try? await self.api.users(ids: chunk) else { continue }
+                guard !Task.isCancelled, generation == self.generation else { return }
+                for user in users where user.profileImageURL != nil {
+                    self.avatars[user.id] = user.profileImageURL
+                }
+                self.avatarsSubject.send(())
+            }
+        }
+    }
+
     func load() {
         loadTask?.cancel()
+        avatarTask?.cancel()
         generation += 1
         isLoading = false
         cursor = nil
@@ -202,6 +228,7 @@ final class StreamListViewModel {
                 streams.append(contentsOf: page.items.filter { !known.contains($0.id) })
             }
             streamsSubject.send(streams)
+            fetchAvatars(for: streams, generation: generation)
         } catch is CancellationError {
             return
         } catch {

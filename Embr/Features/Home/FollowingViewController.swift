@@ -100,6 +100,19 @@ final class FollowingViewController: UIViewController {
                 MainActor.assumeIsolated { self?.handleError(message) }
             }
             .store(in: &cancellables)
+        model.avatarsSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.reconfigureLiveAvatars() }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reconfigureLiveAvatars() {
+        var snapshot = dataSource.snapshot()
+        guard snapshot.sectionIdentifiers.contains(.live) else { return }
+        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .live))
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func loadFollowedChannels() {
@@ -176,12 +189,13 @@ final class FollowingViewController: UIViewController {
     private static func liveSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
         let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .fractionalHeight(1.0)))
-        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .estimated(320)))
+        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
         let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
             repeatingSubitem: item, count: columns)
         let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = 6
         section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0)
         section.boundarySupplementaryItems = [headerItem()]
         return section
@@ -200,8 +214,8 @@ final class FollowingViewController: UIViewController {
     }
 
     private func setUpDataSource() {
-        let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { cell, _, stream in
-            cell.configure(with: stream)
+        let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { [weak self] cell, _, stream in
+            cell.configure(with: stream, avatarURL: self?.viewModel?.avatarURL(for: stream.userID))
         }
         let channelRegistration = UICollectionView.CellRegistration<FollowedChannelCell, FollowedChannel> { [weak self] cell, _, channel in
             cell.configure(with: channel, avatarURL: self?.avatars[channel.id])

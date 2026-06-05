@@ -162,12 +162,13 @@ final class TopViewController: UIViewController {
     private static func streamsSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
         let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .fractionalHeight(1.0)))
-        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .estimated(320)))
+        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
         let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(280)),
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
             repeatingSubitem: item, count: columns)
         let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = 6
         section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
         return section
     }
@@ -191,8 +192,8 @@ final class TopViewController: UIViewController {
     }
 
     private func setUpDataSource() {
-        let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { cell, _, stream in
-            cell.configure(with: stream)
+        let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { [weak self] cell, _, stream in
+            cell.configure(with: stream, avatarURL: self?.streamsViewModel.avatarURL(for: stream.userID))
         }
         let categoryRegistration = UICollectionView.CellRegistration<CategoryCell, GameCategory> { cell, _, category in
             cell.configure(with: category)
@@ -281,6 +282,21 @@ final class TopViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+        streamsViewModel.avatarsSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.reconfigureStreamAvatars() }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reconfigureStreamAvatars() {
+        guard !showingCategories else { return }
+        var snapshot = dataSource.snapshot()
+        let streamItems = snapshot.itemIdentifiers.filter { if case .stream = $0 { return true } else { return false } }
+        guard !streamItems.isEmpty else { return }
+        snapshot.reconfigureItems(streamItems)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func applyStreams(_ streams: [LiveStream]) {
