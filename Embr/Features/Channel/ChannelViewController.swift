@@ -277,8 +277,23 @@ final class ChannelViewController: UIViewController {
         view.layoutIfNeeded()
     }
 
+    private var fullscreenChatHidden = false
+
+    private func toggleFullscreenChat() {
+        guard isVideoFullscreen else { return }
+        fullscreenChatHidden.toggle()
+        chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
+        Haptics.impact(.light)
+        UIView.animate(withDuration: 0.25) {
+            self.chatOverlay.alpha = self.fullscreenChatHidden ? 0 : 1
+        }
+    }
+
     private func installChatOverlay(chat: ChatViewController) {
         chatContainer.isHidden = true
+        fullscreenChatHidden = false
+        chatOverlay.alpha = 1
+        chatOverlay.isUserInteractionEnabled = true
         chatOverlay.translatesAutoresizingMaskIntoConstraints = false
         chatOverlay.backgroundColor = Theme.background.withAlphaComponent(0.35)
         videoContainer.addSubview(chatOverlay)
@@ -313,6 +328,9 @@ final class ChannelViewController: UIViewController {
         let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
         video.onFullscreenChange = { [weak self] fullscreen in
             self?.setVideoFullscreen(fullscreen)
+        }
+        video.onDoubleTapToggleChat = { [weak self] in
+            self?.toggleFullscreenChat()
         }
         addChild(video)
         video.view.translatesAutoresizingMaskIntoConstraints = false
