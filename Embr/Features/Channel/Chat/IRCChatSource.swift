@@ -9,6 +9,7 @@ actor IRCChatSource: ChatSource {
 
     private var session: URLSession?
     private var socket: URLSessionWebSocketTask?
+    private var reconnectTask: Task<Void, Never>?
     private var generation = 0
     private var continuation: AsyncStream<ChatEvent>.Continuation?
     private var buffer = ""
@@ -189,15 +190,32 @@ actor IRCChatSource: ChatSource {
         guard !stopped else { return }
         teardownSocket()
         attempt += 1
+        guard attempt <= Self.maxAttempts else {
+            logger.warn("IRC gave up after \(attempt - 1) attempts", category: .chat)
+            continuation?.yield(.connection(.disconnected(reason: "Tap to reconnect")))
+            return
+        }
         let delay = Self.backoffSeconds(attempt: attempt)
         continuation?.yield(.connection(.reconnecting(attempt: attempt)))
-        Task { [weak self] in
+        reconnectTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            if Task.isCancelled { return }
             await self?.connect()
         }
     }
 
+    private static let maxAttempts = 10
+
+    func wake() async {
+        guard !stopped, socket == nil else { return }
+        logger.info("IRC wake → reconnect", category: .chat)
+        attempt = 0
+        connect()
+    }
+
     private func teardownSocket() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
         socket?.cancel(with: .goingAway, reason: nil)
         socket = nil
     }

@@ -17,6 +17,7 @@ actor EventSubChatSource: ChatSource {
     private var nextGeneration = 0
     private var watchdogTask: Task<Void, Never>?
     private var subscribeTask: Task<Void, Never>?
+    private var reconnectTask: Task<Void, Never>?
     private var continuation: AsyncStream<ChatEvent>.Continuation?
     private var keepaliveSeconds: Int
     private var lastKeepalive = Date()
@@ -127,11 +128,12 @@ actor EventSubChatSource: ChatSource {
             if isReconnect {
                 promote(generation: generation)
             }
-            attempt = 0
             keepaliveSeconds = keepalive ?? defaultKeepalive
             lastKeepalive = Date()
             startWatchdog()
-            if !isReconnect {
+            if isReconnect {
+                attempt = 0
+            } else {
                 scheduleSubscription(sessionID: sessionID)
             }
 
@@ -162,9 +164,27 @@ actor EventSubChatSource: ChatSource {
 
         case .revocation(let reason):
             logger.warn("EventSub revocation: \(reason)", category: .eventsub)
-            continuation?.yield(.notice(SystemNotice(text: "Chat subscription revoked (\(reason)). Reconnecting.", isError: true)))
-            scheduleReconnect()
+            if Self.isPermanentRevocation(reason) {
+                teardownSockets()
+                continuation?.yield(.connection(.disconnected(reason: "Chat unavailable")))
+            } else {
+                continuation?.yield(.notice(SystemNotice(text: "Chat subscription revoked. Reconnecting.", isError: true)))
+                scheduleReconnect()
+            }
         }
+    }
+
+    private static func isPermanentRevocation(_ reason: String) -> Bool {
+        ["authorization_revoked", "user_removed", "version_removed"].contains(reason)
+    }
+
+    func wake() async {
+        guard !stopped else { return }
+        let stale = sockets.isEmpty || Date().timeIntervalSince(lastKeepalive) > Double(keepaliveSeconds)
+        guard stale else { return }
+        logger.info("EventSub wake → reconnect", category: .eventsub)
+        attempt = 0
+        connect()
     }
 
     private func promote(generation: Int) {
@@ -196,12 +216,19 @@ actor EventSubChatSource: ChatSource {
                 token: token
             )
             guard !stopped else { return }
+            attempt = 0
             continuation?.yield(.connection(.connected))
             logger.info("EventSub subscribed to chat for \(channel.broadcasterLogin)", category: .eventsub)
         } catch {
             if stopped { return }
+            let apiError = error as? APIError
+            if apiError == .unauthorized || apiError == .forbidden {
+                logger.warn("EventSub subscribe unauthorized; chat disabled until re-auth", category: .eventsub)
+                teardownSockets()
+                continuation?.yield(.connection(.disconnected(reason: "Sign in to chat")))
+                return
+            }
             logger.error("EventSub subscription failed: \(error)", category: .eventsub)
-            continuation?.yield(.notice(SystemNotice(text: "Failed to join chat.", isError: true)))
             scheduleReconnect()
         }
     }
@@ -235,15 +262,25 @@ actor EventSubChatSource: ChatSource {
         guard !stopped else { return }
         teardownSockets()
         attempt += 1
+        guard attempt <= Self.maxAttempts else {
+            logger.warn("EventSub gave up after \(attempt - 1) attempts", category: .eventsub)
+            continuation?.yield(.connection(.disconnected(reason: "Tap to reconnect")))
+            return
+        }
         let delay = Self.backoffSeconds(attempt: attempt)
         continuation?.yield(.connection(.reconnecting(attempt: attempt)))
-        Task { [weak self] in
+        reconnectTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            if Task.isCancelled { return }
             await self?.connect()
         }
     }
 
+    private static let maxAttempts = 10
+
     private func teardownSockets() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
         watchdogTask?.cancel()
         watchdogTask = nil
         subscribeTask?.cancel()

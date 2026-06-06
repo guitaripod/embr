@@ -67,6 +67,11 @@ actor ChatRoom {
         continuation = nil
     }
 
+    func wake() async {
+        guard !stopped else { return }
+        await source?.wake()
+    }
+
     func send(_ text: String, replyParentID: String?) async throws -> SendResult {
         guard let user = await auth.currentUser() else {
             throw APIError.unauthorized

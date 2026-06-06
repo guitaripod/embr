@@ -51,6 +51,10 @@ final class ChatViewModel {
         }
     }
 
+    func wake() {
+        Task { await room.wake() }
+    }
+
     func updateWidth(_ width: CGFloat) {
         Task { await store.updateWidth(width) }
     }

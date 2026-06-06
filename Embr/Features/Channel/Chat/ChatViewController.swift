@@ -58,8 +58,28 @@ final class ChatViewController: UIViewController {
         setUpOverlays()
         setUpInput()
         setUpKeyboardObservers()
+        setUpReconnectObservers()
         bind()
         viewModel.start()
+    }
+
+    private func setUpReconnectObservers() {
+        statusBar.onTapReconnect = { [weak self] in
+            Haptics.selection()
+            self?.viewModel.wake()
+        }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleForegroundWake),
+            name: UIApplication.didBecomeActiveNotification, object: nil
+        )
+        NetworkMonitor.shared.restored
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.viewModel.wake() }
+            .store(in: &cancellables)
+    }
+
+    @objc private func handleForegroundWake() {
+        viewModel.wake()
     }
 
     override func viewDidLayoutSubviews() {
@@ -514,20 +534,30 @@ extension ChatViewController: ChatInputViewDelegate {
 
 @MainActor
 private final class ConnectionStatusBar: UIView {
+    var onTapReconnect: (() -> Void)?
+
     private let icon = UIImageView()
     private let label = UILabel()
     private let roomStateLabel = UILabel()
     private let statusRow = UIStackView()
     private var noticeDismiss: DispatchWorkItem?
     private var lastStatus: ConnectionStatus = .idle
+    private var canReconnect = false
 
     init() {
         super.init(frame: .zero)
         setUp()
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        addGestureRecognizer(tap)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    @objc private func handleTap() {
+        guard canReconnect else { return }
+        onTapReconnect?()
+    }
 
     func showNotice(_ notice: SystemNotice) {
         show(
@@ -554,6 +584,7 @@ private final class ConnectionStatusBar: UIView {
     }
 
     private func applyStatus(_ status: ConnectionStatus) {
+        canReconnect = false
         switch status {
         case .idle, .connected:
             statusRow.isHidden = true
@@ -564,7 +595,8 @@ private final class ConnectionStatusBar: UIView {
         case .reconnecting(let attempt):
             show(text: "Reconnecting (\(attempt))…", symbol: "arrow.triangle.2.circlepath", pulse: true, color: Theme.slowMode)
         case .disconnected(let reason):
-            show(text: reason ?? "Disconnected", symbol: "exclamationmark.triangle.fill", pulse: false, color: .systemRed)
+            canReconnect = true
+            show(text: reason ?? "Disconnected · Tap to reconnect", symbol: "arrow.clockwise", pulse: false, color: .systemRed)
         }
     }
 
