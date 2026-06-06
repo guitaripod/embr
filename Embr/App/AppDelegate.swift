@@ -19,6 +19,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         performFirstRunIfNeeded()
         _ = AppContainer.shared
+        NetworkMonitor.shared.start()
         AppLogger.shared.info("app launched", category: .app)
         return true
     }
