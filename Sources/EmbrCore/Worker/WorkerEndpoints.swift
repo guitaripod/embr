@@ -35,6 +35,14 @@ public struct WorkerEndpoints: Sendable {
         HTTPRequest(method: .get, url: url(for: "/playback/vod/\(escape(id))"))
     }
 
+    public func channelEvents(login: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/events/\(escape(login))"))
+    }
+
+    public static func decodeChannelEvents(_ data: Data) throws -> ChannelEvents {
+        try TwitchJSON.decode(ChannelEvents.self, from: data)
+    }
+
     public static func decodeToken(_ data: Data) throws -> WorkerAPI.TokenResponse {
         try TwitchJSON.decode(WorkerAPI.TokenResponse.self, from: data)
     }
