@@ -21,6 +21,35 @@ enum Theme {
     static let subscribersOnly = UIColor.systemGreen
     static let slowMode = UIColor.systemOrange
 
+    static let cheerHighlight = UIColor(red: 0.61, green: 0.24, blue: 0.91, alpha: 1.0).withAlphaComponent(0.14)
+
+    /// Twitch bits-tier color for a cheer amount.
+    static func cheerColor(forBits bits: Int) -> UIColor {
+        switch bits {
+        case ..<100: return UIColor(red: 0.60, green: 0.60, blue: 0.60, alpha: 1.0)
+        case 100..<1000: return UIColor(red: 0.61, green: 0.24, blue: 0.91, alpha: 1.0)
+        case 1000..<5000: return UIColor(red: 0.11, green: 0.70, blue: 0.65, alpha: 1.0)
+        case 5000..<10000: return UIColor(red: 0.0, green: 0.60, blue: 1.0, alpha: 1.0)
+        default: return UIColor(red: 0.95, green: 0.19, blue: 0.13, alpha: 1.0)
+        }
+    }
+
+    /// Accent color for a chat system notice, by kind.
+    static func noticeColor(_ kind: NoticeKind) -> UIColor {
+        switch kind {
+        case .sub, .resub, .subGift, .communitySubGift, .giftPaidUpgrade, .primePaidUpgrade:
+            return subscribersOnly
+        case .raid, .unraid:
+            return UIColor(red: 0.0, green: 0.70, blue: 0.55, alpha: 1.0)
+        case .announcement:
+            return accent
+        case .bitsBadgeTier:
+            return UIColor(red: 0.61, green: 0.24, blue: 0.91, alpha: 1.0)
+        case .payItForward, .charityDonation, .other:
+            return accent
+        }
+    }
+
     static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
         UIColor { traits in traits.userInterfaceStyle == .dark ? dark : light }
     }

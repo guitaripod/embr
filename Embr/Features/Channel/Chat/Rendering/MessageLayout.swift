@@ -57,7 +57,7 @@ struct MessageLayout {
         if let notice = message.notice {
             attributed.append(NSAttributedString(string: noticeSymbol(notice.kind) + " " + notice.systemMessage, attributes: [
                 .font: usernameFont,
-                .foregroundColor: Theme.accent,
+                .foregroundColor: Theme.noticeColor(notice.kind),
             ]))
             if !message.fragments.isEmpty {
                 attributed.append(NSAttributedString(string: "\n", attributes: [.font: font]))
@@ -89,6 +89,13 @@ struct MessageLayout {
         }
 
         let bodyColor = message.isAction ? usernameColor : Theme.primaryText
+        let cheerBits = message.bits ?? 0
+        if cheerBits > 0 {
+            attributed.append(NSAttributedString(string: "✦ \(Self.formatBits(cheerBits)) ", attributes: [
+                .font: usernameFont,
+                .foregroundColor: Theme.cheerColor(forBits: cheerBits),
+            ]))
+        }
         let tokens = MessageTokenizer.tokens(for: message, catalog: catalog)
         var emoteTokens: [(emote: Emote, attributedIndex: Int)] = []
         var links: [LaidOutMessage.LinkSpan] = []
@@ -120,7 +127,7 @@ struct MessageLayout {
             case .cheermote(let ref):
                 attributed.append(NSAttributedString(string: ref.text, attributes: [
                     .font: usernameFont,
-                    .foregroundColor: Theme.accent,
+                    .foregroundColor: Theme.cheerColor(forBits: ref.bits),
                 ]))
             case .emote(let emote):
                 let index = attributed.length
@@ -172,8 +179,14 @@ struct MessageLayout {
             replyHeight: replyHeight,
             isHighlighted: isHighlighted,
             mentionsCurrentUser: mentionsCurrentUser,
-            isAnnouncement: message.notice?.kind == .announcement
+            isAnnouncement: message.notice?.kind == .announcement,
+            isCheer: cheerBits > 0
         )
+    }
+
+    private static func formatBits(_ bits: Int) -> String {
+        if bits >= 1000 { return String(format: "%.1fK", Double(bits) / 1000) }
+        return "\(bits)"
     }
 
     private func noticeSymbol(_ kind: NoticeKind) -> String {

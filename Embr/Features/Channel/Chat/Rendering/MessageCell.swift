@@ -99,9 +99,15 @@ final class MessageCell: UICollectionViewCell {
         self.message = message
         self.animator = animator
 
-        let highlight = laidOut.mentionsCurrentUser || laidOut.isHighlighted || laidOut.isAnnouncement
+        let highlight = laidOut.mentionsCurrentUser || laidOut.isHighlighted || laidOut.isAnnouncement || laidOut.isCheer
         highlightView.isHidden = !highlight
-        highlightView.backgroundColor = laidOut.mentionsCurrentUser ? Theme.mentionBackground : Theme.highlightedMessage
+        if laidOut.mentionsCurrentUser {
+            highlightView.backgroundColor = Theme.mentionBackground
+        } else if laidOut.isCheer {
+            highlightView.backgroundColor = Theme.cheerHighlight
+        } else {
+            highlightView.backgroundColor = Theme.highlightedMessage
+        }
 
         if message.moderation == .visible {
             textLabel.attributedText = laidOut.attributedText
