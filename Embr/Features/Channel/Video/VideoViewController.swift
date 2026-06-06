@@ -28,7 +28,6 @@ final class VideoViewController: UIViewController {
 
     private var currentState: VideoState = .idle
     private var isImmersive = false
-    private var liveReloadAttempts = 0
     private var isResolving = false
     private var resolveGeneration = 0
     private var isMuted = false
@@ -38,11 +37,26 @@ final class VideoViewController: UIViewController {
     private var adActive = false
     private var adGraceWork: DispatchWorkItem?
 
+    private var recoveryAttempts = 0
+    private var recoveryWork: DispatchWorkItem?
+    private var stallWork: DispatchWorkItem?
+    private var stableWork: DispatchWorkItem?
+    private var refreshWork: DispatchWorkItem?
+    private var resumeTarget: TimeInterval?
+    private var seekLiveOnReady = false
+    private var showingError = false
+    private static let maxRecoveryAttempts = 6
+
     private var isSeekableSource: Bool {
         switch source {
         case .live: return false
         case .vod, .clip: return true
         }
+    }
+
+    private var isClipSource: Bool {
+        if case .clip = source { return true }
+        return false
     }
 
     private var dragStartCenter: CGPoint = .zero
@@ -80,7 +94,38 @@ final class VideoViewController: UIViewController {
         installPlayerView()
         installOverlay()
         bind()
+        observeLifecycle()
         if streamActive { resolveAndLoad() }
+    }
+
+    private func observeLifecycle() {
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleForeground),
+            name: UIApplication.didBecomeActiveNotification, object: nil
+        )
+        NetworkMonitor.shared.restored
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.logger.info("network restored, recovering playback", category: .playback)
+                self?.handleForeground()
+            }
+            .store(in: &cancellables)
+    }
+
+    @objc private func handleForeground() {
+        guard streamActive, !isResolving, !showingError else { return }
+        switch currentState {
+        case .idle, .ended:
+            recoveryAttempts = 0
+            reload(preservingPosition: true)
+        case .buffering:
+            if case .live = source { player.seekToLive() }
+            player.play()
+        case .playing:
+            player.play()
+        case .paused, .loading, .error:
+            break
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -116,9 +161,11 @@ final class VideoViewController: UIViewController {
         guard active != streamActive else { return }
         streamActive = active
         guard active else {
+            cancelRecoveryTimers()
             player.pause()
             return
         }
+        recoveryAttempts = 0
         switch currentState {
         case .idle, .ended, .error:
             resolveAndLoad()
@@ -281,20 +328,28 @@ final class VideoViewController: UIViewController {
 
     private func apply(_ state: VideoState) {
         currentState = state
+        if state != .playing { stableWork?.cancel(); stableWork = nil }
         switch state {
         case .loading, .buffering:
             overlay.setBuffering(true)
+            startStallWatchdog()
         case .playing:
+            showingError = false
             overlay.clearError()
             overlay.setBuffering(false)
             overlay.setPlaying(true)
-            liveReloadAttempts = 0
+            recoveryWork?.cancel(); recoveryWork = nil
+            stallWork?.cancel(); stallWork = nil
+            armStabilityReset()
+            applyPendingSeek()
         case .paused:
             overlay.setBuffering(false)
             overlay.setPlaying(false)
+            stallWork?.cancel(); stallWork = nil
         case .idle, .ended:
             overlay.setBuffering(false)
             overlay.setPlaying(false)
+            stallWork?.cancel(); stallWork = nil
         case .error(let message):
             overlay.setBuffering(false)
             overlay.setPlaying(false)
@@ -302,22 +357,106 @@ final class VideoViewController: UIViewController {
         }
     }
 
+    /// Reset the recovery budget only after sustained playback, so a stream that
+    /// flaps .playing→.error every second walks up to the cap instead of resetting
+    /// the counter each blip and reloading forever.
+    private func armStabilityReset() {
+        stableWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.recoveryAttempts = 0 }
+        stableWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: work)
+    }
+
+    private func applyPendingSeek() {
+        if let target = resumeTarget {
+            resumeTarget = nil
+            if isSeekableSource { player.seek(to: target) }
+        }
+        if seekLiveOnReady {
+            seekLiveOnReady = false
+            if case .live = source { player.seekToLive() }
+        }
+    }
+
     private func handlePlaybackError(_ message: String) {
         guard !isResolving else { return }
-        if case .live = source {
-            if adActive {
-                logger.info("ad-break reload: \(message)", category: .playback)
-                resolveAndLoad()
-                return
-            }
-            if liveReloadAttempts < 1 {
-                liveReloadAttempts += 1
-                logger.warn("Live playback error, re-resolving once: \(message)", category: .playback)
-                resolveAndLoad()
-                return
-            }
+        if adActive {
+            logger.info("ad-break reload: \(message)", category: .playback)
+            reload(preservingPosition: false)
+            return
         }
-        overlay.showError("Playback stopped.", symbol: "exclamationmark.triangle", canRetry: true)
+        logger.warn("playback error, scheduling recovery: \(message)", category: .playback)
+        scheduleRecovery()
+    }
+
+    /// Bounded exponential-backoff recovery: re-resolve and reload, escalating the
+    /// delay each attempt, and only surfacing the manual error card after the cap —
+    /// so a transient blip self-heals instead of parking the user on an error.
+    private func scheduleRecovery() {
+        guard streamActive, !isResolving, !adActive else { return }
+        recoveryWork?.cancel()
+        guard recoveryAttempts < Self.maxRecoveryAttempts else {
+            showingError = true
+            stallWork?.cancel(); stallWork = nil
+            player.pause()
+            overlay.showError("Playback stopped.", symbol: "exclamationmark.triangle", canRetry: true)
+            return
+        }
+        let delay = min(pow(2.0, Double(recoveryAttempts)), 16)
+        recoveryAttempts += 1
+        let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true) }
+        recoveryWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+    }
+
+    private func reload(preservingPosition: Bool) {
+        if preservingPosition, isSeekableSource, lastProgress.current > 0 {
+            resumeTarget = lastProgress.current
+        }
+        if case .live = source { seekLiveOnReady = true }
+        resolveAndLoad()
+    }
+
+    private func startStallWatchdog() {
+        guard !adActive, !showingError else { return }
+        stallWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.handleStall() }
+        stallWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: work)
+    }
+
+    private func handleStall() {
+        stallWork = nil
+        guard streamActive, !isResolving, !adActive else { return }
+        switch currentState {
+        case .buffering, .loading:
+            logger.warn("stall watchdog fired after 15s buffering", category: .playback)
+            scheduleRecovery()
+        default:
+            break
+        }
+    }
+
+    private func scheduleTokenRefresh(_ expiresAt: Date?) {
+        refreshWork?.cancel()
+        refreshWork = nil
+        guard !isClipSource else { return }
+        let interval: TimeInterval = expiresAt.map { max(60, $0.timeIntervalSinceNow - 120) } ?? (50 * 60)
+        let work = DispatchWorkItem { [weak self] in
+            self?.logger.info("playback token nearing expiry, re-resolving", category: .playback)
+            self?.reload(preservingPosition: true)
+        }
+        refreshWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: work)
+    }
+
+    private func cancelRecoveryTimers() {
+        recoveryWork?.cancel(); recoveryWork = nil
+        stallWork?.cancel(); stallWork = nil
+        stableWork?.cancel(); stableWork = nil
+        refreshWork?.cancel(); refreshWork = nil
+        resumeTarget = nil
+        seekLiveOnReady = false
     }
 
     private func resolveAndLoad() {
@@ -334,22 +473,27 @@ final class VideoViewController: UIViewController {
                 if Task.isCancelled || generation != self.resolveGeneration { return }
                 self.isResolving = false
                 self.player.load(resolution)
+                self.scheduleTokenRefresh(resolution.expiresAt)
             } catch {
                 if Task.isCancelled || generation != self.resolveGeneration { return }
                 self.isResolving = false
-                self.logger.error("Video resolve failed: \(error.localizedDescription)", category: .playback)
-                self.presentResolveFailure(error)
+                self.handleResolveFailure(error)
             }
         }
     }
 
-    private func presentResolveFailure(_ error: Error) {
-        overlay.setPlaying(false)
+    private func handleResolveFailure(_ error: Error) {
         let apiError = error as? APIError
         if apiError == .notFound || apiError == .forbidden {
+            recoveryAttempts = 0
+            recoveryWork?.cancel(); recoveryWork = nil
+            logger.info("resolve: channel offline (\(error.localizedDescription))", category: .playback)
+            overlay.setPlaying(false)
             overlay.showError("This channel isn't live right now.", symbol: "tv.slash", canRetry: true)
         } else {
-            overlay.showError("Couldn't load the stream.", symbol: "exclamationmark.triangle", canRetry: true)
+            logger.warn("resolve failed (\(error.localizedDescription)), scheduling recovery", category: .playback)
+            overlay.setPlaying(false)
+            scheduleRecovery()
         }
     }
 
@@ -446,8 +590,11 @@ final class VideoViewController: UIViewController {
         )
     }
 
-    deinit {
+    isolated deinit {
         resolveTask?.cancel()
+        cancelRecoveryTimers()
+        adGraceWork?.cancel()
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
@@ -475,7 +622,8 @@ extension VideoViewController: VideoOverlayViewDelegate {
     }
 
     func videoOverlayDidTapRetry(_ overlay: VideoOverlayView) {
-        liveReloadAttempts = 0
+        showingError = false
+        recoveryAttempts = 0
         resolveAndLoad()
     }
 
@@ -496,6 +644,7 @@ extension VideoViewController: VideoOverlayViewDelegate {
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView) {}
 
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval) {
+        resumeTarget = nil
         player.seek(to: seconds)
     }
 
@@ -505,6 +654,7 @@ extension VideoViewController: VideoOverlayViewDelegate {
             return
         }
         if isSeekableSource {
+            resumeTarget = nil
             let delta: TimeInterval = forward ? 10 : -10
             let target = max(0, min(lastProgress.current + delta, lastProgress.duration > 0 ? lastProgress.duration : .greatestFiniteMagnitude))
             player.seek(to: target)

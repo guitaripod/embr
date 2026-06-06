@@ -146,6 +146,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     func play() {
+        configureAudioSession()
         player.play()
     }
 
