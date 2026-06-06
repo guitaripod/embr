@@ -29,6 +29,13 @@ public protocol ChatSource: Sendable {
     func start() -> AsyncStream<ChatEvent>
     func stop() async
     func send(_ text: String, replyParentID: String?) async throws -> SendResult
+    /// Nudge the source to reconnect if its connection is stale or has given up
+    /// (e.g. on app foreground or network restore).
+    func wake() async
+}
+
+public extension ChatSource {
+    func wake() async {}
 }
 
 public protocol ThirdPartyEmoteSource: Sendable {
