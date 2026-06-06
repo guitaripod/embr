@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type {
   AppTokenResponse,
   Bindings,
+  ChannelEventsResponse,
   ErrorResponse,
   LoginURLResponse,
   PlaybackResponse,
@@ -12,6 +13,7 @@ import {
   buildLoginURL,
   clientCredentials,
   exchangeCode,
+  fetchChannelEvents,
   refreshToken,
   resolveLivePlayback,
   resolveVodPlayback,
@@ -194,6 +196,19 @@ app.get('/playback/vod/:id', async (c) => {
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
+});
+
+app.get('/events/:login', async (c) => {
+  let events: ChannelEventsResponse = { poll: null, prediction: null };
+  try {
+    events = await fetchChannelEvents(c.req.param('login'));
+  } catch {
+    // Best-effort: a failed poll/prediction lookup is "no active events", not an error.
+  }
+  return new Response(JSON.stringify(events), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 });
 
 app.get('/playback/:login', async (c) => {

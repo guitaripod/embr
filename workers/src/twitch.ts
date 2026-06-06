@@ -1,6 +1,11 @@
 import {
   GQL_CLIENT_ID,
   PLAYBACK_ACCESS_TOKEN_SHA256,
+  POLL_CONTEXT_SHA256,
+  PREDICTION_CONTEXT_SHA256,
+  type ChannelEventsResponse,
+  type PollDTO,
+  type PredictionDTO,
   type TwitchTokenPayload,
   type TwitchValidatePayload,
 } from './types';
@@ -192,6 +197,96 @@ export function buildUsherURL(kind: PlaybackKind, token: PlaybackAccessToken): s
     return `${USHER_LIVE}/${encodeURIComponent(kind.login)}.m3u8?${params.toString()}`;
   }
   return `${USHER_VOD}/${encodeURIComponent(kind.id)}.m3u8?${params.toString()}`;
+}
+
+async function gqlPersisted(
+  operationName: string,
+  variables: Record<string, unknown>,
+  hash: string,
+): Promise<unknown> {
+  const res = await fetch(GQL_URL, {
+    method: 'POST',
+    headers: { 'Client-ID': GQL_CLIENT_ID, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      operationName,
+      variables,
+      extensions: { persistedQuery: { version: 1, sha256Hash: hash } },
+    }),
+  });
+  if (!res.ok) throw new TwitchError(await readTwitchError(res), res.status);
+  return await res.json();
+}
+
+function epochSeconds(iso: unknown): number {
+  if (typeof iso !== 'string') return 0;
+  const ms = Date.parse(iso);
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : 0;
+}
+
+function normalizePoll(raw: unknown): PollDTO | null {
+  const poll = (raw as any)?.data?.channel?.viewablePoll;
+  if (!poll || typeof poll.id !== 'string') return null;
+  const status = String(poll.status ?? '');
+  if (status !== 'ACTIVE') return null;
+  const choices = Array.isArray(poll.choices) ? poll.choices : [];
+  const mapped = choices.map((c: any) => ({
+    title: String(c?.title ?? ''),
+    votes: Number(c?.votes?.total ?? c?.totalVoters ?? 0),
+  }));
+  const started = epochSeconds(poll.startedAt);
+  const duration = Number(poll.durationSeconds ?? 0);
+  const endsAt = epochSeconds(poll.endedAt) || (started ? started + duration : 0);
+  return {
+    id: String(poll.id),
+    title: String(poll.title ?? 'Poll'),
+    status,
+    endsAt,
+    totalVotes: mapped.reduce((sum: number, c: { votes: number }) => sum + c.votes, 0),
+    choices: mapped,
+  };
+}
+
+function normalizePrediction(raw: unknown): PredictionDTO | null {
+  const channel = (raw as any)?.data?.community?.channel;
+  if (!channel) return null;
+  const active = Array.isArray(channel.activePredictionEvents) ? channel.activePredictionEvents : [];
+  const locked = Array.isArray(channel.lockedPredictionEvents) ? channel.lockedPredictionEvents : [];
+  const event = active[0] ?? locked[0];
+  if (!event || typeof event.id !== 'string') return null;
+  const outcomes = Array.isArray(event.outcomes) ? event.outcomes : [];
+  const created = epochSeconds(event.createdAt);
+  const window = Number(event.predictionWindowSeconds ?? 0);
+  const locksAt = epochSeconds(event.lockedAt) || (created ? created + window : 0);
+  return {
+    id: String(event.id),
+    title: String(event.title ?? 'Prediction'),
+    status: String(event.status ?? ''),
+    locksAt,
+    outcomes: outcomes.map((o: any) => ({
+      title: String(o?.title ?? ''),
+      color: String(o?.color ?? 'BLUE'),
+      points: Number(o?.totalPoints ?? 0),
+      users: Number(o?.totalUsers ?? 0),
+    })),
+  };
+}
+
+export async function fetchChannelEvents(login: string): Promise<ChannelEventsResponse> {
+  const [pollRes, predRes] = await Promise.allSettled([
+    gqlPersisted('ChannelPollContext_GetViewablePoll', { login }, POLL_CONTEXT_SHA256),
+    gqlPersisted('ChannelPointsPredictionContext', { count: 1, channelLogin: login }, PREDICTION_CONTEXT_SHA256),
+  ]);
+  const safe = <T>(fn: () => T): T | null => {
+    try {
+      return fn();
+    } catch {
+      return null;
+    }
+  };
+  return {
+    poll: pollRes.status === 'fulfilled' ? safe(() => normalizePoll(pollRes.value)) : null,
+    prediction: predRes.status === 'fulfilled' ? safe(() => normalizePrediction(predRes.value)) : null,
+  };
 }
 
 export async function resolveLivePlayback(login: string): Promise<string> {
