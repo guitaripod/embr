@@ -159,6 +159,19 @@ function proxyURLFor(c: { req: { url: string } }): { proxyBase: string } {
 /// Confirms the usher master is reachable before handing the app a URL.
 /// Offline/ended/sub-gated channels still mint a token but 404 at usher, so this
 /// surfaces a real 404 the app renders as "Channel Offline" instead of a retry loop.
+/// Extracts the PlaybackAccessToken expiry (epoch seconds) embedded in the usher
+/// URL's `token` param, so the app can proactively re-resolve before it lapses.
+function expiresFromUsher(usher: string): number | undefined {
+  try {
+    const raw = new URL(usher).searchParams.get('token');
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { expires?: number };
+    return typeof parsed.expires === 'number' ? parsed.expires : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function playbackResponse(c: { req: { url: string } }, usher: string): Promise<Response> {
   const check = await fetch(usher, { headers: { Accept: '*/*' } });
   await check.body?.cancel();
@@ -167,6 +180,8 @@ async function playbackResponse(c: { req: { url: string } }, usher: string): Pro
   }
   const { proxyBase } = proxyURLFor(c);
   const response: PlaybackResponse = { url: `${proxyBase}?src=${encodeURIComponent(usher)}` };
+  const expiresAt = expiresFromUsher(usher);
+  if (expiresAt !== undefined) response.expiresAt = expiresAt;
   return new Response(JSON.stringify(response), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
