@@ -17,6 +17,8 @@ actor AuthService: AuthControlling {
     private var loadedFromStore = false
     private var appToken: (token: String, expiresAt: Date)?
     private var validateTask: Task<Void, Never>?
+    private var refreshingTask: Task<String, Error>?
+    private var appTokenTask: Task<String, Error>?
 
     private nonisolated let stateSubject = StateSubjectBox()
 
@@ -48,6 +50,7 @@ actor AuthService: AuthControlling {
         let token = credentials?.accessToken
         credentials = nil
         appToken = nil
+        cancelTokenTasks()
         validateTask?.cancel()
         validateTask = nil
         await store.clear()
@@ -64,17 +67,30 @@ actor AuthService: AuthControlling {
         if !current.isExpiring(within: 300, now: Date()) {
             return current.accessToken
         }
+        if let task = refreshingTask {
+            return try await task.value
+        }
         guard let refreshToken = current.refreshToken else {
             throw APIError.unauthorized
         }
+        let task = Task { try await self.performRefresh(refreshToken: refreshToken, base: current) }
+        refreshingTask = task
+        defer { refreshingTask = nil }
+        return try await task.value
+    }
+
+    private func performRefresh(refreshToken: String, base: StoredCredentials) async throws -> String {
         let token = try await worker.refresh(refreshToken: refreshToken)
+        guard credentials != nil else {
+            throw APIError.unauthorized
+        }
         let refreshed = StoredCredentials(
-            userID: token.userID ?? current.userID,
-            login: token.login ?? current.login,
+            userID: token.userID ?? base.userID,
+            login: token.login ?? base.login,
             accessToken: token.accessToken,
-            refreshToken: token.refreshToken ?? current.refreshToken,
+            refreshToken: token.refreshToken ?? base.refreshToken,
             expiresAt: Date().addingTimeInterval(TimeInterval(token.expiresIn)),
-            scopes: token.scope ?? current.scopes
+            scopes: token.scope ?? base.scopes
         )
         credentials = refreshed
         await store.save(refreshed)
@@ -87,10 +103,18 @@ actor AuthService: AuthControlling {
         if let cached = appToken, cached.expiresAt.timeIntervalSinceNow > 300 {
             return cached.token
         }
-        let result = try await worker.appToken()
-        let expiresAt = Date().addingTimeInterval(TimeInterval(result.expiresIn))
-        appToken = (result.token, expiresAt)
-        return result.token
+        if let task = appTokenTask {
+            return try await task.value
+        }
+        let task = Task { () throws -> String in
+            let result = try await self.worker.appToken()
+            let expiresAt = Date().addingTimeInterval(TimeInterval(result.expiresIn))
+            self.appToken = (result.token, expiresAt)
+            return result.token
+        }
+        appTokenTask = task
+        defer { appTokenTask = nil }
+        return try await task.value
     }
 
     @MainActor
@@ -202,11 +226,19 @@ actor AuthService: AuthControlling {
     private func signOutInvalid() async {
         credentials = nil
         appToken = nil
+        cancelTokenTasks()
         validateTask?.cancel()
         validateTask = nil
         await store.clear()
         publish(.anonymous)
         AppLogger.shared.warn("stored credentials are invalid, signed out", category: .auth)
+    }
+
+    private func cancelTokenTasks() {
+        refreshingTask?.cancel()
+        refreshingTask = nil
+        appTokenTask?.cancel()
+        appTokenTask = nil
     }
 
     private func validate(accessToken: String) async throws -> TokenValidation {
