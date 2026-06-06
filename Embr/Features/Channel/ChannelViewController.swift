@@ -50,6 +50,9 @@ final class ChannelViewController: UIViewController {
     private var isVideoFullscreen = false
     private let chatOverlay = UIView()
 
+    private let eventCard = ChannelEventCardView()
+    private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
+
     init(channel: ChannelInfo, auth: AuthService = AuthService.shared, store: SettingsStore = .shared) {
         self.channel = channel
         self.auth = auth
@@ -72,11 +75,13 @@ final class ChannelViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
+        eventsPoller.start()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        eventsPoller.stop()
     }
 
     override func viewDidLoad() {
@@ -91,7 +96,29 @@ final class ChannelViewController: UIViewController {
         loadChildren()
         loadStreamInfo()
         observeAuth()
+        setUpEventCard()
         WatchHistoryStore.shared.record(id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
+    }
+
+    private func setUpEventCard() {
+        eventCard.translatesAutoresizingMaskIntoConstraints = false
+        eventCard.isHidden = true
+        chatContainer.addSubview(eventCard)
+        NSLayoutConstraint.activate([
+            eventCard.topAnchor.constraint(equalTo: chatContainer.safeAreaLayoutGuide.topAnchor, constant: 8),
+            eventCard.leadingAnchor.constraint(equalTo: chatContainer.leadingAnchor, constant: 8),
+            eventCard.trailingAnchor.constraint(equalTo: chatContainer.trailingAnchor, constant: -8)
+        ])
+        eventsPoller.events
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] events in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.eventCard.update(events)
+                    self.chatContainer.bringSubviewToFront(self.eventCard)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func loadStreamInfo() {
