@@ -144,36 +144,72 @@ interface GQLPlaybackResponse {
   errors?: Array<{ message?: string }>;
 }
 
-export async function fetchPlaybackAccessToken(kind: PlaybackKind): Promise<PlaybackAccessToken> {
-  const payload = {
-    operationName: 'PlaybackAccessToken',
+const PLAYBACK_FULL_QUERY =
+  'query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!, $platform: String!) {' +
+  '  streamPlaybackAccessToken(channelName: $login, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) { value signature __typename }' +
+  '  videoPlaybackAccessToken(id: $vodID, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isVod) { value signature __typename }' +
+  '}';
+
+function deviceID(): string {
+  return crypto.randomUUID().replace(/-/g, '');
+}
+
+function playbackPayload(kind: PlaybackKind, persisted: boolean): Record<string, unknown> {
+  if (persisted) {
+    return {
+      operationName: 'PlaybackAccessToken',
+      variables: playbackVariables(kind),
+      extensions: { persistedQuery: { version: 1, sha256Hash: PLAYBACK_ACCESS_TOKEN_SHA256 } },
+    };
+  }
+  return {
+    operationName: 'PlaybackAccessToken_Template',
+    query: PLAYBACK_FULL_QUERY,
     variables: playbackVariables(kind),
-    extensions: {
-      persistedQuery: {
-        version: 1,
-        sha256Hash: PLAYBACK_ACCESS_TOKEN_SHA256,
-      },
-    },
   };
+}
+
+interface PlaybackTokenResult {
+  token?: { value: string; signature: string };
+  persistedMiss: boolean;
+}
+
+async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean): Promise<PlaybackTokenResult> {
   const res = await fetch(GQL_URL, {
     method: 'POST',
     headers: {
       'Client-ID': GQL_CLIENT_ID,
       'Content-Type': 'application/json',
+      'Device-ID': deviceID(),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(playbackPayload(kind, persisted)),
   });
   if (!res.ok) throw new TwitchError(await readTwitchError(res), res.status);
   const json = (await res.json()) as GQLPlaybackResponse;
   if (json.errors && json.errors.length > 0) {
-    throw new TwitchError(json.errors[0]?.message ?? 'gql playback error', 502);
+    const message = json.errors[0]?.message ?? 'gql playback error';
+    if (message.toLowerCase().includes('persistedquerynotfound')) {
+      return { persistedMiss: true };
+    }
+    throw new TwitchError(message, 502);
   }
   const token =
     kind.type === 'live'
       ? json.data?.streamPlaybackAccessToken
       : json.data?.videoPlaybackAccessToken;
-  if (!token) throw new TwitchError('playback access token unavailable', 404);
-  return { value: token.value, signature: token.signature };
+  return { token: token ?? undefined, persistedMiss: false };
+}
+
+/// Mints a PlaybackAccessToken, retrying with the full GraphQL query if the
+/// persisted-query hash has rotated (Twitch changes it without notice), so the
+/// anonymous fallback path keeps working without a redeploy.
+export async function fetchPlaybackAccessToken(kind: PlaybackKind): Promise<PlaybackAccessToken> {
+  let result = await requestPlaybackToken(kind, true);
+  if (result.persistedMiss) {
+    result = await requestPlaybackToken(kind, false);
+  }
+  if (!result.token) throw new TwitchError('playback access token unavailable', 404);
+  return { value: result.token.value, signature: result.token.signature };
 }
 
 const USHER_LIVE = 'https://usher.ttvnw.net/api/channel/hls';

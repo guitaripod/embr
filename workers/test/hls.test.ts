@@ -106,6 +106,51 @@ describe('stripAds', () => {
     expect(out.split('\n').filter((l) => l.startsWith('#EXT-X-PROGRAM-DATE-TIME'))).toHaveLength(2);
   });
 
+  it('strips a real 2026 pod with interleaved ad-tracking date-ranges', () => {
+    const input = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:3',
+      '#EXT-X-TARGETDURATION:5',
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      '#EXT-X-DATERANGE:ID="playlist-session-1",CLASS="twitch-session",START-DATE="2026-06-07T09:09:15Z",END-ON-NEXT=YES,X-TV-TWITCH-SESSIONID="abc"',
+      '#EXT-X-DATERANGE:ID="stitched-ad-1780823349-30235000000",CLASS="twitch-stitched-ad",START-DATE="2026-06-07T09:09:09Z",DURATION=6.0,X-TV-TWITCH-AD-POD-POSITION="0"',
+      '#EXT-X-DATERANGE:ID="source-1",CLASS="twitch-stream-source",START-DATE="2026-06-07T09:09:09Z",END-ON-NEXT=YES,X-TV-TWITCH-STREAM-SOURCE="Amazon|247"',
+      '#EXT-X-DATERANGE:ID="trigger-1",CLASS="twitch-trigger",START-DATE="2026-06-07T09:09:09Z",END-ON-NEXT=YES,X-TV-TWITCH-TRIGGER-URL="https://t.example"',
+      '#EXT-X-DATERANGE:ID="quartile-1-0",CLASS="twitch-ad-quartile",START-DATE="2026-06-07T09:09:09Z",DURATION=2.0,X-TV-TWITCH-AD-QUARTILE="0"',
+      '#EXT-X-DISCONTINUITY',
+      '#EXT-X-PROGRAM-DATE-TIME:2026-06-07T09:09:09.768Z',
+      '#EXTINF:2.000,Amazon|2474283100494',
+      'ad0.ts',
+      '#EXT-X-PROGRAM-DATE-TIME:2026-06-07T09:09:11.768Z',
+      '#EXTINF:2.000,Amazon|2474283100494',
+      'ad1.ts',
+      '#EXT-X-DATERANGE:ID="quartile-1-1",CLASS="twitch-ad-quartile",START-DATE="2026-06-07T09:09:15Z",DURATION=2.0,X-TV-TWITCH-AD-QUARTILE="1"',
+      '#EXT-X-PROGRAM-DATE-TIME:2026-06-07T09:09:13.768Z',
+      '#EXTINF:2.000,Amazon|2474283100494',
+      'ad2.ts',
+      '#EXT-X-DISCONTINUITY',
+      '#EXT-X-PROGRAM-DATE-TIME:2026-06-07T09:09:15.768Z',
+      '#EXTINF:2.000,live',
+      'seg0.ts',
+    ].join('\n');
+
+    const out = stripAds(input);
+
+    expect(out).not.toContain('ad0.ts');
+    expect(out).not.toContain('ad1.ts');
+    expect(out).not.toContain('ad2.ts');
+    expect(out).not.toContain('Amazon');
+    expect(out).not.toContain('twitch-stitched-ad');
+    expect(out).not.toContain('twitch-stream-source');
+    expect(out).not.toContain('twitch-trigger');
+    expect(out).not.toContain('twitch-ad-quartile');
+    expect(out).not.toContain('#EXT-X-DISCONTINUITY');
+    expect(out).toContain('seg0.ts');
+    expect(out).toContain('twitch-session');
+    expect(out).toContain('#EXT-X-MEDIA-SEQUENCE:0');
+    expect(out.split('\n').filter((l) => l.endsWith('.ts'))).toEqual(['seg0.ts']);
+  });
+
   it('matches ad DATERANGE by ID prefix when CLASS is absent', () => {
     const input = [
       '#EXTM3U',

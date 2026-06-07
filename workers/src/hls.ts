@@ -38,12 +38,15 @@ function nextSegmentURIIndex(lines: string[], from: number): number {
 
 /// Removes Twitch stitched-ad segments from a media playlist while keeping it valid.
 ///
-/// Drops `#EXT-X-DATERANGE` ad markers (CLASS="twitch-stitched-ad" or ID prefixed
-/// "stitched-ad-"), the `#EXTINF` segments inside the ad window or whose title
-/// contains "Amazon" (plus the following URI line), and the `#EXT-X-DISCONTINUITY`
-/// tags bracketing the ad block. The window is opened by the ad marker and closed
-/// by the first content segment (a non-empty, non-"Amazon" `#EXTINF` title) or the
-/// closing discontinuity. Preserves `#EXT-X-TWITCH-PREFETCH` low-latency tags.
+/// Opens an ad window on a stitched-ad `#EXT-X-DATERANGE` (CLASS="twitch-stitched-ad"
+/// or ID prefixed "stitched-ad-") and keeps it open across the ad-tracking date-ranges
+/// Twitch interleaves through a real pod (twitch-stream-source, twitch-trigger,
+/// twitch-ad-quartile) and their `#EXT-X-DISCONTINUITY` / `#EXT-X-PROGRAM-DATE-TIME`
+/// lines — all dropped — until a content segment (a non-empty, non-"Amazon" `#EXTINF`
+/// title, after at least one ad segment) or an `#EXT-X-TWITCH-PREFETCH` resumes the
+/// broadcast. Ad segments (in-window or "Amazon"-titled) and their preceding
+/// PROGRAM-DATE-TIME are removed; prefetch tags are preserved. The output carries no
+/// bracketing discontinuities, so the surviving content segments play continuously.
 export function stripAds(playlist: string): string {
   const lines = playlist.split('\n');
   const out: string[] = [];
@@ -99,12 +102,11 @@ export function stripAds(playlist: string): string {
       continue;
     }
 
-    if (line.length === 0) {
-      out.push(raw);
+    if (inAdWindow) {
+      if (line.length > 0) droppedSomething = true;
       continue;
     }
 
-    inAdWindow = false;
     out.push(raw);
   }
 

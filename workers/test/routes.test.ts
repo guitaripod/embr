@@ -252,6 +252,38 @@ describe('GET /playback/:login', () => {
     const res = await app.request('http://embr.test/playback/offlinechannel', {}, makeEnv());
     expect(res.status).toBe(404);
   });
+
+  it('falls back to the full GraphQL query when the persisted hash is rotated', async () => {
+    let gqlCalls = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        gqlCalls += 1;
+        if (gqlCalls === 1) {
+          return jsonResponse({ errors: [{ message: 'PersistedQueryNotFound' }] });
+        }
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/rotated', {}, makeEnv());
+    expect(res.status).toBe(200);
+    expect(gqlCalls).toBe(2);
+
+    const secondGql = fetchMock.mock.calls.filter((c) => String(c[0]).includes('gql'))[1];
+    const init = secondGql?.[1] as RequestInit;
+    const payload = JSON.parse(String(init.body));
+    expect(payload.query).toContain('PlaybackAccessToken_Template');
+    expect(payload.extensions).toBeUndefined();
+    expect((init.headers as Record<string, string>)['Device-ID']).toBeTruthy();
+  });
 });
 
 describe('GET /hls/proxy', () => {
