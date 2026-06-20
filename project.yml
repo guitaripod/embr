@@ -67,6 +67,7 @@ targets:
         UIBackgroundModes:
           - audio
         UIViewControllerBasedStatusBarAppearance: true
+        CADisableMinimumFrameDurationOnPhone: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
