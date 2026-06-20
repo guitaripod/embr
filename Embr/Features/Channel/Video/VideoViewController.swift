@@ -12,7 +12,6 @@ enum VideoSource: Sendable, Equatable {
 @MainActor
 final class VideoViewController: UIViewController {
 
-    var onFullscreenChange: ((Bool) -> Void)?
     var onDoubleTapToggleChat: (() -> Void)?
 
     private let source: VideoSource
@@ -180,24 +179,25 @@ final class VideoViewController: UIViewController {
             self.setNeedsStatusBarAppearanceUpdate()
             self.setNeedsUpdateOfHomeIndicatorAutoHidden()
         })
-        setImmersive(size.width > size.height)
     }
 
     private var isLandscape: Bool {
         view.bounds.width > view.bounds.height
     }
 
-    private func setImmersive(_ immersive: Bool) {
+    func setImmersiveState(_ immersive: Bool) {
         guard immersive != isImmersive else { return }
         isImmersive = immersive
         overlay.setFullscreen(immersive)
-        onFullscreenChange?(immersive)
     }
 
     private func toggleFullscreen() {
-        OrientationCoordinator.mask = [.portrait, .landscapeLeft, .landscapeRight]
+        let deviceLandscape = view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
+        let goFullscreen = !deviceLandscape
+        OrientationCoordinator.mask = goFullscreen ? .landscape : [.portrait, .landscapeLeft, .landscapeRight]
         guard let scene = view.window?.windowScene else { return }
-        let target: UIInterfaceOrientationMask = isLandscape ? .portrait : .landscapeRight
+        view.window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+        let target: UIInterfaceOrientationMask = goFullscreen ? .landscapeRight : .portrait
         scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { error in
             AppLogger.shared.warn("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
         }
@@ -649,7 +649,8 @@ extension VideoViewController: VideoOverlayViewDelegate {
     }
 
     func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool) {
-        if isImmersive, let onDoubleTapToggleChat {
+        let landscape = view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
+        if landscape, let onDoubleTapToggleChat {
             onDoubleTapToggleChat()
             return
         }
@@ -689,10 +690,10 @@ extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         overlay.hideControls()
-        setImmersive(false)
+        setImmersiveState(false)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        setImmersive(isLandscape)
+        setImmersiveState(view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
     }
 }

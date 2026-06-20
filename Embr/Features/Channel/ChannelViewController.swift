@@ -49,6 +49,12 @@ final class ChannelViewController: UIViewController {
     private lazy var dividerPan = UIPanGestureRecognizer(target: self, action: #selector(handleDividerPan(_:)))
     private var isVideoFullscreen = false
     private let chatOverlay = UIView()
+    private lazy var chatOverlayDoubleTap: UITapGestureRecognizer = {
+        let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleOverlayDoubleTap))
+        recognizer.numberOfTapsRequired = 2
+        recognizer.cancelsTouchesInView = false
+        return recognizer
+    }()
 
     private let eventCard = ChannelEventCardView()
     private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
@@ -183,8 +189,10 @@ final class ChannelViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+        let landscape = size.width > size.height
         coordinator.animate(alongsideTransition: { [weak self] _ in
-            self?.applyOrientation(isLandscape: size.width > size.height)
+            self?.applyOrientation(isLandscape: landscape)
+            self?.setVideoFullscreen(landscape)
         })
     }
 
@@ -210,6 +218,7 @@ final class ChannelViewController: UIViewController {
         dividerHandle.addGestureRecognizer(dividerPan)
 
         videoContainer.isHidden = isChatOnly
+        chatOverlay.addGestureRecognizer(chatOverlayDoubleTap)
 
         NSLayoutConstraint.activate([
             containerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -293,7 +302,8 @@ final class ChannelViewController: UIViewController {
     }
 
     func setVideoFullscreen(_ fullscreen: Bool) {
-        let immersive = fullscreen && isLandscape && !isChatOnly
+        let immersive = fullscreen && !isChatOnly
+        videoController?.setImmersiveState(immersive)
         guard immersive != isVideoFullscreen, let chat = chatController else { return }
         isVideoFullscreen = immersive
         if immersive {
@@ -305,6 +315,10 @@ final class ChannelViewController: UIViewController {
     }
 
     private var fullscreenChatHidden = false
+
+    @objc private func handleOverlayDoubleTap() {
+        toggleFullscreenChat()
+    }
 
     private func toggleFullscreenChat() {
         guard isVideoFullscreen else { return }
@@ -353,9 +367,6 @@ final class ChannelViewController: UIViewController {
 
     private func loadChildren() {
         let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
-        video.onFullscreenChange = { [weak self] fullscreen in
-            self?.setVideoFullscreen(fullscreen)
-        }
         video.onDoubleTapToggleChat = { [weak self] in
             self?.toggleFullscreenChat()
         }
@@ -397,6 +408,7 @@ final class ChannelViewController: UIViewController {
         chat.didMove(toParent: self)
         chatController = chat
         chatLoggedIn = loggedIn
+        setVideoFullscreen(isLandscape)
     }
 
     private func reattachChat(user: AuthenticatedUser?) {
