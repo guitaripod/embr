@@ -58,6 +58,8 @@ final class ChannelViewController: UIViewController {
 
     private let eventCard = ChannelEventCardView()
     private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
+    private var dismissedEventID: String?
+    private var currentEventID: String?
 
     init(channel: ChannelInfo, auth: AuthService = AuthService.shared, store: SettingsStore = .shared) {
         self.channel = channel
@@ -109,6 +111,11 @@ final class ChannelViewController: UIViewController {
     private func setUpEventCard() {
         eventCard.translatesAutoresizingMaskIntoConstraints = false
         eventCard.isHidden = true
+        eventCard.onDismiss = { [weak self] in
+            guard let self else { return }
+            self.dismissedEventID = self.currentEventID
+            self.eventCard.update(.empty)
+        }
         chatContainer.addSubview(eventCard)
         NSLayoutConstraint.activate([
             eventCard.topAnchor.constraint(equalTo: chatContainer.safeAreaLayoutGuide.topAnchor, constant: 8),
@@ -120,6 +127,12 @@ final class ChannelViewController: UIViewController {
             .sink { [weak self] events in
                 MainActor.assumeIsolated {
                     guard let self else { return }
+                    let id = events.prediction?.id ?? events.poll?.id
+                    self.currentEventID = id
+                    if let id, id == self.dismissedEventID {
+                        self.eventCard.update(.empty)
+                        return
+                    }
                     self.eventCard.update(events)
                     self.chatContainer.bringSubviewToFront(self.eventCard)
                 }

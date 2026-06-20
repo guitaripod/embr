@@ -3,9 +3,12 @@ import EmbrCore
 
 @MainActor
 final class ChannelEventCardView: UIView {
+    var onDismiss: (() -> Void)?
+
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
     private let countdownLabel = UILabel()
+    private let closeButton = UIButton(type: .system)
     private let barsStack = UIStackView()
     private var barRows: [EventBarRow] = []
 
@@ -147,7 +150,16 @@ final class ChannelEventCardView: UIView {
         countdownLabel.setContentHuggingPriority(.required, for: .horizontal)
         countdownLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let header = UIStackView(arrangedSubviews: [iconView, titleLabel, countdownLabel])
+        closeButton.setImage(
+            UIImage(systemName: "xmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .bold)),
+            for: .normal
+        )
+        closeButton.tintColor = Theme.secondaryText
+        closeButton.setContentHuggingPriority(.required, for: .horizontal)
+        closeButton.accessibilityLabel = "Dismiss"
+        closeButton.addAction(UIAction { [weak self] _ in self?.onDismiss?() }, for: .touchUpInside)
+
+        let header = UIStackView(arrangedSubviews: [iconView, titleLabel, countdownLabel, closeButton])
         header.axis = .horizontal
         header.alignment = .center
         header.spacing = 8
