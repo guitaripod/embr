@@ -1,4 +1,5 @@
 import UIKit
+import SDWebImage
 import EmbrCore
 
 @MainActor
@@ -255,7 +256,7 @@ extension EmoteKeyboardView: UICollectionViewDelegate {
 
 @MainActor
 private final class EmoteKeyCell: UICollectionViewCell {
-    private let imageView = UIImageView()
+    private let imageView = SDAnimatedImageView()
     private var loadTask: Task<Void, Never>?
 
     override init(frame: CGRect) {
@@ -283,6 +284,7 @@ private final class EmoteKeyCell: UICollectionViewCell {
     func configure(with emote: Emote, images: ImageLoading) {
         loadTask?.cancel()
         imageView.image = nil
+        imageView.autoPlayAnimatedImage = SettingsStore.shared.current.animateEmotes
         loadTask = Task { [weak self] in
             let image = await images.emoteImage(for: emote, scale: .x2)
             guard !Task.isCancelled else { return }
