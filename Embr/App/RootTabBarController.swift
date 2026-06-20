@@ -68,7 +68,9 @@ final class RootTabBarController: UITabBarController {
         controllers.append(contentsOf: [topNav, searchNav, settingsNav])
         let previous = selectedViewController
         setViewControllers(controllers, animated: false)
-        if let previous, controllers.contains(where: { $0 === previous }) {
+        if isLoggedIn, let following = followingNav {
+            selectedViewController = following
+        } else if let previous, controllers.contains(where: { $0 === previous }) {
             selectedViewController = previous
         }
     }
