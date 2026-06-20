@@ -246,7 +246,7 @@ final class ChannelViewController: UIViewController {
     private func applyOrientation(isLandscape landscape: Bool) {
         navigationController?.setNavigationBarHidden(landscape, animated: true)
         videoController?.setBackButtonHidden(navigationController != nil && !landscape)
-        infoView.isHidden = landscape
+        infoView.isHidden = landscape || isChatOnly
         if landscape {
             containerStack.axis = .horizontal
             landscapeWidthConstraint?.isActive = false
