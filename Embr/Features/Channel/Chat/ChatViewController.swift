@@ -34,8 +34,6 @@ final class ChatViewController: UIViewController {
     private var pausedForMenu = false
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
-    private var scrollFollowLink: CADisplayLink?
-    private var isFollowing = false
 
     private var inputBottomConstraint: NSLayoutConstraint?
     private var catalog = EmoteCatalog()
@@ -91,11 +89,6 @@ final class ChatViewController: UIViewController {
         lastLayoutWidth = width
         viewModel.updateWidth(width)
         collectionView.collectionViewLayout.invalidateLayout()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        stopFollow()
     }
 
     func endSession() {
@@ -309,16 +302,13 @@ final class ChatViewController: UIViewController {
             chatterIndex[row.message.author.login.lowercased()] = row.message.author.displayName
         }
 
-        let shouldStickToBottom = !snapshot.isPaused
-        let oldHeight = collectionView.contentSize.height
-        let oldOffset = collectionView.contentOffset.y
-
         var diff = NSDiffableDataSourceSnapshot<Int, ChatRow>()
         diff.appendSections([0])
         diff.appendItems(snapshot.rows.reversed(), toSection: 0)
+        let shouldStickToBottom = !snapshot.isPaused
         dataSource.apply(diff, animatingDifferences: false) { [weak self] in
             guard let self, shouldStickToBottom else { return }
-            self.stickToLatest(fromOffset: oldOffset, oldHeight: oldHeight)
+            self.scrollToLatest(animated: false)
         }
 
         if snapshot.isPaused, snapshot.newCount > 0 {
@@ -334,54 +324,7 @@ final class ChatViewController: UIViewController {
         collectionView.setContentOffset(.zero, animated: animated)
     }
 
-    /// Smoothly reveals freshly-appended messages: the inverted list is pinned at
-    /// offset 0, so after a batch grows the content by `delta`, we park the view
-    /// where it was (showing the previous live edge) and ease that `delta` away at
-    /// the display's refresh rate. Successive batches accumulate into one
-    /// continuous glide instead of 200ms snaps. A large offset (resuming from
-    /// scrolled-up) snaps instead.
-    private func stickToLatest(fromOffset oldOffset: CGFloat, oldHeight: CGFloat) {
-        guard collectionView.numberOfItems(inSection: 0) > 0 else { return }
-        let delta = collectionView.contentSize.height - oldHeight
-        guard delta > 0.5, oldOffset <= 120 else {
-            stopFollow()
-            collectionView.contentOffset.y = 0
-            return
-        }
-        collectionView.contentOffset.y = oldOffset + delta
-        isFollowing = true
-        if scrollFollowLink == nil {
-            let link = CADisplayLink(target: self, selector: #selector(stepFollow(_:)))
-            link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
-            link.add(to: .main, forMode: .common)
-            scrollFollowLink = link
-        }
-    }
-
-    @objc private func stepFollow(_ link: CADisplayLink) {
-        if collectionView.isTracking || collectionView.isDragging || collectionView.isDecelerating {
-            stopFollow()
-            return
-        }
-        let current = collectionView.contentOffset.y
-        if current <= 0.5 {
-            collectionView.contentOffset.y = 0
-            stopFollow()
-            return
-        }
-        let dt = max(1.0 / 120.0, link.targetTimestamp - link.timestamp)
-        let next = current * CGFloat(exp(-dt / 0.08))
-        collectionView.contentOffset.y = next <= 0.5 ? 0 : next
-    }
-
-    private func stopFollow() {
-        scrollFollowLink?.invalidate()
-        scrollFollowLink = nil
-        isFollowing = false
-    }
-
     private func jumpToLatest() {
-        stopFollow()
         searchField.isHidden = true
         searchField.text = nil
         searchField.resignFirstResponder()
@@ -423,10 +366,6 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if isFollowing {
-            lastContentOffsetY = scrollView.contentOffset.y
-            return
-        }
         let delta = abs(scrollView.contentOffset.y - lastContentOffsetY)
         lastContentOffsetY = scrollView.contentOffset.y
         let wasFast = fastScroll
@@ -447,10 +386,6 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
             viewModel.setPaused(true)
             searchField.isHidden = false
         }
-    }
-
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        stopFollow()
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
