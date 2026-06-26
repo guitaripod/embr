@@ -35,6 +35,8 @@ final class FollowingViewController: UIViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private var hasLoaded = false
+    private var streamsLoaded = false
+    private var channelsLoaded = false
 
     init(auth: AuthService = AuthService.shared, api: TwitchAPIProviding = TwitchAPIClient.shared) {
         self.auth = auth
@@ -131,6 +133,7 @@ final class FollowingViewController: UIViewController {
             } while cursor != nil && pages < 3 && !Task.isCancelled
             if Task.isCancelled { return }
             self.followedChannels = collected
+            self.channelsLoaded = true
             self.rebuild()
             self.loadAvatars()
         }
@@ -259,13 +262,17 @@ final class FollowingViewController: UIViewController {
 
     private func applyLive(_ streams: [LiveStream]) {
         liveStreams = streams
+        streamsLoaded = true
         rebuild()
         loadAvatars()
     }
 
     private func rebuild() {
-        hasLoaded = true
-        loadingIndicator.stopAnimating()
+        let bothLoaded = streamsLoaded && channelsLoaded
+        if bothLoaded {
+            hasLoaded = true
+            loadingIndicator.stopAnimating()
+        }
         let liveIDs = Set(liveStreams.map(\.userID))
         let offline = followedChannels
             .filter { !liveIDs.contains($0.id) }
@@ -282,7 +289,7 @@ final class FollowingViewController: UIViewController {
         dataSource.apply(snapshot, animatingDifferences: true)
         emptyView.setMessage(Self.emptyMessage)
         emptyView.onRetry = nil
-        emptyView.isHidden = !(liveStreams.isEmpty && offline.isEmpty)
+        emptyView.isHidden = !(bothLoaded && liveStreams.isEmpty && offline.isEmpty)
     }
 
     private func reconfigureOffline() {
