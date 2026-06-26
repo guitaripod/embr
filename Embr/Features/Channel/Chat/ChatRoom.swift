@@ -84,6 +84,25 @@ actor ChatRoom {
         )
     }
 
+    func deleteMessage(_ messageID: String) async throws {
+        guard let user = await auth.currentUser() else { throw APIError.unauthorized }
+        try await api.deleteMessage(broadcasterID: channel.id, moderatorID: user.id, messageID: messageID)
+    }
+
+    func banUser(userID: String, duration: Int?, reason: String?) async throws {
+        guard let user = await auth.currentUser() else { throw APIError.unauthorized }
+        try await api.banUser(broadcasterID: channel.id, moderatorID: user.id, userID: userID, duration: duration, reason: reason)
+    }
+
+    func unbanUser(userID: String) async throws {
+        guard let user = await auth.currentUser() else { throw APIError.unauthorized }
+        try await api.unbanUser(broadcasterID: channel.id, moderatorID: user.id, userID: userID)
+    }
+
+    func lookupUser(login: String) async -> TwitchUser? {
+        try? await api.user(login: login)
+    }
+
     private func begin(_ continuation: AsyncStream<ChatRoomEvent>.Continuation) {
         self.continuation = continuation
         continuation.onTermination = { [weak self] _ in

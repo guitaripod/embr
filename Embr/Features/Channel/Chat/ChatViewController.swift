@@ -18,6 +18,8 @@ final class ChatViewController: UIViewController {
     private let viewModel: ChatViewModel
     private let images: ImageLoading
     private let isAnonymous: Bool
+    private let currentUserLogin: String?
+    private var canModerate = false
     private let animator = EmoteAnimator.shared
 
     private var collectionView: UICollectionView!
@@ -40,10 +42,11 @@ final class ChatViewController: UIViewController {
     private var chatterIndex: [String: String] = [:]
     private var lastLayoutWidth: CGFloat = 0
 
-    init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool) {
+    init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool, currentUserLogin: String? = nil) {
         self.viewModel = viewModel
         self.images = images
         self.isAnonymous = isAnonymous
+        self.currentUserLogin = currentUserLogin
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -301,6 +304,7 @@ final class ChatViewController: UIViewController {
         for row in snapshot.rows {
             chatterIndex[row.message.author.login.lowercased()] = row.message.author.displayName
         }
+        detectModeratorIfNeeded(snapshot.rows)
 
         var diff = NSDiffableDataSourceSnapshot<Int, ChatRow>()
         diff.appendSections([0])
@@ -322,6 +326,18 @@ final class ChatViewController: UIViewController {
     private func scrollToLatest(animated: Bool) {
         guard collectionView.numberOfSections > 0, collectionView.numberOfItems(inSection: 0) > 0 else { return }
         collectionView.setContentOffset(.zero, animated: animated)
+    }
+
+    /// Enables moderator actions once the logged-in user is seen wearing a
+    /// moderator/broadcaster badge in this channel — avoids showing mod controls
+    /// to regular viewers without needing an extra API scope.
+    private func detectModeratorIfNeeded(_ rows: [ChatRow]) {
+        guard !canModerate, !isAnonymous, let me = currentUserLogin?.lowercased() else { return }
+        let isMod = rows.contains { row in
+            row.message.author.login.lowercased() == me
+                && row.message.badges.contains { $0.setID == "moderator" || $0.setID == "broadcaster" }
+        }
+        if isMod { canModerate = true }
     }
 
     private func jumpToLatest() {
@@ -428,21 +444,54 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         guard let row = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        let message = row.message
+        let isOwnMessage = message.author.login.lowercased() == currentUserLogin?.lowercased()
         return UIContextMenuConfiguration(identifier: indexPath as NSCopying, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
-            var actions: [UIAction] = []
+            var actions: [UIMenuElement] = []
             if !self.isAnonymous {
                 actions.append(UIAction(title: "Reply", image: UIImage(systemName: "arrowshape.turn.up.left")) { [weak self] _ in
                     guard let self else { return }
-                    self.delegate?.chatViewController(self, didRequestReplyTo: row.message)
+                    self.delegate?.chatViewController(self, didRequestReplyTo: message)
                 })
             }
+            actions.append(UIAction(title: "View Profile", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
+                guard let self else { return }
+                self.delegate?.chatViewController(self, didTapUsername: message.author)
+            })
             actions.append(UIAction(title: "Copy Message", image: UIImage(systemName: "doc.on.doc")) { _ in
-                UIPasteboard.general.string = row.message.plainText
+                UIPasteboard.general.string = message.plainText
             })
-            actions.append(UIAction(title: "Copy @\(row.message.author.login)", image: UIImage(systemName: "person")) { _ in
-                UIPasteboard.general.string = "@\(row.message.author.login)"
+            actions.append(UIAction(title: "Copy @\(message.author.login)", image: UIImage(systemName: "person")) { _ in
+                UIPasteboard.general.string = "@\(message.author.login)"
             })
+            if self.canModerate, !isOwnMessage {
+                let moderate = UIMenu(title: "Moderate", image: UIImage(systemName: "shield"), children: [
+                    UIAction(title: "Delete Message", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                        Haptics.impact(.light)
+                        self?.viewModel.deleteMessage(messageID: message.id)
+                    },
+                    UIAction(title: "Timeout 10m", image: UIImage(systemName: "clock")) { [weak self] _ in
+                        Haptics.impact(.light)
+                        self?.viewModel.timeoutUser(userID: message.author.id, duration: 600)
+                    },
+                    UIAction(title: "Timeout 1h", image: UIImage(systemName: "clock.badge.exclamationmark")) { [weak self] _ in
+                        Haptics.impact(.light)
+                        self?.viewModel.timeoutUser(userID: message.author.id, duration: 3600)
+                    },
+                    UIAction(title: "Ban", image: UIImage(systemName: "nosign"), attributes: .destructive) { [weak self] _ in
+                        Haptics.impact(.medium)
+                        self?.viewModel.banUser(userID: message.author.id)
+                    },
+                ])
+                actions.append(moderate)
+            }
+            if !self.isAnonymous, !isOwnMessage {
+                actions.append(UIAction(title: "Block @\(message.author.login)", image: UIImage(systemName: "hand.raised"), attributes: .destructive) { [weak self] _ in
+                    Haptics.impact(.light)
+                    self?.viewModel.block(userID: message.author.id, login: message.author.login)
+                })
+            }
             return UIMenu(children: actions)
         }
     }
@@ -450,6 +499,26 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
 
 extension ChatViewController: ChatInputViewDelegate {
     func chatInput(_ input: ChatInputView, didSubmit text: String) {
+        if text.trimmingCharacters(in: .whitespaces).hasPrefix("/") {
+            input.setSending(true)
+            Task { [weak self] in
+                guard let self else { return }
+                let outcome = await self.viewModel.runCommand(text.trimmingCharacters(in: .whitespaces))
+                input.setSending(false)
+                if case .handled = outcome {
+                    Haptics.selection()
+                    input.clear()
+                    input.hideReply()
+                } else {
+                    self.performSend(text, input: input)
+                }
+            }
+            return
+        }
+        performSend(text, input: input)
+    }
+
+    private func performSend(_ text: String, input: ChatInputView) {
         input.setSending(true)
         Task { [weak self] in
             guard let self else { return }

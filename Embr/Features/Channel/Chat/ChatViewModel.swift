@@ -23,6 +23,106 @@ final class ChatViewModel {
     ) {
         self.room = room
         self.store = MessageStore(settings: settings.current, currentUserLogin: currentUserLogin)
+        Task { [store] in
+            let ids = Set(await DatabaseManager.shared.blockedUsers().map(\.userID))
+            await store.setBlocked(ids)
+        }
+    }
+
+    func block(userID: String, login: String) {
+        Task {
+            await DatabaseManager.shared.setBlockedUser(userID: userID, login: login)
+            if let snapshot = await store.block(userID) {
+                snapshotSubject.send(snapshot)
+            }
+        }
+    }
+
+    func deleteMessage(messageID: String) {
+        moderate("delete the message") { try await self.room.deleteMessage(messageID) }
+    }
+
+    func banUser(userID: String) {
+        moderate("ban") { try await self.room.banUser(userID: userID, duration: nil, reason: nil) }
+    }
+
+    func timeoutUser(userID: String, duration: Int) {
+        moderate("time out") { try await self.room.banUser(userID: userID, duration: duration, reason: nil) }
+    }
+
+    private func moderate(_ label: String, _ op: @escaping () async throws -> Void) {
+        Task {
+            do { try await op() }
+            catch { noticeSubject.send(SystemNotice(text: "Couldn't \(label) — \(Self.describeCommandError(error))", isError: true)) }
+        }
+    }
+
+    enum CommandResult: Sendable { case notCommand, handled }
+
+    func runCommand(_ text: String) async -> CommandResult {
+        guard text.hasPrefix("/") else { return .notCommand }
+        let parts = text.dropFirst().split(separator: " ").map(String.init)
+        guard let cmd = parts.first?.lowercased() else { return .notCommand }
+        let args = Array(parts.dropFirst())
+        let targetLogin = args.first.map { $0.hasPrefix("@") ? String($0.dropFirst()) : $0 }
+
+        switch cmd {
+        case "help":
+            noticeSubject.send(SystemNotice(text: "Commands: /ban /timeout <sec> /unban /block /unblock <user>"))
+            return .handled
+        case "ban", "timeout", "unban", "block", "unblock":
+            guard let login = targetLogin, !login.isEmpty else {
+                noticeSubject.send(SystemNotice(text: "Usage: /\(cmd) <user>", isError: true))
+                return .handled
+            }
+            guard let user = await room.lookupUser(login: login) else {
+                noticeSubject.send(SystemNotice(text: "User \(login) not found", isError: true))
+                return .handled
+            }
+            await runUserCommand(cmd, user: user, login: login, args: args)
+            return .handled
+        default:
+            return .notCommand
+        }
+    }
+
+    private func runUserCommand(_ cmd: String, user: TwitchUser, login: String, args: [String]) async {
+        do {
+            switch cmd {
+            case "ban":
+                let reason = args.dropFirst().joined(separator: " ")
+                try await room.banUser(userID: user.id, duration: nil, reason: reason.isEmpty ? nil : reason)
+                noticeSubject.send(SystemNotice(text: "Banned \(login)"))
+            case "timeout":
+                let seconds = args.count > 1 ? (Int(args[1]) ?? 600) : 600
+                try await room.banUser(userID: user.id, duration: seconds, reason: nil)
+                noticeSubject.send(SystemNotice(text: "Timed out \(login) for \(seconds)s"))
+            case "unban":
+                try await room.unbanUser(userID: user.id)
+                noticeSubject.send(SystemNotice(text: "Unbanned \(login)"))
+            case "block":
+                await DatabaseManager.shared.setBlockedUser(userID: user.id, login: user.login)
+                if let snapshot = await store.block(user.id) { snapshotSubject.send(snapshot) }
+                noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
+            case "unblock":
+                await DatabaseManager.shared.removeBlockedUser(userID: user.id)
+                noticeSubject.send(SystemNotice(text: "Unblocked \(login) · reopen chat to show"))
+            default:
+                break
+            }
+        } catch {
+            noticeSubject.send(SystemNotice(text: "Failed: /\(cmd) \(login) — \(Self.describeCommandError(error))", isError: true))
+        }
+    }
+
+    private static func describeCommandError(_ error: Error) -> String {
+        guard let api = error as? APIError else { return "error" }
+        switch api {
+        case .unauthorized: return "sign in required"
+        case .forbidden: return "not a moderator here"
+        case .rateLimited: return "rate limited"
+        default: return "error"
+        }
     }
 
     var currentReplyParentID: String? { replyParentID }
@@ -122,6 +222,7 @@ private actor MessageStore {
     private var width: CGFloat = 0
     private var layout: MessageLayout?
     private let currentUserLogin: String?
+    private var blockedUserIDs: Set<String> = []
 
     private let capacity = 5000
     private let trimFraction = 0.2
@@ -156,10 +257,28 @@ private actor MessageStore {
         return frozenSnapshot()
     }
 
+    func setBlocked(_ ids: Set<String>) {
+        blockedUserIDs = ids
+        guard !ids.isEmpty else { return }
+        rows.removeAll { ids.contains($0.message.author.id) }
+        frozenRows.removeAll { ids.contains($0.message.author.id) }
+        rebuildIndex()
+    }
+
+    func block(_ userID: String) -> ChatSnapshot? {
+        blockedUserIDs.insert(userID)
+        let before = rows.count
+        rows.removeAll { $0.message.author.id == userID }
+        frozenRows.removeAll { $0.message.author.id == userID }
+        if rows.count != before { rebuildIndex() }
+        return currentSnapshot()
+    }
+
     func append(_ messages: [ChatMessage]) -> ChatSnapshot? {
         guard !messages.isEmpty else { return nil }
         var added = 0
         for message in messages {
+            if blockedUserIDs.contains(message.author.id) { continue }
             if let existing = index[message.id] {
                 rows[existing] = makeRow(message)
             } else {
