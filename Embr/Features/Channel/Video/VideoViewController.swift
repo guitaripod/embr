@@ -119,7 +119,7 @@ final class VideoViewController: UIViewController {
     }
 
     @objc private func handleBackground() {
-        guard !store.current.backgroundAudio, !isPiPActive else { return }
+        guard store.current.backgroundAudio == false, !isPiPActive else { return }
         player.pause()
     }
 

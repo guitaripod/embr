@@ -293,7 +293,7 @@ final class SettingsViewController: UIViewController {
                 store.update { $0.autoplay = on }
             }
         case .backgroundAudio:
-            switchRow(cell, &content, title: "Background Audio", isOn: settings.backgroundAudio) { store, on in
+            switchRow(cell, &content, title: "Background Audio", isOn: settings.backgroundAudio ?? true) { store, on in
                 store.update { $0.backgroundAudio = on }
             }
         case .chatDelaySeconds:
