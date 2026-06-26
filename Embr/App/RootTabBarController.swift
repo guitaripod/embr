@@ -5,7 +5,6 @@ import EmbrCore
 @MainActor
 final class RootTabBarController: UITabBarController {
     private let auth: AuthService
-    private let selectionFeedback = UISelectionFeedbackGenerator()
     private var cancellables = Set<AnyCancellable>()
     private var isLoggedIn = false
     private var hasBuiltTabs = false
@@ -99,7 +98,7 @@ extension RootTabBarController: UITabBarControllerDelegate {
     private func scrollActiveToTop(_ viewController: UIViewController) {
         let root = (viewController as? UINavigationController)?.viewControllers.first ?? viewController
         guard let scrollable = root as? ScrollsToTop else { return }
-        selectionFeedback.selectionChanged()
+        Haptics.selection()
         scrollable.scrollToTop()
     }
 }
