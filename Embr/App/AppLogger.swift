@@ -46,6 +46,13 @@ public final class AppLogger: Sendable {
         writeToFile(level: level, category: category, text: text)
     }
 
+    /// Current and rotated log files that exist on disk, for a "Share logs" action.
+    public func logFileURLs() -> [URL] {
+        guard let fileURL else { return [] }
+        let previous = fileURL.deletingLastPathComponent().appendingPathComponent("embr.previous.log")
+        return [fileURL, previous].filter { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
     public func debug(_ message: @autoclosure () -> String, category: LogCategory) { log(.debug, message(), category: category) }
     public func info(_ message: @autoclosure () -> String, category: LogCategory) { log(.info, message(), category: category) }
     public func warn(_ message: @autoclosure () -> String, category: LogCategory) { log(.warn, message(), category: category) }

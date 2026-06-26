@@ -27,6 +27,7 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var chatDelaySeconds: Double
     var autoSyncChatDelay: Bool
     var keepScreenAwake: Bool
+    var backgroundAudio: Bool
 
     var openLinksInApp: Bool
     var hapticsEnabled: Bool
@@ -55,6 +56,7 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         chatDelaySeconds: 0,
         autoSyncChatDelay: true,
         keepScreenAwake: true,
+        backgroundAudio: true,
         openLinksInApp: true,
         hapticsEnabled: true,
         shareCrashLogs: false,

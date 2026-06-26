@@ -96,10 +96,16 @@ final class VideoViewController: UIViewController {
         if streamActive { resolveAndLoad() }
     }
 
+    private var isPiPActive = false
+
     private func observeLifecycle() {
         NotificationCenter.default.addObserver(
             self, selector: #selector(handleForeground),
             name: UIApplication.didBecomeActiveNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleBackground),
+            name: UIApplication.didEnterBackgroundNotification, object: nil
         )
         NetworkMonitor.shared.restored
             .receive(on: DispatchQueue.main)
@@ -108,6 +114,11 @@ final class VideoViewController: UIViewController {
                 self?.handleForeground()
             }
             .store(in: &cancellables)
+    }
+
+    @objc private func handleBackground() {
+        guard !store.current.backgroundAudio, !isPiPActive else { return }
+        player.pause()
     }
 
     @objc private func handleForeground() {
@@ -695,11 +706,13 @@ extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
     }
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        isPiPActive = true
         overlay.hideControls()
         setImmersiveState(false)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        isPiPActive = false
         setImmersiveState(view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
     }
 }

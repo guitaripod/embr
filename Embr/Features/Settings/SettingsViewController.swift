@@ -38,10 +38,12 @@ final class SettingsViewController: UIViewController {
         case recentMessagesBackfill
         case animateEmotes
         case thirdPartyEmotes(EmoteProvider)
+        case blockedUsers
 
         case defaultQuality
         case defaultToHighest
         case autoplay
+        case backgroundAudio
         case chatDelaySeconds
         case autoSyncChatDelay
         case keepScreenAwake
@@ -51,6 +53,7 @@ final class SettingsViewController: UIViewController {
 
         case version
         case github
+        case shareLogs
     }
 
     private let store: SettingsStore
@@ -171,15 +174,16 @@ final class SettingsViewController: UIViewController {
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta, .showDeletedMessages,
              .highlightMentions, .recentMessagesBackfill, .animateEmotes]
-            + thirdPartyProviders.map(Row.thirdPartyEmotes),
+            + thirdPartyProviders.map(Row.thirdPartyEmotes)
+            + [.blockedUsers],
             toSection: .chat
         )
         snapshot.appendItems(
-            [.defaultQuality, .defaultToHighest, .autoplay, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
+            [.defaultQuality, .defaultToHighest, .autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
             toSection: .video
         )
         snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
-        snapshot.appendItems([.version, .github], toSection: .about)
+        snapshot.appendItems([.version, .github, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -270,6 +274,10 @@ final class SettingsViewController: UIViewController {
             switchRow(cell, &content, title: provider.displayName + " Emotes", isOn: settings.thirdPartyEmotesEnabled(provider)) { store, on in
                 store.update { $0.showThirdPartyEmotes[provider] = on }
             }
+        case .blockedUsers:
+            content.text = "Blocked Users"
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
 
         case .defaultQuality:
             content.text = "Default Quality"
@@ -283,6 +291,10 @@ final class SettingsViewController: UIViewController {
         case .autoplay:
             switchRow(cell, &content, title: "Autoplay", isOn: settings.autoplay) { store, on in
                 store.update { $0.autoplay = on }
+            }
+        case .backgroundAudio:
+            switchRow(cell, &content, title: "Background Audio", isOn: settings.backgroundAudio) { store, on in
+                store.update { $0.backgroundAudio = on }
             }
         case .chatDelaySeconds:
             sliderRow(
@@ -335,6 +347,11 @@ final class SettingsViewController: UIViewController {
             content.textProperties.color = Theme.link
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
+        case .shareLogs:
+            content.text = "Share Diagnostic Logs"
+            content.textProperties.color = Theme.accent
+            cell.contentConfiguration = content
+            cell.accessories = []
         }
     }
 
@@ -438,9 +455,11 @@ final class SettingsViewController: UIViewController {
         case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
         case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
         case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
+        case .blockedUsers: spec = ("hand.raised.fill", .systemRed)
         case .defaultQuality: spec = ("slider.horizontal.3", .systemBlue)
         case .defaultToHighest: spec = ("4k.tv.fill", .systemBlue)
         case .autoplay: spec = ("play.fill", .systemGreen)
+        case .backgroundAudio: spec = ("speaker.wave.2.circle.fill", .systemPurple)
         case .chatDelaySeconds: spec = ("timer", .systemOrange)
         case .autoSyncChatDelay: spec = ("arrow.triangle.2.circlepath", .systemTeal)
         case .keepScreenAwake: spec = ("sun.max.fill", .systemYellow)
@@ -448,6 +467,7 @@ final class SettingsViewController: UIViewController {
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
         case .version: spec = ("info.circle.fill", .systemGray)
         case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
+        case .shareLogs: spec = ("square.and.arrow.up", .systemBlue)
         }
         return iconTile(spec.0, spec.1)
     }
@@ -503,6 +523,22 @@ final class SettingsViewController: UIViewController {
         UIApplication.shared.open(url)
     }
 
+    private func shareLogs(from sourceView: UIView?) {
+        let urls = AppLogger.shared.logFileURLs()
+        guard !urls.isEmpty else {
+            let alert = UIAlertController(title: "No Logs Yet", message: "Diagnostic logs will appear here after you use the app.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        let activity = UIActivityViewController(activityItems: urls, applicationActivities: nil)
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = sourceView ?? view
+            popover.sourceRect = (sourceView ?? view).bounds
+        }
+        present(activity, animated: true)
+    }
+
     private func performAccountAction() {
         switch authState {
         case .authenticated:
@@ -542,7 +578,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .defaultQuality, .github, .accountAction:
+        case .defaultQuality, .github, .accountAction, .blockedUsers, .shareLogs:
             return true
         default:
             return false
@@ -559,6 +595,10 @@ extension SettingsViewController: UICollectionViewDelegate {
             openGitHub()
         case .accountAction:
             performAccountAction()
+        case .blockedUsers:
+            navigationController?.pushViewController(BlockedUsersViewController(), animated: true)
+        case .shareLogs:
+            shareLogs(from: collectionView.cellForItem(at: indexPath))
         default:
             break
         }
