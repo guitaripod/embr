@@ -58,7 +58,7 @@ final class RootTabBarController: UITabBarController {
         isLoggedIn = loggedIn
         rebuildTabs()
         if loggedIn {
-            FollowedLiveService.shared.refreshNow()
+            FollowedLiveService.shared.refreshForced()
         } else {
             FollowedLiveService.shared.reset()
         }

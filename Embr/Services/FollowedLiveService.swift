@@ -16,6 +16,9 @@ final class FollowedLiveService {
     private var seeded = false
     private var refreshing = false
     private var requestedAuthorization = false
+    private var generation = 0
+    private var lastRefreshAt: Date?
+    private let minRefreshInterval: TimeInterval = 60
 
     init(auth: AuthControlling = AuthService.shared, api: TwitchAPIProviding = TwitchAPIClient.shared) {
         self.auth = auth
@@ -28,21 +31,28 @@ final class FollowedLiveService {
             self, selector: #selector(refreshNow),
             name: UIApplication.didBecomeActiveNotification, object: nil
         )
-        refreshNow()
+        refreshForced()
     }
 
     @objc func refreshNow() {
-        Task { await refresh() }
+        Task { await refresh(forced: false) }
+    }
+
+    func refreshForced() {
+        Task { await refresh(forced: true) }
     }
 
     func reset() {
+        generation &+= 1
         lastLiveIDs = []
         seeded = false
+        lastRefreshAt = nil
         tabBar?.setFollowingBadge(0)
     }
 
-    private func refresh() async {
+    private func refresh(forced: Bool) async {
         guard !refreshing else { return }
+        if !forced, let last = lastRefreshAt, Date().timeIntervalSince(last) < minRefreshInterval { return }
         refreshing = true
         defer { refreshing = false }
 
@@ -50,7 +60,9 @@ final class FollowedLiveService {
             reset()
             return
         }
+        let token = generation
         guard let page = try? await api.followedStreams(userID: user.id, after: nil, first: 100) else { return }
+        guard token == generation else { return }
         let live = page.items
         let liveIDs = Set(live.map(\.userID))
         tabBar?.setFollowingBadge(live.count)
@@ -62,7 +74,9 @@ final class FollowedLiveService {
             seeded = true
             requestAuthorizationIfNeeded()
         }
+        guard token == generation else { return }
         lastLiveIDs = liveIDs
+        lastRefreshAt = Date()
     }
 
     private func requestAuthorizationIfNeeded() {
