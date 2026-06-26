@@ -32,6 +32,11 @@ final class RootTabBarController: UITabBarController {
         applyBarAppearance()
         rebuildTabs()
         bind()
+        FollowedLiveService.shared.start(tabBar: self)
+    }
+
+    func setFollowingBadge(_ count: Int) {
+        followingNav?.tabBarItem.badgeValue = count > 0 ? "\(count)" : nil
     }
 
     private func bind() {
@@ -52,6 +57,11 @@ final class RootTabBarController: UITabBarController {
         guard loggedIn != isLoggedIn || !hasBuiltTabs else { return }
         isLoggedIn = loggedIn
         rebuildTabs()
+        if loggedIn {
+            FollowedLiveService.shared.refreshNow()
+        } else {
+            FollowedLiveService.shared.reset()
+        }
     }
 
     private func rebuildTabs() {
