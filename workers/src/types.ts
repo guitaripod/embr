@@ -88,7 +88,11 @@ export const VIEWER_SCOPES = [
   "user:read:blocked_users",
   "user:manage:blocked_users",
   "user:manage:chat_color",
+  "moderator:manage:banned_users",
+  "moderator:manage:chat_messages",
 ] as const;
+
+export const PLAYBACK_HASH_KV_KEY = "playback_token_sha256";
 
 export const GQL_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 

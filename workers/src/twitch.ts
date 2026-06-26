@@ -154,12 +154,12 @@ function deviceID(): string {
   return crypto.randomUUID().replace(/-/g, '');
 }
 
-function playbackPayload(kind: PlaybackKind, persisted: boolean): Record<string, unknown> {
+function playbackPayload(kind: PlaybackKind, persisted: boolean, hash: string): Record<string, unknown> {
   if (persisted) {
     return {
       operationName: 'PlaybackAccessToken',
       variables: playbackVariables(kind),
-      extensions: { persistedQuery: { version: 1, sha256Hash: PLAYBACK_ACCESS_TOKEN_SHA256 } },
+      extensions: { persistedQuery: { version: 1, sha256Hash: hash } },
     };
   }
   return {
@@ -174,7 +174,7 @@ interface PlaybackTokenResult {
   persistedMiss: boolean;
 }
 
-async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean): Promise<PlaybackTokenResult> {
+async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean, hash: string): Promise<PlaybackTokenResult> {
   const res = await fetch(GQL_URL, {
     method: 'POST',
     headers: {
@@ -182,7 +182,7 @@ async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean): Pro
       'Content-Type': 'application/json',
       'Device-ID': deviceID(),
     },
-    body: JSON.stringify(playbackPayload(kind, persisted)),
+    body: JSON.stringify(playbackPayload(kind, persisted, hash)),
   });
   if (!res.ok) throw new TwitchError(await readTwitchError(res), res.status);
   const json = (await res.json()) as GQLPlaybackResponse;
@@ -203,10 +203,14 @@ async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean): Pro
 /// Mints a PlaybackAccessToken, retrying with the full GraphQL query if the
 /// persisted-query hash has rotated (Twitch changes it without notice), so the
 /// anonymous fallback path keeps working without a redeploy.
-export async function fetchPlaybackAccessToken(kind: PlaybackKind): Promise<PlaybackAccessToken> {
-  let result = await requestPlaybackToken(kind, true);
+export async function fetchPlaybackAccessToken(
+  kind: PlaybackKind,
+  hashOverride?: string,
+): Promise<PlaybackAccessToken> {
+  const hash = hashOverride && hashOverride.length > 0 ? hashOverride : PLAYBACK_ACCESS_TOKEN_SHA256;
+  let result = await requestPlaybackToken(kind, true, hash);
   if (result.persistedMiss) {
-    result = await requestPlaybackToken(kind, false);
+    result = await requestPlaybackToken(kind, false, hash);
   }
   if (!result.token) throw new TwitchError('playback access token unavailable', 404);
   return { value: result.token.value, signature: result.token.signature };
@@ -325,12 +329,12 @@ export async function fetchChannelEvents(login: string): Promise<ChannelEventsRe
   };
 }
 
-export async function resolveLivePlayback(login: string): Promise<string> {
-  const token = await fetchPlaybackAccessToken({ type: 'live', login });
+export async function resolveLivePlayback(login: string, hashOverride?: string): Promise<string> {
+  const token = await fetchPlaybackAccessToken({ type: 'live', login }, hashOverride);
   return buildUsherURL({ type: 'live', login }, token);
 }
 
-export async function resolveVodPlayback(id: string): Promise<string> {
-  const token = await fetchPlaybackAccessToken({ type: 'vod', id });
+export async function resolveVodPlayback(id: string, hashOverride?: string): Promise<string> {
+  const token = await fetchPlaybackAccessToken({ type: 'vod', id }, hashOverride);
   return buildUsherURL({ type: 'vod', id }, token);
 }

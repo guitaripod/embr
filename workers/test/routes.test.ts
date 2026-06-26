@@ -284,6 +284,47 @@ describe('GET /playback/:login', () => {
     expect(payload.extensions).toBeUndefined();
     expect((init.headers as Record<string, string>)['Device-ID']).toBeTruthy();
   });
+
+  it('uses the KV-configured persisted-query hash when present', async () => {
+    const store = new Map<string, string>();
+    store.set('playback_token_sha256', 'deadbeefhash');
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"t":1}', signature: 's' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/chan', {}, makeEnv(store));
+    expect(res.status).toBe(200);
+    const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
+    const payload = JSON.parse(String((gqlCall?.[1] as RequestInit).body));
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe('deadbeefhash');
+  });
+});
+
+describe('GET /embed', () => {
+  it('serves a Twitch player iframe with this worker host as parent', async () => {
+    const res = await app.request('http://embr.test/embed?channel=somechannel', {}, makeEnv());
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('text/html');
+    const html = await res.text();
+    expect(html).toContain('player.twitch.tv');
+    expect(html).toContain('channel=somechannel');
+    expect(html).toContain('parent=embr.test');
+  });
+
+  it('returns 400 without a channel', async () => {
+    const res = await app.request('http://embr.test/embed', {}, makeEnv());
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('GET /hls/proxy', () => {

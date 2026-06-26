@@ -8,7 +8,7 @@ import type {
   PlaybackResponse,
   TokenResponse,
 } from './types';
-import { VIEWER_SCOPES } from './types';
+import { PLAYBACK_HASH_KV_KEY, VIEWER_SCOPES } from './types';
 import {
   buildLoginURL,
   clientCredentials,
@@ -190,12 +190,41 @@ async function playbackResponse(c: { req: { url: string } }, usher: string): Pro
   });
 }
 
+async function playbackHashOverride(c: { env: Bindings }): Promise<string | undefined> {
+  try {
+    return (await c.env.TOKENS.get(PLAYBACK_HASH_KV_KEY)) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 app.get('/playback/vod/:id', async (c) => {
   try {
-    return await playbackResponse(c, await resolveVodPlayback(c.req.param('id')));
+    const hash = await playbackHashOverride(c);
+    return await playbackResponse(c, await resolveVodPlayback(c.req.param('id'), hash));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
+});
+
+/// Serves a minimal page that embeds the official Twitch player with this worker's
+/// own host as `parent`, so `WebViewPlayer` has a working compliant fallback when
+/// the ad-stripped HLS path fails. Anonymous playback (shows ads) is the trade-off.
+app.get('/embed', (c) => {
+  const channel = c.req.query('channel');
+  if (!channel) return fail(400, 'channel is required');
+  const host = new URL(c.req.url).hostname;
+  const safeChannel = encodeURIComponent(channel);
+  const safeParent = encodeURIComponent(host);
+  const html = `<!doctype html><html><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">` +
+    `<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%}</style></head>` +
+    `<body><iframe src="https://player.twitch.tv/?channel=${safeChannel}&parent=${safeParent}&autoplay=true&playsinline=true" ` +
+    `allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></body></html>`;
+  return new Response(html, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
 });
 
 app.get('/events/:login', async (c) => {
@@ -213,7 +242,8 @@ app.get('/events/:login', async (c) => {
 
 app.get('/playback/:login', async (c) => {
   try {
-    return await playbackResponse(c, await resolveLivePlayback(c.req.param('login')));
+    const hash = await playbackHashOverride(c);
+    return await playbackResponse(c, await resolveLivePlayback(c.req.param('login'), hash));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
