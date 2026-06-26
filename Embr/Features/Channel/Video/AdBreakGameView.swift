@@ -14,6 +14,8 @@ final class AdBreakGameView: UIView {
         var scored: Bool
     }
 
+    var onActiveChanged: ((Bool) -> Void)?
+
     private let ember = UIImageView()
     private let scoreLabel = UILabel()
     private let messageLabel = UILabel()
@@ -58,6 +60,7 @@ final class AdBreakGameView: UIView {
     func deactivate() {
         stopLink()
         state = .idle
+        onActiveChanged?(false)
     }
 
     private func buildHierarchy() {
@@ -135,6 +138,7 @@ final class AdBreakGameView: UIView {
         hintLabel.text = best > 0 ? "Tap to fly · Best \(best)" : "Tap to fly through the ad break"
         messageLabel.isHidden = false
         hintLabel.isHidden = false
+        onActiveChanged?(false)
     }
 
     private func beginPlaying() {
@@ -150,6 +154,7 @@ final class AdBreakGameView: UIView {
         hintLabel.isHidden = true
         startLink()
         Haptics.impact(.light)
+        onActiveChanged?(true)
     }
 
     private func makePillar(at x: CGFloat) -> Pillar {
@@ -236,6 +241,7 @@ final class AdBreakGameView: UIView {
         } completion: { _ in
             self.ember.alpha = 1
         }
+        onActiveChanged?(false)
     }
 
     private func layoutPillars() {

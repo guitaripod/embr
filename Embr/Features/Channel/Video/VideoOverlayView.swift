@@ -59,6 +59,7 @@ final class VideoOverlayView: UIView {
     private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
     private let adStatusLabel = UILabel()
     private let adInfoButton = UIButton(type: .system)
+    private let adBottomStack = UIStackView()
     private let adGameView = AdBreakGameView()
 
     private let latencyLabel: UILabel = {
@@ -421,24 +422,41 @@ final class VideoOverlayView: UIView {
             self.delegate?.videoOverlayDidTapAdInfo(self)
         }, for: .touchUpInside)
 
-        let bottomStack = UIStackView(arrangedSubviews: [adStatusLabel, adInfoButton])
-        bottomStack.axis = .vertical
-        bottomStack.alignment = .center
-        bottomStack.spacing = 8
-        bottomStack.translatesAutoresizingMaskIntoConstraints = false
-        adCover.contentView.addSubview(bottomStack)
+        adBottomStack.addArrangedSubview(adStatusLabel)
+        adBottomStack.addArrangedSubview(adInfoButton)
+        adBottomStack.axis = .vertical
+        adBottomStack.alignment = .center
+        adBottomStack.spacing = 8
+        adBottomStack.translatesAutoresizingMaskIntoConstraints = false
+        adCover.contentView.addSubview(adBottomStack)
+
+        adGameView.onActiveChanged = { [weak self] playing in
+            self?.setAdChromeVisible(!playing)
+        }
 
         NSLayoutConstraint.activate([
             adGameView.topAnchor.constraint(equalTo: adCover.contentView.topAnchor),
             adGameView.leadingAnchor.constraint(equalTo: adCover.contentView.leadingAnchor),
             adGameView.trailingAnchor.constraint(equalTo: adCover.contentView.trailingAnchor),
-            adGameView.bottomAnchor.constraint(equalTo: bottomStack.topAnchor, constant: -8),
+            adGameView.bottomAnchor.constraint(equalTo: adCover.contentView.bottomAnchor),
 
-            bottomStack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
-            bottomStack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
-            bottomStack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
-            bottomStack.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
+            adBottomStack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
+            adBottomStack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
+            adBottomStack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
+            adBottomStack.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
         ])
+    }
+
+    private func setAdChromeVisible(_ visible: Bool) {
+        adBottomStack.isUserInteractionEnabled = visible
+        if visible {
+            adBottomStack.isHidden = false
+            UIView.animate(withDuration: 0.2) { self.adBottomStack.alpha = 1 }
+        } else {
+            UIView.animate(withDuration: 0.2, animations: { self.adBottomStack.alpha = 0 }) { finished in
+                if finished, self.adBottomStack.alpha < 0.01 { self.adBottomStack.isHidden = true }
+            }
+        }
     }
 
     private func configureActions() {
