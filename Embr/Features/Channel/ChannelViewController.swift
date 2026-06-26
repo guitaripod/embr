@@ -410,7 +410,7 @@ final class ChannelViewController: UIViewController {
         let loggedIn = user != nil
         let room = AppContainer.shared.makeChatRoom(channel: channel, loggedIn: loggedIn)
         let viewModel = ChatViewModel(room: room, currentUserLogin: user?.login)
-        let chat = ChatViewController(viewModel: viewModel, isAnonymous: !loggedIn, currentUserLogin: user?.login)
+        let chat = ChatViewController(viewModel: viewModel, isAnonymous: !loggedIn, currentUserLogin: user?.login, broadcasterLogin: channel.broadcasterLogin)
         chat.delegate = self
         addChild(chat)
         chat.view.translatesAutoresizingMaskIntoConstraints = false

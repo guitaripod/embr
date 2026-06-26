@@ -23,9 +23,12 @@ final class ChatViewModel {
     ) {
         self.room = room
         self.store = MessageStore(settings: settings.current, currentUserLogin: currentUserLogin)
-        Task { [store] in
+        Task { [weak self] in
+            guard let self else { return }
             let ids = Set(await DatabaseManager.shared.blockedUsers().map(\.userID))
-            await store.setBlocked(ids)
+            if let snapshot = await self.store.setBlocked(ids) {
+                self.snapshotSubject.send(snapshot)
+            }
         }
     }
 
@@ -35,6 +38,7 @@ final class ChatViewModel {
             if let snapshot = await store.block(userID) {
                 snapshotSubject.send(snapshot)
             }
+            noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
         }
     }
 
@@ -257,12 +261,15 @@ private actor MessageStore {
         return frozenSnapshot()
     }
 
-    func setBlocked(_ ids: Set<String>) {
+    func setBlocked(_ ids: Set<String>) -> ChatSnapshot? {
         blockedUserIDs = ids
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return nil }
+        let before = rows.count
         rows.removeAll { ids.contains($0.message.author.id) }
         frozenRows.removeAll { ids.contains($0.message.author.id) }
+        guard rows.count != before else { return nil }
         rebuildIndex()
+        return currentSnapshot()
     }
 
     func block(_ userID: String) -> ChatSnapshot? {

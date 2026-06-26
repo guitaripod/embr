@@ -385,6 +385,7 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     private var loadTasks: [String: Task<Void, Never>] = [:]
     private let placeholderLabel = UILabel()
     private var pendingRetokenize = false
+    private var pendingRedraw = false
 
     init(images: ImageLoading) {
         self.images = images
@@ -456,9 +457,15 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        if pendingRetokenize, markedTextRange == nil {
-            pendingRetokenize = false
-            render(plain: plainText, caret: caretPlainOffset())
+        if markedTextRange == nil {
+            if pendingRetokenize {
+                pendingRetokenize = false
+                pendingRedraw = false
+                render(plain: plainText, caret: caretPlainOffset())
+            } else if pendingRedraw {
+                pendingRedraw = false
+                redrawAttachments()
+            }
         }
         placeholderLabel.isHidden = attributedText.length > 0
         onTextChange?()
@@ -537,7 +544,7 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     }
 
     private func redrawAttachments() {
-        guard markedTextRange == nil else { return }
+        guard markedTextRange == nil else { pendingRedraw = true; return }
         let preservedSelection = selectedRange
         let current = attributedText
         attributedText = current

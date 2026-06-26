@@ -42,12 +42,15 @@ final class ChatViewController: UIViewController {
     private var chatterIndex: [String: String] = [:]
     private var lastLayoutWidth: CGFloat = 0
 
-    init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool, currentUserLogin: String? = nil) {
+    init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool, currentUserLogin: String? = nil, broadcasterLogin: String? = nil) {
         self.viewModel = viewModel
         self.images = images
         self.isAnonymous = isAnonymous
         self.currentUserLogin = currentUserLogin
         super.init(nibName: nil, bundle: nil)
+        if !isAnonymous, let me = currentUserLogin?.lowercased(), me == broadcasterLogin?.lowercased() {
+            canModerate = true
+        }
     }
 
     @available(*, unavailable)

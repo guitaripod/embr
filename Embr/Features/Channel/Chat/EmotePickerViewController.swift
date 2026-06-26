@@ -152,9 +152,9 @@ final class EmotePickerViewController: UIViewController {
             query.isEmpty ? emotes : emotes.filter { $0.name.lowercased().contains(query) }
         }
         let recent = matches(recentEmotes)
-        let recentIDs = Set(recent.map(\.id))
-        let channel = matches(channelEmotes).filter { !recentIDs.contains($0.id) }
-        let global = matches(globalEmotes).filter { !recentIDs.contains($0.id) }
+        var used = Set(recent.map(\.id))
+        let channel = matches(channelEmotes).filter { used.insert($0.id).inserted }
+        let global = matches(globalEmotes).filter { used.insert($0.id).inserted }
         var snapshot = NSDiffableDataSourceSnapshot<Section, Emote>()
         if !recent.isEmpty { snapshot.appendSections([.recent]); snapshot.appendItems(recent, toSection: .recent) }
         if !channel.isEmpty { snapshot.appendSections([.channel]); snapshot.appendItems(channel, toSection: .channel) }
