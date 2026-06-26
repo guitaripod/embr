@@ -52,7 +52,8 @@ final class BlockedUsersViewController: UIViewController {
 
     private func setUpEmptyLabel() {
         emptyLabel.text = "No blocked users.\nBlock someone from a chat message to hide them."
-        emptyLabel.font = .systemFont(ofSize: 15)
+        emptyLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15))
+        emptyLabel.adjustsFontForContentSizeCategory = true
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
         emptyLabel.numberOfLines = 0
