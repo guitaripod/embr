@@ -41,15 +41,25 @@ final class ChannelEventCardView: UIView {
     private func setHidden(_ hidden: Bool) {
         guard hidden != isHidden else { return }
         isHidden = hidden
-        if hidden {
-            ticker?.invalidate(); ticker = nil
-        } else if ticker == nil {
-            let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { self?.tick() }
-            }
-            RunLoop.main.add(timer, forMode: .common)
-            ticker = timer
+        if hidden { stopTicker() } else { startTicker() }
+    }
+
+    func pause() { stopTicker() }
+
+    func resume() { if !isHidden { startTicker() } }
+
+    private func startTicker() {
+        guard ticker == nil else { return }
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tick() }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        ticker = timer
+    }
+
+    private func stopTicker() {
+        ticker?.invalidate()
+        ticker = nil
     }
 
     private func configure(poll: LivePoll) {

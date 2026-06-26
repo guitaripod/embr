@@ -84,12 +84,14 @@ final class ChannelViewController: UIViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
         eventsPoller.start()
+        eventCard.resume()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         eventsPoller.stop()
+        eventCard.pause()
     }
 
     override func viewDidLoad() {
