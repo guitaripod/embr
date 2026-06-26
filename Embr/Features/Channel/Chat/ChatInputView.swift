@@ -501,7 +501,8 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
             case .word(let value):
                 if let emote = catalog.lookup(value) {
                     let attachment = EmoteTextAttachment(emoteName: emote.name)
-                    attachment.bounds = CGRect(x: 0, y: -4, width: 20, height: 20)
+                    let emoteWidth = max(20, 20 * CGFloat(emote.aspectRatio))
+                    attachment.bounds = CGRect(x: 0, y: -4, width: emoteWidth, height: 20)
                     mutable.append(NSAttributedString(attachment: attachment))
                     loadAttachment(attachment, emote: emote)
                 } else {
