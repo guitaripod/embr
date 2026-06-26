@@ -168,6 +168,7 @@ final class ChannelViewController: UIViewController {
 
     private func setChatOnly(_ on: Bool) {
         guard on != isChatOnly else { return }
+        if isVideoFullscreen { setVideoFullscreen(false) }
         Haptics.selection(store)
         isChatOnly = on
         store.update { $0.chatOnly = on }
