@@ -26,6 +26,7 @@ final class ChatInputView: UIView {
     private let sendButton = UIButton(type: .system)
     private let spinner = UIActivityIndicatorView(style: .medium)
     private let dropReasonLabel = UILabel()
+    private let dropContainer = UIStackView()
 
     private let images: ImageLoading
     private var catalog = EmoteCatalog()
@@ -78,7 +79,7 @@ final class ChatInputView: UIView {
 
     func showDropReason(_ reason: String?) {
         dropReasonLabel.text = reason
-        dropReasonLabel.isHidden = (reason == nil)
+        dropContainer.isHidden = (reason == nil)
     }
 
     func clear() {
@@ -169,11 +170,11 @@ final class ChatInputView: UIView {
         dropReasonLabel.font = .systemFont(ofSize: 12, weight: .regular)
         dropReasonLabel.textColor = .systemRed
         dropReasonLabel.numberOfLines = 2
-        dropReasonLabel.isHidden = true
 
-        let dropContainer = UIStackView(arrangedSubviews: [dropReasonLabel])
+        dropContainer.addArrangedSubview(dropReasonLabel)
         dropContainer.isLayoutMarginsRelativeArrangement = true
         dropContainer.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 2, leading: 14, bottom: 2, trailing: 14)
+        dropContainer.isHidden = true
 
         replyPreview.isHidden = true
         replyPreview.onCancel = { [weak self] in
