@@ -192,7 +192,8 @@ async function playbackResponse(c: { req: { url: string } }, usher: string): Pro
 
 async function playbackHashOverride(c: { env: Bindings }): Promise<string | undefined> {
   try {
-    return (await c.env.TOKENS.get(PLAYBACK_HASH_KV_KEY)) ?? undefined;
+    const value = await c.env.TOKENS.get(PLAYBACK_HASH_KV_KEY);
+    return value && value.length > 0 ? value : undefined;
   } catch {
     return undefined;
   }
@@ -216,10 +217,11 @@ app.get('/embed', (c) => {
   const host = new URL(c.req.url).hostname;
   const safeChannel = encodeURIComponent(channel);
   const safeParent = encodeURIComponent(host);
+  const muted = c.req.query('muted') === 'true' ? 'true' : 'false';
   const html = `<!doctype html><html><head><meta charset="utf-8">` +
     `<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">` +
     `<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%}</style></head>` +
-    `<body><iframe src="https://player.twitch.tv/?channel=${safeChannel}&parent=${safeParent}&autoplay=true&playsinline=true" ` +
+    `<body><iframe src="https://player.twitch.tv/?channel=${safeChannel}&parent=${safeParent}&autoplay=true&muted=${muted}&playsinline=true" ` +
     `allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></body></html>`;
   return new Response(html, {
     status: 200,

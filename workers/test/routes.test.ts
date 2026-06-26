@@ -154,6 +154,8 @@ describe('GET /auth/login-url', () => {
     expect(scope).toContain('user:read:blocked_users');
     expect(scope).toContain('user:manage:blocked_users');
     expect(scope).toContain('user:manage:chat_color');
+    expect(scope).toContain('moderator:manage:banned_users');
+    expect(scope).toContain('moderator:manage:chat_messages');
   });
 
   it('returns 400 without redirectURI', async () => {
@@ -307,6 +309,32 @@ describe('GET /playback/:login', () => {
     const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
     const payload = JSON.parse(String((gqlCall?.[1] as RequestInit).body));
     expect(payload.extensions.persistedQuery.sha256Hash).toBe('deadbeefhash');
+  });
+
+  it('falls back to the default persisted-query hash when the KV value is empty', async () => {
+    const store = new Map<string, string>();
+    store.set('playback_token_sha256', '');
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"t":1}', signature: 's' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/chan', {}, makeEnv(store));
+    expect(res.status).toBe(200);
+    const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
+    const payload = JSON.parse(String((gqlCall?.[1] as RequestInit).body));
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe(
+      'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9',
+    );
   });
 });
 
