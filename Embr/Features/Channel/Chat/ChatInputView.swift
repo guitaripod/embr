@@ -284,6 +284,7 @@ final class ChatInputView: UIView {
     }
 
     private func insertSuggestion(_ suggestion: AutocompleteSuggestion) {
+        if case .emote(let emote) = suggestion { EmoteUsage.record(emote) }
         textView.replaceCurrentToken(with: suggestion.insertionText + " ")
         refreshAutocomplete()
     }

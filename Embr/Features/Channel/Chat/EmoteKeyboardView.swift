@@ -12,6 +12,8 @@ final class EmoteKeyboardView: UIView {
 
     private let images: ImageLoading
     private var sections: [(section: EmoteSection, emotes: [Emote])] = []
+    private var recents: [Emote] = []
+    private var catalog = EmoteCatalog()
 
     private let chipsScroll = UIScrollView()
     private let chipsStack = UIStackView()
@@ -46,16 +48,43 @@ final class EmoteKeyboardView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func setCatalog(_ catalog: EmoteCatalog) {
-        sections = Self.buildSections(catalog)
+        self.catalog = catalog
+        rebuild()
+        loadRecents()
+    }
+
+    private func rebuild() {
+        sections = Self.buildSections(catalog, recents: recents)
         rebuildChips()
         applySnapshot()
         emptyLabel.isHidden = !sections.isEmpty
     }
 
-    private static func buildSections(_ catalog: EmoteCatalog) -> [(EmoteSection, [Emote])] {
+    private func loadRecents() {
+        let catalog = self.catalog
+        Task { [weak self] in
+            let records = await DatabaseManager.shared.recentEmotes()
+            var seen = Set<String>()
+            let resolved = records.compactMap { catalog.lookup($0.name) }.filter { seen.insert($0.id).inserted }
+            guard let self else { return }
+            self.recents = resolved
+            self.rebuild()
+        }
+    }
+
+    private static func buildSections(_ catalog: EmoteCatalog, recents: [Emote]) -> [(EmoteSection, [Emote])] {
+        let recentIDs = Set(recents.map(\.id))
+        var result: [(EmoteSection, [Emote])] = baseSections(catalog, excluding: recentIDs)
+        if !recents.isEmpty {
+            result.insert((EmoteSection(title: "Recent"), recents), at: 0)
+        }
+        return result
+    }
+
+    private static func baseSections(_ catalog: EmoteCatalog, excluding: Set<String>) -> [(EmoteSection, [Emote])] {
         let channel = Array(catalog.channel.values)
         let global = Array(catalog.global.values)
-        var usedIDs = Set<String>()
+        var usedIDs = excluding
         func take(_ emotes: [Emote]) -> [Emote] {
             emotes
                 .sorted { $0.name.lowercased() < $1.name.lowercased() }
@@ -250,6 +279,7 @@ extension EmoteKeyboardView: UICollectionViewDelegate {
         collectionView.deselectItem(at: indexPath, animated: true)
         guard let emote = dataSource.itemIdentifier(for: indexPath) else { return }
         Haptics.selection()
+        EmoteUsage.record(emote)
         onInsert?(emote.name)
     }
 }

@@ -5,19 +5,23 @@ import EmbrCore
 @MainActor
 final class EmotePickerViewController: UIViewController {
     private enum Section: Int, Hashable, CaseIterable {
+        case recent
         case channel
         case global
 
         var title: String {
             switch self {
+            case .recent: return "Recently Used"
             case .channel: return "Channel Emotes"
             case .global: return "Global Emotes"
             }
         }
     }
 
+    private let catalog: EmoteCatalog
     private let channelEmotes: [Emote]
     private let globalEmotes: [Emote]
+    private var recentEmotes: [Emote] = []
     private let images: ImageLoading
     private let onSelect: (String) -> Void
 
@@ -26,6 +30,7 @@ final class EmotePickerViewController: UIViewController {
     private var dataSource: UICollectionViewDiffableDataSource<Section, Emote>!
 
     init(catalog: EmoteCatalog, images: ImageLoading = AppContainer.shared.images, onSelect: @escaping (String) -> Void) {
+        self.catalog = catalog
         self.channelEmotes = catalog.channel.values.sorted { $0.name.lowercased() < $1.name.lowercased() }
         self.globalEmotes = catalog.global.values.sorted { $0.name.lowercased() < $1.name.lowercased() }
         self.images = images
@@ -48,6 +53,19 @@ final class EmotePickerViewController: UIViewController {
         setUpCollectionView()
         setUpDataSource()
         apply(filter: "")
+        loadRecents()
+    }
+
+    private func loadRecents() {
+        let catalog = self.catalog
+        Task { [weak self] in
+            let records = await DatabaseManager.shared.recentEmotes()
+            var seen = Set<String>()
+            let resolved = records.compactMap { catalog.lookup($0.name) }.filter { seen.insert($0.id).inserted }
+            guard let self else { return }
+            self.recentEmotes = resolved
+            self.apply(filter: self.searchField.text ?? "")
+        }
     }
 
     private func setUpSearch() {
@@ -130,9 +148,15 @@ final class EmotePickerViewController: UIViewController {
 
     private func apply(filter: String) {
         let query = filter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let channel = query.isEmpty ? channelEmotes : channelEmotes.filter { $0.name.lowercased().contains(query) }
-        let global = query.isEmpty ? globalEmotes : globalEmotes.filter { $0.name.lowercased().contains(query) }
+        func matches(_ emotes: [Emote]) -> [Emote] {
+            query.isEmpty ? emotes : emotes.filter { $0.name.lowercased().contains(query) }
+        }
+        let recent = matches(recentEmotes)
+        let recentIDs = Set(recent.map(\.id))
+        let channel = matches(channelEmotes).filter { !recentIDs.contains($0.id) }
+        let global = matches(globalEmotes).filter { !recentIDs.contains($0.id) }
         var snapshot = NSDiffableDataSourceSnapshot<Section, Emote>()
+        if !recent.isEmpty { snapshot.appendSections([.recent]); snapshot.appendItems(recent, toSection: .recent) }
         if !channel.isEmpty { snapshot.appendSections([.channel]); snapshot.appendItems(channel, toSection: .channel) }
         if !global.isEmpty { snapshot.appendSections([.global]); snapshot.appendItems(global, toSection: .global) }
         dataSource.apply(snapshot, animatingDifferences: false)
@@ -144,6 +168,7 @@ extension EmotePickerViewController: UICollectionViewDelegate {
         collectionView.deselectItem(at: indexPath, animated: true)
         guard let emote = dataSource.itemIdentifier(for: indexPath) else { return }
         Haptics.selection()
+        EmoteUsage.record(emote)
         onSelect(emote.name)
     }
 }
