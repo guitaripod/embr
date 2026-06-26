@@ -9,7 +9,6 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     }
 
     var theme: ThemePreference
-    var accentUsesTwitchPurple: Bool
 
     var showTimestamps: Bool
     var compactChat: Bool
@@ -37,7 +36,6 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     static let `default` = Settings(
         theme: .system,
-        accentUsesTwitchPurple: true,
         showTimestamps: false,
         compactChat: false,
         messageScale: 1.0,

@@ -25,7 +25,6 @@ final class SettingsViewController: UIViewController {
 
     private enum Row: Hashable {
         case theme
-        case accentPurple
         case openLinksInApp
         case haptics
         case shareCrashLogs
@@ -168,7 +167,7 @@ final class SettingsViewController: UIViewController {
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
         snapshot.appendSections(Section.allCases)
-        snapshot.appendItems([.theme, .accentPurple, .openLinksInApp, .haptics, .shareCrashLogs], toSection: .general)
+        snapshot.appendItems([.theme, .openLinksInApp, .haptics, .shareCrashLogs], toSection: .general)
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta, .showDeletedMessages,
              .highlightMentions, .recentMessagesBackfill, .animateEmotes]
@@ -212,10 +211,6 @@ final class SettingsViewController: UIViewController {
             cell.contentConfiguration = content
             cell.accessories = [.customView(configuration: .init(customView: themeButton(selected: settings.theme), placement: .trailing()))]
 
-        case .accentPurple:
-            switchRow(cell, &content, title: "Use Twitch Purple Accent", isOn: settings.accentUsesTwitchPurple) { store, on in
-                store.update { $0.accentUsesTwitchPurple = on }
-            }
         case .openLinksInApp:
             switchRow(cell, &content, title: "Open Links In App", isOn: settings.openLinksInApp) { store, on in
                 store.update { $0.openLinksInApp = on }
@@ -431,7 +426,6 @@ final class SettingsViewController: UIViewController {
         let spec: (String, UIColor)
         switch row {
         case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
-        case .accentPurple: spec = ("paintpalette.fill", Theme.accent)
         case .openLinksInApp: spec = ("safari.fill", .systemBlue)
         case .haptics: spec = ("hand.tap.fill", .systemPink)
         case .shareCrashLogs: spec = ("ladybug.fill", .systemRed)
