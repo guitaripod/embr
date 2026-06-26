@@ -132,34 +132,6 @@ final class MessageCell: UICollectionViewCell {
         setNeedsLayout()
     }
 
-    /// An upright bitmap of the cell content for a context-menu preview, immune to the
-    /// inverted (scaleY:-1) transform. `CALayer.render(in:)` ignores the layer's own
-    /// transform (so contentView's flip is dropped → upright) while still drawing
-    /// sublayers at their manual frames. Target a NON-flipped container at the cell's
-    /// on-screen center.
-    func makeUprightContextPreview(in container: UIView, center: CGPoint) -> UITargetedPreview? {
-        layoutIfNeeded()
-        let bounds = contentView.bounds
-        guard bounds.width > 1, bounds.height > 1 else { return nil }
-        for view in emoteViews where !view.isHidden {
-            if view.layer.contents == nil, let cgImage = view.image?.cgImage {
-                view.layer.contents = cgImage
-            }
-        }
-        let format = UIGraphicsImageRendererFormat.preferred()
-        format.opaque = false
-        let image = UIGraphicsImageRenderer(bounds: bounds, format: format).image { ctx in
-            contentView.layer.render(in: ctx.cgContext)
-        }
-        let imageView = UIImageView(image: image)
-        imageView.frame = bounds
-        imageView.alpha = contentView.alpha
-        let parameters = UIPreviewParameters()
-        parameters.backgroundColor = .clear
-        parameters.visiblePath = UIBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 0), cornerRadius: 4)
-        return UITargetedPreview(view: imageView, parameters: parameters, target: UIPreviewTarget(container: container, center: center))
-    }
-
     private func configureEmotes(_ placements: [LaidOutMessage.EmotePlacement], images: ImageLoading, animator: EmoteAnimator) {
         ensureEmoteViews(count: placements.count)
         for (index, placement) in placements.enumerated() {

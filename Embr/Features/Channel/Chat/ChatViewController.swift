@@ -33,7 +33,6 @@ final class ChatViewController: UIViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private var isPaused = false
-    private var pausedForMenu = false
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
 
@@ -131,6 +130,12 @@ final class ChatViewController: UIViewController {
         dismissTap.cancelsTouchesInView = false
         dismissTap.delegate = self
         collectionView.addGestureRecognizer(dismissTap)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleMessageLongPress(_:)))
+        longPress.minimumPressDuration = 0.35
+        longPress.delegate = self
+        collectionView.addGestureRecognizer(longPress)
+
         view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
@@ -359,6 +364,18 @@ final class ChatViewController: UIViewController {
         view.endEditing(true)
     }
 
+    @objc private func handleMessageLongPress(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+        let point = recognizer.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: point),
+              let row = dataSource.itemIdentifier(for: indexPath) else { return }
+        Haptics.impact(.medium)
+        let sourceRect = collectionView.layoutAttributesForItem(at: indexPath)
+            .map { collectionView.convert($0.frame, to: view) }
+            ?? CGRect(origin: view.convert(point, from: collectionView), size: .zero)
+        presentMessageActions(for: row.message, sourceRect: sourceRect)
+    }
+
     private func handleKeyboard(_ note: Notification) {
         guard let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
               let durationValue = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else { return }
@@ -416,87 +433,44 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         collectionView.deselectItem(at: indexPath, animated: false)
     }
 
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfiguration configuration: UIContextMenuConfiguration, highlightPreviewForItemAt indexPath: IndexPath) -> UITargetedPreview? {
-        makePreview(for: indexPath)
-    }
-
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfiguration configuration: UIContextMenuConfiguration, dismissalPreviewForItemAt indexPath: IndexPath) -> UITargetedPreview? {
-        makePreview(for: indexPath)
-    }
-
-    private func makePreview(for indexPath: IndexPath) -> UITargetedPreview? {
-        guard let cell = collectionView.cellForItem(at: indexPath) as? MessageCell else { return nil }
-        let center = collectionView.convert(cell.center, to: view)
-        return cell.makeUprightContextPreview(in: view, center: center)
-    }
-
-    func collectionView(_ collectionView: UICollectionView, willDisplayContextMenu configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionAnimating?) {
-        guard !isPaused else { return }
-        pausedForMenu = true
-        isPaused = true
-        viewModel.setPaused(true)
-    }
-
-    func collectionView(_ collectionView: UICollectionView, willEndContextMenuInteraction configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionAnimating?) {
-        guard pausedForMenu else { return }
-        pausedForMenu = false
-        guard collectionView.contentOffset.y <= 8 else { return }
-        isPaused = false
-        viewModel.setPaused(false)
-    }
-
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let row = dataSource.itemIdentifier(for: indexPath) else { return nil }
-        let message = row.message
-        let isOwnMessage = message.author.login.lowercased() == currentUserLogin?.lowercased()
-        return UIContextMenuConfiguration(identifier: indexPath as NSCopying, previewProvider: nil) { [weak self] _ in
-            guard let self else { return nil }
-            var actions: [UIMenuElement] = []
-            if !self.isAnonymous {
-                actions.append(UIAction(title: "Reply", image: UIImage(systemName: "arrowshape.turn.up.left")) { [weak self] _ in
-                    guard let self else { return }
-                    self.delegate?.chatViewController(self, didRequestReplyTo: message)
-                })
-            }
-            actions.append(UIAction(title: "View Profile", image: UIImage(systemName: "person.crop.circle")) { [weak self] _ in
+    private func presentMessageActions(for message: ChatMessage, sourceRect: CGRect) {
+        let isOwn = message.author.login.lowercased() == currentUserLogin?.lowercased()
+        let sheet = UIAlertController(title: message.author.displayName, message: nil, preferredStyle: .actionSheet)
+        if !isAnonymous {
+            sheet.addAction(UIAlertAction(title: "Reply", style: .default) { [weak self] _ in
                 guard let self else { return }
-                self.delegate?.chatViewController(self, didTapUsername: message.author)
+                self.delegate?.chatViewController(self, didRequestReplyTo: message)
             })
-            actions.append(UIAction(title: "Copy Message", image: UIImage(systemName: "doc.on.doc")) { _ in
-                UIPasteboard.general.string = message.plainText
-            })
-            actions.append(UIAction(title: "Copy @\(message.author.login)", image: UIImage(systemName: "person")) { _ in
-                UIPasteboard.general.string = "@\(message.author.login)"
-            })
-            if self.canModerate, !isOwnMessage {
-                let moderate = UIMenu(title: "Moderate", image: UIImage(systemName: "shield"), children: [
-                    UIAction(title: "Delete Message", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                        Haptics.impact(.light)
-                        self?.viewModel.deleteMessage(messageID: message.id)
-                    },
-                    UIAction(title: "Timeout 10m", image: UIImage(systemName: "clock")) { [weak self] _ in
-                        Haptics.impact(.light)
-                        self?.viewModel.timeoutUser(userID: message.author.id, duration: 600)
-                    },
-                    UIAction(title: "Timeout 1h", image: UIImage(systemName: "clock.badge.exclamationmark")) { [weak self] _ in
-                        Haptics.impact(.light)
-                        self?.viewModel.timeoutUser(userID: message.author.id, duration: 3600)
-                    },
-                    UIAction(title: "Ban", image: UIImage(systemName: "nosign"), attributes: .destructive) { [weak self] _ in
-                        Haptics.impact(.medium)
-                        self?.viewModel.banUser(userID: message.author.id)
-                    },
-                ])
-                actions.append(moderate)
-            }
-            if !self.isAnonymous, !isOwnMessage {
-                actions.append(UIAction(title: "Block @\(message.author.login)", image: UIImage(systemName: "hand.raised"), attributes: .destructive) { [weak self] _ in
-                    Haptics.impact(.light)
-                    self?.viewModel.block(userID: message.author.id, login: message.author.login)
-                })
-            }
-            return UIMenu(children: actions)
         }
+        sheet.addAction(UIAlertAction(title: "View Profile", style: .default) { [weak self] _ in
+            guard let self else { return }
+            self.delegate?.chatViewController(self, didTapUsername: message.author)
+        })
+        sheet.addAction(UIAlertAction(title: "Copy Message", style: .default) { _ in
+            UIPasteboard.general.string = message.plainText
+        })
+        if canModerate, !isOwn {
+            sheet.addAction(UIAlertAction(title: "Delete Message", style: .destructive) { [weak self] _ in
+                self?.viewModel.deleteMessage(messageID: message.id)
+            })
+            sheet.addAction(UIAlertAction(title: "Timeout 10 min", style: .default) { [weak self] _ in
+                self?.viewModel.timeoutUser(userID: message.author.id, duration: 600)
+            })
+            sheet.addAction(UIAlertAction(title: "Ban", style: .destructive) { [weak self] _ in
+                self?.viewModel.banUser(userID: message.author.id)
+            })
+        }
+        if !isAnonymous, !isOwn {
+            sheet.addAction(UIAlertAction(title: "Block @\(message.author.login)", style: .destructive) { [weak self] _ in
+                self?.viewModel.block(userID: message.author.id, login: message.author.login)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = sourceRect
+        }
+        present(sheet, animated: true)
     }
 }
 
@@ -577,7 +551,9 @@ extension ChatViewController: ChatInputViewDelegate {
         Haptics.impact(.light)
         viewModel.setReply(parentID: message.id)
         composer.showReply(displayName: message.author.displayName, text: message.plainText)
-        composer.becomeFirstResponder()
+        DispatchQueue.main.async { [weak self] in
+            _ = self?.composer.becomeFirstResponder()
+        }
     }
 
     private func emoteSuggestions(matching query: String) -> [AutocompleteSuggestion] {
