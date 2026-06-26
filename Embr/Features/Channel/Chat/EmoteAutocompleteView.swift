@@ -69,11 +69,11 @@ final class EmoteAutocompleteView: UIView {
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            stack.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            stack.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+            stack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            stack.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor)
         ])
     }
 
