@@ -216,6 +216,7 @@ private final class EventBarRow: UIView {
     private let titleLabel = UILabel()
     private let valueLabel = UILabel()
     private var fraction: CGFloat = 0
+    private var didConfigureOnce = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -257,7 +258,12 @@ private final class EventBarRow: UIView {
         fill.backgroundColor = color.withAlphaComponent(emphasized ? 0.55 : 0.32)
         titleLabel.font = .systemFont(ofSize: 13, weight: emphasized ? .bold : .semibold)
         setNeedsLayout()
-        UIView.animate(withDuration: 0.3) { self.layoutIfNeeded() }
+        if didConfigureOnce {
+            UIView.animate(withDuration: 0.3) { self.layoutIfNeeded() }
+        } else {
+            didConfigureOnce = true
+            UIView.performWithoutAnimation { self.layoutIfNeeded() }
+        }
     }
 
     override func layoutSubviews() {
