@@ -432,7 +432,7 @@ final class VideoOverlayView: UIView {
             adGameView.topAnchor.constraint(equalTo: adCover.contentView.topAnchor),
             adGameView.leadingAnchor.constraint(equalTo: adCover.contentView.leadingAnchor),
             adGameView.trailingAnchor.constraint(equalTo: adCover.contentView.trailingAnchor),
-            adGameView.bottomAnchor.constraint(equalTo: adCover.contentView.bottomAnchor),
+            adGameView.bottomAnchor.constraint(equalTo: bottomStack.topAnchor, constant: -8),
 
             bottomStack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
             bottomStack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),

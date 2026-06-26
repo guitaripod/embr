@@ -330,7 +330,9 @@ final class VideoViewController: UIViewController {
         view.insertSubview(playerView, belowSubview: overlay)
         bindPlayer()
 
+        web.setMuted(isMuted)
         overlay.setPictureInPictureEnabled(false)
+        overlay.setMuted(isMuted)
         overlay.clearError()
         overlay.setBuffering(true)
 

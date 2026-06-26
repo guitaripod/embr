@@ -25,6 +25,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     private let logger: AppLogger
     private let workerBaseURL: URL
     private let parentHost: String
+    private var muted = false
 
     private let messageProxy = WeakScriptMessageHandler()
 
@@ -89,6 +90,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     }
 
     func setMuted(_ muted: Bool) {
+        self.muted = muted
         evaluate("if (window.embrPlayer) { window.embrPlayer.setMuted(\(muted ? "true" : "false")); }")
     }
 
@@ -104,7 +106,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
         var components = URLComponents(url: workerBaseURL.appendingPathComponent("embed"), resolvingAgainstBaseURL: false)
         components?.queryItems = [
             URLQueryItem(name: "channel", value: channel),
-            URLQueryItem(name: "parent", value: parentHost)
+            URLQueryItem(name: "muted", value: muted ? "true" : "false")
         ]
         guard let url = components?.url else {
             loadPlayerTwitchFallback(channel: channel)
@@ -119,7 +121,8 @@ final class WebViewPlayer: NSObject, VideoPlaying {
         components?.queryItems = [
             URLQueryItem(name: "channel", value: channel),
             URLQueryItem(name: "parent", value: parentHost),
-            URLQueryItem(name: "autoplay", value: "true")
+            URLQueryItem(name: "autoplay", value: "true"),
+            URLQueryItem(name: "muted", value: muted ? "true" : "false")
         ]
         guard let url = components?.url else {
             stateSubject.send(.error("Unable to build embed URL"))
@@ -139,9 +142,10 @@ final class WebViewPlayer: NSObject, VideoPlaying {
         """
         <!doctype html><html><head><meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
         <style>html,body{margin:0;background:#000;height:100%}video{width:100%;height:100%;object-fit:contain}</style></head>
-        <body><video id="v" autoplay playsinline src="\(url.absoluteString)"></video>
+        <body><video id="v" autoplay playsinline\(muted ? " muted" : "") src="\(url.absoluteString)"></video>
         <script>
         var v=document.getElementById('v');
+        v.muted=\(muted ? "true" : "false");
         function post(s){try{window.webkit.messageHandlers.embrPlayer.postMessage(s);}catch(e){}}
         window.embrPlayer={play:function(){v.play();},pause:function(){v.pause();},setMuted:function(m){v.muted=m;},setQuality:function(){}};
         v.addEventListener('playing',function(){post('playing');});
