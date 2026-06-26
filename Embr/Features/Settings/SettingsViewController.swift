@@ -273,7 +273,7 @@ final class SettingsViewController: UIViewController {
 
         case .defaultQuality:
             content.text = "Default Quality"
-            content.secondaryText = settings.defaultQuality.capitalized
+            content.secondaryText = Self.qualityDisplayName(settings.defaultQuality)
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .defaultToHighest:
@@ -477,12 +477,25 @@ final class SettingsViewController: UIViewController {
         let qualities = ["auto", "source", "720p60", "720p", "480p", "360p", "160p", "audio_only"]
         let alert = UIAlertController(title: "Default Quality", message: nil, preferredStyle: .actionSheet)
         for quality in qualities {
-            alert.addAction(UIAlertAction(title: quality.capitalized, style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: Self.qualityDisplayName(quality), style: .default) { [weak self] _ in
                 self?.store.update { $0.defaultQuality = quality }
             })
         }
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        }
         present(alert, animated: true)
+    }
+
+    private static func qualityDisplayName(_ quality: String) -> String {
+        switch quality {
+        case "auto": return "Auto"
+        case "source": return "Source"
+        case "audio_only": return "Audio Only"
+        default: return quality
+        }
     }
 
     private func openGitHub() {
