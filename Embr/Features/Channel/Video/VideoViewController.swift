@@ -608,6 +608,9 @@ extension VideoViewController: VideoOverlayViewDelegate {
         switch currentState {
         case .playing, .buffering, .loading:
             player.pause()
+        case .ended where isSeekableSource:
+            player.seek(to: 0)
+            player.play()
         default:
             if case .live = source { player.seekToLive() }
             player.play()
