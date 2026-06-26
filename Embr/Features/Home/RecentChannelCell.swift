@@ -16,6 +16,9 @@ final class RecentChannelCell: UICollectionViewCell {
         self.images = AppContainer.shared.images
         super.init(frame: frame)
         setUp()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (cell: RecentChannelCell, _) in
+            cell.avatar.layer.borderColor = Theme.surfaceElevated.resolvedColor(with: cell.traitCollection).cgColor
+        }
     }
 
     @available(*, unavailable)
@@ -42,6 +45,9 @@ final class RecentChannelCell: UICollectionViewCell {
     func configure(with channel: WatchedChannel, avatarURL: URL?) {
         currentID = channel.id
         nameLabel.text = channel.displayName
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = channel.displayName
         avatar.image = nil
         guard let url = avatarURL else { return }
         if let cached = images.cachedImage(for: url) {
@@ -66,9 +72,11 @@ final class RecentChannelCell: UICollectionViewCell {
         avatar.backgroundColor = Theme.surface
         avatar.layer.cornerRadius = 28
         avatar.layer.borderWidth = 1
-        avatar.layer.borderColor = Theme.surfaceElevated.cgColor
+        avatar.layer.borderColor = Theme.surfaceElevated.resolvedColor(with: traitCollection).cgColor
 
-        nameLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        nameLabel.font = UIFontMetrics(forTextStyle: .caption2).scaledFont(for: .systemFont(ofSize: 11, weight: .medium))
+        nameLabel.adjustsFontForContentSizeCategory = true
+        nameLabel.maximumContentSizeCategory = .extraExtraExtraLarge
         nameLabel.textColor = Theme.secondaryText
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 1

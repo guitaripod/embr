@@ -41,8 +41,12 @@ final class FollowedChannelCell: UICollectionViewCell {
 
     func configure(with channel: FollowedChannel, avatarURL: URL?) {
         currentID = channel.id
-        nameLabel.text = channel.broadcasterName.isEmpty ? channel.broadcasterLogin : channel.broadcasterName
+        let name = channel.broadcasterName.isEmpty ? channel.broadcasterLogin : channel.broadcasterName
+        nameLabel.text = name
         statusLabel.text = "Offline"
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = "\(name), offline"
         avatar.image = nil
         guard let url = avatarURL else { return }
         if let cached = images.cachedImage(for: url) {
@@ -65,10 +69,12 @@ final class FollowedChannelCell: UICollectionViewCell {
         avatar.backgroundColor = Theme.surface
         avatar.layer.cornerRadius = 20
 
-        nameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        nameLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16, weight: .semibold))
+        nameLabel.adjustsFontForContentSizeCategory = true
         nameLabel.textColor = Theme.primaryText
 
-        statusLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        statusLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .regular))
+        statusLabel.adjustsFontForContentSizeCategory = true
         statusLabel.textColor = Theme.secondaryText
 
         let labels = UIStackView(arrangedSubviews: [nameLabel, statusLabel])
