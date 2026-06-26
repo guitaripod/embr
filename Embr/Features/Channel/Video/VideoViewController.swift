@@ -32,7 +32,6 @@ final class VideoViewController: UIViewController {
     private var isMuted = false
     private var lastProgress: PlaybackProgress = .empty
     private var currentRate: Float = 1.0
-    private var mutedBeforeAd: Bool?
     private var adActive = false
     private var adGraceWork: DispatchWorkItem?
 
@@ -303,8 +302,8 @@ final class VideoViewController: UIViewController {
             overlay.updateAdCountdown(remaining)
             if !adActive {
                 adActive = true
-                mutedBeforeAd = isMuted
                 player.setMuted(true)
+                overlay.setMuted(true)
                 logger.info("ad break started", category: .playback)
             }
         } else if adActive, adGraceWork == nil {
@@ -319,10 +318,8 @@ final class VideoViewController: UIViewController {
         guard adActive else { return }
         adActive = false
         overlay.updateAdCountdown(nil)
-        if let prior = mutedBeforeAd {
-            player.setMuted(prior)
-            mutedBeforeAd = nil
-        }
+        player.setMuted(isMuted)
+        overlay.setMuted(isMuted)
         logger.info("ad break ended", category: .playback)
         if case .live = source { player.seekToLive() }
     }
