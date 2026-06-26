@@ -94,12 +94,27 @@ public enum WorkerAPI {
         }
     }
 
-    public struct PlaybackResponse: Codable, Sendable, Equatable {
-        public let url: String
-        public let expiresAt: Double?
-        public init(url: String, expiresAt: Double?) {
-            self.url = url
-            self.expiresAt = expiresAt
+    public struct ReportRequest: Codable, Sendable, Equatable {
+        public let channel: String?
+        public let messageID: String?
+        public let authorID: String?
+        public let authorLogin: String?
+        public let reason: String
+        public let text: String?
+        public init(
+            channel: String?,
+            messageID: String?,
+            authorID: String?,
+            authorLogin: String?,
+            reason: String,
+            text: String?
+        ) {
+            self.channel = channel
+            self.messageID = messageID
+            self.authorID = authorID
+            self.authorLogin = authorLogin
+            self.reason = reason
+            self.text = text
         }
     }
 
@@ -125,6 +140,6 @@ public enum TwitchScopes {
     public static let moderatorManageAnnouncements = "moderator:manage:announcements"
 
     public static let viewerDefault: [String] = [
-        readChat, writeChat, readFollows, readBlocked, manageBlocked, manageChatColor
+        readChat, writeChat, readFollows, manageChatColor
     ]
 }

@@ -30,7 +30,6 @@ final class AppContainer {
     let api = TwitchAPIClient.shared
     let emotes = EmoteService.shared
     let images: ImageLoading = ImageLoader.shared
-    let playback = PlaybackResolver.shared
     let database = DatabaseManager.shared
     let settings = SettingsStore.shared
 

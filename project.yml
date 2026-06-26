@@ -57,6 +57,7 @@ targets:
       properties:
         CFBundleDisplayName: Embr
         CFBundleShortVersionString: "0.1.0"
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

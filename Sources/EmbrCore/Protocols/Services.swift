@@ -53,11 +53,6 @@ public protocol EmoteCataloging: Sendable {
     func loadChannel(broadcasterID: String, login: String) async -> (emotes: EmoteCatalog, badges: BadgeCatalog)
 }
 
-public protocol PlaybackResolving: Sendable {
-    func resolveLive(channelLogin: String) async throws -> PlaybackResolution
-    func resolveVOD(videoID: String) async throws -> PlaybackResolution
-}
-
 public protocol TokenStoring: Sendable {
     func load() async -> StoredCredentials?
     func save(_ credentials: StoredCredentials) async

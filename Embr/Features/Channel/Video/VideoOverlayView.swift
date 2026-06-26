@@ -3,51 +3,20 @@ import UIKit
 @MainActor
 protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapBack(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapPlayPause(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapQuality(_ overlay: VideoOverlayView, from sourceView: UIView)
-    func videoOverlayDidTapPictureInPicture(_ overlay: VideoOverlayView)
     func videoOverlayDidTapRetry(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapMute(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView)
-    func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView)
-    func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView)
-    func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval)
-    func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool)
 }
 
+/// Thin chrome drawn over the Twitch embed webview. It only owns the app's own
+/// affordances — a back button, a buffering spinner, and an error/retry state.
+/// Every other touch passes straight through to Twitch's embedded player so its
+/// native controls (play/pause, volume, quality, fullscreen) keep working.
 @MainActor
 final class VideoOverlayView: UIView {
 
     weak var delegate: VideoOverlayViewDelegate?
 
-    private let autoHideInterval: TimeInterval = 5.0
-    private var hideTimer: Timer?
-    private(set) var controlsVisible = true
-    private var isBuffering = false
-
-    private let dimmingView = UIView()
-    private let topBar = UIStackView()
-    private let bottomBar = UIStackView()
-
+    private let topGradient = GradientView()
     private let backButton = VideoOverlayView.makeButton(symbol: "chevron.left")
-    private let pipButton = VideoOverlayView.makeButton(symbol: "pip.enter")
-    private let qualityButton = VideoOverlayView.makeButton(symbol: "slider.horizontal.3")
-    private let muteButton = VideoOverlayView.makeButton(symbol: "speaker.wave.2.fill")
-    private let fullscreenButton = VideoOverlayView.makeButton(symbol: "arrow.up.left.and.arrow.down.right")
-    private let speedButton = VideoOverlayView.makeButton(symbol: "speedometer")
-    private let playPauseButton = VideoOverlayView.makeButton(symbol: "pause.fill", pointSize: 34)
-
-    private let scrubRow = UIStackView()
-    private let scrubber = UISlider()
-    private let currentTimeLabel = VideoOverlayView.makeTimeLabel()
-    private let durationLabel = VideoOverlayView.makeTimeLabel()
-    private let seekFlashLabel = VideoOverlayView.makeFlashLabel()
-    private var isScrubbing = false
-    private var isSeekable = false
-    private var knownDuration: TimeInterval = 0
-    private var seekFlashCenterX: NSLayoutConstraint?
-
     private let bufferingIndicator = UIActivityIndicatorView(style: .large)
 
     private let errorStack = UIStackView()
@@ -55,81 +24,27 @@ final class VideoOverlayView: UIView {
     private let errorLabel = UILabel()
     private let retryButton = UIButton(type: .system)
     private var errorActive = false
-
-    private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
-    private let adStatusLabel = UILabel()
-    private let adInfoButton = UIButton(type: .system)
-    private let adBottomStack = UIStackView()
-    private let adGameView = AdBreakGameView()
-
-    private let latencyLabel: UILabel = {
-        let label = UILabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
-        label.textColor = .white
-        label.textAlignment = .right
-        label.text = nil
-        return label
-    }()
-
-    private let liveBadge: UIImageView = {
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .bold)
-        let imageView = UIImageView(image: UIImage(systemName: "dot.radiowaves.left.and.right", withConfiguration: config))
-        imageView.tintColor = .systemRed
-        imageView.contentMode = .scaleAspectFit
-        imageView.isHidden = true
-        return imageView
-    }()
-
-    private var isLive = false
+    private var isBuffering = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         buildHierarchy()
-        configureActions()
-        scheduleAutoHide()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
-    func setPlaying(_ playing: Bool) {
-        let symbol = playing ? "pause.fill" : "play.fill"
-        let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
-        playPauseButton.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
-        playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
-        let showBadge = playing && isLive
-        liveBadge.isHidden = !showBadge
-        if showBadge, !Motion.reduced {
-            liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
-        } else {
-            liveBadge.removeAllSymbolEffects()
-        }
-    }
-
-    func setLive(_ live: Bool) {
-        isLive = live
-        if !live {
-            liveBadge.isHidden = true
-            liveBadge.removeAllSymbolEffects()
-        }
+    /// Lets touches outside our own controls fall through to the Twitch player webview.
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit === self ? nil : hit
     }
 
     func setBuffering(_ buffering: Bool) {
         let target = buffering && !errorActive
         guard target != isBuffering else { return }
         isBuffering = target
-        if target {
-            bufferingIndicator.startAnimating()
-        } else {
-            bufferingIndicator.stopAnimating()
-        }
-        UIView.animate(withDuration: 0.2) { self.applyCenterButtonVisibility() }
-    }
-
-    private func applyCenterButtonVisibility() {
-        let visible = controlsVisible && !isBuffering && !errorActive
-        playPauseButton.alpha = visible ? 1.0 : 0.0
-        playPauseButton.isUserInteractionEnabled = visible
+        if target { bufferingIndicator.startAnimating() } else { bufferingIndicator.stopAnimating() }
     }
 
     func showError(_ message: String, symbol: String, canRetry: Bool) {
@@ -139,172 +54,35 @@ final class VideoOverlayView: UIView {
         errorLabel.text = message
         retryButton.isHidden = !canRetry
         errorStack.isHidden = false
-        cancelAutoHide()
-        setControls(visible: true, animated: true)
     }
 
     func clearError() {
         guard errorActive else { return }
         errorActive = false
         errorStack.isHidden = true
-        applyCenterButtonVisibility()
-    }
-
-    func setLatency(_ latency: TimeInterval?) {
-        guard let latency, latency > 0 else {
-            latencyLabel.text = nil
-            return
-        }
-        latencyLabel.text = String(format: "%.1fs", latency)
-    }
-
-    func setPictureInPictureEnabled(_ enabled: Bool) {
-        pipButton.isEnabled = enabled
-        pipButton.alpha = enabled ? 1.0 : 0.4
     }
 
     func setBackButtonHidden(_ hidden: Bool) {
         backButton.isHidden = hidden
+        updateTopGradient()
     }
 
-    func updateAdCountdown(_ remaining: TimeInterval?) {
-        guard let remaining else {
-            setAdCoverVisible(false)
-            return
-        }
-        let seconds = max(1, Int(remaining.rounded(.up)))
-        let wasShowing = !adCover.isHidden && adCover.alpha > 0.01
-        adStatusLabel.text = "Ad break · stream resumes in \(seconds)s"
-        setAdCoverVisible(true)
-        bringSubviewToFront(adCover)
-        bringSubviewToFront(topBar)
-        if !wasShowing {
-            UIAccessibility.post(notification: .announcement, argument: "Ad break. Tap to play Embr Flyer while the stream resumes.")
-        }
-    }
-
-    private func setAdCoverVisible(_ visible: Bool) {
-        if visible {
-            if adCover.isHidden {
-                adCover.alpha = 0
-                adCover.isHidden = false
-                adGameView.activate()
-            }
-            UIView.animate(withDuration: 0.3) { self.adCover.alpha = 1 }
-        } else {
-            adGameView.deactivate()
-            guard !adCover.isHidden else { return }
-            UIView.animate(withDuration: 0.3, animations: { self.adCover.alpha = 0 }) { finished in
-                if finished, self.adCover.alpha < 0.01 { self.adCover.isHidden = true }
-            }
-        }
-    }
-
-    func showControls(thenHide: Bool = true) {
-        setControls(visible: true, animated: true)
-        if thenHide { scheduleAutoHide() }
-    }
-
-    func hideControls() {
-        setControls(visible: false, animated: true)
-        cancelAutoHide()
-    }
-
-    func toggleControls() {
-        if controlsVisible {
-            hideControls()
-        } else {
-            showControls()
-        }
-    }
-
-    private func setControls(visible: Bool, animated: Bool) {
-        controlsVisible = visible
-        let target: CGFloat = visible ? 1.0 : 0.0
-        let work = {
-            self.dimmingView.alpha = target
-            self.topBar.alpha = target
-            self.bottomBar.alpha = target
-            self.scrubRow.alpha = self.isSeekable ? target : 0
-            self.applyCenterButtonVisibility()
-        }
-        if animated {
-            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut], animations: work)
-        } else {
-            work()
-        }
-    }
-
-    private func scheduleAutoHide() {
-        cancelAutoHide()
-        let timer = Timer(timeInterval: autoHideInterval, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hideControls() }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        hideTimer = timer
-    }
-
-    private func cancelAutoHide() {
-        hideTimer?.invalidate()
-        hideTimer = nil
+    private func updateTopGradient() {
+        topGradient.isHidden = backButton.isHidden
     }
 
     private func buildHierarchy() {
-        dimmingView.backgroundColor = UIColor.black.withAlphaComponent(0.28)
-        dimmingView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(dimmingView)
+        topGradient.translatesAutoresizingMaskIntoConstraints = false
+        topGradient.isUserInteractionEnabled = false
+        addSubview(topGradient)
 
-        topBar.axis = .horizontal
-        topBar.alignment = .center
-        topBar.spacing = 12
-        topBar.translatesAutoresizingMaskIntoConstraints = false
-        let topSpacer = UIView()
-        topSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        topBar.addArrangedSubview(backButton)
-        topBar.addArrangedSubview(liveBadge)
-        topBar.addArrangedSubview(topSpacer)
-        topBar.addArrangedSubview(latencyLabel)
-        addSubview(topBar)
-
-        scrubber.minimumTrackTintColor = .systemRed
-        scrubber.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
-        scrubber.setThumbImage(Self.thumbImage(diameter: 12), for: .normal)
-        scrubber.setThumbImage(Self.thumbImage(diameter: 18), for: .highlighted)
-        scrubber.isContinuous = true
-
-        scrubRow.axis = .horizontal
-        scrubRow.alignment = .center
-        scrubRow.spacing = 10
-        scrubRow.translatesAutoresizingMaskIntoConstraints = false
-        scrubRow.addArrangedSubview(currentTimeLabel)
-        scrubRow.addArrangedSubview(scrubber)
-        scrubRow.addArrangedSubview(durationLabel)
-        scrubRow.isHidden = true
-        addSubview(scrubRow)
-
-        bottomBar.axis = .horizontal
-        bottomBar.alignment = .center
-        bottomBar.spacing = 16
-        bottomBar.translatesAutoresizingMaskIntoConstraints = false
-        let bottomSpacer = UIView()
-        bottomSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        bottomBar.addArrangedSubview(bottomSpacer)
-        bottomBar.addArrangedSubview(speedButton)
-        bottomBar.addArrangedSubview(muteButton)
-        bottomBar.addArrangedSubview(qualityButton)
-        bottomBar.addArrangedSubview(pipButton)
-        bottomBar.addArrangedSubview(fullscreenButton)
-        speedButton.isHidden = true
-        addSubview(bottomBar)
-
-        playPauseButton.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(playPauseButton)
-
-        seekFlashLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(seekFlashLabel)
+        backButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
+        backButton.accessibilityLabel = "Back"
+        addSubview(backButton)
 
         bufferingIndicator.color = .white
         bufferingIndicator.hidesWhenStopped = true
+        bufferingIndicator.isUserInteractionEnabled = false
         bufferingIndicator.translatesAutoresizingMaskIntoConstraints = false
         addSubview(bufferingIndicator)
 
@@ -331,319 +109,28 @@ final class VideoOverlayView: UIView {
         errorStack.addArrangedSubview(retryButton)
         addSubview(errorStack)
 
-        buildAdCover()
-
         NSLayoutConstraint.activate([
-            errorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            errorStack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            errorStack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
-            errorStack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -24),
+            topGradient.topAnchor.constraint(equalTo: topAnchor),
+            topGradient.leadingAnchor.constraint(equalTo: leadingAnchor),
+            topGradient.trailingAnchor.constraint(equalTo: trailingAnchor),
+            topGradient.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.28),
 
-            adCover.topAnchor.constraint(equalTo: topAnchor),
-            adCover.leadingAnchor.constraint(equalTo: leadingAnchor),
-            adCover.trailingAnchor.constraint(equalTo: trailingAnchor),
-            adCover.bottomAnchor.constraint(equalTo: bottomAnchor),
-        ])
-
-        NSLayoutConstraint.activate([
-            dimmingView.topAnchor.constraint(equalTo: topAnchor),
-            dimmingView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            dimmingView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            dimmingView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            topBar.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 8),
-            topBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 12),
-            topBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -12),
-
-            bottomBar.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -10),
-            bottomBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 12),
-            bottomBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -12),
-
-            scrubRow.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 14),
-            scrubRow.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -14),
-            scrubRow.bottomAnchor.constraint(equalTo: bottomBar.topAnchor, constant: -2),
-
-            seekFlashLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            seekFlashLabel.widthAnchor.constraint(equalToConstant: 72),
-            seekFlashLabel.heightAnchor.constraint(equalToConstant: 44),
-
-            playPauseButton.centerXAnchor.constraint(equalTo: centerXAnchor),
-            playPauseButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            backButton.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 6),
+            backButton.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 8),
 
             bufferingIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
             bufferingIndicator.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            liveBadge.widthAnchor.constraint(equalToConstant: 22),
-            liveBadge.heightAnchor.constraint(equalToConstant: 22)
+            errorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
+            errorStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            errorStack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
+            errorStack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -24)
         ])
-
-        let flashCenter = seekFlashLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
-        flashCenter.isActive = true
-        seekFlashCenterX = flashCenter
+        updateTopGradient()
     }
 
-    private static func thumbImage(diameter: CGFloat) -> UIImage {
-        UIGraphicsImageRenderer(size: CGSize(width: diameter, height: diameter)).image { _ in
-            UIColor.white.setFill()
-            UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
-        }
-    }
-
-    private func buildAdCover() {
-        adCover.translatesAutoresizingMaskIntoConstraints = false
-        adCover.isHidden = true
-        adCover.isUserInteractionEnabled = true
-        addSubview(adCover)
-
-        adGameView.translatesAutoresizingMaskIntoConstraints = false
-        adCover.contentView.addSubview(adGameView)
-
-        adStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
-        adStatusLabel.textColor = UIColor.white.withAlphaComponent(0.85)
-        adStatusLabel.textAlignment = .center
-        adStatusLabel.numberOfLines = 1
-        adStatusLabel.layer.shadowColor = UIColor.black.cgColor
-        adStatusLabel.layer.shadowRadius = 4
-        adStatusLabel.layer.shadowOpacity = 0.5
-        adStatusLabel.layer.shadowOffset = .zero
-
-        var infoConfig = UIButton.Configuration.gray()
-        infoConfig.cornerStyle = .capsule
-        infoConfig.image = UIImage(systemName: "info.circle.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
-        infoConfig.imagePadding = 5
-        infoConfig.baseForegroundColor = .white
-        infoConfig.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
-        var infoTitle = AttributedString("Why am I seeing ads?")
-        infoTitle.font = .systemFont(ofSize: 12, weight: .semibold)
-        infoConfig.attributedTitle = infoTitle
-        adInfoButton.configuration = infoConfig
-        adInfoButton.addAction(UIAction { [weak self] _ in
-            guard let self else { return }
-            self.delegate?.videoOverlayDidTapAdInfo(self)
-        }, for: .touchUpInside)
-
-        adBottomStack.addArrangedSubview(adStatusLabel)
-        adBottomStack.addArrangedSubview(adInfoButton)
-        adBottomStack.axis = .vertical
-        adBottomStack.alignment = .center
-        adBottomStack.spacing = 8
-        adBottomStack.translatesAutoresizingMaskIntoConstraints = false
-        adCover.contentView.addSubview(adBottomStack)
-
-        adGameView.onActiveChanged = { [weak self] playing in
-            self?.setAdChromeVisible(!playing)
-        }
-
-        NSLayoutConstraint.activate([
-            adGameView.topAnchor.constraint(equalTo: adCover.contentView.topAnchor),
-            adGameView.leadingAnchor.constraint(equalTo: adCover.contentView.leadingAnchor),
-            adGameView.trailingAnchor.constraint(equalTo: adCover.contentView.trailingAnchor),
-            adGameView.bottomAnchor.constraint(equalTo: adCover.contentView.bottomAnchor),
-
-            adBottomStack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
-            adBottomStack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
-            adBottomStack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
-            adBottomStack.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
-        ])
-    }
-
-    private func setAdChromeVisible(_ visible: Bool) {
-        adBottomStack.isUserInteractionEnabled = visible
-        if visible {
-            adBottomStack.isHidden = false
-            UIView.animate(withDuration: 0.2) { self.adBottomStack.alpha = 1 }
-        } else {
-            UIView.animate(withDuration: 0.2, animations: { self.adBottomStack.alpha = 0 }) { finished in
-                if finished, self.adBottomStack.alpha < 0.01 { self.adBottomStack.isHidden = true }
-            }
-        }
-    }
-
-    private func configureActions() {
-        backButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
-        playPauseButton.addTarget(self, action: #selector(didTapPlayPause), for: .touchUpInside)
-        qualityButton.addTarget(self, action: #selector(didTapQuality), for: .touchUpInside)
-        pipButton.addTarget(self, action: #selector(didTapPip), for: .touchUpInside)
-        muteButton.addTarget(self, action: #selector(didTapMute), for: .touchUpInside)
-        fullscreenButton.addTarget(self, action: #selector(didTapFullscreen), for: .touchUpInside)
-        speedButton.addTarget(self, action: #selector(didTapSpeed), for: .touchUpInside)
-        scrubber.addTarget(self, action: #selector(scrubBegan), for: .touchDown)
-        scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
-        scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside])
-
-        backButton.accessibilityLabel = "Back"
-        playPauseButton.accessibilityLabel = "Play"
-        qualityButton.accessibilityLabel = "Quality"
-        pipButton.accessibilityLabel = "Picture in Picture"
-        muteButton.accessibilityLabel = "Mute"
-        fullscreenButton.accessibilityLabel = "Fullscreen"
-        speedButton.accessibilityLabel = "Playback Speed"
-        liveBadge.isAccessibilityElement = true
-        liveBadge.accessibilityLabel = "Live"
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        tap.delegate = self
-        doubleTap.delegate = self
-        addGestureRecognizer(doubleTap)
-        addGestureRecognizer(tap)
-        tap.require(toFail: doubleTap)
-    }
-
-    @objc private func didTapBackground() {
-        toggleControls()
-    }
-
-    @objc private func didDoubleTap(_ recognizer: UITapGestureRecognizer) {
-        let forward = recognizer.location(in: self).x > bounds.midX
-        delegate?.videoOverlay(self, didDoubleTapForward: forward)
-    }
-
-    @objc private func didTapBack() {
-        delegate?.videoOverlayDidTapBack(self)
-    }
-
-    @objc private func didTapPlayPause() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapPlayPause(self)
-    }
-
-    @objc private func didTapQuality() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapQuality(self, from: qualityButton)
-    }
-
-    @objc private func didTapPip() {
-        delegate?.videoOverlayDidTapPictureInPicture(self)
-    }
-
-    @objc private func didTapRetry() {
-        delegate?.videoOverlayDidTapRetry(self)
-    }
-
-    @objc private func didTapMute() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapMute(self)
-    }
-
-    @objc private func didTapFullscreen() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapFullscreen(self)
-    }
-
-    @objc private func didTapSpeed() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapSpeed(self, from: speedButton)
-    }
-
-    @objc private func scrubBegan() {
-        isScrubbing = true
-        cancelAutoHide()
-        delegate?.videoOverlayDidBeginScrubbing(self)
-    }
-
-    @objc private func scrubChanged() {
-        currentTimeLabel.text = Self.formatTime(TimeInterval(scrubber.value) * knownDuration)
-    }
-
-    @objc private func scrubEnded() {
-        isScrubbing = false
-        if knownDuration > 0 {
-            delegate?.videoOverlay(self, didCommitScrubTo: TimeInterval(scrubber.value) * knownDuration)
-        }
-        scheduleAutoHide()
-    }
-
-    func isScrubberTouch(_ touch: UITouch) -> Bool {
-        guard !scrubRow.isHidden, let touched = touch.view else { return false }
-        return touched === scrubber || touched.isDescendant(of: scrubRow)
-    }
-
-    func setSeekable(_ seekable: Bool) {
-        isSeekable = seekable
-        scrubRow.isHidden = !seekable
-        speedButton.isHidden = !seekable
-    }
-
-    func setProgress(_ progress: PlaybackProgress) {
-        guard isSeekable, !isScrubbing else { return }
-        knownDuration = progress.duration
-        scrubber.isEnabled = progress.duration > 0
-        durationLabel.text = Self.formatTime(progress.duration)
-        currentTimeLabel.text = Self.formatTime(progress.current)
-        if progress.duration > 0 {
-            scrubber.value = Float(min(1, max(0, progress.current / progress.duration)))
-        }
-    }
-
-    func setFullscreen(_ fullscreen: Bool) {
-        let symbol = fullscreen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
-        fullscreenButton.setImage(
-            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
-            for: .normal
-        )
-    }
-
-    func setSpeed(_ text: String?) {
-        var config = speedButton.configuration ?? .plain()
-        config.title = text
-        config.attributedTitle = text.map {
-            var attr = AttributedString($0)
-            attr.font = .monospacedDigitSystemFont(ofSize: 12, weight: .bold)
-            return attr
-        }
-        config.imagePadding = 3
-        speedButton.configuration = config
-    }
-
-    func flashSeek(seconds: Int, forward: Bool) {
-        seekFlashLabel.text = (forward ? "+" : "−") + "\(seconds)s"
-        seekFlashCenterX?.constant = (forward ? 1 : -1) * bounds.width * 0.28
-        seekFlashLabel.layer.removeAllAnimations()
-        seekFlashLabel.alpha = 1
-        UIView.animate(withDuration: 0.45, delay: 0.2, options: [.curveEaseOut]) {
-            self.seekFlashLabel.alpha = 0
-        }
-    }
-
-    private static func formatTime(_ seconds: TimeInterval) -> String {
-        guard seconds.isFinite, seconds >= 0 else { return "0:00" }
-        let total = Int(seconds.rounded())
-        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
-        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
-    }
-
-    func setMuted(_ muted: Bool) {
-        let symbol = muted ? "speaker.slash.fill" : "speaker.wave.2.fill"
-        muteButton.setImage(
-            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
-            for: .normal
-        )
-        muteButton.accessibilityLabel = muted ? "Unmute" : "Mute"
-    }
-
-    private static func makeTimeLabel() -> UILabel {
-        let label = UILabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
-        label.textColor = .white
-        label.text = "0:00"
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        return label
-    }
-
-    private static func makeFlashLabel() -> UILabel {
-        let label = UILabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 16, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
-        label.backgroundColor = UIColor.black.withAlphaComponent(0.55)
-        label.layer.cornerRadius = 22
-        label.layer.masksToBounds = true
-        label.alpha = 0
-        return label
-    }
+    @objc private func didTapBack() { delegate?.videoOverlayDidTapBack(self) }
+    @objc private func didTapRetry() { delegate?.videoOverlayDidTapRetry(self) }
 
     private static func makeButton(symbol: String, pointSize: CGFloat = 18) -> UIButton {
         var configuration = UIButton.Configuration.plain()
@@ -652,19 +139,25 @@ final class VideoOverlayView: UIView {
             withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize, weight: .semibold)
         )
         configuration.baseForegroundColor = .white
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
         let button = UIButton(configuration: configuration)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }
-
-    isolated deinit {
-        hideTimer?.invalidate()
-    }
 }
 
-extension VideoOverlayView: UIGestureRecognizerDelegate {
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard !adCover.isHidden else { return true }
-        return !adCover.bounds.contains(touch.location(in: adCover))
+@MainActor
+private final class GradientView: UIView {
+    override static var layerClass: AnyClass { CAGradientLayer.self }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        let gradient = layer as! CAGradientLayer
+        gradient.colors = [UIColor.black.withAlphaComponent(0.45).cgColor, UIColor.clear.cgColor]
+        gradient.startPoint = CGPoint(x: 0.5, y: 0)
+        gradient.endPoint = CGPoint(x: 0.5, y: 1)
     }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
 }

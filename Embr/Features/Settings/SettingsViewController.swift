@@ -27,21 +27,17 @@ final class SettingsViewController: UIViewController {
         case theme
         case openLinksInApp
         case haptics
-        case shareCrashLogs
 
         case showTimestamps
         case compactChat
         case messageScale
         case fontSizeDelta
-        case showDeletedMessages
         case highlightMentions
         case recentMessagesBackfill
         case animateEmotes
         case thirdPartyEmotes(EmoteProvider)
         case blockedUsers
 
-        case defaultQuality
-        case defaultToHighest
         case autoplay
         case backgroundAudio
         case chatDelaySeconds
@@ -53,6 +49,9 @@ final class SettingsViewController: UIViewController {
 
         case version
         case github
+        case termsOfUse
+        case privacyPolicy
+        case contactSupport
         case shareLogs
     }
 
@@ -170,20 +169,20 @@ final class SettingsViewController: UIViewController {
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
         snapshot.appendSections(Section.allCases)
-        snapshot.appendItems([.theme, .openLinksInApp, .haptics, .shareCrashLogs], toSection: .general)
+        snapshot.appendItems([.theme, .openLinksInApp, .haptics], toSection: .general)
         snapshot.appendItems(
-            [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta, .showDeletedMessages,
+            [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
              .highlightMentions, .recentMessagesBackfill, .animateEmotes]
             + thirdPartyProviders.map(Row.thirdPartyEmotes)
             + [.blockedUsers],
             toSection: .chat
         )
         snapshot.appendItems(
-            [.defaultQuality, .defaultToHighest, .autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
+            [.autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
             toSection: .video
         )
         snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
-        snapshot.appendItems([.version, .github, .shareLogs], toSection: .about)
+        snapshot.appendItems([.version, .github, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -223,10 +222,6 @@ final class SettingsViewController: UIViewController {
             switchRow(cell, &content, title: "Haptics", isOn: settings.hapticsEnabled) { store, on in
                 store.update { $0.hapticsEnabled = on }
             }
-        case .shareCrashLogs:
-            switchRow(cell, &content, title: "Share Crash Logs", isOn: settings.shareCrashLogs) { store, on in
-                store.update { $0.shareCrashLogs = on }
-            }
 
         case .showTimestamps:
             switchRow(cell, &content, title: "Show Timestamps", isOn: settings.showTimestamps) { store, on in
@@ -254,10 +249,6 @@ final class SettingsViewController: UIViewController {
             ) { store, value in
                 store.update { $0.fontSizeDelta = Int(value.rounded()) }
             }
-        case .showDeletedMessages:
-            switchRow(cell, &content, title: "Show Deleted Messages", isOn: settings.showDeletedMessages) { store, on in
-                store.update { $0.showDeletedMessages = on }
-            }
         case .highlightMentions:
             switchRow(cell, &content, title: "Highlight Mentions", isOn: settings.highlightMentions) { store, on in
                 store.update { $0.highlightMentions = on }
@@ -279,15 +270,6 @@ final class SettingsViewController: UIViewController {
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
 
-        case .defaultQuality:
-            content.text = "Default Quality"
-            content.secondaryText = Self.qualityDisplayName(settings.defaultQuality)
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .defaultToHighest:
-            switchRow(cell, &content, title: "Default To Highest Quality", isOn: settings.defaultToHighest) { store, on in
-                store.update { $0.defaultToHighest = on }
-            }
         case .autoplay:
             switchRow(cell, &content, title: "Autoplay", isOn: settings.autoplay) { store, on in
                 store.update { $0.autoplay = on }
@@ -347,6 +329,19 @@ final class SettingsViewController: UIViewController {
             content.textProperties.color = Theme.link
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
+        case .termsOfUse:
+            content.text = "Terms of Use"
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
+        case .privacyPolicy:
+            content.text = "Privacy Policy"
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
+        case .contactSupport:
+            content.text = "Contact Support"
+            content.textProperties.color = Theme.accent
+            cell.contentConfiguration = content
+            cell.accessories = []
         case .shareLogs:
             content.text = "Share Diagnostic Logs"
             content.textProperties.color = Theme.accent
@@ -445,19 +440,15 @@ final class SettingsViewController: UIViewController {
         case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
         case .openLinksInApp: spec = ("safari.fill", .systemBlue)
         case .haptics: spec = ("hand.tap.fill", .systemPink)
-        case .shareCrashLogs: spec = ("ladybug.fill", .systemRed)
         case .showTimestamps: spec = ("clock.fill", .systemGray)
         case .compactChat: spec = ("rectangle.compress.vertical", .systemTeal)
         case .messageScale: spec = ("textformat.size", .systemIndigo)
         case .fontSizeDelta: spec = ("character.cursor.ibeam", .systemIndigo)
-        case .showDeletedMessages: spec = ("trash.fill", .systemGray)
         case .highlightMentions: spec = ("at", Theme.accent)
         case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
         case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
         case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
         case .blockedUsers: spec = ("hand.raised.fill", .systemRed)
-        case .defaultQuality: spec = ("slider.horizontal.3", .systemBlue)
-        case .defaultToHighest: spec = ("4k.tv.fill", .systemBlue)
         case .autoplay: spec = ("play.fill", .systemGreen)
         case .backgroundAudio: spec = ("speaker.wave.2.circle.fill", .systemPurple)
         case .chatDelaySeconds: spec = ("timer", .systemOrange)
@@ -467,6 +458,9 @@ final class SettingsViewController: UIViewController {
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
         case .version: spec = ("info.circle.fill", .systemGray)
         case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
+        case .termsOfUse: spec = ("doc.text.fill", .systemGray)
+        case .privacyPolicy: spec = ("hand.raised.fill", .systemBlue)
+        case .contactSupport: spec = ("envelope.fill", Theme.accent)
         case .shareLogs: spec = ("square.and.arrow.up", .systemBlue)
         }
         return iconTile(spec.0, spec.1)
@@ -491,31 +485,6 @@ final class SettingsViewController: UIViewController {
         let short = info?["CFBundleShortVersionString"] as? String ?? "0.0"
         let build = info?["CFBundleVersion"] as? String ?? "0"
         return "\(short) (\(build))"
-    }
-
-    private func presentQualityPicker() {
-        let qualities = ["auto", "source", "720p60", "720p", "480p", "360p", "160p", "audio_only"]
-        let alert = UIAlertController(title: "Default Quality", message: nil, preferredStyle: .actionSheet)
-        for quality in qualities {
-            alert.addAction(UIAlertAction(title: Self.qualityDisplayName(quality), style: .default) { [weak self] _ in
-                self?.store.update { $0.defaultQuality = quality }
-            })
-        }
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
-        }
-        present(alert, animated: true)
-    }
-
-    private static func qualityDisplayName(_ quality: String) -> String {
-        switch quality {
-        case "auto": return "Auto"
-        case "source": return "Source"
-        case "audio_only": return "Audio Only"
-        default: return quality
-        }
     }
 
     private func openGitHub() {
@@ -578,7 +547,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .defaultQuality, .github, .accountAction, .blockedUsers, .shareLogs:
+        case .github, .accountAction, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
             return true
         default:
             return false
@@ -589,19 +558,47 @@ extension SettingsViewController: UICollectionViewDelegate {
         defer { collectionView.deselectItem(at: indexPath, animated: true) }
         guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
         switch row {
-        case .defaultQuality:
-            presentQualityPicker()
         case .github:
             openGitHub()
         case .accountAction:
             performAccountAction()
         case .blockedUsers:
             navigationController?.pushViewController(BlockedUsersViewController(), animated: true)
+        case .termsOfUse:
+            navigationController?.pushViewController(
+                LegalViewController(title: LegalText.termsTitle, body: LegalText.terms), animated: true
+            )
+        case .privacyPolicy:
+            navigationController?.pushViewController(
+                LegalViewController(title: LegalText.privacyTitle, body: LegalText.privacy), animated: true
+            )
+        case .contactSupport:
+            openSupportEmail()
         case .shareLogs:
             shareLogs(from: collectionView.cellForItem(at: indexPath))
         default:
             break
         }
+    }
+
+    private func openSupportEmail() {
+        let subject = "Embr Support (\(Self.versionString))"
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = LegalText.supportEmail
+        components.queryItems = [URLQueryItem(name: "subject", value: subject)]
+        guard let url = components.url, UIApplication.shared.canOpenURL(url) else {
+            UIPasteboard.general.string = LegalText.supportEmail
+            let alert = UIAlertController(
+                title: "Contact Support",
+                message: "Email \(LegalText.supportEmail)\n\nThe address has been copied to your clipboard.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        UIApplication.shared.open(url)
     }
 }
 

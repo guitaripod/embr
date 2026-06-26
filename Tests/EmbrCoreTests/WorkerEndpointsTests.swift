@@ -53,21 +53,28 @@ struct WorkerEndpointsTests {
         #expect(items.contains(URLQueryItem(name: "state", value: "xyz")))
     }
 
-    @Test("playbackLive builds the right GET path")
-    func playbackLivePath() {
-        let request = endpoints.playbackLive(login: "shroud")
+    @Test("report builds a POST to /report with a ReportRequest body")
+    func reportRequest() throws {
+        let request = endpoints.report(
+            WorkerAPI.ReportRequest(
+                channel: "somechannel",
+                messageID: "m1",
+                authorID: "u1",
+                authorLogin: "baduser",
+                reason: "Harassment",
+                text: "bad text"
+            )
+        )
 
-        #expect(request.method == .get)
-        #expect(request.url.absoluteString == "https://worker.example.com/playback/shroud")
-        #expect(request.body == nil)
-    }
+        #expect(request.method == .post)
+        #expect(request.url.absoluteString == "https://worker.example.com/report")
+        #expect(request.headers["Content-Type"] == "application/json")
 
-    @Test("playbackVOD builds the right GET path")
-    func playbackVODPath() {
-        let request = endpoints.playbackVOD(id: "123456789")
-
-        #expect(request.method == .get)
-        #expect(request.url.absoluteString == "https://worker.example.com/playback/vod/123456789")
+        let body = try #require(request.body)
+        let decoded = try TwitchJSON.decode(WorkerAPI.ReportRequest.self, from: body)
+        #expect(decoded.reason == "Harassment")
+        #expect(decoded.authorLogin == "baduser")
+        #expect(decoded.messageID == "m1")
     }
 
     @Test("trailing slash on base URL does not double up the path separator")
@@ -113,16 +120,5 @@ struct WorkerEndpointsTests {
         #expect(token.scope == nil)
         #expect(token.userID == nil)
         #expect(token.login == nil)
-    }
-
-    @Test("decodePlayback round-trips a PlaybackResponse JSON")
-    func decodePlaybackRoundTrip() throws {
-        let json = """
-        { "url": "https://worker.example.com/hls/master.m3u8", "expiresAt": 1718000000.5 }
-        """
-        let playback = try WorkerEndpoints.decodePlayback(Data(json.utf8))
-
-        #expect(playback.url == "https://worker.example.com/hls/master.m3u8")
-        #expect(playback.expiresAt == 1718000000.5)
     }
 }

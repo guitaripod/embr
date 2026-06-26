@@ -235,13 +235,7 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
         case .vod(let vod):
             navigationController?.pushViewController(VideoViewController(source: .vod(id: vod.id)), animated: true)
         case .clip(let clip):
-            if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
-                navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
-            } else {
-                let alert = UIAlertController(title: "Clip Unavailable", message: "This clip can't be played right now.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
-            }
+            navigationController?.pushViewController(VideoViewController(source: .clip(id: clip.id)), animated: true)
         case .schedule:
             break
         }
@@ -358,12 +352,6 @@ private final class MediaRowCell: UICollectionViewListCell {
         return URL(string: template
             .replacingOccurrences(of: "%{width}", with: "320")
             .replacingOccurrences(of: "%{height}", with: "180"))
-    }
-
-    static func clipMP4(from thumbnail: URL?) -> URL? {
-        guard let raw = thumbnail?.absoluteString,
-              let range = raw.range(of: "-preview-[0-9]+x[0-9]+\\.jpg", options: .regularExpression) else { return nil }
-        return URL(string: raw.replacingCharacters(in: range, with: ".mp4"))
     }
 
     static func duration(_ seconds: Double) -> String {

@@ -19,6 +19,7 @@ final class ChatViewController: UIViewController {
     private let images: ImageLoading
     private let isAnonymous: Bool
     private let currentUserLogin: String?
+    private let broadcasterLogin: String?
     private var canModerate = false
     private let animator = EmoteAnimator.shared
 
@@ -46,6 +47,7 @@ final class ChatViewController: UIViewController {
         self.images = images
         self.isAnonymous = isAnonymous
         self.currentUserLogin = currentUserLogin
+        self.broadcasterLogin = broadcasterLogin
         super.init(nibName: nil, bundle: nil)
         if !isAnonymous, let me = currentUserLogin?.lowercased(), me == broadcasterLogin?.lowercased() {
             canModerate = true
@@ -463,6 +465,36 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         if !isAnonymous, !isOwn {
             sheet.addAction(UIAlertAction(title: "Block @\(message.author.login)", style: .destructive) { [weak self] _ in
                 self?.viewModel.block(userID: message.author.id, login: message.author.login)
+            })
+        }
+        if !isOwn {
+            sheet.addAction(UIAlertAction(title: "Report Message", style: .destructive) { [weak self] _ in
+                self?.presentReportReasons(for: message, sourceRect: sourceRect)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = sourceRect
+        }
+        present(sheet, animated: true)
+    }
+
+    private static let reportReasons = [
+        "Spam", "Harassment or bullying", "Hateful conduct", "Violence or threats", "Other"
+    ]
+
+    private func presentReportReasons(for message: ChatMessage, sourceRect: CGRect) {
+        let sheet = UIAlertController(
+            title: "Report @\(message.author.login)",
+            message: "Reports are reviewed and this user will be hidden from your chat.",
+            preferredStyle: .actionSheet
+        )
+        for reason in Self.reportReasons {
+            sheet.addAction(UIAlertAction(title: reason, style: .destructive) { [weak self] _ in
+                guard let self else { return }
+                Haptics.notify(.success)
+                self.viewModel.report(message: message, reason: reason, channelLogin: self.broadcasterLogin)
             })
         }
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))

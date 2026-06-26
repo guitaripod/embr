@@ -11,6 +11,7 @@ final class ChatViewModel {
     let noticeSubject = PassthroughSubject<SystemNotice, Never>()
 
     private let room: ChatRoom
+    private let reporter: ReportClient
 
     private let store: MessageStore
     private var consumeTask: Task<Void, Never>?
@@ -19,9 +20,11 @@ final class ChatViewModel {
     init(
         room: ChatRoom,
         settings: SettingsStore = SettingsStore.shared,
-        currentUserLogin: String? = nil
+        currentUserLogin: String? = nil,
+        reporter: ReportClient = .shared
     ) {
         self.room = room
+        self.reporter = reporter
         self.store = MessageStore(settings: settings.current, currentUserLogin: currentUserLogin)
         Task { [weak self] in
             guard let self else { return }
@@ -39,6 +42,29 @@ final class ChatViewModel {
                 snapshotSubject.send(snapshot)
             }
             noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
+        }
+    }
+
+    /// Flags a message for developer review and immediately hides the author so the
+    /// reporter stops seeing their content (App Store Guideline 1.2).
+    func report(message: ChatMessage, reason: String, channelLogin: String?) {
+        Task { [weak self] in
+            guard let self else { return }
+            await DatabaseManager.shared.setBlockedUser(userID: message.author.id, login: message.author.login)
+            if let snapshot = await self.store.block(message.author.id) {
+                self.snapshotSubject.send(snapshot)
+            }
+            self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login). Their messages are now hidden."))
+            await self.reporter.submit(
+                WorkerAPI.ReportRequest(
+                    channel: channelLogin,
+                    messageID: message.id,
+                    authorID: message.author.id,
+                    authorLogin: message.author.login,
+                    reason: reason,
+                    text: message.plainText
+                )
+            )
         }
     }
 

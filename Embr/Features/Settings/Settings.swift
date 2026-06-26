@@ -14,15 +14,12 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var compactChat: Bool
     var messageScale: Double
     var fontSizeDelta: Int
-    var showDeletedMessages: Bool
     var highlightMentions: Bool
     var recentMessagesBackfill: Bool
 
     var animateEmotes: Bool
     var showThirdPartyEmotes: [EmoteProvider: Bool]
 
-    var defaultQuality: String
-    var defaultToHighest: Bool
     var autoplay: Bool
     var chatDelaySeconds: Double
     var autoSyncChatDelay: Bool
@@ -30,7 +27,6 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var openLinksInApp: Bool
     var hapticsEnabled: Bool
-    var shareCrashLogs: Bool
 
     var chatOnly: Bool?
     var backgroundAudio: Bool?
@@ -41,7 +37,6 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         compactChat: false,
         messageScale: 1.0,
         fontSizeDelta: 0,
-        showDeletedMessages: false,
         highlightMentions: true,
         recentMessagesBackfill: true,
         animateEmotes: true,
@@ -50,15 +45,12 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
             .betterTTV: true,
             .frankerFaceZ: true
         ],
-        defaultQuality: "auto",
-        defaultToHighest: false,
         autoplay: true,
         chatDelaySeconds: 0,
         autoSyncChatDelay: true,
         keepScreenAwake: true,
         openLinksInApp: true,
         hapticsEnabled: true,
-        shareCrashLogs: false,
         chatOnly: false,
         backgroundAudio: true
     )

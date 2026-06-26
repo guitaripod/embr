@@ -56,10 +56,18 @@ final class ChannelViewController: UIViewController {
         return recognizer
     }()
 
-    private let eventCard = ChannelEventCardView()
-    private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
-    private var dismissedEventID: String?
-    private var currentEventID: String?
+    /// Shown only in immersive landscape, hosted above `chatOverlay` so it can both
+    /// show and hide the floating chat (the embed's webview owns all other touches).
+    private lazy var chatToggleButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.baseForegroundColor = .white
+        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        button.addAction(UIAction { [weak self] _ in self?.toggleFullscreenChat() }, for: .touchUpInside)
+        return button
+    }()
 
     init(channel: ChannelInfo, auth: AuthService = AuthService.shared, store: SettingsStore = .shared) {
         self.channel = channel
@@ -83,15 +91,11 @@ final class ChannelViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
-        eventsPoller.start()
-        eventCard.resume()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        eventsPoller.stop()
-        eventCard.pause()
     }
 
     override func viewDidLoad() {
@@ -106,40 +110,7 @@ final class ChannelViewController: UIViewController {
         loadChildren()
         loadStreamInfo()
         observeAuth()
-        setUpEventCard()
         WatchHistoryStore.shared.record(id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
-    }
-
-    private func setUpEventCard() {
-        eventCard.translatesAutoresizingMaskIntoConstraints = false
-        eventCard.isHidden = true
-        eventCard.onDismiss = { [weak self] in
-            guard let self else { return }
-            self.dismissedEventID = self.currentEventID
-            self.eventCard.update(.empty)
-        }
-        chatContainer.addSubview(eventCard)
-        NSLayoutConstraint.activate([
-            eventCard.topAnchor.constraint(equalTo: chatContainer.safeAreaLayoutGuide.topAnchor, constant: 8),
-            eventCard.leadingAnchor.constraint(equalTo: chatContainer.leadingAnchor, constant: 8),
-            eventCard.trailingAnchor.constraint(equalTo: chatContainer.trailingAnchor, constant: -8)
-        ])
-        eventsPoller.events
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] events in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    let id = events.prediction?.id ?? events.poll?.id
-                    self.currentEventID = id
-                    if let id, id == self.dismissedEventID {
-                        self.eventCard.update(.empty)
-                        return
-                    }
-                    self.eventCard.update(events)
-                    self.chatContainer.bringSubviewToFront(self.eventCard)
-                }
-            }
-            .store(in: &cancellables)
     }
 
     private func loadStreamInfo() {
@@ -236,11 +207,16 @@ final class ChannelViewController: UIViewController {
         videoContainer.isHidden = isChatOnly
         chatOverlay.addGestureRecognizer(chatOverlayDoubleTap)
 
+        videoContainer.addSubview(chatToggleButton)
+
         NSLayoutConstraint.activate([
             containerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             containerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            containerStack.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            containerStack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            chatToggleButton.topAnchor.constraint(equalTo: videoContainer.safeAreaLayoutGuide.topAnchor, constant: 6),
+            chatToggleButton.trailingAnchor.constraint(equalTo: videoContainer.safeAreaLayoutGuide.trailingAnchor, constant: -8)
         ])
 
         applyOrientation(isLandscape: isLandscape)
@@ -319,15 +295,27 @@ final class ChannelViewController: UIViewController {
 
     func setVideoFullscreen(_ fullscreen: Bool) {
         let immersive = fullscreen && !isChatOnly
-        videoController?.setImmersiveState(immersive)
         guard immersive != isVideoFullscreen, let chat = chatController else { return }
         isVideoFullscreen = immersive
         if immersive {
             installChatOverlay(chat: chat)
+            updateChatToggleButton()
+            chatToggleButton.isHidden = false
+            videoContainer.bringSubviewToFront(chatToggleButton)
         } else {
             removeChatOverlay(chat: chat)
+            chatToggleButton.isHidden = true
         }
         view.layoutIfNeeded()
+    }
+
+    private func updateChatToggleButton() {
+        let symbol = fullscreenChatHidden ? "bubble.left.and.bubble.right" : "bubble.left.and.bubble.right.fill"
+        chatToggleButton.configuration?.image = UIImage(
+            systemName: symbol,
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+        )
+        chatToggleButton.accessibilityLabel = fullscreenChatHidden ? "Show Chat" : "Hide Chat"
     }
 
     private var fullscreenChatHidden = false
@@ -340,6 +328,7 @@ final class ChannelViewController: UIViewController {
         guard isVideoFullscreen else { return }
         fullscreenChatHidden.toggle()
         chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
+        updateChatToggleButton()
         Haptics.impact(.light)
         UIView.animate(withDuration: 0.25) {
             self.chatOverlay.alpha = self.fullscreenChatHidden ? 0 : 1
@@ -383,9 +372,6 @@ final class ChannelViewController: UIViewController {
 
     private func loadChildren() {
         let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
-        video.onDoubleTapToggleChat = { [weak self] in
-            self?.toggleFullscreenChat()
-        }
         addChild(video)
         video.view.translatesAutoresizingMaskIntoConstraints = false
         videoContainer.addSubview(video.view)

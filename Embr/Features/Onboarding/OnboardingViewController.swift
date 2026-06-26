@@ -60,10 +60,11 @@ final class OnboardingViewController: UIViewController {
         header.alignment = .center
         header.spacing = 16
 
-        let buttons = UIStackView(arrangedSubviews: [connectButton, guestButton, activity])
+        let buttons = UIStackView(arrangedSubviews: [connectButton, guestButton, activity, makeLegalNotice()])
         buttons.axis = .vertical
         buttons.alignment = .fill
         buttons.spacing = 12
+        buttons.setCustomSpacing(18, after: activity)
 
         let container = UIStackView(arrangedSubviews: [header, buttons])
         container.axis = .vertical
@@ -79,6 +80,58 @@ final class OnboardingViewController: UIViewController {
             connectButton.heightAnchor.constraint(equalToConstant: 52),
             guestButton.heightAnchor.constraint(equalToConstant: 52)
         ])
+    }
+
+    private func makeLegalNotice() -> UIView {
+        let caption = UILabel()
+        caption.text = "By continuing, you agree to our"
+        caption.font = .systemFont(ofSize: 12, weight: .regular)
+        caption.textColor = Theme.secondaryText
+        caption.textAlignment = .center
+
+        let terms = makeLinkButton(title: "Terms of Use") { [weak self] in
+            self?.presentLegal(title: LegalText.termsTitle, body: LegalText.terms)
+        }
+        let and = UILabel()
+        and.text = "and"
+        and.font = .systemFont(ofSize: 12, weight: .regular)
+        and.textColor = Theme.secondaryText
+        let privacy = makeLinkButton(title: "Privacy Policy") { [weak self] in
+            self?.presentLegal(title: LegalText.privacyTitle, body: LegalText.privacy)
+        }
+
+        let links = UIStackView(arrangedSubviews: [terms, and, privacy])
+        links.axis = .horizontal
+        links.alignment = .center
+        links.spacing = 5
+
+        let stack = UIStackView(arrangedSubviews: [caption, links])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 2
+        return stack
+    }
+
+    private func makeLinkButton(title: String, action: @escaping () -> Void) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = .zero
+        var attributed = AttributedString(title)
+        attributed.font = .systemFont(ofSize: 12, weight: .semibold)
+        configuration.attributedTitle = attributed
+        configuration.baseForegroundColor = Theme.accent
+        let button = UIButton(configuration: configuration)
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+        return button
+    }
+
+    private func presentLegal(title: String, body: String) {
+        let legal = LegalViewController(title: title, body: body)
+        let nav = UINavigationController(rootViewController: legal)
+        legal.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            systemItem: .done,
+            primaryAction: UIAction { [weak nav] _ in nav?.dismiss(animated: true) }
+        )
+        present(nav, animated: true)
     }
 
     private func configure(_ button: UIButton, title: String, filled: Bool) {

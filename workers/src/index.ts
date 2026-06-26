@@ -2,25 +2,21 @@ import { Hono } from 'hono';
 import type {
   AppTokenResponse,
   Bindings,
-  ChannelEventsResponse,
   ErrorResponse,
   LoginURLResponse,
-  PlaybackResponse,
+  ReportRequest,
   TokenResponse,
 } from './types';
-import { PLAYBACK_HASH_KV_KEY, VIEWER_SCOPES } from './types';
+import { REPORT_KV_PREFIX, REPORT_TTL_SECONDS, VIEWER_SCOPES } from './types';
 import {
   buildLoginURL,
   clientCredentials,
   exchangeCode,
-  fetchChannelEvents,
   refreshToken,
-  resolveLivePlayback,
-  resolveVodPlayback,
   TwitchError,
   validateToken,
 } from './twitch';
-import { isMediaPlaylist, rewriteUris, stripAds } from './hls';
+import { privacyPage, termsPage } from './legal';
 
 const APP_TOKEN_KEY = 'app_token';
 const APP_TOKEN_SKEW_SECONDS = 60;
@@ -153,147 +149,131 @@ app.get('/auth/callback', (c) => {
   return new Response(null, { status: 302, headers: { Location: target.toString() } });
 });
 
-function proxyURLFor(c: { req: { url: string } }): { proxyBase: string } {
-  const here = new URL(c.req.url);
-  return { proxyBase: `${here.origin}/hls/proxy` };
-}
-
-/// Confirms the usher master is reachable before handing the app a URL.
-/// Offline/ended/sub-gated channels still mint a token but 404 at usher, so this
-/// surfaces a real 404 the app renders as "Channel Offline" instead of a retry loop.
-/// Extracts the PlaybackAccessToken expiry (epoch seconds) embedded in the usher
-/// URL's `token` param, so the app can proactively re-resolve before it lapses.
-function expiresFromUsher(usher: string): number | undefined {
-  try {
-    const raw = new URL(usher).searchParams.get('token');
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as { expires?: number };
-    return typeof parsed.expires === 'number' ? parsed.expires : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function playbackResponse(c: { req: { url: string } }, usher: string): Promise<Response> {
-  const check = await fetch(usher, { headers: { Accept: '*/*' } });
-  await check.body?.cancel();
-  if (!check.ok) {
-    return fail(check.status === 404 ? 404 : 502, `stream unavailable (${check.status})`);
-  }
-  const { proxyBase } = proxyURLFor(c);
-  const response: PlaybackResponse = { url: `${proxyBase}?src=${encodeURIComponent(usher)}` };
-  const expiresAt = expiresFromUsher(usher);
-  if (expiresAt !== undefined) response.expiresAt = expiresAt;
-  return new Response(JSON.stringify(response), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-async function playbackHashOverride(c: { env: Bindings }): Promise<string | undefined> {
-  try {
-    const value = await c.env.TOKENS.get(PLAYBACK_HASH_KV_KEY);
-    return value && value.length > 0 ? value : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-app.get('/playback/vod/:id', async (c) => {
-  try {
-    const hash = await playbackHashOverride(c);
-    return await playbackResponse(c, await resolveVodPlayback(c.req.param('id'), hash));
-  } catch (err) {
-    return fail(statusFor(err), messageFor(err));
-  }
-});
-
-/// Serves a minimal page that embeds the official Twitch player with this worker's
-/// own host as `parent`, so `WebViewPlayer` has a working compliant fallback when
-/// the ad-stripped HLS path fails. Anonymous playback (shows ads) is the trade-off.
-app.get('/embed', (c) => {
-  const channel = c.req.query('channel');
-  if (!channel) return fail(400, 'channel is required');
-  const host = new URL(c.req.url).hostname;
-  const safeChannel = encodeURIComponent(channel);
-  const safeParent = encodeURIComponent(host);
-  const muted = c.req.query('muted') === 'true' ? 'true' : 'false';
-  const html = `<!doctype html><html><head><meta charset="utf-8">` +
-    `<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">` +
-    `<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%}</style></head>` +
-    `<body><iframe src="https://player.twitch.tv/?channel=${safeChannel}&parent=${safeParent}&autoplay=true&muted=${muted}&playsinline=true" ` +
-    `allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></body></html>`;
-  return new Response(html, {
+function htmlResponse(body: string): Response {
+  return new Response(body, {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
+}
+
+const EMBED_HEAD =
+  `<!doctype html><html><head><meta charset="utf-8">` +
+  `<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">` +
+  `<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}` +
+  `#player,iframe{border:0;width:100%;height:100%}</style></head>`;
+
+const SAFE_HOST = /^[a-z0-9.-]+$/;
+const CHANNEL_RE = /^[a-zA-Z0-9_]{1,40}$/;
+const VIDEO_RE = /^[0-9]{1,20}$/;
+const CLIP_RE = /^[a-zA-Z0-9-]{1,200}$/;
+
+/// Encodes a value as a JS string literal that cannot break out of a `<script>` block,
+/// neutralizing `</script>` even though the inputs are already charset-validated.
+function jsString(value: string): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+}
+
+/// Renders the official Twitch Interactive Embed (embed.twitch.tv) for a live channel
+/// or a VOD. The embed runs Twitch's own player — including any advertising Twitch
+/// serves — and posts player state back to the native app so the overlay can reflect
+/// loading / playing / paused / ended / offline. `layout: "video"` hides Twitch's
+/// built-in chat because the app renders its own.
+function interactiveEmbed(target: string, parent: string, muted: boolean): string {
+  return (
+    EMBED_HEAD +
+    `<body><div id="player"></div>` +
+    `<script src="https://embed.twitch.tv/embed/v1.js"></script>` +
+    `<script>` +
+    `function post(s){try{window.webkit.messageHandlers.embrPlayer.postMessage(s);}catch(e){}}` +
+    `var player=null;` +
+    `var embed=new Twitch.Embed("player",{width:"100%",height:"100%",${target},` +
+    `parent:[${jsString(parent)}],layout:"video",autoplay:true,muted:${muted ? 'true' : 'false'}});` +
+    `embed.addEventListener(Twitch.Embed.VIDEO_READY,function(){` +
+    `player=embed.getPlayer();post("ready");` +
+    `player.addEventListener(Twitch.Player.PLAY,function(){post("playing");});` +
+    `player.addEventListener(Twitch.Player.PAUSE,function(){post("paused");});` +
+    `player.addEventListener(Twitch.Player.ENDED,function(){post("ended");});` +
+    `player.addEventListener(Twitch.Player.OFFLINE,function(){post("offline");});` +
+    `player.addEventListener(Twitch.Player.ONLINE,function(){post("playing");});});` +
+    `window.embrPlayer={play:function(){if(player)player.play();},` +
+    `pause:function(){if(player)player.pause();},` +
+    `setMuted:function(m){if(player)player.setMuted(m);}};` +
+    `</script></body></html>`
+  );
+}
+
+/// Clips are not supported by the interactive embed, so they use Twitch's dedicated
+/// official clip embed iframe.
+function clipEmbed(clip: string, parent: string, muted: boolean): string {
+  const src =
+    `https://clips.twitch.tv/embed?clip=${encodeURIComponent(clip)}&parent=${encodeURIComponent(parent)}` +
+    `&autoplay=true&muted=${muted ? 'true' : 'false'}`;
+  return (
+    EMBED_HEAD +
+    `<body><iframe src="${src}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>` +
+    `</body></html>`
+  );
+}
+
+app.get('/embed', (c) => {
+  const host = new URL(c.req.url).hostname;
+  if (!SAFE_HOST.test(host)) return fail(400, 'bad host');
+  const muted = c.req.query('muted') === 'true';
+  const channel = c.req.query('channel');
+  const video = c.req.query('video');
+  const clip = c.req.query('clip');
+
+  if (clip) {
+    if (!CLIP_RE.test(clip)) return fail(400, 'invalid clip');
+    return htmlResponse(clipEmbed(clip, host, muted));
+  }
+  if (channel) {
+    if (!CHANNEL_RE.test(channel)) return fail(400, 'invalid channel');
+    return htmlResponse(interactiveEmbed(`channel:${jsString(channel)}`, host, muted));
+  }
+  if (video) {
+    if (!VIDEO_RE.test(video)) return fail(400, 'invalid video');
+    return htmlResponse(interactiveEmbed(`video:${jsString(video)}`, host, muted));
+  }
+  return fail(400, 'channel, video, or clip is required');
 });
 
-app.get('/events/:login', async (c) => {
-  let events: ChannelEventsResponse = { poll: null, prediction: null };
+/// Receives a user's chat-message report (App Store Guideline 1.2) and stores it for
+/// the developer to review. Best-effort: a storage failure still returns 204 so the
+/// reporter's flow never breaks.
+app.post('/report', async (c) => {
+  let body: ReportRequest;
   try {
-    events = await fetchChannelEvents(c.req.param('login'));
+    body = await c.req.json();
   } catch {
-    // Best-effort: a failed poll/prediction lookup is "no active events", not an error.
+    return fail(400, 'invalid JSON body');
   }
-  return new Response(JSON.stringify(events), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-});
-
-app.get('/playback/:login', async (c) => {
+  if (!body.reason || (!body.messageID && !body.authorID)) {
+    return fail(400, 'reason and a target (messageID or authorID) are required');
+  }
+  const cap = (value: unknown, max: number): string | undefined =>
+    typeof value === 'string' ? value.slice(0, max) : undefined;
   try {
-    const hash = await playbackHashOverride(c);
-    return await playbackResponse(c, await resolveLivePlayback(c.req.param('login'), hash));
-  } catch (err) {
-    return fail(statusFor(err), messageFor(err));
-  }
-});
-
-const PLAYLIST_CONTENT_TYPE = 'application/vnd.apple.mpegurl';
-
-app.get('/hls/proxy', async (c) => {
-  const src = c.req.query('src');
-  if (!src) {
-    return fail(400, 'src is required');
-  }
-  let target: URL;
-  try {
-    target = new URL(src);
+    const now = Math.floor(Date.now() / 1000);
+    const key = `${REPORT_KV_PREFIX}${now}-${crypto.randomUUID()}`;
+    const record = {
+      channel: cap(body.channel, 60),
+      messageID: cap(body.messageID, 80),
+      authorID: cap(body.authorID, 40),
+      authorLogin: cap(body.authorLogin, 60),
+      reason: cap(body.reason, 80),
+      text: cap(body.text, 2000),
+      at: now,
+    };
+    await c.env.TOKENS.put(key, JSON.stringify(record), { expirationTtl: REPORT_TTL_SECONDS });
   } catch {
-    return fail(400, 'src must be an absolute URL');
+    // Storing the report is best-effort; never block the reporter on it.
   }
-  try {
-    const upstream = await fetch(target.toString(), {
-      headers: { 'Accept': '*/*' },
-    });
-    if (!upstream.ok) {
-      return fail(upstream.status, `upstream responded ${upstream.status}`);
-    }
-    const text = await upstream.text();
-    const { proxyBase } = proxyURLFor(c);
-
-    let playlist: string;
-    if (isMediaPlaylist(text)) {
-      const stripped = stripAds(text);
-      const safe = stripped.includes('#EXTINF') ? stripped : text;
-      playlist = rewriteUris(safe, target.toString(), null);
-    } else {
-      playlist = rewriteUris(text, target.toString(), proxyBase);
-    }
-
-    return new Response(playlist, {
-      status: 200,
-      headers: {
-        'Content-Type': PLAYLIST_CONTENT_TYPE,
-        'Cache-Control': 'no-store',
-      },
-    });
-  } catch (err) {
-    return fail(statusFor(err), messageFor(err));
-  }
+  return new Response(null, { status: 204 });
 });
+
+app.get('/legal/terms', () => termsPage());
+app.get('/legal/privacy', () => privacyPage());
 
 app.onError((err, _c) => fail(statusFor(err), messageFor(err)));
 
