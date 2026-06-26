@@ -9,6 +9,7 @@ protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapRetry(_ overlay: VideoOverlayView)
     func videoOverlayDidTapMute(_ overlay: VideoOverlayView)
     func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView)
     func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView)
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView)
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval)
@@ -57,6 +58,7 @@ final class VideoOverlayView: UIView {
 
     private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
     private let adStatusLabel = UILabel()
+    private let adInfoButton = UIButton(type: .system)
     private let adGameView = AdBreakGameView()
 
     private let latencyLabel: UILabel = {
@@ -403,8 +405,28 @@ final class VideoOverlayView: UIView {
         adStatusLabel.layer.shadowRadius = 4
         adStatusLabel.layer.shadowOpacity = 0.5
         adStatusLabel.layer.shadowOffset = .zero
-        adStatusLabel.translatesAutoresizingMaskIntoConstraints = false
-        adCover.contentView.addSubview(adStatusLabel)
+
+        var infoConfig = UIButton.Configuration.gray()
+        infoConfig.cornerStyle = .capsule
+        infoConfig.image = UIImage(systemName: "info.circle.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
+        infoConfig.imagePadding = 5
+        infoConfig.baseForegroundColor = .white
+        infoConfig.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        var infoTitle = AttributedString("Why am I seeing ads?")
+        infoTitle.font = .systemFont(ofSize: 12, weight: .semibold)
+        infoConfig.attributedTitle = infoTitle
+        adInfoButton.configuration = infoConfig
+        adInfoButton.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            self.delegate?.videoOverlayDidTapAdInfo(self)
+        }, for: .touchUpInside)
+
+        let bottomStack = UIStackView(arrangedSubviews: [adStatusLabel, adInfoButton])
+        bottomStack.axis = .vertical
+        bottomStack.alignment = .center
+        bottomStack.spacing = 8
+        bottomStack.translatesAutoresizingMaskIntoConstraints = false
+        adCover.contentView.addSubview(bottomStack)
 
         NSLayoutConstraint.activate([
             adGameView.topAnchor.constraint(equalTo: adCover.contentView.topAnchor),
@@ -412,10 +434,10 @@ final class VideoOverlayView: UIView {
             adGameView.trailingAnchor.constraint(equalTo: adCover.contentView.trailingAnchor),
             adGameView.bottomAnchor.constraint(equalTo: adCover.contentView.bottomAnchor),
 
-            adStatusLabel.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
-            adStatusLabel.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
-            adStatusLabel.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
-            adStatusLabel.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
+            bottomStack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
+            bottomStack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
+            bottomStack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
+            bottomStack.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
         ])
     }
 

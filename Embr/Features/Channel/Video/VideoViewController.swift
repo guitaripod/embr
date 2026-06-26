@@ -639,6 +639,10 @@ extension VideoViewController: VideoOverlayViewDelegate {
         toggleFullscreen()
     }
 
+    func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView) {
+        present(AdInfoViewController(), animated: true)
+    }
+
     func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView) {
         presentSpeedPicker(from: sourceView)
     }
