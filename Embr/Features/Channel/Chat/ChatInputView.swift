@@ -382,18 +382,14 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     private var catalog = EmoteCatalog()
     private var loadTasks: [String: Task<Void, Never>] = [:]
     private let placeholderLabel = UILabel()
+    private var pendingRetokenize = false
 
     init(images: ImageLoading) {
         self.images = images
         super.init(frame: .zero, textContainer: nil)
         delegate = self
         allowsEditingTextAttributes = false
-        autocorrectionType = .no
-        autocapitalizationType = .none
-        smartQuotesType = .no
-        smartDashesType = .no
-        smartInsertDeleteType = .no
-        spellCheckingType = .no
+        autocapitalizationType = .sentences
         returnKeyType = .send
         enablesReturnKeyAutomatically = true
         placeholderLabel.font = .systemFont(ofSize: 16)
@@ -458,18 +454,22 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        render(plain: plainText, caret: caretPlainOffset())
+        if pendingRetokenize, markedTextRange == nil {
+            pendingRetokenize = false
+            render(plain: plainText, caret: caretPlainOffset())
+        }
+        placeholderLabel.isHidden = attributedText.length > 0
         onTextChange?()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        guard text.contains("\n") else { return true }
-        if text == "\n" {
-            onReturn?()
-        } else {
+        if text == "\n" { onReturn?(); return false }
+        if text.contains("\n") {
             textView.insertText(text.replacingOccurrences(of: "\n", with: " "))
+            return false
         }
-        return false
+        if text.contains(" ") { pendingRetokenize = true }
+        return true
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -534,6 +534,7 @@ private final class EmoteTextView: UITextView, UITextViewDelegate {
     }
 
     private func redrawAttachments() {
+        guard markedTextRange == nil else { return }
         let preservedSelection = selectedRange
         let current = attributedText
         attributedText = current
