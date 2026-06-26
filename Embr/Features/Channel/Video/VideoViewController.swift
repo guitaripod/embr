@@ -405,6 +405,7 @@ final class VideoViewController: UIViewController {
         }
         let delay = min(pow(2.0, Double(recoveryAttempts)), 16)
         recoveryAttempts += 1
+        overlay.setBuffering(true)
         let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true) }
         recoveryWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
