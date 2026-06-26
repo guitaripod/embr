@@ -258,6 +258,7 @@ final class VideoViewController: UIViewController {
         }
 
         overlay.setSeekable(isSeekableSource)
+        overlay.setLive(!isSeekableSource)
 
         swipeDown.delegate = self
         view.addGestureRecognizer(swipeDown)

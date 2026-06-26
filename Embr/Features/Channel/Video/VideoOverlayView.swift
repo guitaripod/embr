@@ -79,6 +79,8 @@ final class VideoOverlayView: UIView {
         return imageView
     }()
 
+    private var isLive = false
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         buildHierarchy()
@@ -94,10 +96,19 @@ final class VideoOverlayView: UIView {
         let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
         playPauseButton.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
         playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
-        liveBadge.isHidden = !playing
-        if playing {
+        let showBadge = playing && isLive
+        liveBadge.isHidden = !showBadge
+        if showBadge {
             liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
         } else {
+            liveBadge.removeAllSymbolEffects()
+        }
+    }
+
+    func setLive(_ live: Bool) {
+        isLive = live
+        if !live {
+            liveBadge.isHidden = true
             liveBadge.removeAllSymbolEffects()
         }
     }
