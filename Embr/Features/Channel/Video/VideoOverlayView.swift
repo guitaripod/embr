@@ -56,10 +56,8 @@ final class VideoOverlayView: UIView {
     private var errorActive = false
 
     private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
-    private let adIcon = UIImageView(image: UIImage(systemName: "hourglass"))
-    private let adTitleLabel = UILabel()
-    private let adCountdownLabel = UILabel()
-    private let adSubtitleLabel = UILabel()
+    private let adStatusLabel = UILabel()
+    private let adGameView = AdBreakGameView()
 
     private let latencyLabel: UILabel = {
         let label = UILabel()
@@ -168,13 +166,35 @@ final class VideoOverlayView: UIView {
 
     func updateAdCountdown(_ remaining: TimeInterval?) {
         guard let remaining else {
-            adCover.isHidden = true
+            setAdCoverVisible(false)
             return
         }
-        adCover.isHidden = false
-        adCountdownLabel.text = "\(max(1, Int(remaining.rounded(.up))))s"
+        let seconds = max(1, Int(remaining.rounded(.up)))
+        let wasShowing = !adCover.isHidden && adCover.alpha > 0.01
+        adStatusLabel.text = "Ad break · stream resumes in \(seconds)s"
+        setAdCoverVisible(true)
         bringSubviewToFront(adCover)
         bringSubviewToFront(topBar)
+        if !wasShowing {
+            UIAccessibility.post(notification: .announcement, argument: "Ad break. Tap to play Embr Flyer while the stream resumes.")
+        }
+    }
+
+    private func setAdCoverVisible(_ visible: Bool) {
+        if visible {
+            if adCover.isHidden {
+                adCover.alpha = 0
+                adCover.isHidden = false
+                adGameView.activate()
+            }
+            UIView.animate(withDuration: 0.3) { self.adCover.alpha = 1 }
+        } else {
+            adGameView.deactivate()
+            guard !adCover.isHidden else { return }
+            UIView.animate(withDuration: 0.3, animations: { self.adCover.alpha = 0 }) { finished in
+                if finished, self.adCover.alpha < 0.01 { self.adCover.isHidden = true }
+            }
+        }
     }
 
     func showControls(thenHide: Bool = true) {
@@ -369,40 +389,33 @@ final class VideoOverlayView: UIView {
     private func buildAdCover() {
         adCover.translatesAutoresizingMaskIntoConstraints = false
         adCover.isHidden = true
-        adCover.isUserInteractionEnabled = false
+        adCover.isUserInteractionEnabled = true
         addSubview(adCover)
 
-        adIcon.tintColor = .white
-        adIcon.contentMode = .scaleAspectFit
-        adIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 30, weight: .regular)
+        adGameView.translatesAutoresizingMaskIntoConstraints = false
+        adCover.contentView.addSubview(adGameView)
 
-        adTitleLabel.text = "Ad break"
-        adTitleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        adTitleLabel.textColor = .white
-        adTitleLabel.textAlignment = .center
+        adStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        adStatusLabel.textColor = UIColor.white.withAlphaComponent(0.85)
+        adStatusLabel.textAlignment = .center
+        adStatusLabel.numberOfLines = 1
+        adStatusLabel.layer.shadowColor = UIColor.black.cgColor
+        adStatusLabel.layer.shadowRadius = 4
+        adStatusLabel.layer.shadowOpacity = 0.5
+        adStatusLabel.layer.shadowOffset = .zero
+        adStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        adCover.contentView.addSubview(adStatusLabel)
 
-        adCountdownLabel.font = .monospacedDigitSystemFont(ofSize: 40, weight: .bold)
-        adCountdownLabel.textColor = .white
-        adCountdownLabel.textAlignment = .center
-
-        adSubtitleLabel.text = "Your stream resumes automatically"
-        adSubtitleLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        adSubtitleLabel.textColor = UIColor.white.withAlphaComponent(0.7)
-        adSubtitleLabel.textAlignment = .center
-        adSubtitleLabel.numberOfLines = 0
-
-        let stack = UIStackView(arrangedSubviews: [adIcon, adTitleLabel, adCountdownLabel, adSubtitleLabel])
-        stack.axis = .vertical
-        stack.alignment = .center
-        stack.spacing = 6
-        stack.setCustomSpacing(2, after: adCountdownLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        adCover.contentView.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: adCover.contentView.centerYAnchor),
-            stack.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -24)
+            adGameView.topAnchor.constraint(equalTo: adCover.contentView.topAnchor),
+            adGameView.leadingAnchor.constraint(equalTo: adCover.contentView.leadingAnchor),
+            adGameView.trailingAnchor.constraint(equalTo: adCover.contentView.trailingAnchor),
+            adGameView.bottomAnchor.constraint(equalTo: adCover.contentView.bottomAnchor),
+
+            adStatusLabel.centerXAnchor.constraint(equalTo: adCover.contentView.centerXAnchor),
+            adStatusLabel.leadingAnchor.constraint(greaterThanOrEqualTo: adCover.contentView.leadingAnchor, constant: 16),
+            adStatusLabel.trailingAnchor.constraint(lessThanOrEqualTo: adCover.contentView.trailingAnchor, constant: -16),
+            adStatusLabel.bottomAnchor.constraint(equalTo: adCover.safeAreaLayoutGuide.bottomAnchor, constant: -10)
         ])
     }
 
@@ -431,6 +444,8 @@ final class VideoOverlayView: UIView {
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
+        tap.delegate = self
+        doubleTap.delegate = self
         addGestureRecognizer(doubleTap)
         addGestureRecognizer(tap)
         tap.require(toFail: doubleTap)
@@ -607,3 +622,9 @@ final class VideoOverlayView: UIView {
     }
 }
 
+extension VideoOverlayView: UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard !adCover.isHidden else { return true }
+        return !adCover.bounds.contains(touch.location(in: adCover))
+    }
+}
