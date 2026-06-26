@@ -592,8 +592,17 @@ final class EmoteTextAttachment: NSTextAttachment {
     init(emoteName: String) {
         self.emoteName = emoteName
         super.init(data: nil, ofType: nil)
+        image = EmoteTextAttachment.transparentPlaceholder
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    /// Clear placeholder so the attachment shows nothing (not TextKit's "missing
+    /// attachment" document glyph) while the real emote image loads asynchronously.
+    private static let transparentPlaceholder: UIImage = {
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1), format: format).image { _ in }
+    }()
 }

@@ -219,8 +219,18 @@ struct MessageLayout {
         let box = emoteBox(for: emote)
         let descent = (box.height - font.ascender + font.descender) / 2
         attachment.bounds = CGRect(x: 0, y: font.descender - descent, width: box.width, height: box.height)
+        attachment.image = Self.transparentAttachmentImage
         return NSAttributedString(attachment: attachment)
     }
+
+    /// A 1pt clear image so the layout-only emote spacer reserves its bounds without
+    /// TextKit drawing the "missing attachment" document glyph; the real emote is
+    /// painted by an overlaid `SDAnimatedImageView` in `MessageCell`.
+    private static let transparentAttachmentImage: UIImage = {
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1), format: format).image { _ in }
+    }()
 
     private func layoutText(
         attributed: NSAttributedString,
