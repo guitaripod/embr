@@ -587,16 +587,21 @@ final class VideoViewController: UIViewController {
     }
 
     private func springBack() {
+        let restore = {
+            self.player.view.center = self.dragStartCenter
+            self.overlay.alpha = 1
+        }
+        if Motion.reduced {
+            UIView.animate(withDuration: 0.2, animations: restore)
+            return
+        }
         UIView.animate(
             withDuration: 0.5,
             delay: 0,
             usingSpringWithDamping: 0.6,
             initialSpringVelocity: 0.8,
             options: [.allowUserInteraction],
-            animations: {
-                self.player.view.center = self.dragStartCenter
-                self.overlay.alpha = 1
-            }
+            animations: restore
         )
     }
 

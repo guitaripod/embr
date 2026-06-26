@@ -242,7 +242,7 @@ private final class LiveBadgeView: UIView {
         dot.image = UIImage(systemName: "dot.radiowaves.left.and.right")
         dot.tintColor = .white
         dot.contentMode = .scaleAspectFit
-        dot.addSymbolEffect(.pulse, options: .repeating)
+        if !Motion.reduced { dot.addSymbolEffect(.pulse, options: .repeating) }
 
         label.text = "LIVE"
         label.font = .systemFont(ofSize: 11, weight: .heavy)

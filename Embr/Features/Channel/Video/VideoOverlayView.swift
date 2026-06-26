@@ -98,7 +98,7 @@ final class VideoOverlayView: UIView {
         playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
         let showBadge = playing && isLive
         liveBadge.isHidden = !showBadge
-        if showBadge {
+        if showBadge, !Motion.reduced {
             liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
         } else {
             liveBadge.removeAllSymbolEffects()

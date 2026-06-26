@@ -688,7 +688,7 @@ private final class ConnectionStatusBar: UIView {
         icon.image = UIImage(systemName: symbol)
         icon.tintColor = color
         icon.removeAllSymbolEffects()
-        if pulse { icon.addSymbolEffect(.pulse, options: .repeating) }
+        if pulse, !Motion.reduced { icon.addSymbolEffect(.pulse, options: .repeating) }
         updateContainerVisibility()
     }
 

@@ -31,7 +31,7 @@ final class OnboardingViewController: UIViewController {
         logo.tintColor = Theme.accent
         logo.contentMode = .scaleAspectFit
         logo.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 64, weight: .semibold)
-        logo.addSymbolEffect(.pulse, options: .repeating)
+        if !Motion.reduced { logo.addSymbolEffect(.pulse, options: .repeating) }
 
         let title = UILabel()
         title.text = "Embr"
