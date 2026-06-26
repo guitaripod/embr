@@ -67,6 +67,13 @@ final class WebViewPlayer: NSObject, VideoPlaying {
         }
     }
 
+    func loadChannel(_ login: String) {
+        availableQualities = []
+        currentQuality = nil
+        stateSubject.send(.loading)
+        loadEmbed(channel: login)
+    }
+
     func play() {
         evaluate("if (window.embrPlayer) { window.embrPlayer.play(); }")
     }

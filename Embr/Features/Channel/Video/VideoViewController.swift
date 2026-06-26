@@ -15,7 +15,7 @@ final class VideoViewController: UIViewController {
     var onDoubleTapToggleChat: (() -> Void)?
 
     private let source: VideoSource
-    private let player: VideoPlaying
+    private var player: VideoPlaying
     private let resolver: PlaybackResolving
     private let logger: AppLogger
     private let store: SettingsStore
@@ -23,6 +23,8 @@ final class VideoViewController: UIViewController {
 
     private let overlay = VideoOverlayView()
     private var cancellables = Set<AnyCancellable>()
+    private var playerCancellables = Set<AnyCancellable>()
+    private var triedWebFallback = false
     private var resolveTask: Task<Void, Never>?
 
     private var currentState: VideoState = .idle
@@ -91,7 +93,7 @@ final class VideoViewController: UIViewController {
         view.backgroundColor = .black
         installPlayerView()
         installOverlay()
-        bind()
+        bindPlayer()
         observeLifecycle()
         if streamActive { resolveAndLoad() }
     }
@@ -274,27 +276,28 @@ final class VideoViewController: UIViewController {
         view.addGestureRecognizer(swipeDown)
     }
 
-    private func bind() {
+    private func bindPlayer() {
+        playerCancellables.removeAll()
         player.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.apply(state)
             }
-            .store(in: &cancellables)
+            .store(in: &playerCancellables)
 
         player.latencyPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] latency in
                 self?.overlay.setLatency(latency)
             }
-            .store(in: &cancellables)
+            .store(in: &playerCancellables)
 
         player.adBreakPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] remaining in
                 self?.handleAdBreak(remaining)
             }
-            .store(in: &cancellables)
+            .store(in: &playerCancellables)
 
         player.progressPublisher
             .receive(on: DispatchQueue.main)
@@ -303,7 +306,39 @@ final class VideoViewController: UIViewController {
                 self.lastProgress = progress
                 self.overlay.setProgress(progress)
             }
-            .store(in: &cancellables)
+            .store(in: &playerCancellables)
+    }
+
+    /// Last-resort fallback: when the ad-stripped HLS path can't recover, swap to
+    /// the compliant Twitch web embed (anonymous, shows ads, but resilient).
+    private func swapToWebPlayer() {
+        guard !(player is WebViewPlayer), !triedWebFallback else { return }
+        triedWebFallback = true
+        recoveryAttempts = 0
+        cancelRecoveryTimers()
+        logger.info("HLS recovery exhausted — falling back to web player", category: .playback)
+
+        let previous = player
+        previous.teardown()
+        previous.view.removeFromSuperview()
+
+        let web = WebViewPlayer()
+        player = web
+        let playerView = web.view
+        playerView.frame = view.bounds
+        playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.insertSubview(playerView, belowSubview: overlay)
+        bindPlayer()
+
+        overlay.setPictureInPictureEnabled(false)
+        overlay.clearError()
+        overlay.setBuffering(true)
+
+        if case .live(let login) = source {
+            web.loadChannel(login)
+        } else {
+            resolveAndLoad()
+        }
     }
 
     private func handleAdBreak(_ remaining: TimeInterval?) {
@@ -405,6 +440,10 @@ final class VideoViewController: UIViewController {
         guard streamActive, !isResolving, !adActive else { return }
         recoveryWork?.cancel()
         guard recoveryAttempts < Self.maxRecoveryAttempts else {
+            if !triedWebFallback, !(player is WebViewPlayer) {
+                swapToWebPlayer()
+                return
+            }
             showingError = true
             stallWork?.cancel(); stallWork = nil
             player.pause()
