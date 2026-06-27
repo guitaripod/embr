@@ -76,9 +76,15 @@ jobs:
           [ -z "$BUILD_NUMBER" ] && BUILD_NUMBER="${{ github.run_number }}"
           echo "Using build number $BUILD_NUMBER"
           sed -i '' "s/CURRENT_PROJECT_VERSION: \"[0-9]*\"/CURRENT_PROJECT_VERSION: \"$BUILD_NUMBER\"/" project.yml
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
 
       - name: Generate project
         run: xcodegen generate
+
+      - name: Stamp build number into Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" Embr/Info.plist
+          echo "CFBundleVersion is now $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' Embr/Info.plist)"
 
       - name: Archive
         run: |
