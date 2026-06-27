@@ -25,7 +25,7 @@ This repo was built on Linux, so **the UIKit app layer is written but unverified
 - **Chat receive:** EventSub WebSocket, `channel.chat.message` (+ notification/clear/delete). Structured JSON → `ChatMessage`. No IRC tag parsing.
 - **Chat send:** Helix `POST /helix/chat/messages` — surfaces `is_sent` / `drop_reason` (AutoMod feedback).
 - **Auth:** `ASWebAuthenticationSession` → Worker `/auth/exchange` (Authorization Code; the Worker holds the client secret because Twitch does not support PKCE). Tokens in Keychain. Anonymous browsing via a Worker-minted app token.
-- **Video:** Twitch's official embedded player (`embed.twitch.tv` interactive embed for live/VOD, `clips.twitch.tv` for clips), served by the Worker `/embed` route and hosted in a `WKWebView` (`WebViewPlayer`). Twitch's own player handles playback, quality, and any advertising; the app draws only a thin back/chat/loading overlay on top.
+- **Video:** Worker resolves the HLS playlist (GQL `PlaybackAccessToken` → usher) and strips stitched ad segments; the app plays it with `AVPlayer` + `AVPictureInPictureController`. Behind a `VideoPlaying` protocol with a `WebViewPlayer` fallback.
 - **Emotes:** Twitch + 7TV (with `events.7tv.io` live updates) + BetterTTV + FrankerFaceZ, merged into a layered `EmoteCatalog`. Animated WebP via SDWebImage.
 - **Rendering:** off-main tokenization (`MessageTokenizer`), precomputed layout, a flipped `UICollectionView` with diffable batches, a shared `CADisplayLink` emote animator.
 
@@ -53,11 +53,6 @@ npx wrangler deploy
 scripts/core-test.sh
 ```
 
-## Branches
-
-- **`master`** — the personal/sideload build. The native video path uses Twitch's **undocumented** GraphQL playback endpoint and strips ads, which violates the Twitch Developer Services Agreement. Do not distribute it.
-- **`app-store-ready`** — the **App Store–compliant** build. The undocumented-GQL / usher / ad-stripping path and the spoofed-client polls/predictions are removed; the sole player is Twitch's official embed (ads intact, registered dev client only). Adds a chat report flow, in-app + hosted Terms/Privacy, a first-launch agreement, a privacy manifest, and least-privilege OAuth scopes. See [`APP_STORE.md`](APP_STORE.md) for the submission checklist.
-
 ## Legal
 
-Streams play through Twitch's official embedded player. Embr is an independent, open-source client and is not affiliated with Twitch. See `APP_STORE.md` (on the `app-store-ready` branch) and the in-app **Terms of Use** / **Privacy Policy**.
+The native video path uses Twitch's **undocumented** GraphQL playback endpoint and strips ads, which violates the Twitch Developer Services Agreement and can break without notice. This is a **personal, sideloaded** project. Do not distribute it. The compliant alternative is the `WebViewPlayer` (official embed), already stubbed behind the same protocol.

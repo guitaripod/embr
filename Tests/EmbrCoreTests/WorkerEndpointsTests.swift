@@ -41,18 +41,6 @@ struct WorkerEndpointsTests {
         #expect(request.body == nil)
     }
 
-    @Test("loginURL builds a GET with redirectURI and state query items")
-    func loginURLRequest() {
-        let request = endpoints.loginURL(redirectURI: "embr://callback", state: "xyz")
-
-        #expect(request.method == .get)
-        let components = URLComponents(url: request.url, resolvingAgainstBaseURL: false)
-        #expect(components?.path == "/auth/login-url")
-        let items = components?.queryItems ?? []
-        #expect(items.contains(URLQueryItem(name: "redirectURI", value: "embr://callback")))
-        #expect(items.contains(URLQueryItem(name: "state", value: "xyz")))
-    }
-
     @Test("report builds a POST to /report with a ReportRequest body")
     func reportRequest() throws {
         let request = endpoints.report(
@@ -74,7 +62,35 @@ struct WorkerEndpointsTests {
         let decoded = try TwitchJSON.decode(WorkerAPI.ReportRequest.self, from: body)
         #expect(decoded.reason == "Harassment")
         #expect(decoded.authorLogin == "baduser")
-        #expect(decoded.messageID == "m1")
+    }
+
+    @Test("loginURL builds a GET with redirectURI and state query items")
+    func loginURLRequest() {
+        let request = endpoints.loginURL(redirectURI: "embr://callback", state: "xyz")
+
+        #expect(request.method == .get)
+        let components = URLComponents(url: request.url, resolvingAgainstBaseURL: false)
+        #expect(components?.path == "/auth/login-url")
+        let items = components?.queryItems ?? []
+        #expect(items.contains(URLQueryItem(name: "redirectURI", value: "embr://callback")))
+        #expect(items.contains(URLQueryItem(name: "state", value: "xyz")))
+    }
+
+    @Test("playbackLive builds the right GET path")
+    func playbackLivePath() {
+        let request = endpoints.playbackLive(login: "shroud")
+
+        #expect(request.method == .get)
+        #expect(request.url.absoluteString == "https://worker.example.com/playback/shroud")
+        #expect(request.body == nil)
+    }
+
+    @Test("playbackVOD builds the right GET path")
+    func playbackVODPath() {
+        let request = endpoints.playbackVOD(id: "123456789")
+
+        #expect(request.method == .get)
+        #expect(request.url.absoluteString == "https://worker.example.com/playback/vod/123456789")
     }
 
     @Test("trailing slash on base URL does not double up the path separator")
@@ -120,5 +136,16 @@ struct WorkerEndpointsTests {
         #expect(token.scope == nil)
         #expect(token.userID == nil)
         #expect(token.login == nil)
+    }
+
+    @Test("decodePlayback round-trips a PlaybackResponse JSON")
+    func decodePlaybackRoundTrip() throws {
+        let json = """
+        { "url": "https://worker.example.com/hls/master.m3u8", "expiresAt": 1718000000.5 }
+        """
+        let playback = try WorkerEndpoints.decodePlayback(Data(json.utf8))
+
+        #expect(playback.url == "https://worker.example.com/hls/master.m3u8")
+        #expect(playback.expiresAt == 1718000000.5)
     }
 }

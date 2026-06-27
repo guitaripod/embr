@@ -31,8 +31,28 @@ public struct WorkerEndpoints: Sendable {
         jsonPost("/report", body: body)
     }
 
+    public func playbackLive(login: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/playback/\(escape(login))"))
+    }
+
+    public func playbackVOD(id: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/playback/vod/\(escape(id))"))
+    }
+
+    public func channelEvents(login: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/events/\(escape(login))"))
+    }
+
+    public static func decodeChannelEvents(_ data: Data) throws -> ChannelEvents {
+        try TwitchJSON.decode(ChannelEvents.self, from: data)
+    }
+
     public static func decodeToken(_ data: Data) throws -> WorkerAPI.TokenResponse {
         try TwitchJSON.decode(WorkerAPI.TokenResponse.self, from: data)
+    }
+
+    public static func decodePlayback(_ data: Data) throws -> WorkerAPI.PlaybackResponse {
+        try TwitchJSON.decode(WorkerAPI.PlaybackResponse.self, from: data)
     }
 
     private func jsonPost(_ relativePath: String, body: some Encodable) -> HTTPRequest {
@@ -54,5 +74,9 @@ public struct WorkerEndpoints: Sendable {
             ? String(baseURL.absoluteString.dropLast())
             : baseURL.absoluteString
         return trimmed + relativePath
+    }
+
+    private func escape(_ component: String) -> String {
+        component.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? component
     }
 }

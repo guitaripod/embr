@@ -9,6 +9,10 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+function textResponse(body: string, status = 200): Response {
+  return new Response(body, { status, headers: { 'Content-Type': 'text/plain' } });
+}
+
 function makeEnv(store = new Map<string, string>()): Bindings {
   return {
     TWITCH_CLIENT_ID: 'test-client-id',
@@ -25,11 +29,6 @@ function makeEnv(store = new Map<string, string>()): Bindings {
       delete: async (key: string) => {
         store.delete(key);
       },
-      list: async () => ({
-        keys: [...store.keys()].map((name) => ({ name })),
-        list_complete: true,
-        cursor: '',
-      }),
     } as unknown as KVNamespace,
   };
 }
@@ -152,16 +151,11 @@ describe('GET /auth/login-url', () => {
     expect(scope).toContain('user:read:chat');
     expect(scope).toContain('user:write:chat');
     expect(scope).toContain('user:read:follows');
+    expect(scope).toContain('user:read:blocked_users');
+    expect(scope).toContain('user:manage:blocked_users');
     expect(scope).toContain('user:manage:chat_color');
     expect(scope).toContain('moderator:manage:banned_users');
     expect(scope).toContain('moderator:manage:chat_messages');
-  });
-
-  it('does not request the unused blocked-users scopes', async () => {
-    const res = await app.request('/auth/login-url?redirectURI=embr%3A%2F%2Fcb', {}, makeEnv());
-    const body = (await res.json()) as { url: string };
-    const scope = new URL(body.url).searchParams.get('scope') ?? '';
-    expect(scope).not.toContain('blocked_users');
   });
 
   it('returns 400 without redirectURI', async () => {
@@ -193,78 +187,279 @@ describe('GET /auth/app-token', () => {
   });
 });
 
+describe('GET /playback/:login', () => {
+  it('resolves a usher URL and returns a proxied url back to this worker', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: {
+            streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig123' },
+          },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/somechannel', {}, makeEnv());
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { url: string; expiresAt?: number };
+    expect(body.url.startsWith('http://embr.test/hls/proxy?src=')).toBe(true);
+    const src = new URL(body.url).searchParams.get('src') ?? '';
+    expect(src).toContain('usher.ttvnw.net');
+    expect(src).toContain('somechannel.m3u8');
+
+    const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
+    const init = gqlCall?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers['Client-ID']).toBe('kimne78kx3ncx6brgo4mv6wki5h1ko');
+    const payload = JSON.parse(String(init.body));
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe(
+      'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9',
+    );
+    expect(payload.variables.isLive).toBe(true);
+    expect(payload.variables.login).toBe('somechannel');
+    expect(payload.variables.platform).toBe('web');
+  });
+
+  it('returns a non-2xx with error when GQL has no token', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ data: { streamPlaybackAccessToken: null } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/ghost', {}, makeEnv());
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBeTruthy();
+  });
+
+  it('returns 404 when the channel is offline (usher 404s despite a minted token)', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('not found', 404);
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/offlinechannel', {}, makeEnv());
+    expect(res.status).toBe(404);
+  });
+
+  it('falls back to the full GraphQL query when the persisted hash is rotated', async () => {
+    let gqlCalls = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        gqlCalls += 1;
+        if (gqlCalls === 1) {
+          return jsonResponse({ errors: [{ message: 'PersistedQueryNotFound' }] });
+        }
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/rotated', {}, makeEnv());
+    expect(res.status).toBe(200);
+    expect(gqlCalls).toBe(2);
+
+    const secondGql = fetchMock.mock.calls.filter((c) => String(c[0]).includes('gql'))[1];
+    const init = secondGql?.[1] as RequestInit;
+    const payload = JSON.parse(String(init.body));
+    expect(payload.query).toContain('PlaybackAccessToken_Template');
+    expect(payload.extensions).toBeUndefined();
+    expect((init.headers as Record<string, string>)['Device-ID']).toBeTruthy();
+  });
+
+  it('uses the KV-configured persisted-query hash when present', async () => {
+    const store = new Map<string, string>();
+    store.set('playback_token_sha256', 'deadbeefhash');
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"t":1}', signature: 's' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/chan', {}, makeEnv(store));
+    expect(res.status).toBe(200);
+    const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
+    const payload = JSON.parse(String((gqlCall?.[1] as RequestInit).body));
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe('deadbeefhash');
+  });
+
+  it('falls back to the default persisted-query hash when the KV value is empty', async () => {
+    const store = new Map<string, string>();
+    store.set('playback_token_sha256', '');
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"t":1}', signature: 's' } },
+        });
+      }
+      if (url.includes('usher.ttvnw.net')) {
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/chan', {}, makeEnv(store));
+    expect(res.status).toBe(200);
+    const gqlCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('gql'));
+    const payload = JSON.parse(String((gqlCall?.[1] as RequestInit).body));
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe(
+      'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9',
+    );
+  });
+});
+
 describe('GET /embed', () => {
-  it('serves the official Twitch interactive embed for a channel with this worker host as parent', async () => {
+  it('serves a Twitch player iframe with this worker host as parent', async () => {
     const res = await app.request('http://embr.test/embed?channel=somechannel', {}, makeEnv());
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toContain('text/html');
     const html = await res.text();
-    expect(html).toContain('embed.twitch.tv/embed/v1.js');
-    expect(html).toContain('channel:"somechannel"');
-    expect(html).toContain('parent:["embr.test"]');
-    expect(html).toContain('layout:"video"');
-  });
-
-  it('serves the interactive embed for a VOD', async () => {
-    const res = await app.request('http://embr.test/embed?video=123456789', {}, makeEnv());
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain('embed.twitch.tv/embed/v1.js');
-    expect(html).toContain('video:"123456789"');
-  });
-
-  it('serves the official clip embed for a clip slug', async () => {
-    const res = await app.request('http://embr.test/embed?clip=HappyClipSlug', {}, makeEnv());
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain('clips.twitch.tv/embed?clip=HappyClipSlug');
+    expect(html).toContain('player.twitch.tv');
+    expect(html).toContain('channel=somechannel');
     expect(html).toContain('parent=embr.test');
   });
 
-  it('does not strip ads or touch any unofficial Twitch endpoint', async () => {
-    const res = await app.request('http://embr.test/embed?channel=foo', {}, makeEnv());
-    const html = await res.text();
-    expect(html).not.toContain('usher');
-    expect(html).not.toContain('kimne78');
-    expect(html).not.toContain('stitched');
-  });
-
-  it('rejects a script-injection attempt in channel and never emits a closing script tag from input', async () => {
-    const res = await app.request(
-      'http://embr.test/embed?channel=' + encodeURIComponent('</script><script>alert(1)</script>'),
-      {},
-      makeEnv(),
-    );
-    expect(res.status).toBe(400);
-  });
-
-  it('rejects invalid video and clip ids', async () => {
-    expect((await app.request('http://embr.test/embed?video=abc', {}, makeEnv())).status).toBe(400);
-    expect((await app.request('http://embr.test/embed?clip=' + encodeURIComponent('a b/c'), {}, makeEnv())).status).toBe(400);
-  });
-
-  it('returns 400 without a target', async () => {
+  it('returns 400 without a channel', async () => {
     const res = await app.request('http://embr.test/embed', {}, makeEnv());
     expect(res.status).toBe(400);
   });
 });
 
+describe('GET /hls/proxy', () => {
+  it('strips ads from a media playlist and serves segments as direct CDN URLs', async () => {
+    const upstream = [
+      '#EXTM3U',
+      '#EXT-X-VERSION:6',
+      '#EXT-X-TARGETDURATION:2',
+      '#EXTINF:2.000,live',
+      'seg0.ts',
+      '#EXT-X-DATERANGE:ID="stitched-ad-1",CLASS="twitch-stitched-ad",START-DATE="2024-01-01T00:00:00Z"',
+      '#EXTINF:15.000,Amazon',
+      'ad0.ts',
+      '#EXTINF:2.000,live',
+      'seg1.ts',
+    ].join('\n');
+
+    const fetchMock = vi.fn(async () => textResponse(upstream));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8?sig=x';
+    const res = await app.request(
+      `http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`,
+      {},
+      makeEnv(),
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('application/vnd.apple.mpegurl');
+    const text = await res.text();
+    expect(text).not.toContain('ad0.ts');
+    expect(text).not.toContain('Amazon');
+    expect(text).not.toContain('twitch-stitched-ad');
+    expect(text).toContain('#EXTINF:2.000,live');
+    expect(text).toContain('https://usher.ttvnw.net/api/channel/hls/seg0.ts');
+    expect(text).toContain('https://usher.ttvnw.net/api/channel/hls/seg1.ts');
+    expect(text).not.toContain('/hls/proxy');
+  });
+
+  it('passes through the original playlist when stripping would leave no segments', async () => {
+    const upstream = [
+      '#EXTM3U',
+      '#EXT-X-TARGETDURATION:2',
+      '#EXT-X-MEDIA-SEQUENCE:0',
+      '#EXT-X-DATERANGE:ID="stitched-ad-1",CLASS="twitch-stitched-ad",START-DATE="2024-01-01T00:00:00Z"',
+      '#EXTINF:2.000,Amazon',
+      'https://cdn.example/ad0.ts',
+      '#EXTINF:2.000,Amazon',
+      'https://cdn.example/ad1.ts',
+    ].join('\n');
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(upstream)));
+
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+    const res = await app.request(`http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`, {}, makeEnv());
+    const text = await res.text();
+    expect(res.status).toBe(200);
+    expect(text).toContain('https://cdn.example/ad0.ts');
+    expect(text).toContain('https://cdn.example/ad1.ts');
+    expect(text).not.toContain('/hls/proxy');
+  });
+
+  it('returns 400 without a src', async () => {
+    const res = await app.request('http://embr.test/hls/proxy', {}, makeEnv());
+    expect(res.status).toBe(400);
+  });
+
+  it('rewrites variant URIs in a master playlist without stripping', async () => {
+    const master = [
+      '#EXTM3U',
+      '#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=1280x720',
+      'https://video-weaver.example/720.m3u8',
+    ].join('\n');
+    const fetchMock = vi.fn(async () => textResponse(master));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+    const res = await app.request(
+      `http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`,
+      {},
+      makeEnv(),
+    );
+    const text = await res.text();
+    const variantAbs = 'https://video-weaver.example/720.m3u8';
+    expect(text).toContain(`http://embr.test/hls/proxy?src=${encodeURIComponent(variantAbs)}`);
+  });
+});
+
+describe('GET /auth/callback', () => {
+  it('302-redirects Twitch HTTPS callback to the app custom scheme, forwarding code and state', async () => {
+    const res = await app.request('http://embr.test/auth/callback?code=abc123&state=xyz', {}, makeEnv());
+    expect(res.status).toBe(302);
+    const location = res.headers.get('Location') ?? '';
+    expect(location.startsWith('embr://auth/callback')).toBe(true);
+    expect(location).toContain('code=abc123');
+    expect(location).toContain('state=xyz');
+  });
+});
+
 describe('POST /report', () => {
-  it('stores a report in KV and returns 204', async () => {
+  it('stores a report in KV (capped) and returns 204', async () => {
     const store = new Map<string, string>();
     const res = await app.request(
       'http://embr.test/report',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channel: 'somechannel',
-          messageID: 'm1',
-          authorID: 'u1',
-          authorLogin: 'baduser',
-          reason: 'Harassment',
-          text: 'something bad',
-        }),
+        body: JSON.stringify({ authorID: 'u1', authorLogin: 'baduser', reason: 'Harassment', text: 'x'.repeat(5000) }),
       },
       makeEnv(store),
     );
@@ -273,17 +468,13 @@ describe('POST /report', () => {
     expect(stored).toBeDefined();
     const payload = JSON.parse(stored![1]);
     expect(payload.reason).toBe('Harassment');
-    expect(payload.authorLogin).toBe('baduser');
+    expect(payload.text.length).toBe(2000);
   });
 
   it('returns 400 when reason or target is missing', async () => {
     const res = await app.request(
       'http://embr.test/report',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel: 'somechannel' }),
-      },
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'c' }) },
       makeEnv(),
     );
     expect(res.status).toBe(400);
@@ -297,22 +488,6 @@ describe('POST /report', () => {
     );
     expect(res.status).toBe(400);
   });
-
-  it('caps an oversized report text before storing', async () => {
-    const store = new Map<string, string>();
-    await app.request(
-      'http://embr.test/report',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ authorID: 'u1', reason: 'Spam', text: 'x'.repeat(5000) }),
-      },
-      makeEnv(store),
-    );
-    const stored = [...store.values()].find((v) => v.includes('Spam'));
-    const payload = JSON.parse(stored!);
-    expect(payload.text.length).toBe(2000);
-  });
 });
 
 describe('legal pages', () => {
@@ -320,43 +495,12 @@ describe('legal pages', () => {
     const res = await app.request('http://embr.test/legal/terms', {}, makeEnv());
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toContain('text/html');
-    const html = await res.text();
-    expect(html.toLowerCase()).toContain('zero tolerance');
-    expect(html).toContain('report');
+    expect((await res.text()).toLowerCase()).toContain('zero tolerance');
   });
 
   it('serves the privacy page', async () => {
     const res = await app.request('http://embr.test/legal/privacy', {}, makeEnv());
     expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html.toLowerCase()).toContain('privacy');
-  });
-});
-
-describe('removed non-compliant routes', () => {
-  it('no longer serves /playback', async () => {
-    const res = await app.request('http://embr.test/playback/somechannel', {}, makeEnv());
-    expect(res.status).toBe(404);
-  });
-
-  it('no longer serves /hls/proxy', async () => {
-    const res = await app.request('http://embr.test/hls/proxy?src=https://x', {}, makeEnv());
-    expect(res.status).toBe(404);
-  });
-
-  it('no longer serves /events', async () => {
-    const res = await app.request('http://embr.test/events/somechannel', {}, makeEnv());
-    expect(res.status).toBe(404);
-  });
-});
-
-describe('GET /auth/callback', () => {
-  it('302-redirects Twitch HTTPS callback to the app custom scheme, forwarding code and state', async () => {
-    const res = await app.request('http://embr.test/auth/callback?code=abc123&state=xyz', {}, makeEnv());
-    expect(res.status).toBe(302);
-    const location = res.headers.get('Location') ?? '';
-    expect(location.startsWith('embr://auth/callback')).toBe(true);
-    expect(location).toContain('code=abc123');
-    expect(location).toContain('state=xyz');
+    expect((await res.text()).toLowerCase()).toContain('privacy');
   });
 });

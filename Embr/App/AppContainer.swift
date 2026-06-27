@@ -6,22 +6,16 @@ struct Configuration: Sendable {
     let workerBaseURL: URL
     let redirectURI: String
     let recentMessagesBaseURL: URL
-    /// Empty → derive from `workerBaseURL`. Set when the registered Twitch OAuth callback
-    /// lives on a different host than `workerBaseURL` (see `Secrets.oauthCallbackURL`).
-    let oauthCallbackOverride: String
 
     var twitchRedirectURI: String {
-        oauthCallbackOverride.isEmpty
-            ? workerBaseURL.appendingPathComponent("auth/callback").absoluteString
-            : oauthCallbackOverride
+        workerBaseURL.appendingPathComponent("auth/callback").absoluteString
     }
 
     static let current = Configuration(
         twitchClientID: Secrets.twitchClientID,
         workerBaseURL: URL(string: Secrets.workerBaseURL) ?? URL(string: "https://embr.example.workers.dev")!,
         redirectURI: Secrets.redirectURI,
-        recentMessagesBaseURL: URL(string: "https://recent-messages.robotty.de/api/v2")!,
-        oauthCallbackOverride: Secrets.oauthCallbackURL
+        recentMessagesBaseURL: URL(string: "https://recent-messages.robotty.de/api/v2")!
     )
 }
 
@@ -36,6 +30,7 @@ final class AppContainer {
     let api = TwitchAPIClient.shared
     let emotes = EmoteService.shared
     let images: ImageLoading = ImageLoader.shared
+    let playback = PlaybackResolver.shared
     let database = DatabaseManager.shared
     let settings = SettingsStore.shared
 
