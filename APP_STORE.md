@@ -40,29 +40,26 @@ deliberate experiment.
 - iOS app compiles clean (Swift 6 strict concurrency, 0 warnings in changed files);
   deployed + running on the iPhone Air.
 
-## What you must do (account-gated)
-
 ## Done autonomously
 
-- **App ID** `com.guitaripod.embr` registered (ASC id `XQ5LJ7TX5Y`, team `P4DQK6SRKR`).
-- **App Store distribution profile** "Embr App Store" minted (signed by the Midgar
-  distribution cert).
-- **TestFlight CI** (`.github/workflows/testflight.yml`) — stable-macOS runner with a
-  beta-host guard, xcodegen, manual signing, archive → export → altool. Repo secrets set.
-  A run **built, signed (Midgar dist cert), and exported a valid `Embr.ipa`**; the only
-  failure was the upload — altool: "Cannot determine the Apple ID from Bundle ID" — i.e.
-  it just needs the app record below.
+- **App ID** `com.guitaripod.embr` (ASC id `XQ5LJ7TX5Y`) + **App Store distribution
+  profile** "Embr App Store" — minted via the ASC API.
+- **TestFlight CI** (`.github/workflows/testflight.yml`): stable-macOS runner, beta-host
+  guard, xcodegen, manual signing, archive → export → altool. Repo secrets set.
+- **Build 1 uploaded and `VALID` in App Store Connect, attached to the 1.0 version.**
+- **Listing metadata pushed via API** to the en-US localizations: name
+  `Embr — Live Streams`, subtitle, description (2085 chars), keywords, promotional text,
+  support URL. (`whatsNew` is left blank — Apple disallows it on a first version.)
 - **Listing copy** (`docs/store-listing.md`) + two 6.9" screenshots (`docs/screenshots/`).
 
-## What you must do (account-gated)
+## What you must do (account-gated, all guided UI)
 
-1. **Create the App Store Connect app record** (the one step the ASC API forbids — it
-   returns 403 on `apps` CREATE). In ASC → My Apps → **+** → New App → iOS → select
-   bundle id **`com.guitaripod.embr`** → name + primary language + SKU. (≈1 min.)
-2. **Re-run the CI** (`gh workflow run testflight.yml --ref app-store-ready`) — the
-   altool upload now succeeds and the build lands in TestFlight.
-3. **Fill metadata** from `docs/store-listing.md` (I can push most of it via the ASC API
-   once the record exists), finish **screenshots** (player/chat/search/settings need
-   on-device capture or an XCUITest harness — offer stands), set age rating **17+**,
-   Privacy Policy URL `…/legal/privacy`, support email, and **Submit for Review**.
-   Provide a demo Twitch account (2FA off) in App Review notes if asked.
+1. **Screenshots** — at least one per size is required; only 2 of 6 are captured (the
+   rest — player/chat/search/settings — need in-app taps). Either capture on-device, or
+   I can stand up an **XCUITest snapshot harness** for clean reproducible captures.
+2. **Age rating** questionnaire → **17+** (answers in `docs/store-listing.md`).
+3. **App Privacy** questionnaire (no tracking; "User Content" for reports) + **Privacy
+   Policy URL** `https://embr.guitaripod.workers.dev/legal/privacy`. Both guided in ASC;
+   answers documented.
+4. **Submit for Review** (provide a demo Twitch account, 2FA off, in App Review notes if
+   asked). Export compliance is already declared (`ITSAppUsesNonExemptEncryption=false`).
