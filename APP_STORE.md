@@ -32,14 +32,32 @@ official embedded player. `master` is untouched and remains the personal sideloa
 - App compiles clean for iOS (Swift 6 strict concurrency, 0 warnings in changed files);
   privacy manifest is bundled at the app root.
 
+## Cloudflare — done
+
+- Clean branch Worker **deployed as a separate Worker** `embr-appstore`
+  (`https://embr-appstore.guitaripod.workers.dev`). Prod `embr` (the sideload's Worker)
+  is **untouched** — verified `/playback`, `/hls`, `/auth/*` still serve there.
+- It reuses the existing `TOKENS` KV (binding present; reports persist under `report:`,
+  app-token cache shared with `embr` — verified read-back).
+- `TWITCH_CLIENT_ID` secret set. Routes smoke-tested live: `/embed` (channel/video
+  interactive embed + clip), `/report` (204 + KV write), `/legal/{terms,privacy}`,
+  removed routes 404.
+- App pointed at it: `Embr/Secrets.swift` `workerBaseURL` → `embr-appstore`. The OAuth
+  callback is **decoupled** to the already-registered `embr` host
+  (`Secrets.oauthCallbackURL = https://embr.guitaripod.workers.dev/auth/callback`), so
+  login needs **no new redirect URI** in the Twitch console.
+
 ## What you must do (account-gated — not done autonomously)
 
-1. **Deploy the Worker to a *separate* environment.** Do **not** `wrangler deploy` over the
-   prod Worker your sideload (`master`) build uses — that prod Worker still serves
-   `/playback`,`/hls`,`/events`, and this branch removes them, which would break the
-   installed sideload app. Deploy this branch's Worker to a new name/route, then set
-   `Embr/Secrets.swift` `workerBaseURL` on this branch to that URL. Register the new
-   `/auth/callback` redirect on the Twitch app if the host changes.
+1. **Set the Twitch client secret on the new Worker** (it's write-only on prod `embr`,
+   so it can't be copied). Login and independent app-token refresh need it:
+   ```
+   cd workers
+   echo -n '<TWITCH_CLIENT_SECRET>' | CLOUDFLARE_API_TOKEN=$(cat ~/.cloudflare-api-token) \
+     npx wrangler secret put TWITCH_CLIENT_SECRET --name embr-appstore
+   ```
+   (Guest browse already works off the shared warm app-token cache; this makes auth
+   self-sufficient and enables Sign in with Twitch.)
 2. **App Store Connect record:** bundle id `com.guitaripod.embr`, category Entertainment,
    age rating **17+** (unrestricted web/UGC).
    - **Privacy Policy URL** → `https://<worker>/legal/privacy`. **Support URL / email** →
