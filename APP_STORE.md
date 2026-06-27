@@ -42,15 +42,27 @@ deliberate experiment.
 
 ## What you must do (account-gated)
 
-1. **App Store Connect record** for `com.guitaripod.embr` (none exists yet): name,
-   category Entertainment, age rating **17+**. Privacy Policy URL →
-   `https://embr.guitaripod.workers.dev/legal/privacy`; Support → `guitaripod@gmail.com`.
-   App Privacy labels: no tracking; "User Content (Other)" → App Functionality, not
-   linked, not for tracking (covers reports).
-2. **Register the App ID + mint an App Store distribution profile** for the bundle id
-   (Midgar team `P4DQK6SRKR`; distribution cert is in the keychain / `~/.config/midgar`).
-3. **Build the upload on stable macOS.** This Mac is on macOS 27.0 **beta** (`26A5368g`)
-   → Apple rejects beta-built binaries (ITMS-90111). Build on a stable-macOS GitHub
-   Actions runner with manual signing (p12 + profile + ASC API key secrets),
-   `altool --upload-app`. Reference: `guitaripod/master-of-flags` `testflight.yml`.
-4. **Screenshots, demo Twitch account (2FA off), and Submit for Review.**
+## Done autonomously
+
+- **App ID** `com.guitaripod.embr` registered (ASC id `XQ5LJ7TX5Y`, team `P4DQK6SRKR`).
+- **App Store distribution profile** "Embr App Store" minted (signed by the Midgar
+  distribution cert).
+- **TestFlight CI** (`.github/workflows/testflight.yml`) — stable-macOS runner with a
+  beta-host guard, xcodegen, manual signing, archive → export → altool. Repo secrets set.
+  A run **built, signed (Midgar dist cert), and exported a valid `Embr.ipa`**; the only
+  failure was the upload — altool: "Cannot determine the Apple ID from Bundle ID" — i.e.
+  it just needs the app record below.
+- **Listing copy** (`docs/store-listing.md`) + two 6.9" screenshots (`docs/screenshots/`).
+
+## What you must do (account-gated)
+
+1. **Create the App Store Connect app record** (the one step the ASC API forbids — it
+   returns 403 on `apps` CREATE). In ASC → My Apps → **+** → New App → iOS → select
+   bundle id **`com.guitaripod.embr`** → name + primary language + SKU. (≈1 min.)
+2. **Re-run the CI** (`gh workflow run testflight.yml --ref app-store-ready`) — the
+   altool upload now succeeds and the build lands in TestFlight.
+3. **Fill metadata** from `docs/store-listing.md` (I can push most of it via the ASC API
+   once the record exists), finish **screenshots** (player/chat/search/settings need
+   on-device capture or an XCUITest harness — offer stands), set age rating **17+**,
+   Privacy Policy URL `…/legal/privacy`, support email, and **Submit for Review**.
+   Provide a demo Twitch account (2FA off) in App Review notes if asked.
