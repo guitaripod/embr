@@ -3,9 +3,9 @@
 Paste-ready for App Store Connect. Character counts include spaces; capped fields noted.
 
 ## App name (≤30)
-- **`Embr`** (4) — first choice; carry "Twitch" in the subtitle/keywords, not the name.
-- Fallbacks if taken: `Embr • Stream Viewer` (20), `Embr — Live Stream Client` (25).
-  (Avoid `Embr for Twitch` — "for Twitch" naming draws the most trademark risk.)
+- **`Embr — Live Streams`** (19) — chosen App Store listing name ("Embr" alone is taken
+  by the "Embr Wave" brand). The home-screen name stays **`Embr`** (`CFBundleDisplayName`,
+  unchanged) — only the ASC listing name is qualified.
 
 ## Subtitle (≤30)
 - **`Fast native Twitch client`** (25)
@@ -16,9 +16,9 @@ Paste-ready for App Store Connect. Character counts include spaces; capped field
 
 ## Keywords (≤100, comma-separated, no spaces, no title/subtitle repeats)
 ```
-stream,streaming,livestream,twitch viewer,7tv,bttv,ffz,emotes,vod,clips,pip,irc,esports,gaming,live
+stream,streaming,livestream,twitch viewer,7tv,bttv,ffz,emotes,vod,clips,pip,irc,esports,gaming,chat
 ```
-(99 — deliberately omits "Embr/Twitch/client/native/fast/chat", already indexed from title/subtitle.)
+(99 — omits "Embr/Twitch/client/native/fast/live", already indexed from the title/subtitle.)
 
 ## Description (≤4000, ~2050 used)
 Embr is a fast, native Twitch client built for iPhone — not a wrapped web view. Streams open in a real AVPlayer with picture-in-picture, background audio, and instant quality switching. Chat is rendered natively so it stays smooth even in the busiest channels. No bloat, no clutter, just watch and chat.
