@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarKit
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -30,12 +31,50 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         observeThemeChanges(window)
 
+        #if DEBUG
+        if handleScreenshotRoute(tabBar) {
+            AppLogger.shared.info("scene connected (screenshot route)", category: .app)
+            return
+        }
+        #endif
+
         let pending = connectionOptions.urlContexts
         if !presentOnboardingIfNeeded(over: tabBar, then: pending) {
             handle(pending)
         }
         AppLogger.shared.info("scene connected", category: .app)
     }
+
+    #if DEBUG
+    /// Drives the app straight to a screen for App Store screenshot capture, e.g.
+    /// `-screenshotRoute channel -screenshotChannel shroud`. DEBUG-only; never ships.
+    private func handleScreenshotRoute(_ tabBar: RootTabBarController) -> Bool {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-screenshotRoute"), i + 1 < args.count else { return false }
+        UserDefaults.standard.set(true, forKey: completedOnboardingKey)
+        let route = args[i + 1]
+        let channel = args.firstIndex(of: "-screenshotChannel").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak tabBar] in
+            guard let self, let tabBar else { return }
+            switch route {
+            case "search": tabBar.selectedIndex = 1
+            case "settings": tabBar.selectedIndex = 2
+            case "moreapps":
+                tabBar.selectedIndex = 2
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
+                    Midgar.present(from: top, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
+                }
+            case "channel":
+                if let channel, let url = URL(string: "embr://channel/\(channel)") {
+                    Task { await self.router.handle(url, from: tabBar) }
+                }
+            default: break
+            }
+        }
+        return true
+    }
+    #endif
 
     private func observeThemeChanges(_ window: UIWindow) {
         SettingsStore.shared.changes

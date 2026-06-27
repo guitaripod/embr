@@ -2,6 +2,7 @@ import UIKit
 import Combine
 import AuthenticationServices
 import EmbrCore
+import MidgarKit
 
 @MainActor
 final class SettingsViewController: UIViewController {
@@ -49,6 +50,7 @@ final class SettingsViewController: UIViewController {
 
         case version
         case github
+        case moreApps
         case termsOfUse
         case privacyPolicy
         case contactSupport
@@ -182,7 +184,7 @@ final class SettingsViewController: UIViewController {
             toSection: .video
         )
         snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
-        snapshot.appendItems([.version, .github, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
+        snapshot.appendItems([.version, .github, .moreApps, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -329,6 +331,10 @@ final class SettingsViewController: UIViewController {
             content.textProperties.color = Theme.link
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
+        case .moreApps:
+            content.text = "More Apps"
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
         case .termsOfUse:
             content.text = "Terms of Use"
             cell.contentConfiguration = content
@@ -458,6 +464,7 @@ final class SettingsViewController: UIViewController {
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
         case .version: spec = ("info.circle.fill", .systemGray)
         case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
+        case .moreApps: spec = ("square.grid.2x2.fill", Theme.accent)
         case .termsOfUse: spec = ("doc.text.fill", .systemGray)
         case .privacyPolicy: spec = ("hand.raised.fill", .systemBlue)
         case .contactSupport: spec = ("envelope.fill", Theme.accent)
@@ -547,7 +554,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .accountAction, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
+        case .github, .moreApps, .accountAction, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
             return true
         default:
             return false
@@ -560,6 +567,8 @@ extension SettingsViewController: UICollectionViewDelegate {
         switch row {
         case .github:
             openGitHub()
+        case .moreApps:
+            Midgar.present(from: self, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
         case .accountAction:
             performAccountAction()
         case .blockedUsers:

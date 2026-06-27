@@ -18,6 +18,9 @@ packages:
   SDWebImageWebPCoder:
     url: https://github.com/SDWebImage/SDWebImageWebPCoder
     from: "0.14.0"
+  MidgarKit:
+    url: https://github.com/guitaripod/MidgarKit
+    from: "2.0.0"
 
 targets:
   Embr:
@@ -37,6 +40,7 @@ targets:
         product: SDWebImage
       - package: SDWebImageWebPCoder
         product: SDWebImageWebPCoder
+      - package: MidgarKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${EMBR_BUNDLE_ID}
