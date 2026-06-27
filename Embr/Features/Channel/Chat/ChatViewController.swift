@@ -379,12 +379,15 @@ final class ChatViewController: UIViewController {
     }
 
     private func handleKeyboard(_ note: Notification) {
-        guard let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
-              let durationValue = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else { return }
-        let endFrame = view.convert(frameValue.cgRectValue, from: nil)
-        let overlap = max(0, view.bounds.maxY - endFrame.minY)
+        guard view.window != nil,
+              let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
+        let endFrame = view.convert(frameValue.cgRectValue, from: view.window)
+        let intersection = view.bounds.intersection(endFrame)
+        let overlap = intersection.isNull ? 0 : intersection.height
+        guard inputBottomConstraint?.constant != -overlap else { return }
         inputBottomConstraint?.constant = -overlap
-        UIView.animate(withDuration: durationValue.doubleValue) { self.view.layoutIfNeeded() }
+        let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.25
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
     }
 }
 

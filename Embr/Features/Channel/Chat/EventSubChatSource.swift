@@ -229,7 +229,12 @@ actor EventSubChatSource: ChatSource {
                 return
             }
             logger.error("EventSub subscription failed: \(error)", category: .eventsub)
-            scheduleReconnect()
+            if case .rateLimited(let resetAt)? = apiError {
+                let wait = max(5, resetAt?.timeIntervalSinceNow ?? 15) + Double.random(in: 0...2)
+                scheduleReconnect(minDelay: wait)
+            } else {
+                scheduleReconnect()
+            }
         }
     }
 
@@ -258,7 +263,7 @@ actor EventSubChatSource: ChatSource {
         scheduleReconnect()
     }
 
-    private func scheduleReconnect() {
+    private func scheduleReconnect(minDelay: Double? = nil) {
         guard !stopped else { return }
         teardownSockets()
         attempt += 1
@@ -267,7 +272,7 @@ actor EventSubChatSource: ChatSource {
             continuation?.yield(.connection(.disconnected(reason: "Tap to reconnect")))
             return
         }
-        let delay = Self.backoffSeconds(attempt: attempt)
+        let delay = max(Self.backoffSeconds(attempt: attempt), minDelay ?? 0)
         continuation?.yield(.connection(.reconnecting(attempt: attempt)))
         reconnectTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))

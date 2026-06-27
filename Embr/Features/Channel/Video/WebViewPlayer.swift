@@ -17,7 +17,6 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     private let logger: AppLogger
     private let workerBaseURL: URL
     private var muted = false
-    private var currentSource: VideoSource?
 
     private let messageProxy = WeakScriptMessageHandler()
 
@@ -49,7 +48,6 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     }
 
     func load(_ source: VideoSource) {
-        currentSource = source
         stateSubject.send(.loading)
         let item: URLQueryItem
         switch source {
@@ -126,11 +124,13 @@ extension WebViewPlayer: WKNavigationDelegate {
         logger.error("WebView navigation failed: \(error.localizedDescription)", category: .playback)
     }
 
-    /// The interactive embed (live/VOD) reports real player state over the message
-    /// handler, but the clip embed is a plain iframe with no callbacks — so for clips,
-    /// treat a finished page load as playback having started to clear the spinner.
+    /// Clear the app's loading overlay once the embed page has loaded, then hand off to
+    /// Twitch's own player UI. We can't wait for the embed's JS "playing" event — iOS
+    /// blocks unattended autoplay-with-sound, so it may never fire until the user taps —
+    /// and the page-finished signal always fires. Real offline/ended events still arrive
+    /// over the message handler afterwards and override this.
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if case .clip = currentSource, stateSubject.value == .loading {
+        if stateSubject.value == .loading {
             stateSubject.send(.playing)
         }
     }
