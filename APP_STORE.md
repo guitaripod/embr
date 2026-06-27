@@ -46,19 +46,15 @@ official embedded player. `master` is untouched and remains the personal sideloa
   callback is **decoupled** to the already-registered `embr` host
   (`Secrets.oauthCallbackURL = https://embr.guitaripod.workers.dev/auth/callback`), so
   login needs **no new redirect URI** in the Twitch console.
+- **`TWITCH_CLIENT_SECRET` set on both Workers** (the Twitch app secret was rotated and
+  applied to `embr` + `embr-appstore`). Auth verified live on both: fake-code exchange
+  returns Twitch's "Invalid authorization code" (client auth OK) and `/auth/app-token`
+  mints a fresh token. The app-store backend is fully functional — login, refresh,
+  browse, embed, report, legal.
 
 ## What you must do (account-gated — not done autonomously)
 
-1. **Set the Twitch client secret on the new Worker** (it's write-only on prod `embr`,
-   so it can't be copied). Login and independent app-token refresh need it:
-   ```
-   cd workers
-   echo -n '<TWITCH_CLIENT_SECRET>' | CLOUDFLARE_API_TOKEN=$(cat ~/.cloudflare-api-token) \
-     npx wrangler secret put TWITCH_CLIENT_SECRET --name embr-appstore
-   ```
-   (Guest browse already works off the shared warm app-token cache; this makes auth
-   self-sufficient and enables Sign in with Twitch.)
-2. **App Store Connect record:** bundle id `com.guitaripod.embr`, category Entertainment,
+1. **App Store Connect record:** bundle id `com.guitaripod.embr`, category Entertainment,
    age rating **17+** (unrestricted web/UGC).
    - **Privacy Policy URL** → `https://<worker>/legal/privacy`. **Support URL / email** →
      `guitaripod@gmail.com` (or a support page).
@@ -67,10 +63,10 @@ official embedded player. `master` is untouched and remains the personal sideloa
      tracking* (covers reports). Twitch auth token is not collected by you (Keychain only).
    - **App Review notes / demo:** guest mode covers browse + watch + read chat; for
      send-chat, supply a throwaway Twitch account (2FA off) in App Review Information.
-3. **Build & upload on stable macOS.** Per the ITMS-90111 rule, build the distribution
+2. **Build & upload on stable macOS.** Per the ITMS-90111 rule, build the distribution
    binary on a non-beta macOS (GitHub Actions `macos-*` runner) with manual signing
    (dist p12 + provisioning profile + ASC API key), `altool --upload-app`.
-4. **Screenshots & description** — required iPhone sizes; describe it as an independent,
+3. **Screenshots & description** — required iPhone sizes; describe it as an independent,
    unofficial Twitch viewer ("not affiliated with Twitch").
 
 ## Residual review risk (can't be fixed in code)
