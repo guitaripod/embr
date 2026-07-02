@@ -315,12 +315,14 @@ app.post('/report', async (c) => {
   try {
     const now = Math.floor(Date.now() / 1000);
     const key = `${REPORT_KV_PREFIX}${now}-${crypto.randomUUID()}`;
+    const reason = cap(body.reason, 80);
     const record = {
+      kind: reason && /^blocked/i.test(reason) ? 'block' : 'report',
       channel: cap(body.channel, 60),
       messageID: cap(body.messageID, 80),
       authorID: cap(body.authorID, 40),
       authorLogin: cap(body.authorLogin, 60),
-      reason: cap(body.reason, 80),
+      reason,
       text: cap(body.text, 2000),
       at: now,
     };
@@ -329,6 +331,40 @@ app.post('/report', async (c) => {
     // Storing the report is best-effort; never block the reporter on it.
   }
   return new Response(null, { status: 204 });
+});
+
+/// Authenticated review endpoint (App Store Guideline 1.2 — the developer must act on
+/// reports within 24 hours). Lists the stored reports/blocks newest-first. Disabled unless
+/// REPORTS_ADMIN_TOKEN is configured; requires `Authorization: Bearer <token>`.
+app.get('/reports', async (c) => {
+  const token = c.env.REPORTS_ADMIN_TOKEN;
+  if (!token) return fail(404, 'not found');
+  if (c.req.header('Authorization') !== `Bearer ${token}`) return fail(401, 'unauthorized');
+  // Keys sort lexicographically == chronologically ascending, so a single 1000-key page
+  // would return the OLDEST reports and drop the newest — page through the cursor so the
+  // full set is available and the newest-first sort below is meaningful.
+  const keys: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await c.env.TOKENS.list({ prefix: REPORT_KV_PREFIX, limit: 1000, cursor });
+    for (const entry of page.keys) keys.push(entry.name);
+    cursor = page.list_complete ? undefined : (page as { cursor?: string }).cursor;
+  } while (cursor);
+  const reports: unknown[] = [];
+  for (const name of keys) {
+    const raw = await c.env.TOKENS.get(name);
+    if (raw === null) continue;
+    try {
+      reports.push(JSON.parse(raw));
+    } catch {
+      // Skip a corrupt record rather than failing the whole review list.
+    }
+  }
+  reports.sort((a, b) => {
+    const at = (r: unknown) => (typeof r === 'object' && r !== null && 'at' in r ? Number((r as { at: unknown }).at) || 0 : 0);
+    return at(b) - at(a);
+  });
+  return c.json({ count: reports.length, reports });
 });
 
 app.get('/legal/terms', () => termsPage());

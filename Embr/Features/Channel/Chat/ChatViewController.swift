@@ -465,9 +465,16 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
                 self?.viewModel.banUser(userID: message.author.id)
             })
         }
-        if !isAnonymous, !isOwn {
+        if !isOwn {
             sheet.addAction(UIAlertAction(title: "Block @\(message.author.login)", style: .destructive) { [weak self] _ in
-                self?.viewModel.block(userID: message.author.id, login: message.author.login)
+                guard let self else { return }
+                Haptics.notify(.success)
+                self.viewModel.block(
+                    userID: message.author.id,
+                    login: message.author.login,
+                    message: message,
+                    channelLogin: self.broadcasterLogin
+                )
             })
         }
         if !isOwn {

@@ -2,7 +2,7 @@ import Foundation
 
 enum LegalText {
     static let supportEmail = "guitaripod@gmail.com"
-    static let lastUpdated = "26 June 2026"
+    static let lastUpdated = "2 July 2026"
 
     static var termsURL: URL {
         Configuration.current.workerBaseURL.appendingPathComponent("legal/terms")
@@ -23,9 +23,10 @@ enum LegalText {
     User-generated content
     Embr displays live chat and other content created by Twitch users. Embr does not create, endorse, \
     or control that content. There is zero tolerance for objectionable content or abusive behaviour. \
-    You can report any message from within the app, and you can block or hide any user. Reported \
-    content and users are reviewed, and offending users may be ejected from the service. Twitch's own \
-    moderation and reporting tools also apply.
+    Embr filters objectionable content automatically, and lets you mute keywords, report any message, \
+    and block any user — blocked and reported users are hidden from your chat instantly and flagged to \
+    the developer. Reports are reviewed and acted on within 24 hours: offending content is removed and \
+    offending users are ejected. Twitch's own moderation and reporting tools also apply.
 
     Acceptable use
     Do not use Embr to harass, threaten, or abuse others, to post unlawful content, or to circumvent \
@@ -53,8 +54,9 @@ enum LegalText {
     removes the token from your device.
 
     Reports
-    When you report a chat message, the reported message, its author, and your selected reason are sent \
-    to the developer so the report can be reviewed. Reports do not include your identity.
+    When you report or block a chat message or user, the message, its author, and your selected reason \
+    are sent to the developer so the report can be reviewed and acted on. These reports do not include \
+    your identity.
 
     Twitch
     Video and chat come from Twitch. Twitch's own privacy policy governs the data Twitch collects when \

@@ -12,10 +12,12 @@ final class ChatViewModel {
 
     private let room: ChatRoom
     private let reporter: ReportClient
+    private let settings: SettingsStore
 
     private let store: MessageStore
     private var consumeTask: Task<Void, Never>?
     private var replyParentID: String?
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         room: ChatRoom,
@@ -25,7 +27,12 @@ final class ChatViewModel {
     ) {
         self.room = room
         self.reporter = reporter
-        self.store = MessageStore(settings: settings.current, currentUserLogin: currentUserLogin)
+        self.settings = settings
+        self.store = MessageStore(
+            settings: settings.current,
+            currentUserLogin: currentUserLogin,
+            filter: settings.current.makeContentFilter()
+        )
         Task { [weak self] in
             guard let self else { return }
             let ids = Set(await DatabaseManager.shared.blockedUsers().map(\.userID))
@@ -33,15 +40,56 @@ final class ChatViewModel {
                 self.snapshotSubject.send(snapshot)
             }
         }
+        settings.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] settings in
+                self?.applyContentFilter(settings.makeContentFilter())
+            }
+            .store(in: &cancellables)
     }
 
-    func block(userID: String, login: String) {
-        Task {
-            await DatabaseManager.shared.setBlockedUser(userID: userID, login: login)
-            if let snapshot = await store.block(userID) {
-                snapshotSubject.send(snapshot)
+    private func applyContentFilter(_ filter: ContentFilter) {
+        Task { [weak self] in
+            guard let self else { return }
+            if let snapshot = await self.store.setFilter(filter) {
+                self.snapshotSubject.send(snapshot)
             }
-            noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
+        }
+    }
+
+    /// Blocks a user: hides their messages from this feed instantly, persists the block, and
+    /// notifies the developer of the offending content (App Store Guideline 1.2 — blocking
+    /// must remove content from the feed and report it for review).
+    func block(userID: String, login: String, message: ChatMessage? = nil, channelLogin: String? = nil) {
+        notifyDeveloperOfBlock(login: login, authorID: userID, message: message, channelLogin: channelLogin)
+        guard !userID.isEmpty else {
+            noticeSubject.send(SystemNotice(text: "Blocked \(login)."))
+            return
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            await DatabaseManager.shared.setBlockedUser(userID: userID, login: login)
+            if let snapshot = await self.store.block(userID) {
+                self.snapshotSubject.send(snapshot)
+            }
+            self.noticeSubject.send(SystemNotice(text: "Blocked \(login). Their messages are now hidden."))
+        }
+    }
+
+    private func notifyDeveloperOfBlock(login: String, authorID: String?, message: ChatMessage?, channelLogin: String?) {
+        let reporter = self.reporter
+        let resolvedAuthorID = (message?.author.id).flatMap { $0.isEmpty ? nil : $0 } ?? authorID.flatMap { $0.isEmpty ? nil : $0 }
+        Task {
+            await reporter.submit(
+                WorkerAPI.ReportRequest(
+                    channel: channelLogin,
+                    messageID: message?.id,
+                    authorID: resolvedAuthorID,
+                    authorLogin: login,
+                    reason: "Blocked abusive user",
+                    text: message?.plainText
+                )
+            )
         }
     }
 
@@ -50,16 +98,21 @@ final class ChatViewModel {
     func report(message: ChatMessage, reason: String, channelLogin: String?) {
         Task { [weak self] in
             guard let self else { return }
-            await DatabaseManager.shared.setBlockedUser(userID: message.author.id, login: message.author.login)
-            if let snapshot = await self.store.block(message.author.id) {
-                self.snapshotSubject.send(snapshot)
+            let authorID = message.author.id
+            if !authorID.isEmpty {
+                await DatabaseManager.shared.setBlockedUser(userID: authorID, login: message.author.login)
+                if let snapshot = await self.store.block(authorID) {
+                    self.snapshotSubject.send(snapshot)
+                }
+                self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login). Their messages are now hidden."))
+            } else {
+                self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login)."))
             }
-            self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login). Their messages are now hidden."))
             await self.reporter.submit(
                 WorkerAPI.ReportRequest(
                     channel: channelLogin,
                     messageID: message.id,
-                    authorID: message.author.id,
+                    authorID: authorID.isEmpty ? nil : authorID,
                     authorLogin: message.author.login,
                     reason: reason,
                     text: message.plainText
@@ -133,6 +186,7 @@ final class ChatViewModel {
             case "block":
                 await DatabaseManager.shared.setBlockedUser(userID: user.id, login: user.login)
                 if let snapshot = await store.block(user.id) { snapshotSubject.send(snapshot) }
+                notifyDeveloperOfBlock(login: user.login, authorID: user.id, message: nil, channelLogin: nil)
                 noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
             case "unblock":
                 await DatabaseManager.shared.removeBlockedUser(userID: user.id)
@@ -253,14 +307,30 @@ private actor MessageStore {
     private var layout: MessageLayout?
     private let currentUserLogin: String?
     private var blockedUserIDs: Set<String> = []
+    private var filter: ContentFilter
 
     private let capacity = 5000
     private let trimFraction = 0.2
     private let liveWindow = 500
 
-    init(settings: Settings, currentUserLogin: String?) {
+    init(settings: Settings, currentUserLogin: String?, filter: ContentFilter) {
         self.settings = settings
         self.currentUserLogin = currentUserLogin
+        self.filter = filter
+    }
+
+    /// Applies an updated content filter, dropping any buffered messages that now match so
+    /// the change takes effect on already-received chat, not just future messages.
+    func setFilter(_ filter: ContentFilter) -> ChatSnapshot? {
+        guard filter != self.filter else { return nil }
+        self.filter = filter
+        guard !filter.isEmpty else { return nil }
+        let before = rows.count
+        rows.removeAll { filter.shouldHide($0.message.plainText) }
+        frozenRows.removeAll { filter.shouldHide($0.message.plainText) }
+        guard rows.count != before else { return nil }
+        rebuildIndex()
+        return currentSnapshot()
     }
 
     func updateWidth(_ width: CGFloat) {
@@ -288,6 +358,7 @@ private actor MessageStore {
     }
 
     func setBlocked(_ ids: Set<String>) -> ChatSnapshot? {
+        let ids = ids.filter { !$0.isEmpty }
         blockedUserIDs = ids
         guard !ids.isEmpty else { return nil }
         let before = rows.count
@@ -299,6 +370,7 @@ private actor MessageStore {
     }
 
     func block(_ userID: String) -> ChatSnapshot? {
+        guard !userID.isEmpty else { return nil }
         blockedUserIDs.insert(userID)
         let before = rows.count
         rows.removeAll { $0.message.author.id == userID }
@@ -307,11 +379,16 @@ private actor MessageStore {
         return currentSnapshot()
     }
 
+    private func isSuppressed(_ message: ChatMessage) -> Bool {
+        if !message.author.id.isEmpty && blockedUserIDs.contains(message.author.id) { return true }
+        return filter.shouldHide(message.plainText)
+    }
+
     func append(_ messages: [ChatMessage]) -> ChatSnapshot? {
         guard !messages.isEmpty else { return nil }
         var added = 0
         for message in messages {
-            if blockedUserIDs.contains(message.author.id) { continue }
+            if isSuppressed(message) { continue }
             if let existing = index[message.id] {
                 rows[existing] = makeRow(message)
             } else {

@@ -83,6 +83,13 @@ final class OnboardingViewController: UIViewController {
     }
 
     private func makeLegalNotice() -> UIView {
+        let notice = UILabel()
+        notice.text = "Embr shows live Twitch chat — content created by other users that we don't control. There is zero tolerance for objectionable content or abusive behaviour: you can filter, report, and block from any message, and reports are reviewed and acted on."
+        notice.font = .systemFont(ofSize: 12, weight: .regular)
+        notice.textColor = Theme.secondaryText
+        notice.textAlignment = .center
+        notice.numberOfLines = 0
+
         let caption = UILabel()
         caption.text = "By continuing, you agree to our"
         caption.font = .systemFont(ofSize: 12, weight: .regular)
@@ -105,10 +112,15 @@ final class OnboardingViewController: UIViewController {
         links.alignment = .center
         links.spacing = 5
 
-        let stack = UIStackView(arrangedSubviews: [caption, links])
+        let agreement = UIStackView(arrangedSubviews: [caption, links])
+        agreement.axis = .vertical
+        agreement.alignment = .center
+        agreement.spacing = 2
+
+        let stack = UIStackView(arrangedSubviews: [notice, agreement])
         stack.axis = .vertical
         stack.alignment = .center
-        stack.spacing = 2
+        stack.spacing = 12
         return stack
     }
 

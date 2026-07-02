@@ -9,6 +9,7 @@ final class SettingsViewController: UIViewController {
     private enum Section: Int, CaseIterable {
         case general
         case chat
+        case safety
         case video
         case account
         case about
@@ -17,6 +18,7 @@ final class SettingsViewController: UIViewController {
             switch self {
             case .general: return "General"
             case .chat: return "Chat"
+            case .safety: return "Safety & Moderation"
             case .video: return "Video"
             case .account: return "Account"
             case .about: return "About"
@@ -37,6 +39,9 @@ final class SettingsViewController: UIViewController {
         case recentMessagesBackfill
         case animateEmotes
         case thirdPartyEmotes(EmoteProvider)
+
+        case filterObjectionableContent
+        case mutedKeywords
         case blockedUsers
 
         case autoplay
@@ -145,6 +150,7 @@ final class SettingsViewController: UIViewController {
         switch section {
         case .general: return "Appearance, link handling, and haptic feedback across the app."
         case .chat: return "Readability, message size, and which emote sets load in chat."
+        case .safety: return "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review."
         case .video: return "Stream quality, autoplay, and how chat stays in sync with the video."
         case .account: return "Sign in with Twitch to follow channels and join chat."
         case .about: return "Embr is an independent, open-source Twitch client. Not affiliated with Twitch."
@@ -175,10 +181,10 @@ final class SettingsViewController: UIViewController {
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
              .highlightMentions, .recentMessagesBackfill, .animateEmotes]
-            + thirdPartyProviders.map(Row.thirdPartyEmotes)
-            + [.blockedUsers],
+            + thirdPartyProviders.map(Row.thirdPartyEmotes),
             toSection: .chat
         )
+        snapshot.appendItems([.filterObjectionableContent, .mutedKeywords, .blockedUsers], toSection: .safety)
         snapshot.appendItems(
             [.autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
             toSection: .video
@@ -267,6 +273,16 @@ final class SettingsViewController: UIViewController {
             switchRow(cell, &content, title: provider.displayName + " Emotes", isOn: settings.thirdPartyEmotesEnabled(provider)) { store, on in
                 store.update { $0.showThirdPartyEmotes[provider] = on }
             }
+        case .filterObjectionableContent:
+            switchRow(cell, &content, title: "Filter Objectionable Content", isOn: settings.objectionableFilterEnabled) { store, on in
+                store.update { $0.filterObjectionableContent = on }
+            }
+        case .mutedKeywords:
+            content.text = "Muted Keywords"
+            let count = settings.mutedKeywordList.count
+            content.secondaryText = count == 0 ? "None" : (count == 1 ? "1 word" : "\(count) words")
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
         case .blockedUsers:
             content.text = "Blocked Users"
             cell.contentConfiguration = content
@@ -454,6 +470,8 @@ final class SettingsViewController: UIViewController {
         case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
         case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
         case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
+        case .filterObjectionableContent: spec = ("eye.slash.fill", .systemRed)
+        case .mutedKeywords: spec = ("character.bubble.fill", .systemOrange)
         case .blockedUsers: spec = ("hand.raised.fill", .systemRed)
         case .autoplay: spec = ("play.fill", .systemGreen)
         case .backgroundAudio: spec = ("speaker.wave.2.circle.fill", .systemPurple)
@@ -554,7 +572,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .moreApps, .accountAction, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
+        case .github, .moreApps, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
             return true
         default:
             return false
@@ -571,6 +589,8 @@ extension SettingsViewController: UICollectionViewDelegate {
             Midgar.present(from: self, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
         case .accountAction:
             performAccountAction()
+        case .mutedKeywords:
+            navigationController?.pushViewController(MutedKeywordsViewController(), animated: true)
         case .blockedUsers:
             navigationController?.pushViewController(BlockedUsersViewController(), animated: true)
         case .termsOfUse:

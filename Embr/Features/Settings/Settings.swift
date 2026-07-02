@@ -31,6 +31,9 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var chatOnly: Bool?
     var backgroundAudio: Bool?
 
+    var filterObjectionableContent: Bool?
+    var mutedKeywords: [String]?
+
     static let `default` = Settings(
         theme: .system,
         showTimestamps: false,
@@ -52,10 +55,27 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         openLinksInApp: true,
         hapticsEnabled: true,
         chatOnly: false,
-        backgroundAudio: true
+        backgroundAudio: true,
+        filterObjectionableContent: true,
+        mutedKeywords: []
     )
 
     func thirdPartyEmotesEnabled(_ provider: EmoteProvider) -> Bool {
         showThirdPartyEmotes[provider] ?? true
+    }
+
+    var objectionableFilterEnabled: Bool {
+        filterObjectionableContent ?? true
+    }
+
+    var mutedKeywordList: [String] {
+        mutedKeywords ?? []
+    }
+
+    /// The content filter derived from current settings. The severe-slur list is active
+    /// whenever the objectionable-content toggle is on; the user's muted keywords always
+    /// apply on top.
+    func makeContentFilter() -> ContentFilter {
+        ContentFilter(userTerms: mutedKeywordList, includeDefaultList: objectionableFilterEnabled)
     }
 }

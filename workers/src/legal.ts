@@ -1,5 +1,5 @@
 const SUPPORT_EMAIL = 'guitaripod@gmail.com';
-const UPDATED = '2026-06-26';
+const UPDATED = '2026-07-02';
 
 function page(title: string, bodyHTML: string): Response {
   const html =
@@ -29,9 +29,11 @@ export function termsPage(): Response {
       `<h2>User-generated content</h2>` +
       `<p>Embr displays live chat and other content created by Twitch users. Embr does not create, ` +
       `endorse, or control that content. <strong>There is zero tolerance for objectionable content or ` +
-      `abusive behaviour.</strong> You may report any message from within the app, and you may block or ` +
-      `hide any user. Reported content and users are reviewed, and offending users may be ejected from ` +
-      `the service. Twitch's own moderation and reporting tools also apply.</p>` +
+      `abusive behaviour.</strong> Embr filters objectionable content automatically, and lets you mute ` +
+      `keywords, report any message, and block any user &mdash; blocked and reported users are hidden ` +
+      `from your chat instantly and flagged to the developer. Reports are reviewed and acted on within ` +
+      `24 hours: offending content is removed and offending users are ejected. Twitch's own moderation ` +
+      `and reporting tools also apply.</p>` +
       `<h2>Acceptable use</h2>` +
       `<p>Do not use Embr to harass, threaten, or abuse others, to post unlawful content, or to ` +
       `circumvent Twitch's terms. Streams play through Twitch's official embedded player, including any ` +
@@ -58,8 +60,9 @@ export function privacyPage(): Response {
       `thin proxy that holds no copy of it) to load chat and your follows. You can log out at any time, ` +
       `which removes the token from your device.</p>` +
       `<h2>Reports</h2>` +
-      `<p>When you report a chat message, the reported message, its author, and your selected reason are ` +
-      `sent to the developer so the report can be reviewed. Reports do not include your identity.</p>` +
+      `<p>When you report or block a chat message or user, the message, its author, and your selected ` +
+      `reason are sent to the developer so the report can be reviewed and acted on. These reports do ` +
+      `not include your identity.</p>` +
       `<h2>Twitch</h2>` +
       `<p>Video and chat come from Twitch. Twitch's own privacy policy governs the data Twitch collects ` +
       `when its embedded player and services are used.</p>`,

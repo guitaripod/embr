@@ -2,6 +2,9 @@ export interface Bindings {
   TWITCH_CLIENT_ID: string;
   TWITCH_CLIENT_SECRET: string;
   TOKENS: KVNamespace;
+  /// Optional. When set (via `wrangler secret put REPORTS_ADMIN_TOKEN`), enables the
+  /// authenticated `GET /reports` review endpoint. Absent = endpoint disabled (404).
+  REPORTS_ADMIN_TOKEN?: string;
 }
 
 export interface TokenResponse {

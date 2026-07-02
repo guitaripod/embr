@@ -13,8 +13,8 @@ function textResponse(body: string, status = 200): Response {
   return new Response(body, { status, headers: { 'Content-Type': 'text/plain' } });
 }
 
-function makeEnv(store = new Map<string, string>()): Bindings {
-  return {
+function makeEnv(store = new Map<string, string>(), adminToken?: string): Bindings {
+  const env: Bindings = {
     TWITCH_CLIENT_ID: 'test-client-id',
     TWITCH_CLIENT_SECRET: 'test-client-secret',
     TOKENS: {
@@ -29,8 +29,23 @@ function makeEnv(store = new Map<string, string>()): Bindings {
       delete: async (key: string) => {
         store.delete(key);
       },
+      list: async ({ prefix = '', limit = 1000, cursor }: { prefix?: string; limit?: number; cursor?: string } = {}) => {
+        const all = [...store.keys()].filter((k) => k.startsWith(prefix)).sort();
+        const start = cursor ? Number(cursor) : 0;
+        const slice = all.slice(start, start + limit);
+        const next = start + limit;
+        const complete = next >= all.length;
+        return {
+          keys: slice.map((name) => ({ name })),
+          list_complete: complete,
+          cacheStatus: null,
+          ...(complete ? {} : { cursor: String(next) }),
+        };
+      },
     } as unknown as KVNamespace,
   };
+  if (adminToken !== undefined) env.REPORTS_ADMIN_TOKEN = adminToken;
+  return env;
 }
 
 afterEach(() => {
@@ -469,6 +484,23 @@ describe('POST /report', () => {
     const payload = JSON.parse(stored![1]);
     expect(payload.reason).toBe('Harassment');
     expect(payload.text.length).toBe(2000);
+    expect(payload.kind).toBe('report');
+  });
+
+  it('tags a block as kind "block"', async () => {
+    const store = new Map<string, string>();
+    const res = await app.request(
+      'http://embr.test/report',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authorID: 'u9', authorLogin: 'meanie', reason: 'Blocked abusive user' }),
+      },
+      makeEnv(store),
+    );
+    expect(res.status).toBe(204);
+    const stored = [...store.entries()].find(([k]) => k.startsWith('report:'));
+    expect(JSON.parse(stored![1]).kind).toBe('block');
   });
 
   it('returns 400 when reason or target is missing', async () => {
@@ -487,6 +519,59 @@ describe('POST /report', () => {
       makeEnv(),
     );
     expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /reports', () => {
+  it('is disabled (404) when no admin token is configured', async () => {
+    const res = await app.request('http://embr.test/reports', {}, makeEnv());
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects a missing or wrong bearer token with 401', async () => {
+    const store = new Map<string, string>();
+    const noAuth = await app.request('http://embr.test/reports', {}, makeEnv(store, 'secret'));
+    expect(noAuth.status).toBe(401);
+    const wrong = await app.request(
+      'http://embr.test/reports',
+      { headers: { Authorization: 'Bearer nope' } },
+      makeEnv(store, 'secret'),
+    );
+    expect(wrong.status).toBe(401);
+  });
+
+  it('lists stored reports newest-first for an authorized reviewer', async () => {
+    const store = new Map<string, string>();
+    store.set('report:100-a', JSON.stringify({ reason: 'Spam', authorLogin: 'old', at: 100 }));
+    store.set('report:200-b', JSON.stringify({ reason: 'Harassment', authorLogin: 'new', at: 200 }));
+    store.set('app_token', JSON.stringify({ accessToken: 'x', expiresAt: 999 }));
+    const res = await app.request(
+      'http://embr.test/reports',
+      { headers: { Authorization: 'Bearer secret' } },
+      makeEnv(store, 'secret'),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { count: number; reports: Array<{ authorLogin: string }> };
+    expect(body.count).toBe(2);
+    expect(body.reports[0]?.authorLogin).toBe('new');
+    expect(body.reports[1]?.authorLogin).toBe('old');
+  });
+
+  it('paginates past 1000 keys so the newest reports are not dropped', async () => {
+    const store = new Map<string, string>();
+    const total = 1500;
+    for (let i = 0; i < total; i++) {
+      store.set(`report:${1_000_000 + i}-x`, JSON.stringify({ authorLogin: `u${i}`, at: 1_000_000 + i }));
+    }
+    const res = await app.request(
+      'http://embr.test/reports',
+      { headers: { Authorization: 'Bearer secret' } },
+      makeEnv(store, 'secret'),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { count: number; reports: Array<{ at: number }> };
+    expect(body.count).toBe(total);
+    expect(body.reports[0]?.at).toBe(1_000_000 + total - 1);
   });
 });
 
