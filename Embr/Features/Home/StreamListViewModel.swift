@@ -34,23 +34,27 @@ enum StreamListLayout {
     static func make() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
             MainActor.assumeIsolated {
-                let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
-                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                    heightDimension: .estimated(320)
-                ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
-                let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
-                    repeatingSubitem: item,
-                    count: columns
-                )
-                let section = NSCollectionLayoutSection(group: group)
-                section.interGroupSpacing = 6
-                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
-                return section
+                streamsSection(environment: environment)
             }
         }
+    }
+
+    static func streamsSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
+        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
+            heightDimension: .estimated(96)
+        ))
+        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 14, bottom: 0, trailing: 14)
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(96)),
+            repeatingSubitem: item,
+            count: columns
+        )
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = 14
+        section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0)
+        return section
     }
 
     static func grid(columns: Int) -> UICollectionViewCompositionalLayout {
@@ -60,14 +64,14 @@ enum StreamListLayout {
                     widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
                     heightDimension: .fractionalHeight(1.0)
                 ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
+                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
                 let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(220)),
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(210)),
                     repeatingSubitem: item,
                     count: columns
                 )
                 let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 9, bottom: 8, trailing: 9)
                 return section
             }
         }

@@ -32,6 +32,14 @@ final class MutedKeywordsViewController: UIViewController {
         applySnapshot()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        let latest = store.current.mutedKeywordList
+        guard latest != keywords else { return }
+        keywords = latest
+        applySnapshot()
+    }
+
     private func setUpCollectionView() {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
         config.backgroundColor = Theme.background
@@ -117,8 +125,11 @@ final class MutedKeywordsViewController: UIViewController {
 
     private func add(_ raw: String) {
         let keyword = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keyword.isEmpty,
-              !keywords.contains(where: { $0.caseInsensitiveCompare(keyword) == .orderedSame }) else { return }
+        guard !keyword.isEmpty else { return }
+        guard !keywords.contains(where: { $0.caseInsensitiveCompare(keyword) == .orderedSame }) else {
+            Haptics.notify(.warning)
+            return
+        }
         keywords.append(keyword)
         keywords.sort { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         Haptics.selection()

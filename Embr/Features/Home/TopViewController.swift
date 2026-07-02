@@ -137,7 +137,7 @@ final class TopViewController: UIViewController {
                 if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .recent {
                     return Self.recentRailSection()
                 }
-                return Self.streamsSection(environment: environment)
+                return StreamListLayout.streamsSection(environment: environment)
             }
         }
     }
@@ -159,20 +159,6 @@ final class TopViewController: UIViewController {
         return section
     }
 
-    private static func streamsSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
-        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .estimated(320)))
-        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
-        let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
-            repeatingSubitem: item, count: columns)
-        let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 6
-        section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0)
-        return section
-    }
-
     private func setUpCollectionView() {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeStreamsLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -181,6 +167,7 @@ final class TopViewController: UIViewController {
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         collectionView.refreshControl = refreshControl
+        refreshControl.tintColor = Theme.accent
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([

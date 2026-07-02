@@ -14,12 +14,15 @@ enum VideoSource: Sendable, Equatable {
 final class VideoViewController: UIViewController {
 
     var onDoubleTapToggleChat: (() -> Void)?
+    var onAudioOnlyChanged: ((Bool) -> Void)?
+    var onPlaybackStateChanged: ((Bool) -> Void)?
 
     private let source: VideoSource
     private var player: VideoPlaying
     private let resolver: PlaybackResolving
     private let logger: AppLogger
     private let store: SettingsStore
+    private let imageLoader: ImageLoading
     private let feedback = UIImpactFeedbackGenerator(style: .medium)
 
     private let overlay = VideoOverlayView()
@@ -50,6 +53,9 @@ final class VideoViewController: UIViewController {
     private let nowPlaying = NowPlayingCoordinator()
     private var nowPlayingTitle: String?
     private var nowPlayingChannelName: String?
+    private var nowPlayingArtwork: MPMediaItemArtwork?
+    private var artworkURL: URL?
+    private(set) var isAudioOnly = false
     private static let maxRecoveryAttempts = 6
 
     private var isSeekableSource: Bool {
@@ -75,6 +81,7 @@ final class VideoViewController: UIViewController {
         resolver: PlaybackResolving = PlaybackResolver.shared,
         logger: AppLogger = .shared,
         store: SettingsStore = .shared,
+        imageLoader: ImageLoading = ImageLoader.shared,
         active: Bool = true
     ) {
         self.source = source
@@ -82,6 +89,7 @@ final class VideoViewController: UIViewController {
         self.resolver = resolver
         self.logger = logger
         self.store = store
+        self.imageLoader = imageLoader
         self.streamActive = active
         super.init(nibName: nil, bundle: nil)
     }
@@ -105,6 +113,7 @@ final class VideoViewController: UIViewController {
     }
 
     private var isPiPActive = false
+    private var pendingAudioOnlyOnPiPStop = false
 
     private func observeLifecycle() {
         NotificationCenter.default.addObserver(
@@ -114,6 +123,10 @@ final class VideoViewController: UIViewController {
         NotificationCenter.default.addObserver(
             self, selector: #selector(handleBackground),
             name: UIApplication.didEnterBackgroundNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handleWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification, object: nil
         )
         NetworkMonitor.shared.restored
             .receive(on: DispatchQueue.main)
@@ -125,11 +138,30 @@ final class VideoViewController: UIViewController {
     }
 
     @objc private func handleBackground() {
-        guard store.current.backgroundAudio == false, !isPiPActive else { return }
-        player.pause()
+        guard !isPiPActive,
+              (player as? HLSVideoPlayer)?.isPictureInPictureActive != true else { return }
+        if store.current.backgroundAudio == false {
+            player.pause()
+        } else {
+            setLayerAttached(false)
+        }
+    }
+
+    @objc private func handleWillEnterForeground() {
+        reattachLayerIfNeeded()
+    }
+
+    private func reattachLayerIfNeeded() {
+        guard !isAudioOnly else { return }
+        setLayerAttached(true)
+    }
+
+    private func setLayerAttached(_ attached: Bool) {
+        (player as? HLSVideoPlayer)?.setLayerAttached(attached)
     }
 
     @objc private func handleForeground() {
+        reattachLayerIfNeeded()
         guard streamActive, !isResolving, !showingError else { return }
         switch currentState {
         case .idle, .ended:
@@ -195,6 +227,10 @@ final class VideoViewController: UIViewController {
             return
         }
         recoveryAttempts = 0
+        if !isAudioOnly {
+            (player as? HLSVideoPlayer)?.setAudioOnly(false)
+            setLayerAttached(true)
+        }
         switch currentState {
         case .idle, .ended, .error:
             resolveAndLoad()
@@ -284,9 +320,11 @@ final class VideoViewController: UIViewController {
             hls.pictureInPictureDelegate = self
             overlay.setPictureInPictureEnabled(AVPictureInPictureController.isPictureInPictureSupported())
             overlay.setAirPlayHidden(false)
+            if case .live = source { overlay.setAudioOnlyHidden(false) }
         } else {
             overlay.setPictureInPictureEnabled(false)
             overlay.setAirPlayHidden(true)
+            overlay.setAudioOnlyHidden(true)
         }
 
         overlay.setSeekable(isSeekableSource)
@@ -338,6 +376,7 @@ final class VideoViewController: UIViewController {
         cancelRecoveryTimers()
         logger.info("HLS recovery exhausted — falling back to web player", category: .playback)
 
+        if isAudioOnly { clearAudioOnlyState() }
         let previous = player
         previous.teardown()
         previous.view.removeFromSuperview()
@@ -353,6 +392,7 @@ final class VideoViewController: UIViewController {
         web.setMuted(isMuted)
         overlay.setPictureInPictureEnabled(false)
         overlay.setAirPlayHidden(true)
+        overlay.setAudioOnlyHidden(true)
         overlay.setMuted(isMuted)
         overlay.clearError()
         overlay.setBuffering(true)
@@ -423,12 +463,70 @@ final class VideoViewController: UIViewController {
             handlePlaybackError(message)
         }
         updateNowPlaying()
+        onPlaybackStateChanged?(state == .playing)
     }
 
-    func setNowPlayingMetadata(title: String?, channelName: String?) {
+    func setNowPlayingMetadata(title: String?, channelName: String?, avatarURL: URL? = nil) {
         nowPlayingTitle = title
         nowPlayingChannelName = channelName
         updateNowPlaying()
+        loadArtworkIfNeeded(avatarURL)
+    }
+
+    private func loadArtworkIfNeeded(_ url: URL?) {
+        guard let url, url != artworkURL else { return }
+        artworkURL = url
+        Task { [weak self, imageLoader] in
+            let image = await imageLoader.image(for: url, targetScale: 2.0)
+            guard let self, self.artworkURL == url else { return }
+            guard let image else {
+                self.artworkURL = nil
+                return
+            }
+            self.nowPlayingArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            self.updateNowPlaying()
+        }
+    }
+
+    func setAudioOnly(_ on: Bool) {
+        guard on != isAudioOnly, case .live = source else { return }
+        isAudioOnly = on
+        if on {
+            if isPiPActive {
+                pendingAudioOnlyOnPiPStop = true
+                (player as? HLSVideoPlayer)?.stopPictureInPicture()
+            } else {
+                enterAudioOnlyPlayback()
+            }
+        } else {
+            pendingAudioOnlyOnPiPStop = false
+            setLayerAttached(true)
+            (player as? HLSVideoPlayer)?.setAudioOnly(false)
+        }
+        overlay.setAudioOnly(on)
+        logger.info("audio-only \(on ? "enabled" : "disabled")", category: .playback)
+        onAudioOnlyChanged?(on)
+    }
+
+    private func enterAudioOnlyPlayback() {
+        (player as? HLSVideoPlayer)?.setAudioOnly(true)
+        setLayerAttached(false)
+    }
+
+    func exitAudioOnlyKeepingPlayerVariant() {
+        guard isAudioOnly else { return }
+        clearAudioOnlyState()
+    }
+
+    private func clearAudioOnlyState() {
+        isAudioOnly = false
+        pendingAudioOnlyOnPiPStop = false
+        overlay.setAudioOnly(false)
+        onAudioOnlyChanged?(false)
+    }
+
+    func togglePlayPause() {
+        videoOverlayDidTapPlayPause(overlay)
     }
 
     private var defaultNowPlayingTitle: String {
@@ -453,7 +551,8 @@ final class VideoViewController: UIViewController {
             elapsed: lastProgress.current,
             duration: lastProgress.duration,
             isPlaying: currentState == .playing,
-            rate: currentRate
+            rate: currentRate,
+            artwork: nowPlayingArtwork
         )
     }
 
@@ -525,6 +624,12 @@ final class VideoViewController: UIViewController {
         guard streamActive, !isResolving, !adActive else { return }
         recoveryWork?.cancel()
         guard recoveryAttempts < Self.maxRecoveryAttempts else {
+            if UIApplication.shared.applicationState != .active {
+                let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true) }
+                recoveryWork = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 16, execute: work)
+                return
+            }
             if !triedWebFallback, !(player is WebViewPlayer) {
                 swapToWebPlayer()
                 return
@@ -787,6 +892,11 @@ extension VideoViewController: VideoOverlayViewDelegate {
         presentSpeedPicker(from: sourceView)
     }
 
+    func videoOverlayDidTapAudioOnly(_ overlay: VideoOverlayView) {
+        Haptics.selection(store)
+        setAudioOnly(!isAudioOnly)
+    }
+
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView) {}
 
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval) {
@@ -849,6 +959,10 @@ extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
         isPiPActive = false
         overlay.setPictureInPictureActive(false)
         setImmersiveState(view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
+        if pendingAudioOnlyOnPiPStop {
+            pendingAudioOnlyOnPiPStop = false
+            if isAudioOnly { enterAudioOnlyPlayback() }
+        }
         if view.window == nil { teardownPlayerIfNeeded() }
     }
 
@@ -901,10 +1015,12 @@ private final class NowPlayingCoordinator {
         elapsed: TimeInterval,
         duration: TimeInterval,
         isPlaying: Bool,
-        rate: Float
+        rate: Float,
+        artwork: MPMediaItemArtwork?
     ) {
         var info: [String: Any] = [MPMediaItemPropertyTitle: title]
         if let artist { info[MPMediaItemPropertyArtist] = artist }
+        if let artwork { info[MPMediaItemPropertyArtwork] = artwork }
         info[MPNowPlayingInfoPropertyIsLiveStream] = isLive
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? Double(rate) : 0.0
         if !isLive, duration > 0 {

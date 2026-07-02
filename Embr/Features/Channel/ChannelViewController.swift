@@ -14,6 +14,8 @@ final class ChannelViewController: UIViewController {
     private var videoController: VideoViewController?
     private var chatLoggedIn: Bool?
     private var isChatOnly = false
+    private var isAudioOnly = false
+    private let audioBar = AudioOnlyBarView()
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var chatOnlyItem = UIBarButtonItem(
@@ -144,6 +146,8 @@ final class ChannelViewController: UIViewController {
 
     private func loadStreamInfo() {
         infoView.configure(channel: channel)
+        audioBar.configure(name: channel.broadcasterName, title: channel.title)
+        videoController?.setNowPlayingMetadata(title: channel.title, channelName: channel.broadcasterName)
         gameToOpen = channel.gameName.isEmpty ? nil : GameCategory(id: channel.gameID, name: channel.gameName, boxArtURLTemplate: "")
         infoView.onTapGame = { [weak self] in
             guard let self, let game = self.gameToOpen else { return }
@@ -151,10 +155,24 @@ final class ChannelViewController: UIViewController {
         }
         Task { [weak self] in
             guard let self else { return }
-            guard let stream = try? await AppContainer.shared.api.streams(userIDs: [self.channel.id]).first else { return }
-            self.infoView.configure(stream: stream)
-            if !stream.gameName.isEmpty {
-                self.gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
+            let avatarURL = try? await AppContainer.shared.api.users(ids: [self.channel.id]).first?.profileImageURL
+            var title = self.channel.title
+            if let stream = try? await AppContainer.shared.api.streams(userIDs: [self.channel.id]).first {
+                self.infoView.configure(stream: stream)
+                title = stream.title
+                if !stream.gameName.isEmpty {
+                    self.gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
+                }
+            }
+            self.audioBar.configure(name: self.channel.broadcasterName, title: title)
+            self.videoController?.setNowPlayingMetadata(
+                title: title,
+                channelName: self.channel.broadcasterName,
+                avatarURL: avatarURL ?? nil
+            )
+            if let avatarURL = avatarURL ?? nil,
+               let image = await ImageLoader.shared.image(for: avatarURL, targetScale: 2.0) {
+                self.audioBar.setAvatar(image)
             }
         }
     }
@@ -175,6 +193,13 @@ final class ChannelViewController: UIViewController {
         isChatOnly = on
         store.update { $0.chatOnly = on }
         updateChatOnlyButton()
+        if isAudioOnly {
+            if on {
+                videoController?.exitAudioOnlyKeepingPlayerVariant()
+            } else {
+                videoController?.setAudioOnly(false)
+            }
+        }
         videoController?.setStreamActive(!on)
         if on {
             videoContainer.removeConstraints(videoAspectConstraints)
@@ -247,10 +272,10 @@ final class ChannelViewController: UIViewController {
     }
 
     private func applyOrientation(isLandscape landscape: Bool) {
-        navigationController?.setNavigationBarHidden(landscape, animated: true)
+        navigationController?.setNavigationBarHidden(landscape && !isAudioOnly, animated: true)
         videoController?.setBackButtonHidden(navigationController != nil && !landscape)
-        infoView.isHidden = landscape || isChatOnly
-        if landscape {
+        infoView.isHidden = landscape || isChatOnly || isAudioOnly
+        if landscape, !isAudioOnly {
             containerStack.axis = .horizontal
             landscapeWidthConstraint?.isActive = false
             if isChatOnly {
@@ -269,9 +294,33 @@ final class ChannelViewController: UIViewController {
             removeDivider()
             landscapeWidthConstraint?.isActive = false
             landscapeWidthConstraint = nil
-            if !isChatOnly { applyPortraitVideoAspect() }
+            if !isChatOnly, !isAudioOnly { applyPortraitVideoAspect() }
         }
         view.layoutIfNeeded()
+    }
+
+    /// Collapses the video area to a compact audio bar (chat fills the screen) or
+    /// restores the full video layout. Session-only: the layout is forced vertical
+    /// while audio-only so chat stays primary in both orientations.
+    private func applyAudioOnly(_ on: Bool) {
+        guard on != isAudioOnly else { return }
+        if on, isVideoFullscreen { setVideoFullscreen(false) }
+        isAudioOnly = on
+        Haptics.selection(store)
+        if on {
+            videoContainer.removeConstraints(videoAspectConstraints)
+            videoAspectConstraints = []
+            videoContainer.isHidden = true
+            if audioBar.superview == nil {
+                containerStack.insertArrangedSubview(audioBar, at: 0)
+            }
+            audioBar.isHidden = false
+        } else {
+            audioBar.isHidden = true
+            audioBar.removeFromSuperview()
+            videoContainer.isHidden = isChatOnly
+        }
+        applyOrientation(isLandscape: isLandscape)
     }
 
     private var videoAspectConstraints: [NSLayoutConstraint] = []
@@ -318,7 +367,7 @@ final class ChannelViewController: UIViewController {
     }
 
     func setVideoFullscreen(_ fullscreen: Bool) {
-        let immersive = fullscreen && !isChatOnly
+        let immersive = fullscreen && !isChatOnly && !isAudioOnly
         videoController?.setImmersiveState(immersive)
         guard immersive != isVideoFullscreen, let chat = chatController else { return }
         isVideoFullscreen = immersive
@@ -385,6 +434,18 @@ final class ChannelViewController: UIViewController {
         let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
         video.onDoubleTapToggleChat = { [weak self] in
             self?.toggleFullscreenChat()
+        }
+        video.onAudioOnlyChanged = { [weak self] on in
+            self?.applyAudioOnly(on)
+        }
+        video.onPlaybackStateChanged = { [weak self] playing in
+            self?.audioBar.setPlaying(playing)
+        }
+        audioBar.onPlayPause = { [weak self] in
+            self?.videoController?.togglePlayPause()
+        }
+        audioBar.onRestoreVideo = { [weak self] in
+            self?.videoController?.setAudioOnly(false)
         }
         addChild(video)
         video.view.translatesAutoresizingMaskIntoConstraints = false
@@ -474,6 +535,127 @@ extension ChannelViewController: ChatViewControllerDelegate {
             } catch {
                 AppLogger.shared.warn("channel chat login failed: \(error)", category: .auth)
             }
+        }
+    }
+}
+
+@MainActor
+private final class AudioOnlyBarView: UIView {
+    var onPlayPause: (() -> Void)?
+    var onRestoreVideo: (() -> Void)?
+
+    private let avatarView = UIImageView()
+    private let nameLabel = UILabel()
+    private let titleLabel = UILabel()
+    private let liveBadge = UIImageView()
+    private let playPauseButton = UIButton(type: .system)
+    private let restoreButton = UIButton(type: .system)
+
+    init() {
+        super.init(frame: .zero)
+        isHidden = true
+        backgroundColor = Theme.surface
+
+        avatarView.contentMode = .scaleAspectFill
+        avatarView.clipsToBounds = true
+        avatarView.layer.cornerRadius = 20
+        avatarView.backgroundColor = Theme.surfaceElevated
+        avatarView.image = UIImage(systemName: "person.crop.circle.fill")
+        avatarView.tintColor = Theme.secondaryText
+
+        nameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        nameLabel.textColor = Theme.primaryText
+
+        titleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        titleLabel.textColor = Theme.secondaryText
+        titleLabel.numberOfLines = 1
+        titleLabel.lineBreakMode = .byTruncatingTail
+
+        let badgeConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .bold)
+        liveBadge.image = UIImage(systemName: "dot.radiowaves.left.and.right", withConfiguration: badgeConfig)
+        liveBadge.tintColor = Theme.liveDot
+        liveBadge.contentMode = .scaleAspectFit
+        liveBadge.setContentHuggingPriority(.required, for: .horizontal)
+        liveBadge.isAccessibilityElement = true
+        liveBadge.accessibilityLabel = "Live"
+
+        let nameRow = UIStackView(arrangedSubviews: [nameLabel, liveBadge, UIView()])
+        nameRow.axis = .horizontal
+        nameRow.spacing = 6
+        nameRow.alignment = .center
+
+        let textStack = UIStackView(arrangedSubviews: [nameRow, titleLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        configureButton(playPauseButton, symbol: "pause.fill", label: "Pause")
+        playPauseButton.addAction(UIAction { [weak self] _ in self?.onPlayPause?() }, for: .touchUpInside)
+        configureButton(restoreButton, symbol: "play.rectangle.fill", label: "Show Video")
+        restoreButton.addAction(UIAction { [weak self] _ in self?.onRestoreVideo?() }, for: .touchUpInside)
+
+        let row = UIStackView(arrangedSubviews: [avatarView, textStack, playPauseButton, restoreButton])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.isLayoutMarginsRelativeArrangement = true
+        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 8)
+        addSubview(row)
+
+        let separator = UIView()
+        separator.backgroundColor = Theme.surfaceElevated
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(separator)
+
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: topAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor),
+            avatarView.widthAnchor.constraint(equalToConstant: 40),
+            avatarView.heightAnchor.constraint(equalToConstant: 40),
+            separator.leadingAnchor.constraint(equalTo: leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            separator.bottomAnchor.constraint(equalTo: bottomAnchor),
+            separator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func configureButton(_ button: UIButton, symbol: String, label: String) {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold))
+        config.baseForegroundColor = Theme.accent
+        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
+        button.configuration = config
+        button.accessibilityLabel = label
+        button.setContentHuggingPriority(.required, for: .horizontal)
+    }
+
+    func configure(name: String, title: String) {
+        nameLabel.text = name
+        titleLabel.text = title
+    }
+
+    func setAvatar(_ image: UIImage?) {
+        guard let image else { return }
+        avatarView.image = image
+    }
+
+    func setPlaying(_ playing: Bool) {
+        var config = playPauseButton.configuration ?? .plain()
+        config.image = UIImage(
+            systemName: playing ? "pause.fill" : "play.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+        )
+        playPauseButton.configuration = config
+        playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
+        if playing, !Motion.reduced {
+            liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
+        } else {
+            liveBadge.removeAllSymbolEffects()
         }
     }
 }

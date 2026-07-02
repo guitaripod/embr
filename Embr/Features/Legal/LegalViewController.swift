@@ -41,7 +41,7 @@ final class LegalViewController: UIViewController {
     private static func render(title: String, body: String) -> NSAttributedString {
         let result = NSMutableAttributedString()
         result.append(NSAttributedString(string: title + "\n\n", attributes: [
-            .font: UIFont.systemFont(ofSize: 26, weight: .bold),
+            .font: UIFontMetrics(forTextStyle: .title1).scaledFont(for: .systemFont(ofSize: 26, weight: .bold)),
             .foregroundColor: Theme.primaryText
         ]))
 
@@ -50,7 +50,7 @@ final class LegalViewController: UIViewController {
             guard !trimmed.isEmpty else { continue }
             let isHeading = !trimmed.contains("\n") && trimmed.count < 44 && !trimmed.hasSuffix(".")
             let font: UIFont = isHeading
-                ? .systemFont(ofSize: 18, weight: .semibold)
+                ? UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 18, weight: .semibold))
                 : .preferredFont(forTextStyle: .body)
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.paragraphSpacing = isHeading ? 4 : 14
@@ -65,7 +65,7 @@ final class LegalViewController: UIViewController {
         let footerStyle = NSMutableParagraphStyle()
         footerStyle.paragraphSpacingBefore = 18
         result.append(NSAttributedString(string: "Last updated \(LegalText.lastUpdated).", attributes: [
-            .font: UIFont.systemFont(ofSize: 12, weight: .regular),
+            .font: UIFont.preferredFont(forTextStyle: .caption1),
             .foregroundColor: Theme.secondaryText,
             .paragraphStyle: footerStyle
         ]))

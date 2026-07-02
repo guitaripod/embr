@@ -30,6 +30,7 @@ final class ChannelVideosViewController: UIViewController {
     private var loadingVods = false
     private var loadingClips = false
     private var loadingSchedule = false
+    private var resolvingClip = false
 
     private var showingClips: Bool { segmented.selectedSegmentIndex == 1 }
     private var showingSchedule: Bool { segmented.selectedSegmentIndex == 2 }
@@ -235,15 +236,36 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
         case .vod(let vod):
             navigationController?.pushViewController(VideoViewController(source: .vod(id: vod.id)), animated: true)
         case .clip(let clip):
-            if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
-                navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
-            } else {
-                let alert = UIAlertController(title: "Clip Unavailable", message: "This clip can't be played right now.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
-            }
+            playClip(clip)
         case .schedule:
             break
+        }
+    }
+
+    private func playClip(_ clip: Clip) {
+        guard !resolvingClip else { return }
+        resolvingClip = true
+        let startedSpinner = !spinner.isAnimating
+        if startedSpinner { spinner.startAnimating() }
+        Task { [weak self] in
+            guard let self else { return }
+            defer {
+                self.resolvingClip = false
+                if startedSpinner { self.spinner.stopAnimating() }
+            }
+            do {
+                let url = try await PlaybackResolver.shared.resolveClip(slug: clip.id)
+                self.navigationController?.pushViewController(VideoViewController(source: .clip(url: url)), animated: true)
+            } catch {
+                AppLogger.shared.warn("clip resolve \(clip.id) failed: \(error)", category: .playback)
+                if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
+                    self.navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
+                } else {
+                    let alert = UIAlertController(title: "Clip Unavailable", message: "This clip can't be played right now.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
         }
     }
 }

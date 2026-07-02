@@ -23,6 +23,10 @@ actor PlaybackResolver: PlaybackResolving {
         try await resolve(request: endpoints.playbackVOD(id: videoID), label: videoID)
     }
 
+    func resolveClip(slug: String) async throws -> URL {
+        try await resolve(request: endpoints.playbackClip(slug: slug), label: slug).masterPlaylistURL
+    }
+
     private func resolve(request: HTTPRequest, label: String) async throws -> PlaybackResolution {
         let response = try await transport.send(request)
         guard response.isSuccess else {

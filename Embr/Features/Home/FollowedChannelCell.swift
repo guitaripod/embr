@@ -27,7 +27,7 @@ final class FollowedChannelCell: UICollectionViewCell {
         var background = UIBackgroundConfiguration.listCell().updated(for: state)
         background.backgroundColor = state.isHighlighted ? Theme.surfaceElevated : .clear
         background.cornerRadius = 10
-        background.backgroundInsets = NSDirectionalEdgeInsets(top: 3, leading: 12, bottom: 3, trailing: 12)
+        background.backgroundInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
         backgroundConfiguration = background
     }
 
@@ -67,7 +67,7 @@ final class FollowedChannelCell: UICollectionViewCell {
         avatar.contentMode = .scaleAspectFill
         avatar.clipsToBounds = true
         avatar.backgroundColor = Theme.surface
-        avatar.layer.cornerRadius = 20
+        avatar.layer.cornerRadius = 18
 
         nameLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16, weight: .semibold))
         nameLabel.adjustsFontForContentSizeCategory = true
@@ -92,12 +92,12 @@ final class FollowedChannelCell: UICollectionViewCell {
         row.spacing = 12
         row.translatesAutoresizingMaskIntoConstraints = false
         row.isLayoutMarginsRelativeArrangement = true
-        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24)
+        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 5, leading: 14, bottom: 5, trailing: 14)
         contentView.addSubview(row)
 
         NSLayoutConstraint.activate([
-            avatar.widthAnchor.constraint(equalToConstant: 40),
-            avatar.heightAnchor.constraint(equalToConstant: 40),
+            avatar.widthAnchor.constraint(equalToConstant: 36),
+            avatar.heightAnchor.constraint(equalToConstant: 36),
             row.topAnchor.constraint(equalTo: contentView.topAnchor),
             row.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             row.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),

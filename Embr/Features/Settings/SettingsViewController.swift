@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import AuthenticationServices
+import SafariServices
 import EmbrCore
 import MidgarKit
 
@@ -384,6 +385,7 @@ final class SettingsViewController: UIViewController {
         let toggle = UISwitch()
         toggle.isOn = isOn
         toggle.onTintColor = Theme.accent
+        toggle.accessibilityLabel = title
         toggle.addAction(UIAction { [weak self] act in
             guard let self, let sw = act.sender as? UISwitch else { return }
             action(self.store, sw.isOn)
@@ -514,7 +516,13 @@ final class SettingsViewController: UIViewController {
 
     private func openGitHub() {
         guard let url = URL(string: "https://github.com/guitaripod/embr") else { return }
-        UIApplication.shared.open(url)
+        if store.current.openLinksInApp {
+            let safari = SFSafariViewController(url: url)
+            safari.preferredControlTintColor = Theme.accent
+            present(safari, animated: true)
+        } else {
+            UIApplication.shared.open(url)
+        }
     }
 
     private func shareLogs(from sourceView: UIView?) {
@@ -616,18 +624,25 @@ extension SettingsViewController: UICollectionViewDelegate {
         components.scheme = "mailto"
         components.path = LegalText.supportEmail
         components.queryItems = [URLQueryItem(name: "subject", value: subject)]
-        guard let url = components.url, UIApplication.shared.canOpenURL(url) else {
-            UIPasteboard.general.string = LegalText.supportEmail
-            let alert = UIAlertController(
-                title: "Contact Support",
-                message: "Email \(LegalText.supportEmail)\n\nThe address has been copied to your clipboard.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
+        guard let url = components.url else {
+            presentSupportFallback()
             return
         }
-        UIApplication.shared.open(url)
+        UIApplication.shared.open(url) { [weak self] success in
+            guard !success else { return }
+            self?.presentSupportFallback()
+        }
+    }
+
+    private func presentSupportFallback() {
+        UIPasteboard.general.string = LegalText.supportEmail
+        let alert = UIAlertController(
+            title: "Contact Support",
+            message: "Email \(LegalText.supportEmail)\n\nThe address has been copied to your clipboard.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
@@ -692,7 +707,7 @@ private final class SliderRowView: UIView, UIContentView {
 
         slider.minimumTrackTintColor = Theme.accent
         slider.addTarget(self, action: #selector(sliderChanged), for: .valueChanged)
-        slider.addTarget(self, action: #selector(sliderCommitted), for: [.touchUpInside, .touchUpOutside])
+        slider.addTarget(self, action: #selector(sliderCommitted), for: [.touchUpInside, .touchUpOutside, .touchCancel])
 
         let header = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
         header.axis = .horizontal
@@ -724,6 +739,8 @@ private final class SliderRowView: UIView, UIContentView {
         slider.minimumValue = Float(config.range.lowerBound)
         slider.maximumValue = Float(config.range.upperBound)
         slider.value = Float(config.value)
+        slider.accessibilityLabel = config.title
+        slider.accessibilityValue = config.format(config.value)
         valueLabel.text = config.format(config.value)
     }
 
@@ -734,7 +751,9 @@ private final class SliderRowView: UIView, UIContentView {
     }
 
     @objc private func sliderChanged() {
-        valueLabel.text = current.format(snappedValue())
+        let formatted = current.format(snappedValue())
+        valueLabel.text = formatted
+        slider.accessibilityValue = formatted
     }
 
     @objc private func sliderCommitted() {
@@ -798,7 +817,8 @@ private final class StepperRowView: UIView, UIContentView {
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.lineBreakMode = .byTruncatingTail
 
-        valueLabel.font = .monospacedDigitSystemFont(ofSize: 17, weight: .semibold)
+        valueLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .monospacedDigitSystemFont(ofSize: 17, weight: .semibold))
+        valueLabel.adjustsFontForContentSizeCategory = true
         valueLabel.textColor = Theme.primaryText
         valueLabel.textAlignment = .center
         valueLabel.setContentHuggingPriority(.required, for: .horizontal)
@@ -850,6 +870,11 @@ private final class StepperRowView: UIView, UIContentView {
         iconView.image = config.icon
         titleLabel.text = config.title
         valueLabel.text = config.format(liveValue)
+        minusButton.accessibilityLabel = "Decrease \(config.title)"
+        plusButton.accessibilityLabel = "Increase \(config.title)"
+        valueLabel.isAccessibilityElement = true
+        valueLabel.accessibilityLabel = config.title
+        valueLabel.accessibilityValue = config.format(liveValue)
         updateButtonStates()
     }
 
@@ -858,6 +883,7 @@ private final class StepperRowView: UIView, UIContentView {
         guard next != liveValue else { return }
         liveValue = next
         valueLabel.text = current.format(liveValue)
+        valueLabel.accessibilityValue = current.format(liveValue)
         updateButtonStates()
         Haptics.selection()
         current.commit(liveValue)

@@ -93,6 +93,26 @@ struct WorkerEndpointsTests {
         #expect(request.url.absoluteString == "https://worker.example.com/playback/vod/123456789")
     }
 
+    @Test("playbackClip builds the right GET path")
+    func playbackClipPath() {
+        let request = endpoints.playbackClip(slug: "CoolClip-slug_123")
+
+        #expect(request.method == .get)
+        #expect(request.url.absoluteString == "https://worker.example.com/playback/clip/CoolClip-slug_123")
+        #expect(request.body == nil)
+    }
+
+    @Test("decodePlayback tolerates the clip response's extra qualities key")
+    func decodeClipPlayback() throws {
+        let json = """
+        { "url": "https://production.assets.clips.twitchcdn.net/abc-1080.mp4?sig=s&token=t", "qualities": [{ "quality": "1080", "frameRate": 60, "url": "https://production.assets.clips.twitchcdn.net/abc-1080.mp4?sig=s&token=t" }] }
+        """
+        let playback = try WorkerEndpoints.decodePlayback(Data(json.utf8))
+
+        #expect(playback.url == "https://production.assets.clips.twitchcdn.net/abc-1080.mp4?sig=s&token=t")
+        #expect(playback.expiresAt == nil)
+    }
+
     @Test("trailing slash on base URL does not double up the path separator")
     func trailingSlashBase() {
         let trailing = WorkerEndpoints(baseURL: URL(string: "https://worker.example.com/")!)

@@ -3,7 +3,10 @@ import {
   PLAYBACK_ACCESS_TOKEN_SHA256,
   POLL_CONTEXT_SHA256,
   PREDICTION_CONTEXT_SHA256,
+  VIDEO_ACCESS_TOKEN_CLIP_SHA256,
   type ChannelEventsResponse,
+  type ClipPlaybackResponse,
+  type ClipQualityDTO,
   type PollDTO,
   type PredictionDTO,
   type TwitchTokenPayload,
@@ -340,4 +343,72 @@ export async function resolveLivePlayback(login: string, hashOverride?: string):
 export async function resolveVodPlayback(id: string, hashOverride?: string): Promise<string> {
   const token = await fetchPlaybackAccessToken({ type: 'vod', id }, hashOverride);
   return buildUsherURL({ type: 'vod', id }, token);
+}
+
+interface GQLClipResponse {
+  data?: {
+    clip?: {
+      playbackAccessToken?: { value: string; signature: string } | null;
+      videoQualities?: Array<{ frameRate?: number; quality?: string; sourceURL?: string }> | null;
+    } | null;
+  };
+  errors?: Array<{ message?: string }>;
+}
+
+function clipQualityRank(quality: string): number {
+  const parsed = Number.parseInt(quality, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function signedClipURL(sourceURL: string, token: PlaybackAccessToken): string {
+  return `${sourceURL}?sig=${token.signature}&token=${encodeURIComponent(token.value)}`;
+}
+
+export async function resolveClipPlayback(slug: string): Promise<ClipPlaybackResponse> {
+  let res: Response;
+  try {
+    res = await fetch(GQL_URL, {
+      method: 'POST',
+      headers: {
+        'Client-ID': GQL_CLIENT_ID,
+        'Content-Type': 'application/json',
+        'Device-ID': deviceID(),
+      },
+      body: JSON.stringify({
+        operationName: 'VideoAccessToken_Clip',
+        variables: { slug },
+        extensions: { persistedQuery: { version: 1, sha256Hash: VIDEO_ACCESS_TOKEN_CLIP_SHA256 } },
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (err) {
+    if (typeof err === 'object' && err !== null && (err as { name?: unknown }).name === 'TimeoutError') {
+      console.error('clip gql timed out');
+      throw new TwitchError('upstream timeout', 504);
+    }
+    throw err;
+  }
+  if (!res.ok) throw new TwitchError(await readTwitchError(res), res.status);
+  const json = (await res.json()) as GQLClipResponse;
+  if (json.errors && json.errors.length > 0) {
+    const message = json.errors[0]?.message ?? 'gql clip error';
+    console.error(`gql clip error: ${message}`);
+    throw new TwitchError(`clip resolution failed: ${message}`, 502);
+  }
+  const clip = json.data?.clip;
+  if (!clip) throw new TwitchError('clip not found', 404);
+  const token = clip.playbackAccessToken;
+  if (!token?.signature || !token.value) throw new TwitchError('clip playback token unavailable', 404);
+  const qualities: ClipQualityDTO[] = (clip.videoQualities ?? [])
+    .filter((q): q is { frameRate?: number; quality?: string; sourceURL: string } =>
+      typeof q?.sourceURL === 'string' && q.sourceURL.length > 0)
+    .map((q) => ({
+      quality: String(q.quality ?? ''),
+      frameRate: Number(q.frameRate ?? 0),
+      url: signedClipURL(q.sourceURL, token),
+    }))
+    .sort((a, b) => clipQualityRank(b.quality) - clipQualityRank(a.quality));
+  const best = qualities[0];
+  if (!best) throw new TwitchError('clip has no playable qualities', 404);
+  return { url: best.url, qualities };
 }

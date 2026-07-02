@@ -469,6 +469,102 @@ describe('GET /playback/:login', () => {
   });
 });
 
+describe('GET /playback/clip/:slug', () => {
+  const clipToken = { signature: 'clipsig', value: '{"clip_uri":"","expires":9999}' };
+  const qualities = [
+    { frameRate: 30, quality: '480', sourceURL: 'https://production.assets.clips.twitchcdn.net/abc-480.mp4' },
+    { frameRate: 60, quality: '1080', sourceURL: 'https://production.assets.clips.twitchcdn.net/abc-1080.mp4' },
+    { frameRate: 30, quality: '720', sourceURL: 'https://production.assets.clips.twitchcdn.net/abc-720.mp4' },
+  ];
+
+  it('resolves the highest-quality signed MP4 URL', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      jsonResponse({ data: { clip: { playbackAccessToken: clipToken, videoQualities: qualities } } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/clip/CoolClip-slug_123', {}, makeEnv());
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { url: string; qualities: Array<{ quality: string; url: string }> };
+    expect(body.url).toBe(
+      'https://production.assets.clips.twitchcdn.net/abc-1080.mp4' +
+        `?sig=clipsig&token=${encodeURIComponent(clipToken.value)}`,
+    );
+    expect(body.qualities.map((q) => q.quality)).toEqual(['1080', '720', '480']);
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers['Client-ID']).toBe('kimne78kx3ncx6brgo4mv6wki5h1ko');
+    const payload = JSON.parse(String(init.body));
+    expect(payload.operationName).toBe('VideoAccessToken_Clip');
+    expect(payload.variables).toEqual({ slug: 'CoolClip-slug_123' });
+    expect(payload.extensions.persistedQuery.sha256Hash).toBe(
+      '36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11',
+    );
+  });
+
+  it('returns 404 when the clip does not exist', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ data: { clip: null } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/clip/MissingClip', {}, makeEnv());
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBeTruthy();
+  });
+
+  it('returns 404 when the playbackAccessToken is null', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({ data: { clip: { playbackAccessToken: null, videoQualities: qualities } } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/clip/TokenlessClip', {}, makeEnv());
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 when the clip has no playable qualities', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({ data: { clip: { playbackAccessToken: clipToken, videoQualities: [] } } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/clip/EmptyClip', {}, makeEnv());
+    expect(res.status).toBe(404);
+  });
+
+  it('surfaces a GQL error as 502 with the upstream message', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => jsonResponse({ errors: [{ message: 'service error' }] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request('http://embr.test/playback/clip/BrokenClip', {}, makeEnv());
+    expect(res.status).toBe(502);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toContain('service error');
+  });
+
+  it('rejects an invalid slug with 400 before any upstream call', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    for (const slug of ['-leadinghyphen', 'has space', 'a'.repeat(101), 'semi;colon']) {
+      const res = await app.request(`http://embr.test/playback/clip/${encodeURIComponent(slug)}`, {}, makeEnv());
+      expect(res.status, slug).toBe(400);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 504 when the clip GQL request times out', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => {
+      throw new DOMException('The operation timed out.', 'TimeoutError');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await app.request('http://embr.test/playback/clip/SlowClip', {}, makeEnv());
+    expect(res.status).toBe(504);
+  });
+});
+
 describe('GET /events/:login', () => {
   it('rejects an invalid channel login with 400', async () => {
     const res = await app.request('http://embr.test/events/bad%20name', {}, makeEnv());

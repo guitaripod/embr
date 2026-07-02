@@ -93,14 +93,14 @@ final class SearchViewController: UIViewController {
                     widthDimension: .fractionalWidth(1.0 / 3.0),
                     heightDimension: .fractionalHeight(1.0)
                 ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8)
+                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
                 let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(220)),
+                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(210)),
                     repeatingSubitem: item,
                     count: 3
                 )
                 let layoutSection = NSCollectionLayoutSection(group: group)
-                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 9, bottom: 8, trailing: 9)
                 layoutSection.boundarySupplementaryItems = [self?.headerItem()].compactMap { $0 }
                 return layoutSection
             }

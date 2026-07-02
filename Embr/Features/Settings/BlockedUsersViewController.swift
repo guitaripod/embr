@@ -4,6 +4,7 @@ import UIKit
 final class BlockedUsersViewController: UIViewController {
     private var records: [String: BlockedUserRecord] = [:]
     private var order: [String] = []
+    private var pendingUnblocks: Set<String> = []
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
     private let emptyLabel = UILabel()
@@ -23,6 +24,10 @@ final class BlockedUsersViewController: UIViewController {
         setUpCollectionView()
         setUpEmptyLabel()
         setUpDataSource()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         load()
     }
 
@@ -83,10 +88,12 @@ final class BlockedUsersViewController: UIViewController {
 
     private func load() {
         Task { [weak self] in
-            let users = await DatabaseManager.shared.blockedUsers()
+            let fetched = await DatabaseManager.shared.blockedUsers()
             guard let self else { return }
-            self.records = Dictionary(uniqueKeysWithValues: users.map { ($0.userID, $0) })
-            self.order = users.map(\.userID)
+            let users = fetched.filter { !self.pendingUnblocks.contains($0.userID) }
+            self.records = Dictionary(users.map { ($0.userID, $0) }, uniquingKeysWith: { first, _ in first })
+            var seen = Set<String>()
+            self.order = users.map(\.userID).filter { seen.insert($0).inserted }
             self.applySnapshot()
         }
     }
@@ -104,6 +111,10 @@ final class BlockedUsersViewController: UIViewController {
         records[userID] = nil
         order.removeAll { $0 == userID }
         applySnapshot()
-        Task { await DatabaseManager.shared.removeBlockedUser(userID: userID) }
+        pendingUnblocks.insert(userID)
+        Task { [weak self] in
+            await DatabaseManager.shared.removeBlockedUser(userID: userID)
+            self?.pendingUnblocks.remove(userID)
+        }
     }
 }

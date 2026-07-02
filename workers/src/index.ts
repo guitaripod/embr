@@ -16,6 +16,7 @@ import {
   exchangeCode,
   fetchChannelEvents,
   refreshToken,
+  resolveClipPlayback,
   resolveLivePlayback,
   resolveVodPlayback,
   TwitchError,
@@ -54,6 +55,7 @@ function isTimeout(err: unknown): boolean {
 
 const CHANNEL_LOGIN_RE = /^[a-zA-Z0-9_]{1,25}$/;
 const VOD_ID_RE = /^\d+$/;
+const CLIP_SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/;
 
 const PROXY_HOST_SUFFIXES = ['ttvnw.net', 'twitch.tv', 'twitchcdn.net', 'cloudfront.net'] as const;
 
@@ -250,6 +252,16 @@ app.get('/playback/vod/:id', async (c) => {
   try {
     const hash = await playbackHashOverride(c);
     return await playbackResponse(c, await resolveVodPlayback(id, hash));
+  } catch (err) {
+    return fail(statusFor(err), messageFor(err));
+  }
+});
+
+app.get('/playback/clip/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  if (!CLIP_SLUG_RE.test(slug)) return fail(400, 'invalid clip slug');
+  try {
+    return c.json(await resolveClipPlayback(slug));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }

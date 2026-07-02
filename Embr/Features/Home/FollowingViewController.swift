@@ -162,6 +162,7 @@ final class FollowingViewController: UIViewController {
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         collectionView.refreshControl = refreshControl
+        refreshControl.tintColor = Theme.accent
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([
@@ -190,16 +191,8 @@ final class FollowingViewController: UIViewController {
     }
 
     private static func liveSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
-        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)), heightDimension: .estimated(320)))
-        item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
-        let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(320)),
-            repeatingSubitem: item, count: columns)
-        let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 6
-        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0)
+        let section = StreamListLayout.streamsSection(environment: environment)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 0, bottom: 10, trailing: 0)
         section.boundarySupplementaryItems = [headerItem()]
         return section
     }

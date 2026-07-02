@@ -39,6 +39,10 @@ public struct WorkerEndpoints: Sendable {
         HTTPRequest(method: .get, url: url(for: "/playback/vod/\(escape(id))"))
     }
 
+    public func playbackClip(slug: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/playback/clip/\(escape(slug))"))
+    }
+
     public func channelEvents(login: String) -> HTTPRequest {
         HTTPRequest(method: .get, url: url(for: "/events/\(escape(login))"))
     }

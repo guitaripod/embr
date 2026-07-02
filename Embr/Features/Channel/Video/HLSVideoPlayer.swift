@@ -62,6 +62,11 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var liveLatencyConfigured = false
     private var loadGeneration = 0
     private var appliedAudioOptions: AVAudioSession.CategoryOptions?
+    private(set) var isAudioOnly = false
+    private var audioOnlyRequested = false
+    private var appliedAudioOnlyName: String?
+    private var qualityBeforeAudioOnly: StreamQuality?
+    private var wasAutoBeforeAudioOnly = false
 
     private enum PendingResume {
         case time(CMTime)
@@ -142,6 +147,9 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         } else {
             currentQuality = nil
         }
+        if audioOnlyRequested {
+            isAudioOnly = currentQuality?.isAudioOnly == true
+        }
         configureAudioSession()
         stateSubject.send(.loading)
         pendingResume = nil
@@ -175,7 +183,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             return
         }
 
-        if let bandwidth = quality.bandwidth, qualityBelongsToMaster(quality) {
+        if let bandwidth = quality.bandwidth, qualityBelongsToMaster(quality), !quality.isAudioOnly {
             currentItem?.preferredPeakBitRate = Double(bandwidth)
             logger.info("HLS quality -> \(quality.name) peakBitRate=\(bandwidth)", category: .playback)
             return
@@ -207,8 +215,87 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         logger.info("HLS teardown", category: .playback)
     }
 
+    /// Detaches or reattaches the AVPlayer from the on-screen AVPlayerLayer.
+    /// Detaching while backgrounded is Apple's sanctioned way to keep audio running
+    /// when the app leaves the foreground; PiP requires the layer attached, so
+    /// callers must not detach while PiP is active.
+    func setLayerAttached(_ attached: Bool) {
+        let target: AVPlayer? = attached ? player : nil
+        guard playerView.player !== target else { return }
+        playerView.player = target
+        logger.info("HLS layer \(attached ? "attached" : "detached")", category: .playback)
+    }
+
+    var audioOnlyQuality: StreamQuality? {
+        availableQualities.first { $0.isAudioOnly }
+    }
+
+    /// Switches to the master's audio_only variant to save bandwidth, remembering
+    /// the previous selection; switching back restores that variant or the master
+    /// playlist (auto) exactly as before.
+    func setAudioOnly(_ on: Bool) {
+        guard on != audioOnlyRequested else { return }
+        audioOnlyRequested = on
+        if on {
+            applyAudioOnlyVariantIfAvailable()
+        } else {
+            let previous = qualityBeforeAudioOnly
+            let wasAuto = wasAutoBeforeAudioOnly
+            qualityBeforeAudioOnly = nil
+            let lastApplied = appliedAudioOnlyName
+            appliedAudioOnlyName = nil
+            guard isAudioOnly else {
+                if let lastApplied, preferredQualityName == lastApplied {
+                    preferredQualityName = nil
+                }
+                return
+            }
+            isAudioOnly = false
+            if let previousName = previous?.name, !wasAuto,
+               let match = availableQualities.first(where: { $0.name == previousName }) {
+                preferredQualityName = match.name
+                currentQuality = match
+                swapVariant(to: match)
+            } else {
+                preferredQualityName = nil
+                currentQuality = nil
+                restoreMasterPlaylist()
+            }
+        }
+    }
+
+    private func applyAudioOnlyVariantIfAvailable() {
+        guard audioOnlyRequested, !isAudioOnly, let audio = audioOnlyQuality else { return }
+        isAudioOnly = true
+        qualityBeforeAudioOnly = currentQuality
+        wasAutoBeforeAudioOnly = currentQuality == nil
+        appliedAudioOnlyName = audio.name
+        preferredQualityName = audio.name
+        currentQuality = audio
+        swapVariant(to: audio)
+        logger.info("HLS audio-only variant applied", category: .playback)
+    }
+
+    private func restoreMasterPlaylist() {
+        guard let url = resolution?.masterPlaylistURL else { return }
+        let progress = progressSubject.value
+        let resumeTime = player.currentTime()
+        let item = AVPlayerItem(url: url)
+        attach(item)
+        pendingResume = progress.current > 0 ? (progress.isLive ? .liveEdge : .time(resumeTime)) : nil
+        player.replaceCurrentItem(with: item)
+        applyMutePreference()
+        player.play()
+        startLatencySampling()
+        logger.info("HLS restore master after audio-only", category: .playback)
+    }
+
     var canStartPictureInPicture: Bool {
         pictureInPictureController?.isPictureInPicturePossible ?? false
+    }
+
+    var isPictureInPictureActive: Bool {
+        pictureInPictureController?.isPictureInPictureActive ?? false
     }
 
     func startPictureInPicture() {
@@ -345,6 +432,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             guard !parsed.isEmpty, let self, self.loadGeneration == generation else { return }
             self.availableQualities = parsed
             self.logger.info("HLS parsed master qualities=\(parsed.count)", category: .playback)
+            self.applyAudioOnlyVariantIfAvailable()
         }
     }
 
