@@ -60,6 +60,7 @@ final class ChannelViewController: UIViewController {
 
     private let eventCard = ChannelEventCardView()
     private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
+    private lazy var liveStatsPoller = LiveStatsPoller(userID: channel.id)
     private var dismissedEventID: String?
     private var currentEventID: String?
 
@@ -86,6 +87,7 @@ final class ChannelViewController: UIViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
         eventsPoller.start()
+        liveStatsPoller.start()
         eventCard.resume()
     }
 
@@ -93,6 +95,7 @@ final class ChannelViewController: UIViewController {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         eventsPoller.stop()
+        liveStatsPoller.stop()
         eventCard.pause()
     }
 
@@ -144,6 +147,8 @@ final class ChannelViewController: UIViewController {
             .store(in: &cancellables)
     }
 
+    private var avatarURL: URL?
+
     private func loadStreamInfo() {
         infoView.configure(channel: channel)
         audioBar.configure(name: channel.broadcasterName, title: channel.title)
@@ -153,28 +158,68 @@ final class ChannelViewController: UIViewController {
             guard let self, let game = self.gameToOpen else { return }
             self.navigationController?.pushViewController(TopViewController(mode: .game(game), api: AppContainer.shared.api), animated: true)
         }
+        observeLiveStats()
         Task { [weak self] in
             guard let self else { return }
             let avatarURL = try? await AppContainer.shared.api.users(ids: [self.channel.id]).first?.profileImageURL
-            var title = self.channel.title
+            self.avatarURL = avatarURL ?? nil
             if let stream = try? await AppContainer.shared.api.streams(userIDs: [self.channel.id]).first {
-                self.infoView.configure(stream: stream)
-                title = stream.title
-                if !stream.gameName.isEmpty {
-                    self.gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
-                }
+                self.applyLiveStream(stream)
+            } else {
+                self.applyMetadata(title: self.channel.title)
             }
-            self.audioBar.configure(name: self.channel.broadcasterName, title: title)
-            self.videoController?.setNowPlayingMetadata(
-                title: title,
-                channelName: self.channel.broadcasterName,
-                avatarURL: avatarURL ?? nil
-            )
-            if let avatarURL = avatarURL ?? nil,
+            if let avatarURL = self.avatarURL,
                let image = await ImageLoader.shared.image(for: avatarURL, targetScale: 2.0) {
                 self.audioBar.setAvatar(image)
             }
         }
+    }
+
+    private func observeLiveStats() {
+        liveStatsPoller.status
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    switch status {
+                    case .live(let stream): self.applyLiveStream(stream)
+                    case .offline: self.applyOffline()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private var isStreamOffline = false
+    private var lastAppliedTitle: String?
+
+    private func applyLiveStream(_ stream: LiveStream) {
+        isStreamOffline = false
+        infoView.configure(stream: stream)
+        if !stream.gameName.isEmpty {
+            gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
+        }
+        guard lastAppliedTitle != stream.title else { return }
+        lastAppliedTitle = stream.title
+        applyMetadata(title: stream.title)
+    }
+
+    private func applyOffline() {
+        guard !isStreamOffline else { return }
+        isStreamOffline = true
+        gameToOpen = nil
+        lastAppliedTitle = nil
+        infoView.setOffline()
+        applyMetadata(title: channel.title)
+    }
+
+    private func applyMetadata(title: String) {
+        audioBar.configure(name: channel.broadcasterName, title: title)
+        videoController?.setNowPlayingMetadata(
+            title: title,
+            channelName: channel.broadcasterName,
+            avatarURL: avatarURL
+        )
     }
 
     @objc private func toggleChatOnly() {

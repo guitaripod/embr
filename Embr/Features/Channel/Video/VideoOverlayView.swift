@@ -61,12 +61,21 @@ final class VideoOverlayView: UIView {
     private var seekFlashCenterX: NSLayoutConstraint?
 
     private let bufferingIndicator = UIActivityIndicatorView(style: .large)
+    private var bufferingWork: DispatchWorkItem?
+    private let bufferingDebounce: TimeInterval = 0.3
+
+    private let reconnectPill = UIView()
+    private let reconnectStack = UIStackView()
+    private let reconnectSpinner = UIActivityIndicatorView(style: .medium)
+    private let reconnectLabel = UILabel()
+    private var isReconnecting = false
 
     private let errorStack = UIStackView()
     private let errorIcon = UIImageView()
     private let errorLabel = UILabel()
     private let retryButton = UIButton(type: .system)
     private var errorActive = false
+    private var noticeGeneration = 0
 
     private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
     private let adStatusLabel = UILabel()
@@ -108,13 +117,29 @@ final class VideoOverlayView: UIView {
         let symbol = playing ? "pause.fill" : "play.fill"
         let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
         playPauseButton.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
-        playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
-        let showBadge = playing && isLive
-        liveBadge.isHidden = !showBadge
-        if showBadge, !Motion.reduced {
-            liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
+        playPauseButton.accessibilityLabel = playing ? "Pause" : (isLive ? "Go to live" : "Play")
+        applyLiveBadge(playing: playing)
+    }
+
+    private func applyLiveBadge(playing: Bool) {
+        guard isLive else {
+            liveBadge.isHidden = true
+            liveBadge.removeAllSymbolEffects()
+            return
+        }
+        liveBadge.isHidden = false
+        if playing {
+            liveBadge.tintColor = .systemRed
+            liveBadge.accessibilityLabel = "Live"
+            if !Motion.reduced {
+                liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
+            } else {
+                liveBadge.removeAllSymbolEffects()
+            }
         } else {
             liveBadge.removeAllSymbolEffects()
+            liveBadge.tintColor = UIColor.white.withAlphaComponent(0.5)
+            liveBadge.accessibilityLabel = "Paused — tap play to return to live"
         }
     }
 
@@ -123,19 +148,51 @@ final class VideoOverlayView: UIView {
         if !live {
             liveBadge.isHidden = true
             liveBadge.removeAllSymbolEffects()
+            latencyLabel.text = nil
         }
     }
 
     func setBuffering(_ buffering: Bool) {
         let target = buffering && !errorActive
-        guard target != isBuffering else { return }
-        isBuffering = target
+        bufferingWork?.cancel()
+        bufferingWork = nil
         if target {
+            guard !isBuffering else { return }
+            let work = DispatchWorkItem { [weak self] in self?.applyBuffering(true) }
+            bufferingWork = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + bufferingDebounce, execute: work)
+        } else {
+            applyBuffering(false)
+        }
+    }
+
+    private func applyBuffering(_ on: Bool) {
+        guard on != isBuffering else { return }
+        isBuffering = on
+        if on, !isReconnecting {
             bufferingIndicator.startAnimating()
         } else {
             bufferingIndicator.stopAnimating()
         }
         UIView.animate(withDuration: 0.2) { self.applyCenterButtonVisibility() }
+    }
+
+    func setReconnecting(_ visible: Bool) {
+        guard visible != isReconnecting else { return }
+        isReconnecting = visible
+        if visible {
+            reconnectSpinner.startAnimating()
+            bufferingIndicator.stopAnimating()
+            reconnectPill.isHidden = false
+            reconnectPill.alpha = 0
+            UIView.animate(withDuration: 0.2) { self.reconnectPill.alpha = 1 }
+        } else {
+            reconnectSpinner.stopAnimating()
+            if isBuffering, !errorActive { bufferingIndicator.startAnimating() }
+            UIView.animate(withDuration: 0.2, animations: { self.reconnectPill.alpha = 0 }) { finished in
+                if finished, self.reconnectPill.alpha < 0.01 { self.reconnectPill.isHidden = true }
+            }
+        }
     }
 
     private func applyCenterButtonVisibility() {
@@ -144,13 +201,35 @@ final class VideoOverlayView: UIView {
         playPauseButton.isUserInteractionEnabled = visible
     }
 
-    func showError(_ message: String, symbol: String, canRetry: Bool) {
+    func showError(_ message: String, symbol: String, canRetry: Bool, actionTitle: String = "Try Again", tint: UIColor = .systemOrange) {
+        presentNotice(message: message, symbol: symbol, tint: tint, actionTitle: canRetry ? actionTitle : nil)
+    }
+
+    func showEnded(_ message: String, symbol: String) {
+        presentNotice(message: message, symbol: symbol, tint: UIColor.white.withAlphaComponent(0.85), actionTitle: "Try Again")
+    }
+
+    private func presentNotice(message: String, symbol: String, tint: UIColor, actionTitle: String?) {
         errorActive = true
         setBuffering(false)
+        setReconnecting(false)
+        errorIcon.tintColor = tint
         errorIcon.image = UIImage(systemName: symbol)
         errorLabel.text = message
-        retryButton.isHidden = !canRetry
+        if let actionTitle {
+            var config = retryButton.configuration ?? .tinted()
+            config.title = actionTitle
+            retryButton.configuration = config
+            retryButton.isHidden = false
+        } else {
+            retryButton.isHidden = true
+        }
+        noticeGeneration += 1
+        errorStack.layer.removeAllAnimations()
         errorStack.isHidden = false
+        if errorStack.alpha < 1 {
+            UIView.animate(withDuration: 0.22) { self.errorStack.alpha = 1 }
+        }
         cancelAutoHide()
         setControls(visible: true, animated: true)
     }
@@ -158,12 +237,17 @@ final class VideoOverlayView: UIView {
     func clearError() {
         guard errorActive else { return }
         errorActive = false
-        errorStack.isHidden = true
+        noticeGeneration += 1
+        let generation = noticeGeneration
+        UIView.animate(withDuration: 0.2, animations: { self.errorStack.alpha = 0 }) { finished in
+            guard finished, !self.errorActive, generation == self.noticeGeneration else { return }
+            self.errorStack.isHidden = true
+        }
         applyCenterButtonVisibility()
     }
 
     func setLatency(_ latency: TimeInterval?) {
-        guard let latency, latency > 0 else {
+        guard isLive, let latency, latency > 0 else {
             latencyLabel.text = nil
             return
         }
@@ -370,9 +454,17 @@ final class VideoOverlayView: UIView {
         errorStack.addArrangedSubview(retryButton)
         addSubview(errorStack)
 
+        buildReconnectPill()
         buildAdCover()
 
         NSLayoutConstraint.activate([
+            reconnectPill.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 52),
+            reconnectPill.centerXAnchor.constraint(equalTo: centerXAnchor),
+            reconnectStack.topAnchor.constraint(equalTo: reconnectPill.topAnchor),
+            reconnectStack.bottomAnchor.constraint(equalTo: reconnectPill.bottomAnchor),
+            reconnectStack.leadingAnchor.constraint(equalTo: reconnectPill.leadingAnchor),
+            reconnectStack.trailingAnchor.constraint(equalTo: reconnectPill.trailingAnchor),
+
             errorStack.centerXAnchor.constraint(equalTo: centerXAnchor),
             errorStack.centerYAnchor.constraint(equalTo: centerYAnchor),
             errorStack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 24),
@@ -429,6 +521,32 @@ final class VideoOverlayView: UIView {
             UIColor.white.setFill()
             UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
         }
+    }
+
+    private func buildReconnectPill() {
+        reconnectPill.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        reconnectPill.layer.cornerRadius = 16
+        reconnectPill.layer.cornerCurve = .continuous
+        reconnectPill.translatesAutoresizingMaskIntoConstraints = false
+        reconnectPill.isHidden = true
+        addSubview(reconnectPill)
+
+        reconnectSpinner.color = .white
+        reconnectSpinner.hidesWhenStopped = false
+        reconnectLabel.text = "Reconnecting…"
+        reconnectLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        reconnectLabel.textColor = .white
+        reconnectStack.axis = .horizontal
+        reconnectStack.alignment = .center
+        reconnectStack.spacing = 8
+        reconnectStack.isLayoutMarginsRelativeArrangement = true
+        reconnectStack.layoutMargins = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 16)
+        reconnectStack.translatesAutoresizingMaskIntoConstraints = false
+        reconnectStack.addArrangedSubview(reconnectSpinner)
+        reconnectStack.addArrangedSubview(reconnectLabel)
+        reconnectPill.addSubview(reconnectStack)
+        reconnectPill.isAccessibilityElement = true
+        reconnectPill.accessibilityLabel = "Reconnecting"
     }
 
     private func buildAdCover() {
@@ -708,6 +826,7 @@ final class VideoOverlayView: UIView {
 
     isolated deinit {
         hideTimer?.invalidate()
+        bufferingWork?.cancel()
     }
 }
 

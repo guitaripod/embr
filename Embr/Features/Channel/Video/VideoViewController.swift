@@ -395,6 +395,7 @@ final class VideoViewController: UIViewController {
         overlay.setAudioOnlyHidden(true)
         overlay.setMuted(isMuted)
         overlay.clearError()
+        overlay.setReconnecting(false)
         overlay.setBuffering(true)
 
         if case .live(let login) = source {
@@ -434,6 +435,7 @@ final class VideoViewController: UIViewController {
     }
 
     private func apply(_ state: VideoState) {
+        guard !didTeardownPlayer else { return }
         currentState = state
         if state != .playing { stableWork?.cancel(); stableWork = nil }
         switch state {
@@ -443,6 +445,7 @@ final class VideoViewController: UIViewController {
         case .playing:
             showingError = false
             overlay.clearError()
+            overlay.setReconnecting(false)
             overlay.setBuffering(false)
             overlay.setPlaying(true)
             recoveryWork?.cancel(); recoveryWork = nil
@@ -450,20 +453,46 @@ final class VideoViewController: UIViewController {
             armStabilityReset()
             applyPendingSeek()
         case .paused:
+            overlay.setReconnecting(false)
             overlay.setBuffering(false)
             overlay.setPlaying(false)
             stallWork?.cancel(); stallWork = nil
-        case .idle, .ended:
+        case .idle:
+            overlay.setReconnecting(false)
             overlay.setBuffering(false)
             overlay.setPlaying(false)
             stallWork?.cancel(); stallWork = nil
+        case .ended:
+            overlay.setReconnecting(false)
+            overlay.setBuffering(false)
+            overlay.setPlaying(false)
+            stallWork?.cancel(); stallWork = nil
+            handleStreamEnded()
         case .error(let message):
+            overlay.setReconnecting(false)
             overlay.setBuffering(false)
             overlay.setPlaying(false)
             handlePlaybackError(message)
         }
         updateNowPlaying()
         onPlaybackStateChanged?(state == .playing)
+    }
+
+    /// A live source reaching `.ended` means the broadcast stopped (went offline),
+    /// not a playback fault — present a calm offline notice, never the error card.
+    /// A seekable VOD/clip reaching `.ended` is a normal finish; leave controls be.
+    private func handleStreamEnded() {
+        guard !showingError else { return }
+        switch source {
+        case .live(let login):
+            cancelRecoveryTimers()
+            recoveryAttempts = 0
+            showingError = true
+            logger.info("live source ended — presenting offline notice", category: .playback)
+            overlay.showEnded("\(login) is offline.", symbol: "tv.slash")
+        case .vod, .clip:
+            break
+        }
     }
 
     func setNowPlayingMetadata(title: String?, channelName: String?, avatarURL: URL? = nil) {
@@ -489,8 +518,7 @@ final class VideoViewController: UIViewController {
     }
 
     private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
-        nonisolated(unsafe) let boxed = image
-        return MPMediaItemArtwork(boundsSize: image.size) { _ in boxed }
+        MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 
     func setAudioOnly(_ on: Bool) {
@@ -586,6 +614,8 @@ final class VideoViewController: UIViewController {
         guard !didTeardownPlayer else { return }
         didTeardownPlayer = true
         cancelRecoveryTimers()
+        overlay.setReconnecting(false)
+        overlay.setBuffering(false)
         nowPlaying.clear()
         player.teardown()
     }
@@ -630,7 +660,7 @@ final class VideoViewController: UIViewController {
         recoveryWork?.cancel()
         guard recoveryAttempts < Self.maxRecoveryAttempts else {
             if UIApplication.shared.applicationState != .active {
-                let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true) }
+                let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true, isRecovery: true) }
                 recoveryWork = work
                 DispatchQueue.main.asyncAfter(deadline: .now() + 16, execute: work)
                 return
@@ -641,19 +671,22 @@ final class VideoViewController: UIViewController {
             }
             showingError = true
             stallWork?.cancel(); stallWork = nil
+            overlay.setReconnecting(false)
             player.pause()
-            overlay.showError("Playback stopped.", symbol: "exclamationmark.triangle", canRetry: true)
+            overlay.showError("Playback stopped. Check your connection and try again.", symbol: "exclamationmark.triangle", canRetry: true)
             return
         }
         let delay = min(pow(2.0, Double(recoveryAttempts)), 16)
         recoveryAttempts += 1
         overlay.setBuffering(true)
-        let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true) }
+        overlay.setReconnecting(true)
+        let work = DispatchWorkItem { [weak self] in self?.reload(preservingPosition: true, isRecovery: true) }
         recoveryWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
-    private func reload(preservingPosition: Bool) {
+    private func reload(preservingPosition: Bool, isRecovery: Bool = false) {
+        if !isRecovery { overlay.setReconnecting(false) }
         if preservingPosition, isSeekableSource, lastProgress.current > 0 {
             resumeTarget = lastProgress.current
         }
@@ -731,14 +764,21 @@ final class VideoViewController: UIViewController {
         if apiError == .notFound || apiError == .forbidden {
             recoveryAttempts = 0
             recoveryWork?.cancel(); recoveryWork = nil
+            showingError = true
+            overlay.setReconnecting(false)
             logger.info("resolve: channel offline (\(error.localizedDescription))", category: .playback)
             overlay.setPlaying(false)
-            overlay.showError("This channel isn't live right now.", symbol: "tv.slash", canRetry: true)
+            overlay.showEnded(offlineMessage, symbol: "tv.slash")
         } else {
             logger.warn("resolve failed (\(error.localizedDescription)), scheduling recovery", category: .playback)
             overlay.setPlaying(false)
             scheduleRecovery()
         }
+    }
+
+    private var offlineMessage: String {
+        if case .live(let login) = source { return "\(login) isn't live right now." }
+        return "This content isn't available right now."
     }
 
     private func resolve() async throws -> PlaybackResolution {
@@ -756,9 +796,11 @@ final class VideoViewController: UIViewController {
         let qualities = player.availableQualities
         let sheet = UIAlertController(title: "Quality", message: nil, preferredStyle: .actionSheet)
 
-        sheet.addAction(qualityAction(named: "Auto", quality: autoQuality, isSelected: player.currentQuality == nil))
+        sheet.addAction(qualityAction(named: "Auto", quality: autoQuality, isSelected: !isAudioOnly && player.currentQuality == nil))
         for quality in qualities where quality.name.caseInsensitiveCompare("auto") != .orderedSame {
-            sheet.addAction(qualityAction(named: quality.name, quality: quality, isSelected: player.currentQuality == quality))
+            let selected = quality.isAudioOnly ? isAudioOnly : (!isAudioOnly && player.currentQuality == quality)
+            let label = quality.isAudioOnly ? "Audio Only" : quality.name
+            sheet.addAction(qualityAction(named: label, quality: quality, isSelected: selected))
         }
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
 
@@ -771,7 +813,13 @@ final class VideoViewController: UIViewController {
 
     private func qualityAction(named name: String, quality: StreamQuality, isSelected: Bool) -> UIAlertAction {
         let action = UIAlertAction(title: name, style: .default) { [weak self] _ in
-            self?.player.setQuality(quality)
+            guard let self else { return }
+            if quality.isAudioOnly {
+                self.setAudioOnly(true)
+            } else {
+                if self.isAudioOnly { self.setAudioOnly(false) }
+                self.player.setQuality(quality)
+            }
         }
         action.setValue(isSelected, forKey: "checked")
         return action
@@ -874,6 +922,7 @@ extension VideoViewController: VideoOverlayViewDelegate {
     }
 
     func videoOverlayDidTapRetry(_ overlay: VideoOverlayView) {
+        guard !didTeardownPlayer else { return }
         showingError = false
         recoveryAttempts = 0
         resolveAndLoad()
