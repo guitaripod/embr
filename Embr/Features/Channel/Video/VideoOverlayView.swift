@@ -12,7 +12,6 @@ protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView)
     func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView)
     func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView)
-    func videoOverlayDidTapAudioOnly(_ overlay: VideoOverlayView)
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView)
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval)
     func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool)
@@ -38,7 +37,6 @@ final class VideoOverlayView: UIView {
     private let muteButton = VideoOverlayView.makeButton(symbol: "speaker.wave.2.fill")
     private let fullscreenButton = VideoOverlayView.makeButton(symbol: "arrow.up.left.and.arrow.down.right")
     private let speedButton = VideoOverlayView.makeButton(symbol: "speedometer")
-    private let audioOnlyButton = VideoOverlayView.makeButton(symbol: "headphones")
     private let playPauseButton = VideoOverlayView.makeButton(symbol: "pause.fill", pointSize: 34)
 
     private let routePicker: AVRoutePickerView = {
@@ -268,17 +266,6 @@ final class VideoOverlayView: UIView {
         pipButton.accessibilityLabel = active ? "Exit Picture in Picture" : "Picture in Picture"
     }
 
-    func setAudioOnlyHidden(_ hidden: Bool) {
-        audioOnlyButton.isHidden = hidden
-    }
-
-    func setAudioOnly(_ on: Bool) {
-        var config = audioOnlyButton.configuration ?? .plain()
-        config.baseForegroundColor = on ? Theme.accent : .white
-        audioOnlyButton.configuration = config
-        audioOnlyButton.accessibilityLabel = on ? "Show Video" : "Audio Only"
-    }
-
     func setAirPlayHidden(_ hidden: Bool) {
         routePicker.isHidden = hidden
     }
@@ -410,14 +397,12 @@ final class VideoOverlayView: UIView {
         bottomSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         bottomBar.addArrangedSubview(bottomSpacer)
         bottomBar.addArrangedSubview(speedButton)
-        bottomBar.addArrangedSubview(audioOnlyButton)
         bottomBar.addArrangedSubview(muteButton)
         bottomBar.addArrangedSubview(qualityButton)
         bottomBar.addArrangedSubview(routePicker)
         bottomBar.addArrangedSubview(pipButton)
         bottomBar.addArrangedSubview(fullscreenButton)
         speedButton.isHidden = true
-        audioOnlyButton.isHidden = true
         addSubview(bottomBar)
 
         playPauseButton.translatesAutoresizingMaskIntoConstraints = false
@@ -627,7 +612,6 @@ final class VideoOverlayView: UIView {
         muteButton.addTarget(self, action: #selector(didTapMute), for: .touchUpInside)
         fullscreenButton.addTarget(self, action: #selector(didTapFullscreen), for: .touchUpInside)
         speedButton.addTarget(self, action: #selector(didTapSpeed), for: .touchUpInside)
-        audioOnlyButton.addTarget(self, action: #selector(didTapAudioOnly), for: .touchUpInside)
         scrubber.addTarget(self, action: #selector(scrubBegan), for: .touchDown)
         scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
         scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside, .touchCancel])
@@ -639,7 +623,6 @@ final class VideoOverlayView: UIView {
         muteButton.accessibilityLabel = "Mute"
         fullscreenButton.accessibilityLabel = "Fullscreen"
         speedButton.accessibilityLabel = "Playback Speed"
-        audioOnlyButton.accessibilityLabel = "Audio Only"
         liveBadge.isAccessibilityElement = true
         liveBadge.accessibilityLabel = "Live"
 
@@ -697,11 +680,6 @@ final class VideoOverlayView: UIView {
     @objc private func didTapSpeed() {
         scheduleAutoHide()
         delegate?.videoOverlayDidTapSpeed(self, from: speedButton)
-    }
-
-    @objc private func didTapAudioOnly() {
-        scheduleAutoHide()
-        delegate?.videoOverlayDidTapAudioOnly(self)
     }
 
     @objc private func scrubBegan() {

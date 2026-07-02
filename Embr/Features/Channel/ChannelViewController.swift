@@ -632,6 +632,10 @@ private final class AudioOnlyBarView: UIView {
         let textStack = UIStackView(arrangedSubviews: [nameRow, titleLabel])
         textStack.axis = .vertical
         textStack.spacing = 2
+        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        nameLabel.lineBreakMode = .byTruncatingTail
 
         configureButton(playPauseButton, symbol: "pause.fill", label: "Pause")
         playPauseButton.addAction(UIAction { [weak self] _ in self?.onPlayPause?() }, for: .touchUpInside)
@@ -654,8 +658,8 @@ private final class AudioOnlyBarView: UIView {
 
         NSLayoutConstraint.activate([
             row.topAnchor.constraint(equalTo: topAnchor),
-            row.leadingAnchor.constraint(equalTo: leadingAnchor),
-            row.trailingAnchor.constraint(equalTo: trailingAnchor),
+            row.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
             row.bottomAnchor.constraint(equalTo: bottomAnchor),
             avatarView.widthAnchor.constraint(equalToConstant: 40),
             avatarView.heightAnchor.constraint(equalToConstant: 40),

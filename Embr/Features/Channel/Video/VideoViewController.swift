@@ -320,11 +320,9 @@ final class VideoViewController: UIViewController {
             hls.pictureInPictureDelegate = self
             overlay.setPictureInPictureEnabled(AVPictureInPictureController.isPictureInPictureSupported())
             overlay.setAirPlayHidden(false)
-            if case .live = source { overlay.setAudioOnlyHidden(false) }
         } else {
             overlay.setPictureInPictureEnabled(false)
             overlay.setAirPlayHidden(true)
-            overlay.setAudioOnlyHidden(true)
         }
 
         overlay.setSeekable(isSeekableSource)
@@ -392,7 +390,6 @@ final class VideoViewController: UIViewController {
         web.setMuted(isMuted)
         overlay.setPictureInPictureEnabled(false)
         overlay.setAirPlayHidden(true)
-        overlay.setAudioOnlyHidden(true)
         overlay.setMuted(isMuted)
         overlay.clearError()
         overlay.setReconnecting(false)
@@ -536,7 +533,6 @@ final class VideoViewController: UIViewController {
             setLayerAttached(true)
             (player as? HLSVideoPlayer)?.setAudioOnly(false)
         }
-        overlay.setAudioOnly(on)
         logger.info("audio-only \(on ? "enabled" : "disabled")", category: .playback)
         onAudioOnlyChanged?(on)
     }
@@ -554,7 +550,6 @@ final class VideoViewController: UIViewController {
     private func clearAudioOnlyState() {
         isAudioOnly = false
         pendingAudioOnlyOnPiPStop = false
-        overlay.setAudioOnly(false)
         onAudioOnlyChanged?(false)
     }
 
@@ -944,11 +939,6 @@ extension VideoViewController: VideoOverlayViewDelegate {
 
     func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView) {
         presentSpeedPicker(from: sourceView)
-    }
-
-    func videoOverlayDidTapAudioOnly(_ overlay: VideoOverlayView) {
-        Haptics.selection(store)
-        setAudioOnly(!isAudioOnly)
     }
 
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView) {}
