@@ -483,9 +483,14 @@ final class VideoViewController: UIViewController {
                 self.artworkURL = nil
                 return
             }
-            self.nowPlayingArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            self.nowPlayingArtwork = Self.makeArtwork(image)
             self.updateNowPlaying()
         }
+    }
+
+    private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
+        nonisolated(unsafe) let boxed = image
+        return MPMediaItemArtwork(boundsSize: image.size) { _ in boxed }
     }
 
     func setAudioOnly(_ on: Bool) {
