@@ -498,9 +498,7 @@ describe('GET /playback/clip/:slug', () => {
     const payload = JSON.parse(String(init.body));
     expect(payload.operationName).toBe('VideoAccessToken_Clip');
     expect(payload.variables).toEqual({ slug: 'CoolClip-slug_123' });
-    expect(payload.extensions.persistedQuery.sha256Hash).toBe(
-      '36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11',
-    );
+    expect(payload.query).toContain('clip(slug: $slug)');
   });
 
   it('returns 404 when the clip does not exist', async () => {

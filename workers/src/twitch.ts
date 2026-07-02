@@ -3,7 +3,6 @@ import {
   PLAYBACK_ACCESS_TOKEN_SHA256,
   POLL_CONTEXT_SHA256,
   PREDICTION_CONTEXT_SHA256,
-  VIDEO_ACCESS_TOKEN_CLIP_SHA256,
   type ChannelEventsResponse,
   type ClipPlaybackResponse,
   type ClipQualityDTO,
@@ -153,6 +152,15 @@ const PLAYBACK_FULL_QUERY =
   'query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!, $platform: String!) {' +
   '  streamPlaybackAccessToken(channelName: $login, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) { value signature __typename }' +
   '  videoPlaybackAccessToken(id: $vodID, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isVod) { value signature __typename }' +
+  '}';
+
+const CLIP_FULL_QUERY =
+  'query VideoAccessToken_Clip($slug: ID!) {' +
+  '  clip(slug: $slug) {' +
+  '    playbackAccessToken(params: {platform: "web", playerBackend: "mediaplayer", playerType: "site"}) { signature value __typename }' +
+  '    videoQualities { frameRate quality sourceURL __typename }' +
+  '    __typename' +
+  '  }' +
   '}';
 
 function deviceID(): string {
@@ -376,8 +384,8 @@ export async function resolveClipPlayback(slug: string): Promise<ClipPlaybackRes
       },
       body: JSON.stringify({
         operationName: 'VideoAccessToken_Clip',
+        query: CLIP_FULL_QUERY,
         variables: { slug },
-        extensions: { persistedQuery: { version: 1, sha256Hash: VIDEO_ACCESS_TOKEN_CLIP_SHA256 } },
       }),
       signal: AbortSignal.timeout(5000),
     });
