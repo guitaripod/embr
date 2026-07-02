@@ -137,8 +137,17 @@ final class MessageCell: UICollectionViewCell {
         for (index, placement) in placements.enumerated() {
             let view = emoteViews[index]
             view.isHidden = false
-            view.image = nil
             let emote = placement.emote
+            let url = emote.images.url(preferring: .x2)
+            if let url, let cached = images.cachedImage(for: url) {
+                view.image = cached
+                if emote.isAnimated {
+                    animator.register(view, url: url)
+                    registeredEmoteViews.append(view)
+                }
+                continue
+            }
+            view.image = nil
             let task = Task { [weak self, weak view, weak animator] in
                 let image = await images.emoteImage(for: emote, scale: .x2)
                 guard !Task.isCancelled, let view else { return }
@@ -162,8 +171,12 @@ final class MessageCell: UICollectionViewCell {
         for (index, placement) in placements.enumerated() {
             let view = badgeViews[index]
             view.isHidden = false
-            view.image = nil
             let badge = placement.badge
+            if let url = badge.images.url(preferring: .x2), let cached = images.cachedImage(for: url) {
+                view.image = cached
+                continue
+            }
+            view.image = nil
             let task = Task { [weak view] in
                 let image = await images.badgeImage(for: badge, scale: .x2)
                 guard !Task.isCancelled, let view else { return }

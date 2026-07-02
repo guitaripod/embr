@@ -271,6 +271,10 @@ final class ChatViewModel {
             if let snapshot = await store.append(messages) {
                 snapshotSubject.send(snapshot)
             }
+        case .backfill(let messages):
+            if let snapshot = await store.merge(messages) {
+                snapshotSubject.send(snapshot)
+            }
         case .delete(let messageID):
             if let snapshot = await store.applyModeration(.deleted, messageID: messageID) {
                 snapshotSubject.send(snapshot)
@@ -403,6 +407,45 @@ private actor MessageStore {
             return frozenSnapshot()
         }
         return liveSnapshot()
+    }
+
+    /// Merges gap-backfill messages after a reconnect: skips ids already buffered and anything
+    /// older than the newest buffered row (so trimmed history is never resurrected), then splices
+    /// the remainder into the tail in timestamp order without disturbing existing rows.
+    func merge(_ messages: [ChatMessage]) -> ChatSnapshot? {
+        let cutoff = rows.last?.message.timestamp ?? .distantPast
+        let missed = messages
+            .filter { $0.timestamp >= cutoff && index[$0.id] == nil && !isSuppressed($0) }
+            .sorted { $0.timestamp < $1.timestamp }
+        guard !missed.isEmpty else { return nil }
+        spliceAtTail(missed)
+        trimIfNeeded()
+        rebuildIndex()
+        if paused {
+            pausedNewCount += missed.count
+            return frozenSnapshot()
+        }
+        return liveSnapshot()
+    }
+
+    /// Merge-appends timestamp-sorted backfill rows at the buffer tail, keeping existing
+    /// equal-timestamp rows in place ahead of the inserted ones.
+    private func spliceAtTail(_ missed: [ChatMessage]) {
+        var splice = rows.count
+        while splice > 0, rows[splice - 1].message.timestamp > missed[0].timestamp {
+            splice -= 1
+        }
+        let tail = Array(rows[splice...])
+        rows.removeSubrange(splice...)
+        var pending = missed[...]
+        for row in tail {
+            while let next = pending.first, next.timestamp < row.message.timestamp {
+                rows.append(makeRow(next))
+                pending.removeFirst()
+            }
+            rows.append(row)
+        }
+        rows.append(contentsOf: pending.map(makeRow))
     }
 
     func applyModeration(_ state: ModerationState, messageID: String) -> ChatSnapshot? {

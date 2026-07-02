@@ -172,6 +172,15 @@ final class DatabaseManager: Sendable {
         } ?? nil
     }
 
+    func wipePersonalData() async {
+        await write { db in
+            try AccountRecord.deleteAll(db)
+            try JoinedChannelRecord.deleteAll(db)
+            try BlockedUserRecord.deleteAll(db)
+            try RecentEmoteRecord.deleteAll(db)
+        }
+    }
+
     func clearAccount() async {
         await write { db in
             try AccountRecord.deleteAll(db)

@@ -48,6 +48,23 @@ function makeEnv(store = new Map<string, string>(), adminToken?: string): Bindin
   return env;
 }
 
+function makeCtx(): { ctx: ExecutionContext; flush: () => Promise<void> } {
+  const pending: Promise<unknown>[] = [];
+  const ctx = {
+    waitUntil: (promise: Promise<unknown>) => {
+      pending.push(promise);
+    },
+    passThroughOnException: () => {},
+    props: {},
+  } as unknown as ExecutionContext;
+  return {
+    ctx,
+    flush: async () => {
+      await Promise.all(pending.splice(0));
+    },
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -126,7 +143,8 @@ describe('POST /auth/exchange', () => {
     expect(body.error).toBeTruthy();
   });
 
-  it('propagates a non-2xx with an error body when Twitch rejects the code', async () => {
+  it('propagates a non-2xx with a generic error body when Twitch rejects the code', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const fetchMock = vi.fn(async () => jsonResponse({ message: 'Invalid authorization code' }, 400));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -142,7 +160,71 @@ describe('POST /auth/exchange', () => {
 
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toBe('Invalid authorization code');
+    expect(body.error).toBe('upstream request failed (400)');
+    expect(body.error).not.toContain('Invalid authorization code');
+    expect(errorSpy).toHaveBeenCalled();
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('Invalid authorization code');
+  });
+});
+
+describe('POST /auth/refresh', () => {
+  it('refreshes the token and enriches from validate', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/oauth2/token')) {
+        return jsonResponse({
+          access_token: 'newacc',
+          refresh_token: 'newref',
+          expires_in: 12000,
+          scope: ['user:read:chat'],
+          token_type: 'bearer',
+        });
+      }
+      if (url.includes('/oauth2/validate')) {
+        return jsonResponse({
+          client_id: 'test-client-id',
+          login: 'cooluser',
+          user_id: '12345',
+          scopes: ['user:read:chat'],
+          expires_in: 12000,
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request(
+      '/auth/refresh',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: 'oldref' }),
+      },
+      makeEnv(),
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      accessToken: 'newacc',
+      refreshToken: 'newref',
+      expiresIn: 12000,
+      scope: ['user:read:chat'],
+      userID: '12345',
+      login: 'cooluser',
+    });
+    const tokenCall = fetchMock.mock.calls.find((c) => String(c[0]).includes('/oauth2/token'));
+    const sentBody = String((tokenCall?.[1] as RequestInit).body);
+    expect(sentBody).toContain('grant_type=refresh_token');
+    expect(sentBody).toContain('refresh_token=oldref');
+  });
+
+  it('returns 400 without a refreshToken', async () => {
+    const res = await app.request(
+      '/auth/refresh',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) },
+      makeEnv(),
+    );
+    expect(res.status).toBe(400);
   });
 });
 
@@ -351,9 +433,55 @@ describe('GET /playback/:login', () => {
       'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9',
     );
   });
+
+  it('rejects an invalid channel login with 400 before any upstream call', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    for (const login of ['bad!name', 'has space', 'a'.repeat(26), 'semi;colon']) {
+      const res = await app.request(`http://embr.test/playback/${encodeURIComponent(login)}`, {}, makeEnv());
+      expect(res.status, login).toBe(400);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a non-numeric VOD id with 400', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await app.request('http://embr.test/playback/vod/abc123', {}, makeEnv());
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 504 when the usher preflight times out', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('gql.twitch.tv/gql')) {
+        return jsonResponse({
+          data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig' } },
+        });
+      }
+      throw new DOMException('The operation timed out.', 'TimeoutError');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await app.request('http://embr.test/playback/slowchannel', {}, makeEnv());
+    expect(res.status).toBe(504);
+  });
+});
+
+describe('GET /events/:login', () => {
+  it('rejects an invalid channel login with 400', async () => {
+    const res = await app.request('http://embr.test/events/bad%20name', {}, makeEnv());
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('GET /embed', () => {
+  it('rejects an invalid channel with 400', async () => {
+    const res = await app.request('http://embr.test/embed?channel=%22%3E%3Cscript%3E', {}, makeEnv());
+    expect(res.status).toBe(400);
+  });
+
   it('serves a Twitch player iframe with this worker host as parent', async () => {
     const res = await app.request('http://embr.test/embed?channel=somechannel', {}, makeEnv());
     expect(res.status).toBe(200);
@@ -434,6 +562,53 @@ describe('GET /hls/proxy', () => {
     expect(res.status).toBe(400);
   });
 
+  it('allows Twitch HLS hosts through the allowlist', async () => {
+    const fetchMock = vi.fn(async () => textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8'));
+    vi.stubGlobal('fetch', fetchMock);
+    const allowed = [
+      'https://usher.ttvnw.net/api/channel/hls/foo.m3u8',
+      'https://video-weaver.hel01.hls.ttvnw.net/v1/playlist/abc.m3u8',
+      'https://video-edge-abc.arn01.abs.hls.ttvnw.net/v1/segment/x.ts',
+      'https://d2nvs31859zcd8.cloudfront.net/vod/chunked/0.m3u8',
+      'https://clips-media-assets2.twitch.tv/foo.m3u8',
+      'https://assets.twitchcdn.net/foo.m3u8',
+      'https://video-edge.abc.twitchcdn.net/v1/segment/x.ts',
+    ];
+    for (const src of allowed) {
+      const res = await app.request(`http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`, {}, makeEnv());
+      expect(res.status, src).toBe(200);
+    }
+  });
+
+  it('rejects non-allowlisted hosts with 403 without fetching them', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => textResponse('#EXTM3U'));
+    vi.stubGlobal('fetch', fetchMock);
+    const blocked = [
+      'https://evil.example/steal',
+      'https://ttvnw.net.evil.example/x.m3u8',
+      'https://notttvnw.net/x.m3u8',
+      'https://twitchcdn.net.evil.example/x.m3u8',
+      'https://cloudfront.net.attacker.io/x.m3u8',
+      'https://169.254.169.254/latest/meta-data',
+      'http://usher.ttvnw.net/api/channel/hls/foo.m3u8',
+    ];
+    for (const src of blocked) {
+      const res = await app.request(`http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`, {}, makeEnv());
+      expect(res.status, src).toBe(403);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 504 when the upstream fetch times out', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const timeoutError = new DOMException('The operation timed out.', 'TimeoutError');
+    vi.stubGlobal('fetch', vi.fn(async () => { throw timeoutError; }));
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+    const res = await app.request(`http://embr.test/hls/proxy?src=${encodeURIComponent(src)}`, {}, makeEnv());
+    expect(res.status).toBe(504);
+  });
+
   it('rewrites variant URIs in a master playlist without stripping', async () => {
     const master = [
       '#EXTM3U',
@@ -469,6 +644,7 @@ describe('GET /auth/callback', () => {
 describe('POST /report', () => {
   it('stores a report in KV (capped) and returns 204', async () => {
     const store = new Map<string, string>();
+    const { ctx, flush } = makeCtx();
     const res = await app.request(
       'http://embr.test/report',
       {
@@ -477,8 +653,10 @@ describe('POST /report', () => {
         body: JSON.stringify({ authorID: 'u1', authorLogin: 'baduser', reason: 'Harassment', text: 'x'.repeat(5000) }),
       },
       makeEnv(store),
+      ctx,
     );
     expect(res.status).toBe(204);
+    await flush();
     const stored = [...store.entries()].find(([k]) => k.startsWith('report:'));
     expect(stored).toBeDefined();
     const payload = JSON.parse(stored![1]);
@@ -489,6 +667,7 @@ describe('POST /report', () => {
 
   it('tags a block as kind "block"', async () => {
     const store = new Map<string, string>();
+    const { ctx, flush } = makeCtx();
     const res = await app.request(
       'http://embr.test/report',
       {
@@ -497,8 +676,10 @@ describe('POST /report', () => {
         body: JSON.stringify({ authorID: 'u9', authorLogin: 'meanie', reason: 'Blocked abusive user' }),
       },
       makeEnv(store),
+      ctx,
     );
     expect(res.status).toBe(204);
+    await flush();
     const stored = [...store.entries()].find(([k]) => k.startsWith('report:'));
     expect(JSON.parse(stored![1]).kind).toBe('block');
   });
@@ -508,6 +689,7 @@ describe('POST /report', () => {
       'http://embr.test/report',
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'c' }) },
       makeEnv(),
+      makeCtx().ctx,
     );
     expect(res.status).toBe(400);
   });
@@ -517,8 +699,99 @@ describe('POST /report', () => {
       'http://embr.test/report',
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'not json' },
       makeEnv(),
+      makeCtx().ctx,
     );
     expect(res.status).toBe(400);
+  });
+
+  it('returns 413 when the body exceeds the size cap', async () => {
+    const res = await app.request(
+      'http://embr.test/report',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authorID: 'u1', reason: 'Spam', text: 'x'.repeat(9000) }),
+      },
+      makeEnv(),
+      makeCtx().ctx,
+    );
+    expect(res.status).toBe(413);
+  });
+
+  it('returns 413 when multi-byte characters push the byte size past the cap', async () => {
+    const store = new Map<string, string>();
+    const body = JSON.stringify({ authorID: 'u1', reason: 'Spam', text: '€'.repeat(3000) });
+    expect(body.length).toBeLessThanOrEqual(8192);
+    expect(new TextEncoder().encode(body).length).toBeGreaterThan(8192);
+    const res = await app.request(
+      'http://embr.test/report',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body },
+      makeEnv(store),
+      makeCtx().ctx,
+    );
+    expect(res.status).toBe(413);
+    expect([...store.keys()].some((k) => k.startsWith('report:'))).toBe(false);
+  });
+
+  it('returns 413 from the Content-Length header alone', async () => {
+    const res = await app.request(
+      new Request('http://embr.test/report', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': '999999' },
+      }),
+      { method: 'POST', body: JSON.stringify({ authorID: 'u1', reason: 'Spam' }) },
+      makeEnv(),
+      makeCtx().ctx,
+    );
+    expect(res.status).toBe(413);
+  });
+
+  it('rate limits a client IP to 5 reports per window with 429', async () => {
+    const store = new Map<string, string>();
+    const env = makeEnv(store);
+    const send = async () => {
+      const { ctx, flush } = makeCtx();
+      const res = await app.request(
+        'http://embr.test/report',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '203.0.113.7' },
+          body: JSON.stringify({ authorID: 'u1', reason: 'Spam' }),
+        },
+        env,
+        ctx,
+      );
+      await flush();
+      return res;
+    };
+    for (let i = 0; i < 5; i++) {
+      expect((await send()).status).toBe(204);
+    }
+    expect((await send()).status).toBe(429);
+    expect([...store.keys()].filter((k) => k.startsWith('report:')).length).toBe(5);
+  });
+
+  it('tracks rate limits per client IP independently', async () => {
+    const store = new Map<string, string>();
+    const env = makeEnv(store);
+    const send = async (ip: string) => {
+      const { ctx, flush } = makeCtx();
+      const res = await app.request(
+        'http://embr.test/report',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip },
+          body: JSON.stringify({ authorID: 'u1', reason: 'Spam' }),
+        },
+        env,
+        ctx,
+      );
+      await flush();
+      return res;
+    };
+    for (let i = 0; i < 5; i++) await send('198.51.100.1');
+    expect((await send('198.51.100.1')).status).toBe(429);
+    expect((await send('198.51.100.2')).status).toBe(204);
   });
 });
 

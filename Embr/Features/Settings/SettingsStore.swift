@@ -59,7 +59,8 @@ final class SettingsStore {
         do {
             return try JSONDecoder().decode(Settings.self, from: data)
         } catch {
-            AppLogger.shared.warn("failed to decode settings, using defaults: \(error)", category: .persistence)
+            AppLogger.shared.error("failed to decode settings, preserving raw blob under \(key).backup: \(error)", category: .persistence)
+            defaults.set(data, forKey: "\(key).backup")
             return .default
         }
     }

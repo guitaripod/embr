@@ -386,6 +386,34 @@ struct EventSubTests {
         #expect(transport["session_id"] as? String == "AQoQILE98gtqShGmLD7AM6yJThAB")
     }
 
+    @Test("Builds supplemental chat subscription requests with shared condition and version 1")
+    func supplementalSubscriptionRequests() throws {
+        let requests = EventSubSubscriptionRequest.supplementalChatSubscriptions(
+            broadcasterID: "1971641",
+            userID: "4145994",
+            sessionID: "AQoQILE98gtqShGmLD7AM6yJThAB"
+        )
+        #expect(requests.map(\.type) == [
+            "channel.chat.notification",
+            "channel.chat.message_delete",
+            "channel.chat.clear_user_messages",
+            "channel.chat.clear",
+        ])
+        for request in requests {
+            #expect(request.version == "1")
+            #expect(request.condition == [
+                "broadcaster_user_id": "1971641",
+                "user_id": "4145994",
+            ])
+            #expect(request.transport.method == "websocket")
+            #expect(request.transport.sessionID == "AQoQILE98gtqShGmLD7AM6yJThAB")
+            let object = try #require(try JSONSerialization.jsonObject(with: request.encoded()) as? [String: Any])
+            #expect(object["type"] as? String == request.type)
+            let transport = try #require(object["transport"] as? [String: Any])
+            #expect(transport["session_id"] as? String == "AQoQILE98gtqShGmLD7AM6yJThAB")
+        }
+    }
+
     private static let chatMessageEnvelope = """
     {
       "metadata": {

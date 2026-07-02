@@ -27,10 +27,12 @@ export class TwitchError extends Error {
 async function readTwitchError(res: Response): Promise<string> {
   try {
     const body = (await res.json()) as { message?: string; error?: string };
-    return body.message ?? body.error ?? `twitch responded ${res.status}`;
-  } catch {
-    return `twitch responded ${res.status}`;
+    const detail = body.message ?? body.error ?? `twitch responded ${res.status}`;
+    console.error(`twitch error (${res.status}): ${detail}`);
+  } catch (err) {
+    console.error(`twitch error (${res.status}): unreadable body`, err);
   }
+  return `upstream request failed (${res.status})`;
 }
 
 export async function exchangeCode(
@@ -191,7 +193,8 @@ async function requestPlaybackToken(kind: PlaybackKind, persisted: boolean, hash
     if (message.toLowerCase().includes('persistedquerynotfound')) {
       return { persistedMiss: true };
     }
-    throw new TwitchError(message, 502);
+    console.error(`gql playback error: ${message}`);
+    throw new TwitchError(`playback resolution failed: ${message}`, 502);
   }
   const token =
     kind.type === 'live'

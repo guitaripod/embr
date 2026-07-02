@@ -29,8 +29,37 @@ public struct EventSubSubscriptionRequest: Encodable, Sendable, Equatable {
     }
 
     public static func chatMessage(broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
+        chat(type: "channel.chat.message", broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
+    }
+
+    public static func chatNotification(broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
+        chat(type: "channel.chat.notification", broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
+    }
+
+    public static func chatMessageDelete(broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
+        chat(type: "channel.chat.message_delete", broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
+    }
+
+    public static func chatClearUserMessages(broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
+        chat(type: "channel.chat.clear_user_messages", broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
+    }
+
+    public static func chatClear(broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
+        chat(type: "channel.chat.clear", broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
+    }
+
+    public static func supplementalChatSubscriptions(broadcasterID: String, userID: String, sessionID: String) -> [EventSubSubscriptionRequest] {
+        [
+            chatNotification(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID),
+            chatMessageDelete(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID),
+            chatClearUserMessages(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID),
+            chatClear(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID),
+        ]
+    }
+
+    private static func chat(type: String, broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
         EventSubSubscriptionRequest(
-            type: "channel.chat.message",
+            type: type,
             version: "1",
             condition: [
                 "broadcaster_user_id": broadcasterID,

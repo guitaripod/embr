@@ -86,7 +86,8 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     func setQuality(_ quality: StreamQuality) {
         currentQuality = isAuto(quality) ? nil : quality
         let group = isAuto(quality) ? "auto" : quality.name
-        evaluate("if (window.embrPlayer) { window.embrPlayer.setQuality('\(group)'); }")
+        let encoded = (try? JSONEncoder().encode(group)).flatMap { String(data: $0, encoding: .utf8) } ?? "\"auto\""
+        evaluate("if (window.embrPlayer) { window.embrPlayer.setQuality(\(encoded)); }")
     }
 
     func setMuted(_ muted: Bool) {

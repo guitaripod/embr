@@ -40,6 +40,7 @@ final class ChatViewController: UIViewController {
     private var inputBottomConstraint: NSLayoutConstraint?
     private var catalog = EmoteCatalog()
     private var chatterIndex: [String: String] = [:]
+    private static let chatterIndexCap = 2000
     private var lastLayoutWidth: CGFloat = 0
 
     init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool, currentUserLogin: String? = nil, broadcasterLogin: String? = nil) {
@@ -311,6 +312,9 @@ final class ChatViewController: UIViewController {
     private func apply(_ snapshot: ChatSnapshot) {
         isPaused = snapshot.isPaused
         emptyLabel.isHidden = !snapshot.rows.isEmpty
+        if chatterIndex.count > Self.chatterIndexCap * 2 {
+            chatterIndex.removeAll(keepingCapacity: true)
+        }
         for row in snapshot.rows {
             chatterIndex[row.message.author.login.lowercased()] = row.message.author.displayName
         }

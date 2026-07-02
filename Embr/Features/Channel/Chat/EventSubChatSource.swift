@@ -209,7 +209,7 @@ actor EventSubChatSource: ChatSource {
             guard let user = await auth.currentUser() else {
                 throw APIError.unauthorized
             }
-            try await subscriber.createChatSubscription(
+            try await subscriber.createChatSubscriptions(
                 broadcasterID: channel.id,
                 userID: user.id,
                 sessionID: sessionID,

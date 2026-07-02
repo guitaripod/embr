@@ -58,6 +58,15 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var pictureInPictureController: AVPictureInPictureController?
     private var isMuted = false
     private var preferredQualityName: String?
+    private var pendingResume: PendingResume?
+    private var liveLatencyConfigured = false
+    private var loadGeneration = 0
+    private var appliedAudioOptions: AVAudioSession.CategoryOptions?
+
+    private enum PendingResume {
+        case time(CMTime)
+        case liveEdge
+    }
 
     init(logger: AppLogger = .shared) {
         self.logger = logger
@@ -125,6 +134,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     func load(_ resolution: PlaybackResolution) {
+        loadGeneration += 1
         self.resolution = resolution
         availableQualities = resolution.qualities
         if let saved = preferredQualityName, let match = availableQualities.first(where: { $0.name == saved }) {
@@ -134,6 +144,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         }
         configureAudioSession()
         stateSubject.send(.loading)
+        pendingResume = nil
 
         let url = currentQuality?.url ?? resolution.masterPlaylistURL
         let item = AVPlayerItem(url: url)
@@ -174,13 +185,17 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     func setMuted(_ muted: Bool) {
+        let changed = muted != isMuted
         isMuted = muted
         applyMutePreference()
+        if changed { configureAudioSession() }
     }
 
     func teardown() {
+        loadGeneration += 1
         latencyTimer?.invalidate()
         latencyTimer = nil
+        pendingResume = nil
         detachObservers()
         player.pause()
         player.replaceCurrentItem(with: nil)
@@ -210,8 +225,15 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func swapVariant(to quality: StreamQuality) {
+        let progress = progressSubject.value
+        let resumeTime = player.currentTime()
         let item = AVPlayerItem(url: quality.url)
         attach(item)
+        if progress.current > 0 {
+            pendingResume = progress.isLive ? .liveEdge : .time(resumeTime)
+        } else {
+            pendingResume = nil
+        }
         player.replaceCurrentItem(with: item)
         applyMutePreference()
         player.play()
@@ -222,6 +244,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private func attach(_ item: AVPlayerItem) {
         detachObservers()
         currentItem = item
+        liveLatencyConfigured = false
         item.preferredPeakBitRate = peakBitRate(for: currentQuality)
 
         item.add(metadataCollector)
@@ -274,6 +297,8 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             if availableQualities.isEmpty {
                 parseMasterIfNeeded(item)
             }
+            configureLiveLatencyIfNeeded(item)
+            applyPendingResume()
             reflectTimeControlStatus()
         case .failed:
             let message = item.error?.localizedDescription ?? "Playback failed"
@@ -312,11 +337,12 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
     private func parseMasterIfNeeded(_ item: AVPlayerItem) {
         guard let url = resolution?.masterPlaylistURL else { return }
+        let generation = loadGeneration
         Task { [weak self] in
             guard let (data, _) = try? await URLSession.shared.data(from: url),
                   let text = String(data: data, encoding: .utf8) else { return }
             let parsed = HLSPlaylistParser.qualities(text)
-            guard !parsed.isEmpty, let self else { return }
+            guard !parsed.isEmpty, let self, self.loadGeneration == generation else { return }
             self.availableQualities = parsed
             self.logger.info("HLS parsed master qualities=\(parsed.count)", category: .playback)
         }
@@ -358,8 +384,33 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func qualityBelongsToMaster(_ quality: StreamQuality?) -> Bool {
-        guard let quality, let resolution else { return false }
-        return resolution.qualities.contains(quality)
+        guard let quality else { return false }
+        return availableQualities.contains(quality)
+    }
+
+    private func applyPendingResume() {
+        guard let pendingResume else { return }
+        self.pendingResume = nil
+        switch pendingResume {
+        case .time(let time):
+            player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        case .liveEdge:
+            seekToLive()
+        }
+    }
+
+    private func configureLiveLatencyIfNeeded(_ item: AVPlayerItem) {
+        guard !liveLatencyConfigured, item.duration.isIndefinite else { return }
+        liveLatencyConfigured = true
+        item.automaticallyPreservesTimeOffsetFromLive = true
+        let recommended = item.recommendedTimeOffsetFromLive
+        let target: TimeInterval
+        if recommended.isValid, recommended.isNumeric, recommended.seconds > 0 {
+            target = min(recommended.seconds, 6)
+        } else {
+            target = 6
+        }
+        item.configuredTimeOffsetFromLive = CMTime(seconds: target, preferredTimescale: 600)
     }
 
     private func configurePictureInPicture() {
@@ -372,16 +423,20 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func configureAudioSession() {
+        let options: AVAudioSession.CategoryOptions = isMuted ? [.mixWithOthers] : []
+        guard options != appliedAudioOptions else { return }
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .moviePlayback, options: [])
+            try session.setCategory(.playback, mode: .moviePlayback, options: options)
             try session.setActive(true)
+            appliedAudioOptions = options
         } catch {
             logger.warn("HLS audio session activate failed: \(error.localizedDescription)", category: .playback)
         }
     }
 
     private func deactivateAudioSession() {
+        appliedAudioOptions = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
     }
 

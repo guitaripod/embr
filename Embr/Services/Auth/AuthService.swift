@@ -57,8 +57,15 @@ actor AuthService: AuthControlling {
         if let token {
             await revoke(token)
         }
+        await wipePersonalData()
         publish(.anonymous)
         AppLogger.shared.info("logged out", category: .auth)
+    }
+
+    private func wipePersonalData() async {
+        await DatabaseManager.shared.wipePersonalData()
+        await WatchHistoryStore.shared.clear()
+        await FollowedLiveService.shared.reset()
     }
 
     func validAccessToken() async throws -> String {
@@ -68,15 +75,41 @@ actor AuthService: AuthControlling {
             return current.accessToken
         }
         if let task = refreshingTask {
-            return try await task.value
+            return try await awaitValue(from: task, signOutOnDefinitiveFailure: true)
         }
         guard let refreshToken = current.refreshToken else {
+            if current.expiresAt > Date() {
+                return current.accessToken
+            }
             throw APIError.unauthorized
         }
         let task = Task { try await self.performRefresh(refreshToken: refreshToken, base: current) }
         refreshingTask = task
         defer { refreshingTask = nil }
-        return try await task.value
+        return try await awaitValue(from: task, signOutOnDefinitiveFailure: true)
+    }
+
+    private func awaitValue(from task: Task<String, Error>, signOutOnDefinitiveFailure: Bool) async throws -> String {
+        do {
+            return try await task.value
+        } catch is CancellationError {
+            throw APIError.cancelled
+        } catch {
+            if signOutOnDefinitiveFailure, Self.isDefinitiveAuthFailure(error) {
+                await signOutInvalid()
+                throw APIError.unauthorized
+            }
+            throw error
+        }
+    }
+
+    private static func isDefinitiveAuthFailure(_ error: Error) -> Bool {
+        switch error {
+        case APIError.unauthorized, APIError.forbidden, APIError.invalidRequest:
+            return true
+        default:
+            return false
+        }
     }
 
     private func performRefresh(refreshToken: String, base: StoredCredentials) async throws -> String {
@@ -104,7 +137,7 @@ actor AuthService: AuthControlling {
             return cached.token
         }
         if let task = appTokenTask {
-            return try await task.value
+            return try await awaitValue(from: task, signOutOnDefinitiveFailure: false)
         }
         let task = Task { () throws -> String in
             let result = try await self.worker.appToken()
@@ -114,7 +147,7 @@ actor AuthService: AuthControlling {
         }
         appTokenTask = task
         defer { appTokenTask = nil }
-        return try await task.value
+        return try await awaitValue(from: task, signOutOnDefinitiveFailure: false)
     }
 
     @MainActor
@@ -125,8 +158,8 @@ actor AuthService: AuthControlling {
             authorizeURL: request.authorizeURL,
             callbackScheme: request.scheme
         )
-        if let returned = coordinator.state(from: callbackURL), returned != request.state {
-            throw APIError.invalidRequest("login state mismatch")
+        guard let returned = coordinator.state(from: callbackURL), returned == request.state else {
+            throw APIError.invalidRequest("login state missing or mismatched")
         }
         guard let code = coordinator.code(from: callbackURL) else {
             throw APIError.invalidRequest("login callback missing code")
@@ -216,7 +249,11 @@ actor AuthService: AuthControlling {
             do {
                 _ = try await validAccessToken()
             } catch {
-                await signOutInvalid()
+                if Self.isDefinitiveAuthFailure(error) {
+                    await signOutInvalid()
+                } else {
+                    AppLogger.shared.warn("token refresh failed transiently, keeping credentials: \(error)", category: .auth)
+                }
             }
         } catch {
             AppLogger.shared.warn("hourly validate failed: \(error)", category: .auth)
@@ -224,6 +261,7 @@ actor AuthService: AuthControlling {
     }
 
     private func signOutInvalid() async {
+        guard credentials != nil else { return }
         credentials = nil
         appToken = nil
         cancelTokenTasks()

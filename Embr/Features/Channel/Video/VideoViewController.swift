@@ -1,5 +1,6 @@
 import AVKit
 import Combine
+import MediaPlayer
 import UIKit
 import EmbrCore
 
@@ -45,6 +46,10 @@ final class VideoViewController: UIViewController {
     private var resumeTarget: TimeInterval?
     private var seekLiveOnReady = false
     private var showingError = false
+    private var didTeardownPlayer = false
+    private let nowPlaying = NowPlayingCoordinator()
+    private var nowPlayingTitle: String?
+    private var nowPlayingChannelName: String?
     private static let maxRecoveryAttempts = 6
 
     private var isSeekableSource: Bool {
@@ -95,6 +100,7 @@ final class VideoViewController: UIViewController {
         installOverlay()
         bindPlayer()
         observeLifecycle()
+        registerRemoteCommands()
         if streamActive { resolveAndLoad() }
     }
 
@@ -157,6 +163,18 @@ final class VideoViewController: UIViewController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         UIApplication.shared.isIdleTimerDisabled = false
+        if isBeingRemovedFromHierarchy {
+            teardownPlayerIfNeeded()
+        }
+    }
+
+    private var isBeingRemovedFromHierarchy: Bool {
+        var ancestor: UIViewController? = self
+        while let current = ancestor {
+            if current.isMovingFromParent || current.isBeingDismissed { return true }
+            ancestor = current.parent
+        }
+        return false
     }
 
     override func viewDidLayoutSubviews() {
@@ -265,8 +283,10 @@ final class VideoViewController: UIViewController {
         if let hls = player as? HLSVideoPlayer {
             hls.pictureInPictureDelegate = self
             overlay.setPictureInPictureEnabled(AVPictureInPictureController.isPictureInPictureSupported())
+            overlay.setAirPlayHidden(false)
         } else {
             overlay.setPictureInPictureEnabled(false)
+            overlay.setAirPlayHidden(true)
         }
 
         overlay.setSeekable(isSeekableSource)
@@ -332,6 +352,7 @@ final class VideoViewController: UIViewController {
 
         web.setMuted(isMuted)
         overlay.setPictureInPictureEnabled(false)
+        overlay.setAirPlayHidden(true)
         overlay.setMuted(isMuted)
         overlay.clearError()
         overlay.setBuffering(true)
@@ -401,6 +422,68 @@ final class VideoViewController: UIViewController {
             overlay.setPlaying(false)
             handlePlaybackError(message)
         }
+        updateNowPlaying()
+    }
+
+    func setNowPlayingMetadata(title: String?, channelName: String?) {
+        nowPlayingTitle = title
+        nowPlayingChannelName = channelName
+        updateNowPlaying()
+    }
+
+    private var defaultNowPlayingTitle: String {
+        switch source {
+        case .live(let login): return login
+        case .vod: return "Video"
+        case .clip: return "Clip"
+        }
+    }
+
+    private var defaultNowPlayingArtist: String? {
+        if case .live(let login) = source { return login }
+        return nil
+    }
+
+    private func updateNowPlaying() {
+        guard !didTeardownPlayer else { return }
+        nowPlaying.update(
+            title: nowPlayingTitle ?? defaultNowPlayingTitle,
+            artist: nowPlayingChannelName ?? defaultNowPlayingArtist,
+            isLive: !isSeekableSource,
+            elapsed: lastProgress.current,
+            duration: lastProgress.duration,
+            isPlaying: currentState == .playing,
+            rate: currentRate
+        )
+    }
+
+    private func registerRemoteCommands() {
+        nowPlaying.register(
+            play: { [weak self] in self?.remotePlay() },
+            pause: { [weak self] in self?.player.pause() },
+            toggle: { [weak self] in self?.remoteTogglePlayPause() }
+        )
+    }
+
+    private func remotePlay() {
+        if case .live = source { player.seekToLive() }
+        player.play()
+    }
+
+    private func remoteTogglePlayPause() {
+        if currentState == .playing {
+            player.pause()
+        } else {
+            remotePlay()
+        }
+    }
+
+    private func teardownPlayerIfNeeded() {
+        guard !didTeardownPlayer else { return }
+        didTeardownPlayer = true
+        cancelRecoveryTimers()
+        nowPlaying.clear()
+        player.teardown()
     }
 
     /// Reset the recovery budget only after sustained playback, so a stream that
@@ -589,7 +672,7 @@ final class VideoViewController: UIViewController {
     }
 
     private func dismissSelf() {
-        player.teardown()
+        teardownPlayerIfNeeded()
         if let navigationController, navigationController.viewControllers.first !== self {
             navigationController.popViewController(animated: true)
         } else {
@@ -648,8 +731,8 @@ final class VideoViewController: UIViewController {
 
     isolated deinit {
         resolveTask?.cancel()
-        cancelRecoveryTimers()
         adGraceWork?.cancel()
+        teardownPlayerIfNeeded()
         NotificationCenter.default.removeObserver(self)
     }
 }
@@ -709,6 +792,8 @@ extension VideoViewController: VideoOverlayViewDelegate {
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval) {
         resumeTarget = nil
         player.seek(to: seconds)
+        lastProgress = PlaybackProgress(current: seconds, duration: lastProgress.duration, isLive: lastProgress.isLive)
+        updateNowPlaying()
     }
 
     func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool) {
@@ -723,6 +808,8 @@ extension VideoViewController: VideoOverlayViewDelegate {
             let target = max(0, min(lastProgress.current + delta, lastProgress.duration > 0 ? lastProgress.duration : .greatestFiniteMagnitude))
             player.seek(to: target)
             overlay.flashSeek(seconds: 10, forward: forward)
+            lastProgress = PlaybackProgress(current: target, duration: lastProgress.duration, isLive: lastProgress.isLive)
+            updateNowPlaying()
         } else {
             overlay.toggleControls()
         }
@@ -753,12 +840,83 @@ extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         isPiPActive = true
+        overlay.setPictureInPictureActive(true)
         overlay.hideControls()
         setImmersiveState(false)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         isPiPActive = false
+        overlay.setPictureInPictureActive(false)
         setImmersiveState(view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
+        if view.window == nil { teardownPlayerIfNeeded() }
+    }
+
+    func pictureInPictureController(
+        _ pictureInPictureController: AVPictureInPictureController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
+    ) {
+        let host = parent ?? self
+        if let presented = host.presentedViewController {
+            presented.dismiss(animated: false)
+        }
+        if let nav = host.navigationController,
+           nav.topViewController !== host,
+           nav.viewControllers.contains(host) {
+            nav.popToViewController(host, animated: false)
+        }
+        completionHandler(true)
+    }
+}
+
+@MainActor
+private final class NowPlayingCoordinator {
+    private var commandTargets: [(MPRemoteCommand, Any)] = []
+
+    func register(
+        play: @escaping @MainActor () -> Void,
+        pause: @escaping @MainActor () -> Void,
+        toggle: @escaping @MainActor () -> Void
+    ) {
+        guard commandTargets.isEmpty else { return }
+        let center = MPRemoteCommandCenter.shared()
+        add(center.playCommand, handler: play)
+        add(center.pauseCommand, handler: pause)
+        add(center.togglePlayPauseCommand, handler: toggle)
+    }
+
+    private func add(_ command: MPRemoteCommand, handler: @escaping @MainActor () -> Void) {
+        command.isEnabled = true
+        let target = command.addTarget { _ in
+            MainActor.assumeIsolated { handler() }
+            return .success
+        }
+        commandTargets.append((command, target))
+    }
+
+    func update(
+        title: String,
+        artist: String?,
+        isLive: Bool,
+        elapsed: TimeInterval,
+        duration: TimeInterval,
+        isPlaying: Bool,
+        rate: Float
+    ) {
+        var info: [String: Any] = [MPMediaItemPropertyTitle: title]
+        if let artist { info[MPMediaItemPropertyArtist] = artist }
+        info[MPNowPlayingInfoPropertyIsLiveStream] = isLive
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? Double(rate) : 0.0
+        if !isLive, duration > 0 {
+            info[MPMediaItemPropertyPlaybackDuration] = duration
+            info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    func clear() {
+        commandTargets.forEach { $0.0.removeTarget($0.1) }
+        commandTargets.removeAll()
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 }

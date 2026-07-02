@@ -1,3 +1,4 @@
+import AVKit
 import UIKit
 
 @MainActor
@@ -37,6 +38,15 @@ final class VideoOverlayView: UIView {
     private let fullscreenButton = VideoOverlayView.makeButton(symbol: "arrow.up.left.and.arrow.down.right")
     private let speedButton = VideoOverlayView.makeButton(symbol: "speedometer")
     private let playPauseButton = VideoOverlayView.makeButton(symbol: "pause.fill", pointSize: 34)
+
+    private let routePicker: AVRoutePickerView = {
+        let picker = AVRoutePickerView()
+        picker.tintColor = .white
+        picker.activeTintColor = .white
+        picker.prioritizesVideoDevices = true
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        return picker
+    }()
 
     private let scrubRow = UIStackView()
     private let scrubber = UISlider()
@@ -161,6 +171,19 @@ final class VideoOverlayView: UIView {
     func setPictureInPictureEnabled(_ enabled: Bool) {
         pipButton.isEnabled = enabled
         pipButton.alpha = enabled ? 1.0 : 0.4
+    }
+
+    func setPictureInPictureActive(_ active: Bool) {
+        let symbol = active ? "pip.exit" : "pip.enter"
+        pipButton.setImage(
+            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
+            for: .normal
+        )
+        pipButton.accessibilityLabel = active ? "Exit Picture in Picture" : "Picture in Picture"
+    }
+
+    func setAirPlayHidden(_ hidden: Bool) {
+        routePicker.isHidden = hidden
     }
 
     func setBackButtonHidden(_ hidden: Bool) {
@@ -292,6 +315,7 @@ final class VideoOverlayView: UIView {
         bottomBar.addArrangedSubview(speedButton)
         bottomBar.addArrangedSubview(muteButton)
         bottomBar.addArrangedSubview(qualityButton)
+        bottomBar.addArrangedSubview(routePicker)
         bottomBar.addArrangedSubview(pipButton)
         bottomBar.addArrangedSubview(fullscreenButton)
         speedButton.isHidden = true
@@ -374,7 +398,10 @@ final class VideoOverlayView: UIView {
             bufferingIndicator.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             liveBadge.widthAnchor.constraint(equalToConstant: 22),
-            liveBadge.heightAnchor.constraint(equalToConstant: 22)
+            liveBadge.heightAnchor.constraint(equalToConstant: 22),
+
+            routePicker.widthAnchor.constraint(equalToConstant: 36),
+            routePicker.heightAnchor.constraint(equalToConstant: 36)
         ])
 
         let flashCenter = seekFlashLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
@@ -469,7 +496,7 @@ final class VideoOverlayView: UIView {
         speedButton.addTarget(self, action: #selector(didTapSpeed), for: .touchUpInside)
         scrubber.addTarget(self, action: #selector(scrubBegan), for: .touchDown)
         scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
-        scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside])
+        scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside, .touchCancel])
 
         backButton.accessibilityLabel = "Back"
         playPauseButton.accessibilityLabel = "Play"

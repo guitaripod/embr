@@ -43,7 +43,35 @@ function statusFor(err: unknown): number {
 }
 
 function messageFor(err: unknown): string {
-  return err instanceof Error ? err.message : 'unexpected error';
+  if (err instanceof TwitchError) return err.message;
+  console.error('unexpected error:', err);
+  return 'unexpected error';
+}
+
+function isTimeout(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { name?: unknown }).name === 'TimeoutError';
+}
+
+const CHANNEL_LOGIN_RE = /^[a-zA-Z0-9_]{1,25}$/;
+const VOD_ID_RE = /^\d+$/;
+
+const PROXY_HOST_SUFFIXES = ['ttvnw.net', 'twitch.tv', 'twitchcdn.net', 'cloudfront.net'] as const;
+
+function isAllowedProxyHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return PROXY_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
+}
+
+async function sha256(value: string): Promise<Uint8Array> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return new Uint8Array(digest);
+}
+
+async function constantTimeEquals(a: string, b: string): Promise<boolean> {
+  const [da, db] = await Promise.all([sha256(a), sha256(b)]);
+  let diff = 0;
+  for (let i = 0; i < da.length; i++) diff |= (da[i] ?? 0) ^ (db[i] ?? 0);
+  return diff === 0;
 }
 
 async function toTokenResponse(
@@ -62,8 +90,8 @@ async function toTokenResponse(
     if (response.scope === undefined && validation.scopes !== undefined) {
       response.scope = validation.scopes;
     }
-  } catch {
-    // validation is best-effort enrichment; the token itself is already valid.
+  } catch (err) {
+    console.error('token validation enrichment failed:', err);
   }
   return response;
 }
@@ -176,8 +204,22 @@ function expiresFromUsher(usher: string): number | undefined {
   }
 }
 
+/// Fetches an upstream URL with a timeout, converting a timeout into a 504
+/// TwitchError so route-level catch blocks render it uniformly.
+async function fetchUpstream(url: string, timeoutMs: number, label: string): Promise<Response> {
+  try {
+    return await fetch(url, { headers: { Accept: '*/*' }, signal: AbortSignal.timeout(timeoutMs) });
+  } catch (err) {
+    if (isTimeout(err)) {
+      console.error(`${label} timed out`);
+      throw new TwitchError('upstream timeout', 504);
+    }
+    throw err;
+  }
+}
+
 async function playbackResponse(c: { req: { url: string } }, usher: string): Promise<Response> {
-  const check = await fetch(usher, { headers: { Accept: '*/*' } });
+  const check = await fetchUpstream(usher, 5000, 'usher preflight');
   await check.body?.cancel();
   if (!check.ok) {
     return fail(check.status === 404 ? 404 : 502, `stream unavailable (${check.status})`);
@@ -196,15 +238,18 @@ async function playbackHashOverride(c: { env: Bindings }): Promise<string | unde
   try {
     const value = await c.env.TOKENS.get(PLAYBACK_HASH_KV_KEY);
     return value && value.length > 0 ? value : undefined;
-  } catch {
+  } catch (err) {
+    console.error('playback hash override lookup failed:', err);
     return undefined;
   }
 }
 
 app.get('/playback/vod/:id', async (c) => {
+  const id = c.req.param('id');
+  if (!VOD_ID_RE.test(id)) return fail(400, 'invalid vod id');
   try {
     const hash = await playbackHashOverride(c);
-    return await playbackResponse(c, await resolveVodPlayback(c.req.param('id'), hash));
+    return await playbackResponse(c, await resolveVodPlayback(id, hash));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
@@ -216,6 +261,7 @@ app.get('/playback/vod/:id', async (c) => {
 app.get('/embed', (c) => {
   const channel = c.req.query('channel');
   if (!channel) return fail(400, 'channel is required');
+  if (!CHANNEL_LOGIN_RE.test(channel)) return fail(400, 'invalid channel');
   const host = new URL(c.req.url).hostname;
   const safeChannel = encodeURIComponent(channel);
   const safeParent = encodeURIComponent(host);
@@ -232,11 +278,13 @@ app.get('/embed', (c) => {
 });
 
 app.get('/events/:login', async (c) => {
+  const login = c.req.param('login');
+  if (!CHANNEL_LOGIN_RE.test(login)) return fail(400, 'invalid channel login');
   let events: ChannelEventsResponse = { poll: null, prediction: null };
   try {
-    events = await fetchChannelEvents(c.req.param('login'));
-  } catch {
-    // Best-effort: a failed poll/prediction lookup is "no active events", not an error.
+    events = await fetchChannelEvents(login);
+  } catch (err) {
+    console.error('channel events lookup failed:', err);
   }
   return new Response(JSON.stringify(events), {
     status: 200,
@@ -245,9 +293,11 @@ app.get('/events/:login', async (c) => {
 });
 
 app.get('/playback/:login', async (c) => {
+  const login = c.req.param('login');
+  if (!CHANNEL_LOGIN_RE.test(login)) return fail(400, 'invalid channel login');
   try {
     const hash = await playbackHashOverride(c);
-    return await playbackResponse(c, await resolveLivePlayback(c.req.param('login'), hash));
+    return await playbackResponse(c, await resolveLivePlayback(login, hash));
   } catch (err) {
     return fail(statusFor(err), messageFor(err));
   }
@@ -266,10 +316,12 @@ app.get('/hls/proxy', async (c) => {
   } catch {
     return fail(400, 'src must be an absolute URL');
   }
+  if (target.protocol !== 'https:' || !isAllowedProxyHost(target.hostname)) {
+    console.error(`hls proxy rejected host: ${target.hostname}`);
+    return fail(403, 'src host not allowed');
+  }
   try {
-    const upstream = await fetch(target.toString(), {
-      headers: { 'Accept': '*/*' },
-    });
+    const upstream = await fetchUpstream(target.toString(), 8000, 'hls proxy upstream');
     if (!upstream.ok) {
       return fail(upstream.status, `upstream responded ${upstream.status}`);
     }
@@ -297,39 +349,89 @@ app.get('/hls/proxy', async (c) => {
   }
 });
 
+const REPORT_MAX_BODY_BYTES = 8 * 1024;
+const REPORT_RATE_LIMIT_MAX = 5;
+const REPORT_RATE_LIMIT_WINDOW_SECONDS = 600;
+const REPORT_RATE_KV_PREFIX = 'ratelimit:report:';
+
+/// KV-backed best-effort limiter; eventual consistency means brief overshoot is
+/// possible, which is acceptable for abuse throttling here. The counter write is
+/// scheduled through `waitUntil` so it never delays the response.
+async function reportRateLimited(
+  env: Bindings,
+  ip: string,
+  waitUntil: (promise: Promise<unknown>) => void,
+): Promise<boolean> {
+  const key = `${REPORT_RATE_KV_PREFIX}${ip}`;
+  try {
+    const raw = await env.TOKENS.get(key, 'json');
+    const now = Math.floor(Date.now() / 1000);
+    const state = (raw ?? { count: 0, windowStart: now }) as { count: number; windowStart: number };
+    if (now - state.windowStart >= REPORT_RATE_LIMIT_WINDOW_SECONDS) {
+      state.count = 0;
+      state.windowStart = now;
+    }
+    if (state.count >= REPORT_RATE_LIMIT_MAX) return true;
+    state.count += 1;
+    waitUntil(
+      env.TOKENS
+        .put(key, JSON.stringify(state), { expirationTtl: REPORT_RATE_LIMIT_WINDOW_SECONDS })
+        .catch((err) => console.error('report rate limit persist failed:', err)),
+    );
+    return false;
+  } catch (err) {
+    console.error('report rate limit check failed:', err);
+    return false;
+  }
+}
+
 /// Receives a user's chat-message report (App Store Guideline 1.2) and stores it for
 /// the developer to review. Best-effort: a storage failure still returns 204 so the
 /// reporter's flow never breaks.
 app.post('/report', async (c) => {
+  const declared = Number(c.req.header('Content-Length'));
+  if (Number.isFinite(declared) && declared > REPORT_MAX_BODY_BYTES) {
+    return fail(413, 'request body too large');
+  }
+  const raw = await c.req.text();
+  if (new TextEncoder().encode(raw).length > REPORT_MAX_BODY_BYTES) {
+    return fail(413, 'request body too large');
+  }
   let body: ReportRequest;
   try {
-    body = await c.req.json();
+    body = JSON.parse(raw) as ReportRequest;
   } catch {
     return fail(400, 'invalid JSON body');
+  }
+  const waitUntil = (promise: Promise<unknown>): void => c.executionCtx.waitUntil(promise);
+  const ip = c.req.header('CF-Connecting-IP') ?? 'unknown';
+  const limited = await reportRateLimited(c.env, ip, waitUntil);
+  if (limited) {
+    return fail(429, 'too many reports, try again later');
   }
   if (!body.reason || (!body.messageID && !body.authorID)) {
     return fail(400, 'reason and a target (messageID or authorID) are required');
   }
   const cap = (value: unknown, max: number): string | undefined =>
     typeof value === 'string' ? value.slice(0, max) : undefined;
-  try {
-    const now = Math.floor(Date.now() / 1000);
-    const key = `${REPORT_KV_PREFIX}${now}-${crypto.randomUUID()}`;
-    const reason = cap(body.reason, 80);
-    const record = {
-      kind: reason && /^blocked/i.test(reason) ? 'block' : 'report',
-      channel: cap(body.channel, 60),
-      messageID: cap(body.messageID, 80),
-      authorID: cap(body.authorID, 40),
-      authorLogin: cap(body.authorLogin, 60),
-      reason,
-      text: cap(body.text, 2000),
-      at: now,
-    };
-    await c.env.TOKENS.put(key, JSON.stringify(record), { expirationTtl: REPORT_TTL_SECONDS });
-  } catch {
-    // Storing the report is best-effort; never block the reporter on it.
-  }
+  const now = Math.floor(Date.now() / 1000);
+  const key = `${REPORT_KV_PREFIX}${now}-${crypto.randomUUID()}`;
+  const reason = cap(body.reason, 80);
+  const record = {
+    kind: reason && /^blocked/i.test(reason) ? 'block' : 'report',
+    channel: cap(body.channel, 60),
+    messageID: cap(body.messageID, 80),
+    authorID: cap(body.authorID, 40),
+    authorLogin: cap(body.authorLogin, 60),
+    reason,
+    text: cap(body.text, 2000),
+    at: now,
+  };
+  waitUntil(
+    c.env.TOKENS
+      .put(key, JSON.stringify(record), { expirationTtl: REPORT_TTL_SECONDS })
+      .catch((err) => console.error('report storage failed:', err)),
+  );
   return new Response(null, { status: 204 });
 });
 
@@ -339,7 +441,9 @@ app.post('/report', async (c) => {
 app.get('/reports', async (c) => {
   const token = c.env.REPORTS_ADMIN_TOKEN;
   if (!token) return fail(404, 'not found');
-  if (c.req.header('Authorization') !== `Bearer ${token}`) return fail(401, 'unauthorized');
+  const header = c.req.header('Authorization') ?? '';
+  const authorized = await constantTimeEquals(header, `Bearer ${token}`);
+  if (!authorized) return fail(401, 'unauthorized');
   // Keys sort lexicographically == chronologically ascending, so a single 1000-key page
   // would return the OLDEST reports and drop the newest — page through the cursor so the
   // full set is available and the newest-first sort below is meaningful.

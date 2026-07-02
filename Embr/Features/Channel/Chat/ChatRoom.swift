@@ -4,6 +4,7 @@ import EmbrCore
 enum ChatRoomEvent: Sendable {
     case catalog(EmoteCatalog, BadgeCatalog)
     case messages([ChatMessage])
+    case backfill([ChatMessage])
     case delete(messageID: String)
     case clearUser(userID: String)
     case clearChat
@@ -30,6 +31,19 @@ actor ChatRoom {
     private var setupTask: Task<Void, Never>?
     private var pending: [ChatMessage] = []
     private var stopped = false
+    private var gapBackfillTask: Task<Void, Never>?
+    private var connectionPhase: ConnectionPhase = .initial
+
+    private enum ConnectionPhase {
+        case initial
+        case connected
+        case interrupted
+    }
+
+    private enum BackfillKind {
+        case initial
+        case gap
+    }
 
     init(
         channel: ChannelInfo,
@@ -58,6 +72,8 @@ actor ChatRoom {
         setupTask?.cancel()
         consumeTask?.cancel()
         flushTask?.cancel()
+        gapBackfillTask?.cancel()
+        gapBackfillTask = nil
         setupTask = nil
         consumeTask = nil
         flushTask = nil
@@ -116,7 +132,7 @@ actor ChatRoom {
     private func setup() async {
         await loadCatalog()
         guard !stopped else { return }
-        await backfill()
+        await backfill(.initial)
         guard !stopped else { return }
         startFlushing()
         consumeSource()
@@ -129,11 +145,17 @@ actor ChatRoom {
         continuation?.yield(.catalog(channelLoad.emotes, channelLoad.badges))
     }
 
-    private func backfill() async {
+    private func backfill(_ kind: BackfillKind) async {
         let recent = await recentMessages.recentMessages(channelLogin: channel.broadcasterLogin, limit: 100)
-        guard !stopped, !recent.isEmpty else { return }
+        guard !stopped, !Task.isCancelled, !recent.isEmpty else { return }
         let rewritten = recent.map(rewriteChannelID)
-        continuation?.yield(.messages(rewritten))
+        switch kind {
+        case .initial:
+            continuation?.yield(.messages(rewritten))
+        case .gap:
+            logger.info("chat gap backfill: \(rewritten.count) candidates", category: .chat)
+            continuation?.yield(.backfill(rewritten))
+        }
     }
 
     private func rewriteChannelID(_ message: ChatMessage) -> ChatMessage {
@@ -181,10 +203,32 @@ actor ChatRoom {
         case .roomState(let state):
             continuation?.yield(.roomState(state))
         case .connection(let status):
+            trackConnection(status)
             continuation?.yield(.connection(status))
         case .notice(let notice):
             logger.info("chat notice: \(notice.text)", category: .chat)
             continuation?.yield(.notice(notice))
+        }
+    }
+
+    private func trackConnection(_ status: ConnectionStatus) {
+        switch status {
+        case .connected:
+            if connectionPhase == .interrupted {
+                scheduleGapBackfill()
+            }
+            connectionPhase = .connected
+        case .disconnected, .reconnecting:
+            if connectionPhase == .connected { connectionPhase = .interrupted }
+        case .connecting, .idle:
+            break
+        }
+    }
+
+    private func scheduleGapBackfill() {
+        gapBackfillTask?.cancel()
+        gapBackfillTask = Task { [weak self] in
+            await self?.backfill(.gap)
         }
     }
 
