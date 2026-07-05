@@ -2,5 +2,6 @@
   "name": "embr-demo-mail",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-01",
-  "kv_namespaces": [{ "binding": "MAIL", "id": "7837fe95fd344d5e8378fc85a94f1d85" }]
+  "kv_namespaces": [{ "binding": "MAIL", "id": "7837fe95fd344d5e8378fc85a94f1d85" }],
+  "r2_buckets": [{ "binding": "REVIEW", "bucket_name": "embr-review" }]
 }

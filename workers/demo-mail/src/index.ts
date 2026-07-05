@@ -2,6 +2,7 @@ import PostalMime from "postal-mime";
 
 interface Env {
   MAIL: KVNamespace;
+  REVIEW: R2Bucket;
 }
 
 const PATH_TOKEN = "4bf7008a3c55211fa003cb13";
@@ -44,6 +45,25 @@ export default {
 
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const reviewPrefix = `/review/${PATH_TOKEN}/`;
+    if (url.pathname.startsWith(reviewPrefix)) {
+      const key = url.pathname.slice(reviewPrefix.length);
+      const obj = await env.REVIEW.get(key, {
+        range: request.headers,
+        onlyIf: request.headers,
+      });
+      if (!obj) return new Response("Not found", { status: 404 });
+      const headers = new Headers();
+      obj.writeHttpMetadata(headers);
+      headers.set("accept-ranges", "bytes");
+      if (obj.range && "offset" in obj.range) {
+        const end = obj.range.offset + (obj.range.length ?? obj.size - obj.range.offset) - 1;
+        headers.set("content-range", `bytes ${obj.range.offset}-${end}/${obj.size}`);
+      }
+      const body = "body" in obj ? obj.body : null;
+      const status = body ? (request.headers.has("range") ? 206 : 200) : 304;
+      return new Response(body, { status, headers });
+    }
     if (url.pathname !== `/code/${PATH_TOKEN}`) {
       return new Response("Not found", { status: 404 });
     }
