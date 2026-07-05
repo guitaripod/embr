@@ -59,6 +59,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var isMuted = false
     private var preferredQualityName: String?
     private var pendingResume: PendingResume?
+    private var playbackIntended = false
     private var liveLatencyConfigured = false
     private var loadGeneration = 0
     private var appliedAudioOptions: AVAudioSession.CategoryOptions?
@@ -104,7 +105,8 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         case .began:
             player.pause()
         case .ended:
-            if let optionsValue, AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume) {
+            if let optionsValue, AVAudioSession.InterruptionOptions(rawValue: optionsValue).contains(.shouldResume),
+               playbackIntended {
                 try? AVAudioSession.sharedInstance().setActive(true)
                 player.play()
             }
@@ -117,6 +119,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         guard let reasonValue,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
               reason == .oldDeviceUnavailable else { return }
+        playbackIntended = false
         player.pause()
     }
 
@@ -159,6 +162,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         applyMutePreference()
         attach(item)
         player.replaceCurrentItem(with: item)
+        playbackIntended = true
         player.play()
         startLatencySampling()
         logger.info("HLS load url=\(url.absoluteString) qualities=\(availableQualities.count)", category: .playback)
@@ -166,10 +170,12 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
     func play() {
         configureAudioSession()
+        playbackIntended = true
         player.play()
     }
 
     func pause() {
+        playbackIntended = false
         player.pause()
     }
 
@@ -204,6 +210,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         latencyTimer?.invalidate()
         latencyTimer = nil
         pendingResume = nil
+        playbackIntended = false
         detachObservers()
         player.pause()
         player.replaceCurrentItem(with: nil)
@@ -285,6 +292,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         pendingResume = progress.current > 0 ? (progress.isLive ? .liveEdge : .time(resumeTime)) : nil
         player.replaceCurrentItem(with: item)
         applyMutePreference()
+        playbackIntended = true
         player.play()
         startLatencySampling()
         logger.info("HLS restore master after audio-only", category: .playback)
@@ -323,6 +331,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         }
         player.replaceCurrentItem(with: item)
         applyMutePreference()
+        playbackIntended = true
         player.play()
         startLatencySampling()
         logger.info("HLS quality swap variant -> \(quality.name) url=\(quality.url.absoluteString)", category: .playback)
