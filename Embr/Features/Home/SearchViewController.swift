@@ -53,6 +53,16 @@ final class SearchViewController: UIViewController {
         setUpCollectionView()
         setUpDataSource()
         setUpEmptyState()
+        #if DEBUG
+        if let query = ScreenshotHarness.searchQuery {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                guard let self else { return }
+                self.searchController.isActive = true
+                self.searchController.searchBar.text = query
+                self.performSearch(query)
+            }
+        }
+        #endif
     }
 
     func scrollToTop() {

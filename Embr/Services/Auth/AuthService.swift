@@ -304,6 +304,14 @@ actor AuthService: AuthControlling {
         stateSubject.send(state)
     }
 
+    #if DEBUG
+    /// Seeds an authenticated identity for App Store screenshot capture (no real token).
+    /// The posed Following tab renders curated live channels via the public API.
+    func seedScreenshotAuth() {
+        publish(.authenticated(AuthenticatedUser(id: "0", login: "embrdemo", displayName: "Embr", scopes: [])))
+    }
+    #endif
+
     private static func user(from credentials: StoredCredentials) -> AuthenticatedUser {
         AuthenticatedUser(
             id: credentials.userID,

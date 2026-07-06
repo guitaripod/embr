@@ -81,6 +81,14 @@ final class TopViewController: UIViewController {
         streamsViewModel.load()
     }
 
+    #if DEBUG
+    func showCategoriesForScreenshot() {
+        guard mode == .top, isViewLoaded else { return }
+        segmented.selectedSegmentIndex = 1
+        segmentChanged()
+    }
+    #endif
+
     private func bindHistory() {
         guard showsRecentRail else { return }
         recentChannels = history.recent

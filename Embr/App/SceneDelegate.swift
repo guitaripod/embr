@@ -53,19 +53,37 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let i = args.firstIndex(of: "-screenshotRoute"), i + 1 < args.count else { return false }
         UserDefaults.standard.set(true, forKey: completedOnboardingKey)
         let route = args[i + 1]
-        let channel = args.firstIndex(of: "-screenshotChannel").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        func arg(_ name: String) -> String? {
+            args.firstIndex(of: name).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        }
+        let channel = arg("-screenshotChannel")
+        if let theme = arg("-screenshotTheme") {
+            SettingsStore.shared.update { $0.theme = theme == "dark" ? .dark : (theme == "light" ? .light : .system) }
+        }
+        ScreenshotHarness.searchQuery = arg("-screenshotQuery")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak tabBar] in
             guard let self, let tabBar else { return }
             switch route {
+            case "top": tabBar.selectedIndex = 0
+            case "categories":
+                tabBar.selectedIndex = 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    let top = (tabBar.viewControllers?.first as? UINavigationController)?.viewControllers.first as? TopViewController
+                    top?.showCategoriesForScreenshot()
+                }
             case "search": tabBar.selectedIndex = 1
             case "settings": tabBar.selectedIndex = 2
+            case "following":
+                ScreenshotHarness.seededFollow = true
+                Task { await AuthService.shared.seedScreenshotAuth() }
             case "moreapps":
                 tabBar.selectedIndex = 2
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                     guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
                     Midgar.present(from: top, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
                 }
-            case "channel":
+            case "channel", "channelaudio", "channelchat":
+                ScreenshotHarness.channelPose = route == "channelaudio" ? .audio : (route == "channelchat" ? .chat : .normal)
                 if let channel, let url = URL(string: "embr://channel/\(channel)") {
                     Task { await self.router.handle(url, from: tabBar) }
                 }

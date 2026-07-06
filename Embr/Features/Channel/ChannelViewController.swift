@@ -113,7 +113,25 @@ final class ChannelViewController: UIViewController {
         observeAuth()
         setUpEventCard()
         WatchHistoryStore.shared.record(id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
+        #if DEBUG
+        applyScreenshotPose()
+        #endif
     }
+
+    #if DEBUG
+    private func applyScreenshotPose() {
+        let pose = ScreenshotHarness.channelPose
+        guard pose != .normal else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+            guard let self else { return }
+            switch pose {
+            case .audio: self.videoController?.setAudioOnly(true)
+            case .chat: self.setChatOnly(true)
+            case .normal: break
+            }
+        }
+    }
+    #endif
 
     private func setUpEventCard() {
         eventCard.translatesAutoresizingMaskIntoConstraints = false

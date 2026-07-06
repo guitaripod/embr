@@ -65,6 +65,12 @@ final class FollowingViewController: UIViewController {
     }
 
     private func bootstrap() {
+        #if DEBUG
+        if ScreenshotHarness.seededFollow {
+            loadScreenshotFollows()
+            return
+        }
+        #endif
         loadingIndicator.startAnimating()
         Task { [weak self] in
             guard let self else { return }
@@ -80,6 +86,24 @@ final class FollowingViewController: UIViewController {
             self.loadFollowedChannels()
         }
     }
+
+    #if DEBUG
+    private func loadScreenshotFollows() {
+        signInView.isHidden = true
+        loadingIndicator.startAnimating()
+        channelsLoaded = true
+        Task { [weak self] in
+            guard let self else { return }
+            var ids: [String] = []
+            for login in ScreenshotHarness.curatedFollowLogins {
+                if let user = try? await self.api.user(login: login) { ids.append(user.id) }
+            }
+            let streams = (try? await self.api.streams(userIDs: ids)) ?? []
+            let ordered = ids.compactMap { id in streams.first { $0.userID == id } }
+            self.applyLive(ordered)
+        }
+    }
+    #endif
 
     private func bind(userID: String) {
         let model = StreamListViewModel(kind: .followed(userID: userID), api: api)
