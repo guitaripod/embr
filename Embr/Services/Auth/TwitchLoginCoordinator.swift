@@ -34,7 +34,7 @@ final class TwitchLoginCoordinator: NSObject {
                 continuation.resume(returning: callbackURL)
             }
             session.presentationContextProvider = self
-            session.prefersEphemeralWebBrowserSession = false
+            session.prefersEphemeralWebBrowserSession = true
             self.session = session
             if !session.start() {
                 continuation.resume(throwing: APIError.network("could not start login session"))

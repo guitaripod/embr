@@ -156,19 +156,33 @@ final class OnboardingViewController: UIViewController {
     }
 
     @objc private func connectTapped() {
+        guard let anchor = presentationAnchor() else {
+            AppLogger.shared.warn("onboarding login: no window anchor available", category: .auth)
+            return
+        }
         setBusy(true)
         Task {
             do {
-                let anchor: ASPresentationAnchor = view.window ?? ASPresentationAnchor()
                 let user = try await auth.login(presentationAnchor: anchor)
                 AppLogger.shared.info("onboarding login succeeded for \(user.login)", category: .auth)
                 finish()
+            } catch APIError.cancelled {
+                AppLogger.shared.info("onboarding login cancelled by user", category: .auth)
+                setBusy(false)
             } catch {
                 AppLogger.shared.warn("onboarding login failed: \(error)", category: .auth)
                 setBusy(false)
                 presentLoginError()
             }
         }
+    }
+
+    private func presentationAnchor() -> ASPresentationAnchor? {
+        if let window = view.window { return window }
+        return UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }?
+            .keyWindow
     }
 
     @objc private func guestTapped() {
