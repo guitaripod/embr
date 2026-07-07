@@ -22,7 +22,7 @@ workers/   (Cloudflare Worker — Hono + TypeScript. Compiled + vitest on Linux.
 - **Chat send:** Helix `POST /helix/chat/messages` (scope `user:write:chat`). Surface `is_sent`/`drop_reason`.
 - **Anonymous chat preview only:** IRC `wss://irc-ws.chat.twitch.tv:443`, `NICK justinfan<random>`. Removable leg.
 - **Auth:** Authorization Code via the Worker (holds client secret). `ASWebAuthenticationSession` on device → Worker `/auth/exchange` + `/auth/refresh`. Tokens in **Keychain**. Anonymous browsing uses Worker `/auth/app-token`. `/oauth2/validate` hourly.
-- **Video:** native `AVPlayer` fed by Worker-resolved, ad-stripped HLS (`/playback/:login` → m3u8 proxied through `/hls/*`). `AVPictureInPictureController`. `VideoPlaying` protocol with `HLSVideoPlayer` primary + `WebViewPlayer` fallback.
+- **Video:** native `AVPlayer` fed by Worker-resolved HLS (`/playback/:login` → m3u8 proxied through `/hls/*`). `AVPictureInPictureController`. `VideoPlaying` protocol with `HLSVideoPlayer` primary + `WebViewPlayer` fallback.
 - **Emotes:** Twitch + 7TV (+ `wss://events.7tv.io/v3` live updates) + BetterTTV + FrankerFaceZ. Layered `EmoteCatalog` (channel over global). Animated WebP via SDWebImage.
 - **Persistence:** GRDB for domain data, Keychain for tokens, single `Codable` blob for settings.
 
@@ -85,13 +85,9 @@ Base: the app sends `Authorization: Bearer <user-or-app-token>` where required. 
 - `POST /auth/refresh` ← `{ "refreshToken": string }` → `TokenResponse`
 - `GET  /auth/app-token` → `{ "accessToken": string, "expiresIn": number }`
 - `GET  /auth/login-url?redirectURI=...&state=...` → `{ "url": string }` (builds the Twitch authorize URL with scopes)
-- `GET  /playback/:login` (live) → `PlaybackResponse { url, expiresAt? }` where `url` points at this Worker's `/hls/...` ad-stripped master proxy
+- `GET  /playback/:login` (live) → `PlaybackResponse { url, expiresAt? }` where `url` points at this Worker's `/hls/...` master proxy
 - `GET  /playback/vod/:id` → `PlaybackResponse`
-- `GET  /hls/*` → proxied + ad-segment-stripped m3u8/playlist passthrough
+- `GET  /hls/*` → proxied m3u8/playlist passthrough
 - Errors → non-2xx + `ErrorResponse { error }`
 
-Secrets (wrangler): `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`. KV namespace `TOKENS` caches the app token. The GQL `PlaybackAccessToken` call uses the public web client-id `kimne78kx3ncx6brgo4mv6wki5h1ko` (separate from the registered dev client-id used for Helix/OAuth).
-
-## Ad-strip rule (shared by Worker `/hls` and EmbrCore `HLSAdStripper`)
-
-In a media playlist, drop segments belonging to stitched ads: `#EXT-X-DATERANGE` with `CLASS="twitch-stitched-ad"` or an `ID` beginning `stitched-ad-`, segments whose preceding `#EXTINF` title contains `Amazon`, and any `#EXT-X-DISCONTINUITY` bracketing them. Preserve `#EXT-X-TWITCH-PREFETCH` (low-latency) tags. Keep the playlist valid (consistent media sequence).
+Secrets (wrangler): `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`. KV namespace `TOKENS` caches the app token.

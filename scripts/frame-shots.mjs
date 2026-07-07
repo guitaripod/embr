@@ -1,17 +1,19 @@
 // Frames raw 1320x2868 app captures into App Store / marketing screenshots that
-// match the existing Embr store style: purple gradient, bold headline, a rounded
-// device screenshot floated below. Run with the midgarcorp canvas available:
-//   NODE_PATH=~/Dev/web/midgarcorp/node_modules node scripts/frame-shots.mjs
+// match the Embr store style: purple gradient, bold headline, a rounded device
+// screenshot floated below. Needs the node-canvas module — point CANVAS_FROM at a
+// project that has it installed:
+//   CANVAS_FROM=~/some/node/project SHOTS_SRC=/tmp/caps SHOTS_OUT=/tmp/framed node scripts/frame-shots.mjs
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import { createRequire } from 'node:module'
-const require = createRequire('/Users/marcus/Dev/web/midgarcorp/')
+const require = createRequire(path.resolve(process.env.CANVAS_FROM || '.') + '/')
 const { createCanvas, loadImage } = require('canvas')
 
 const W = 1320
 const H = 2868
-const SRC = '/tmp/embr-caps'
-const OUT = '/tmp/embr-framed'
+const SRC = process.env.SHOTS_SRC || path.join(os.tmpdir(), 'embr-caps')
+const OUT = process.env.SHOTS_OUT || path.join(os.tmpdir(), 'embr-framed')
 fs.mkdirSync(OUT, { recursive: true })
 
 // raw file (in SRC) -> headline (max 2 lines). Order = store display order.

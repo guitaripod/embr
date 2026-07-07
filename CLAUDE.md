@@ -6,9 +6,9 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 
 ## Stack
 
-- **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS ad-stripping, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
+- **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
 - **Embr** (`Embr/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
-- **workers/**: Cloudflare Workers (Hono, jose, KV). OAuth code exchange/refresh, app-token minting, HLS `PlaybackAccessToken` resolution + ad-stripping proxy. TypeScript, vitest.
+- **workers/**: Cloudflare Workers (Hono, jose, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
 
 ## Code style (non-negotiable)
 
@@ -66,5 +66,5 @@ Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` 
 
 ## Reality
 
-- The video path resolves Twitch HLS via the unofficial GQL `PlaybackAccessToken` (Worker-side) and strips stitched ad segments. This violates Twitch's Developer Agreement and can break when Twitch changes the GQL hash or enforces Client-Integrity. Personal/sideload use, eyes open. The player sits behind `VideoPlaying`; `WebViewPlayer` is the compliant fallback.
+- The video path resolves the stream's HLS playlist Worker-side and plays it with `AVPlayer`; it can break if Twitch changes upstream playback behavior. The player sits behind `VideoPlaying`, with `WebViewPlayer` (official embed) as the fallback.
 - Chat is EventSub-first (`channel.chat.message`); IRC `justinfan` is a logged-out-preview-only leg.
