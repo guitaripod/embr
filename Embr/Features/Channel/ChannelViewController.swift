@@ -75,6 +75,8 @@ final class ChannelViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    private var watchStartedAt: Date?
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         [.portrait, .landscapeLeft, .landscapeRight]
     }
@@ -85,6 +87,7 @@ final class ChannelViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        watchStartedAt = Date()
         navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
         eventsPoller.start()
         liveStatsPoller.start()
@@ -93,6 +96,11 @@ final class ChannelViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if let startedAt = watchStartedAt {
+            ReviewPrompt.recordWatchTime(
+                Date().timeIntervalSince(startedAt), in: view.window?.windowScene)
+            watchStartedAt = nil
+        }
         navigationController?.setNavigationBarHidden(false, animated: animated)
         eventsPoller.stop()
         liveStatsPoller.stop()
