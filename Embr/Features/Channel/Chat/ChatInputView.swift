@@ -68,13 +68,15 @@ final class ChatInputView: UIView {
 
     private static func placeholder(for state: RoomState) -> String {
         var parts: [String] = []
-        if state.emoteOnly { parts.append("emote-only") }
-        if state.subscribersOnly { parts.append("subs-only") }
-        if let seconds = state.followersOnly { parts.append(seconds == 0 ? "followers-only" : "followers \(seconds)m") }
-        if let slow = state.slowMode { parts.append("slow \(slow)s") }
-        if state.uniqueChat { parts.append("unique") }
-        guard !parts.isEmpty else { return "Send a message" }
-        return "Send a message · " + parts.joined(separator: ", ")
+        if state.emoteOnly { parts.append(String(localized: "emote-only")) }
+        if state.subscribersOnly { parts.append(String(localized: "subs-only")) }
+        if let seconds = state.followersOnly {
+            parts.append(seconds == 0 ? String(localized: "followers-only") : String(localized: "followers \(seconds)m"))
+        }
+        if let slow = state.slowMode { parts.append(String(localized: "slow \(slow)s")) }
+        if state.uniqueChat { parts.append(String(localized: "unique")) }
+        guard !parts.isEmpty else { return String(localized: "Send a message") }
+        return String(localized: "Send a message · \(parts.joined(separator: ", "))")
     }
 
     func showDropReason(_ reason: String?) {
@@ -128,7 +130,7 @@ final class ChatInputView: UIView {
 
     private func updateEmoteButtonIcon() {
         emoteButton.configuration?.image = UIImage(systemName: showingEmoteKeyboard ? "keyboard" : "face.smiling")
-        emoteButton.accessibilityLabel = showingEmoteKeyboard ? "Keyboard" : "Emotes"
+        emoteButton.accessibilityLabel = showingEmoteKeyboard ? String(localized: "Keyboard") : String(localized: "Emotes")
     }
 
     func showReply(displayName: String, text: String) {
@@ -215,7 +217,7 @@ final class ChatInputView: UIView {
         textView.onTextChange = { [weak self] in self?.refreshAutocomplete() }
         textView.onReturn = { [weak self] in self?.sendTapped() }
         textView.onEndEditing = { [weak self] in self?.switchToSystemKeyboard() }
-        textView.placeholder = "Send a message"
+        textView.placeholder = String(localized: "Send a message")
         textView.translatesAutoresizingMaskIntoConstraints = false
 
         var config = UIButton.Configuration.plain()
@@ -240,7 +242,7 @@ final class ChatInputView: UIView {
         emoteButton.configuration = emoteConfig
         emoteButton.tintColor = Theme.secondaryText
         emoteButton.translatesAutoresizingMaskIntoConstraints = false
-        emoteButton.accessibilityLabel = "Emotes"
+        emoteButton.accessibilityLabel = String(localized: "Emotes")
         emoteButton.addTarget(self, action: #selector(emoteTapped), for: .touchUpInside)
 
         inputRow.addArrangedSubview(emoteButton)
@@ -332,7 +334,7 @@ private final class ReplyComposerBar: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(displayName: String, text: String) {
-        titleLabel.text = "Replying to \(displayName)"
+        titleLabel.text = String(localized: "Replying to \(displayName)")
         bodyLabel.text = text
     }
 

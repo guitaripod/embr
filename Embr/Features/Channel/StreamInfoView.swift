@@ -131,7 +131,7 @@ final class StreamInfoView: UIView {
         liveDot.tintColor = .white
         liveDot.contentMode = .scaleAspectFit
 
-        liveLabel.text = "LIVE"
+        liveLabel.text = String(localized: "LIVE")
         liveLabel.font = .systemFont(ofSize: 10, weight: .heavy)
         liveLabel.textColor = .white
 
@@ -181,7 +181,7 @@ final class StreamInfoView: UIView {
         matureBadge.setContentHuggingPriority(.required, for: .horizontal)
         matureBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
         matureBadge.isHidden = true
-        matureBadge.accessibilityLabel = "Mature content"
+        matureBadge.accessibilityLabel = String(localized: "Mature content")
         NSLayoutConstraint.activate([
             matureBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 30),
             matureBadge.heightAnchor.constraint(equalToConstant: 18)
@@ -239,12 +239,12 @@ final class StreamInfoView: UIView {
         lastSnapshot = nil
         let announce = state == .live
         transition {
-            self.statusLabel.text = "Offline"
+            self.statusLabel.text = String(localized: "Offline")
             self.applyState(.offline)
         }
-        titleLabel.accessibilityLabel = "\(channelName), offline"
+        titleLabel.accessibilityLabel = String(localized: "\(channelName), offline")
         if announce {
-            UIAccessibility.post(notification: .announcement, argument: "\(channelName) went offline")
+            UIAccessibility.post(notification: .announcement, argument: String(localized: "\(channelName) went offline"))
         }
     }
 
@@ -344,13 +344,13 @@ final class StreamInfoView: UIView {
     private func updateAccessibility(category: String) {
         var parts = [channelName]
         switch state {
-        case .loading: parts.append("loading")
-        case .offline: parts.append("offline")
+        case .loading: parts.append(String(localized: "loading"))
+        case .offline: parts.append(String(localized: "offline"))
         case .live:
-            parts.append("live")
+            parts.append(String(localized: "live"))
             if !category.isEmpty { parts.append(category) }
-            parts.append("\(viewerCount) viewers")
-            if let startedAt, let up = Self.uptime(startedAt) { parts.append("up \(up)") }
+            parts.append(String(localized: "\(viewerCount) viewers"))
+            if let startedAt, let up = Self.uptime(startedAt) { parts.append(String(localized: "up \(up)")) }
         }
         titleLabel.accessibilityLabel = parts.joined(separator: ", ")
     }
@@ -366,6 +366,6 @@ final class StreamInfoView: UIView {
         guard elapsed > 0 else { return nil }
         let hours = Int(elapsed) / 3600
         let minutes = (Int(elapsed) % 3600) / 60
-        return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+        return hours > 0 ? String(localized: "\(hours)h \(minutes)m") : String(localized: "\(minutes)m")
     }
 }

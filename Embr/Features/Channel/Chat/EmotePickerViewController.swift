@@ -11,9 +11,9 @@ final class EmotePickerViewController: UIViewController {
 
         var title: String {
             switch self {
-            case .recent: return "Recently Used"
-            case .channel: return "Channel Emotes"
-            case .global: return "Global Emotes"
+            case .recent: return String(localized: "Recently Used")
+            case .channel: return String(localized: "Channel Emotes")
+            case .global: return String(localized: "Global Emotes")
             }
         }
     }
@@ -48,7 +48,7 @@ final class EmotePickerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = Theme.background
-        title = "Emotes"
+        title = String(localized: "Emotes")
         setUpSearch()
         setUpCollectionView()
         setUpDataSource()
@@ -70,7 +70,7 @@ final class EmotePickerViewController: UIViewController {
 
     private func setUpSearch() {
         searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.placeholder = "Search emotes"
+        searchField.placeholder = String(localized: "Search emotes")
         searchField.autocapitalizationType = .none
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         view.addSubview(searchField)

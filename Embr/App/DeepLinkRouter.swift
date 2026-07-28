@@ -81,11 +81,11 @@ final class DeepLinkRouter {
     @MainActor
     private func presentNotFound(login: String, from root: RootTabBarController) {
         let alert = UIAlertController(
-            title: "Channel Not Found",
-            message: "Could not open \"\(login)\".",
+            title: String(localized: "Channel Not Found"),
+            message: String(localized: "Could not open \"\(login)\"."),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
         let presenter = root.presentedViewController ?? root
         presenter.present(alert, animated: true)
     }

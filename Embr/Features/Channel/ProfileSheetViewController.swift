@@ -70,7 +70,7 @@ final class ProfileSheetViewController: UIViewController {
         sinceLabel.textAlignment = .center
 
         var videosConfig = UIButton.Configuration.tinted()
-        videosConfig.title = "Videos & Clips"
+        videosConfig.title = String(localized: "Videos & Clips")
         videosConfig.image = UIImage(systemName: "film.stack")
         videosConfig.imagePadding = 6
         videosConfig.cornerStyle = .large
@@ -131,14 +131,14 @@ final class ProfileSheetViewController: UIViewController {
         loginLabel.text = "@\(user.login)"
         videosButton.isHidden = (navigator == nil || loadedUser == nil)
         switch user.broadcasterType {
-        case "partner": typeLabel.text = "TWITCH PARTNER"; typeLabel.isHidden = false
-        case "affiliate": typeLabel.text = "AFFILIATE"; typeLabel.isHidden = false
+        case "partner": typeLabel.text = String(localized: "TWITCH PARTNER"); typeLabel.isHidden = false
+        case "affiliate": typeLabel.text = String(localized: "AFFILIATE"); typeLabel.isHidden = false
         default: typeLabel.isHidden = true
         }
         bioLabel.text = user.description
         bioLabel.isHidden = user.description.isEmpty
         if let created = user.createdAt {
-            sinceLabel.text = "On Twitch since \(Self.yearFormatter.string(from: created))"
+            sinceLabel.text = String(localized: "On Twitch since \(Self.yearFormatter.string(from: created))")
         }
         stack?.isHidden = false
     }

@@ -134,8 +134,8 @@ final class AdBreakGameView: UIView {
         scoreLabel.isHidden = true
         ember.center = CGPoint(x: emberX, y: emberY)
         ember.transform = .identity
-        messageLabel.text = "Embr Flyer"
-        hintLabel.text = best > 0 ? "Tap to fly · Best \(best)" : "Tap to fly through the ad break"
+        messageLabel.text = String(localized: "Embr Flyer")
+        hintLabel.text = best > 0 ? String(localized: "Tap to fly · Best \(best)") : String(localized: "Tap to fly through the ad break")
         messageLabel.isHidden = false
         hintLabel.isHidden = false
         onActiveChanged?(false)
@@ -232,8 +232,8 @@ final class AdBreakGameView: UIView {
         state = .gameOver
         Haptics.notify(.error)
         scoreLabel.isHidden = true
-        messageLabel.text = "Score \(score)"
-        hintLabel.text = "Best \(best) · Tap to play again"
+        messageLabel.text = String(localized: "Score \(score)")
+        hintLabel.text = String(localized: "Best \(best) · Tap to play again")
         messageLabel.isHidden = false
         hintLabel.isHidden = false
         UIView.animate(withDuration: 0.25, delay: 0, options: [.allowUserInteraction]) {

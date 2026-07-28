@@ -120,12 +120,12 @@ final class ChannelEventCardView: UIView {
     private func tick() {
         guard let target = countdownTarget else { countdownLabel.text = nil; return }
         if countdownLocked {
-            countdownLabel.text = "Locked"
+            countdownLabel.text = String(localized: "Locked")
             return
         }
         let remaining = Int(target.timeIntervalSinceNow.rounded(.up))
         if remaining <= 0 {
-            countdownLabel.text = "Closing"
+            countdownLabel.text = String(localized: "Closing")
         } else {
             countdownLabel.text = String(format: "%d:%02d", remaining / 60, remaining % 60)
         }
@@ -166,7 +166,7 @@ final class ChannelEventCardView: UIView {
         )
         closeButton.tintColor = Theme.secondaryText
         closeButton.setContentHuggingPriority(.required, for: .horizontal)
-        closeButton.accessibilityLabel = "Dismiss"
+        closeButton.accessibilityLabel = String(localized: "Dismiss")
         closeButton.addAction(UIAction { [weak self] _ in self?.onDismiss?() }, for: .touchUpInside)
 
         let header = UIStackView(arrangedSubviews: [iconView, titleLabel, countdownLabel, closeButton])

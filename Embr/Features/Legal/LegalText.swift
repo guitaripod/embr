@@ -12,10 +12,10 @@ enum LegalText {
         Configuration.current.workerBaseURL.appendingPathComponent("legal/privacy")
     }
 
-    static let termsTitle = "Terms of Use"
-    static let privacyTitle = "Privacy Policy"
+    static let termsTitle = String(localized: "Terms of Use")
+    static let privacyTitle = String(localized: "Privacy Policy")
 
-    static let terms = """
+    static let terms = String(localized: """
     Embr is an independent, open-source client for watching Twitch streams and chat. It is not \
     affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. By using Embr you agree \
     to these terms and to Twitch's own Terms of Service and Community Guidelines.
@@ -36,9 +36,9 @@ enum LegalText {
     No warranty
     Embr is provided "as is", without warranty of any kind. Availability depends on Twitch's services \
     and may change at any time.
-    """
+    """)
 
-    static let privacy = """
+    static let privacy = String(localized: """
     Embr is designed to collect as little data as possible. The developer does not operate any \
     advertising or analytics tracking, and does not sell or share your data.
 
@@ -64,5 +64,5 @@ enum LegalText {
 
     Contact
     Questions about privacy: \(supportEmail)
-    """
+    """)
 }

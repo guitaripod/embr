@@ -63,7 +63,7 @@ final class ChatViewModel {
     func block(userID: String, login: String, message: ChatMessage? = nil, channelLogin: String? = nil) {
         notifyDeveloperOfBlock(login: login, authorID: userID, message: message, channelLogin: channelLogin)
         guard !userID.isEmpty else {
-            noticeSubject.send(SystemNotice(text: "Blocked \(login)."))
+            noticeSubject.send(SystemNotice(text: String(localized: "Blocked \(login).")))
             return
         }
         Task { [weak self] in
@@ -72,7 +72,7 @@ final class ChatViewModel {
             if let snapshot = await self.store.block(userID) {
                 self.snapshotSubject.send(snapshot)
             }
-            self.noticeSubject.send(SystemNotice(text: "Blocked \(login). Their messages are now hidden."))
+            self.noticeSubject.send(SystemNotice(text: String(localized: "Blocked \(login). Their messages are now hidden.")))
         }
     }
 
@@ -104,9 +104,9 @@ final class ChatViewModel {
                 if let snapshot = await self.store.block(authorID) {
                     self.snapshotSubject.send(snapshot)
                 }
-                self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login). Their messages are now hidden."))
+                self.noticeSubject.send(SystemNotice(text: String(localized: "Reported \(message.author.login). Their messages are now hidden.")))
             } else {
-                self.noticeSubject.send(SystemNotice(text: "Reported \(message.author.login)."))
+                self.noticeSubject.send(SystemNotice(text: String(localized: "Reported \(message.author.login).")))
             }
             await self.reporter.submit(
                 WorkerAPI.ReportRequest(
@@ -122,21 +122,21 @@ final class ChatViewModel {
     }
 
     func deleteMessage(messageID: String) {
-        moderate("delete the message") { try await self.room.deleteMessage(messageID) }
+        moderate(String(localized: "delete the message")) { try await self.room.deleteMessage(messageID) }
     }
 
     func banUser(userID: String) {
-        moderate("ban") { try await self.room.banUser(userID: userID, duration: nil, reason: nil) }
+        moderate(String(localized: "ban")) { try await self.room.banUser(userID: userID, duration: nil, reason: nil) }
     }
 
     func timeoutUser(userID: String, duration: Int) {
-        moderate("time out") { try await self.room.banUser(userID: userID, duration: duration, reason: nil) }
+        moderate(String(localized: "time out")) { try await self.room.banUser(userID: userID, duration: duration, reason: nil) }
     }
 
     private func moderate(_ label: String, _ op: @escaping () async throws -> Void) {
         Task {
             do { try await op() }
-            catch { noticeSubject.send(SystemNotice(text: "Couldn't \(label) — \(Self.describeCommandError(error))", isError: true)) }
+            catch { noticeSubject.send(SystemNotice(text: String(localized: "Couldn't \(label) — \(Self.describeCommandError(error))"), isError: true)) }
         }
     }
 
@@ -151,15 +151,15 @@ final class ChatViewModel {
 
         switch cmd {
         case "help":
-            noticeSubject.send(SystemNotice(text: "Commands: /ban /timeout <sec> /unban /block /unblock <user>"))
+            noticeSubject.send(SystemNotice(text: String(localized: "Commands: /ban /timeout <sec> /unban /block /unblock <user>")))
             return .handled
         case "ban", "timeout", "unban", "block", "unblock":
             guard let login = targetLogin, !login.isEmpty else {
-                noticeSubject.send(SystemNotice(text: "Usage: /\(cmd) <user>", isError: true))
+                noticeSubject.send(SystemNotice(text: String(localized: "Usage: /\(cmd) <user>"), isError: true))
                 return .handled
             }
             guard let user = await room.lookupUser(login: login) else {
-                noticeSubject.send(SystemNotice(text: "User \(login) not found", isError: true))
+                noticeSubject.send(SystemNotice(text: String(localized: "User \(login) not found"), isError: true))
                 return .handled
             }
             await runUserCommand(cmd, user: user, login: login, args: args)
@@ -175,37 +175,37 @@ final class ChatViewModel {
             case "ban":
                 let reason = args.dropFirst().joined(separator: " ")
                 try await room.banUser(userID: user.id, duration: nil, reason: reason.isEmpty ? nil : reason)
-                noticeSubject.send(SystemNotice(text: "Banned \(login)"))
+                noticeSubject.send(SystemNotice(text: String(localized: "Banned \(login)")))
             case "timeout":
                 let seconds = args.count > 1 ? (Int(args[1]) ?? 600) : 600
                 try await room.banUser(userID: user.id, duration: seconds, reason: nil)
-                noticeSubject.send(SystemNotice(text: "Timed out \(login) for \(seconds)s"))
+                noticeSubject.send(SystemNotice(text: String(localized: "Timed out \(login) for \(seconds)s")))
             case "unban":
                 try await room.unbanUser(userID: user.id)
-                noticeSubject.send(SystemNotice(text: "Unbanned \(login)"))
+                noticeSubject.send(SystemNotice(text: String(localized: "Unbanned \(login)")))
             case "block":
                 await DatabaseManager.shared.setBlockedUser(userID: user.id, login: user.login)
                 if let snapshot = await store.block(user.id) { snapshotSubject.send(snapshot) }
                 notifyDeveloperOfBlock(login: user.login, authorID: user.id, message: nil, channelLogin: nil)
-                noticeSubject.send(SystemNotice(text: "Blocked \(login)"))
+                noticeSubject.send(SystemNotice(text: String(localized: "Blocked \(login)")))
             case "unblock":
                 await DatabaseManager.shared.removeBlockedUser(userID: user.id)
-                noticeSubject.send(SystemNotice(text: "Unblocked \(login) · reopen chat to show"))
+                noticeSubject.send(SystemNotice(text: String(localized: "Unblocked \(login) · reopen chat to show")))
             default:
                 break
             }
         } catch {
-            noticeSubject.send(SystemNotice(text: "Failed: /\(cmd) \(login) — \(Self.describeCommandError(error))", isError: true))
+            noticeSubject.send(SystemNotice(text: String(localized: "Failed: /\(cmd) \(login) — \(Self.describeCommandError(error))"), isError: true))
         }
     }
 
     private static func describeCommandError(_ error: Error) -> String {
-        guard let api = error as? APIError else { return "error" }
+        guard let api = error as? APIError else { return String(localized: "error") }
         switch api {
-        case .unauthorized: return "sign in required"
-        case .forbidden: return "not a moderator here"
-        case .rateLimited: return "rate limited"
-        default: return "error"
+        case .unauthorized: return String(localized: "sign in required")
+        case .forbidden: return String(localized: "not a moderator here")
+        case .rateLimited: return String(localized: "rate limited")
+        default: return String(localized: "error")
         }
     }
 

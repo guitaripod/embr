@@ -16,26 +16,26 @@ final class AdInfoViewController: UIViewController {
         Topic(
             symbol: "antenna.radiowaves.left.and.right",
             tint: .systemTeal,
-            title: "Ads are stitched into the stream",
-            body: "Twitch uses server-side ad insertion: the ad video is spliced directly into the live stream's segments on Twitch's own servers, mixed in with the broadcast. By the time the stream reaches Embr the ad is already baked in — it isn't a separate track a player can simply switch off."
+            title: String(localized: "Ads are stitched into the stream"),
+            body: String(localized: "Twitch uses server-side ad insertion: the ad video is spliced directly into the live stream's segments on Twitch's own servers, mixed in with the broadcast. By the time the stream reaches Embr the ad is already baked in — it isn't a separate track a player can simply switch off.")
         ),
         Topic(
             symbol: "scissors",
             tint: Theme.accent,
-            title: "Embr cuts the ads out",
-            body: "Embr detects those stitched-ad segments and drops them before they play. Instead of watching the ad you get a brief \"resuming shortly\" gap, because Twitch is still sending ad content during that window and there's nothing else to show. That gap is exactly when Embr Flyer appears."
+            title: String(localized: "Embr cuts the ads out"),
+            body: String(localized: "Embr detects those stitched-ad segments and drops them before they play. Instead of watching the ad you get a brief \"resuming shortly\" gap, because Twitch is still sending ad content during that window and there's nothing else to show. That gap is exactly when Embr Flyer appears.")
         ),
         Topic(
             symbol: "crown.fill",
             tint: .systemOrange,
-            title: "Why Turbo or a sub doesn't skip them here",
-            body: "Turbo's ad-free perk is tied to your account inside Twitch's own apps, applied the moment the official player requests a stream. Embr connects as an independent client and can't hand that entitlement to Twitch's ad system. Third-party clients used to forward a web login to request an ad-free stream, but Twitch closed that path — today the playback handshake returns \"ads on\" for everyone: Turbo members, subscribers, and logged-out viewers alike."
+            title: String(localized: "Why Turbo or a sub doesn't skip them here"),
+            body: String(localized: "Turbo's ad-free perk is tied to your account inside Twitch's own apps, applied the moment the official player requests a stream. Embr connects as an independent client and can't hand that entitlement to Twitch's ad system. Third-party clients used to forward a web login to request an ad-free stream, but Twitch closed that path — today the playback handshake returns \"ads on\" for everyone: Turbo members, subscribers, and logged-out viewers alike.")
         ),
         Topic(
             symbol: "heart.fill",
             tint: .systemPink,
-            title: "Supporting your streamer still matters",
-            body: "A subscription still goes to your streamer and unlocks their emotes and badges, even though it can't remove ads inside Embr. If ad-free viewing is what you're after, the official Twitch app honors your Turbo subscription."
+            title: String(localized: "Supporting your streamer still matters"),
+            body: String(localized: "A subscription still goes to your streamer and unlocks their emotes and badges, even though it can't remove ads inside Embr. If ad-free viewing is what you're after, the official Twitch app honors your Turbo subscription.")
         )
     ]
 
@@ -100,13 +100,13 @@ final class AdInfoViewController: UIViewController {
         let badge = makeIconBadge(symbol: "megaphone.fill", tint: Theme.accent, size: 56, pointSize: 26)
 
         let title = UILabel()
-        title.text = "Why am I seeing ads?"
+        title.text = String(localized: "Why am I seeing ads?")
         title.font = .systemFont(ofSize: 26, weight: .bold)
         title.textColor = Theme.primaryText
         title.numberOfLines = 0
 
         let subtitle = UILabel()
-        subtitle.text = "Even with Twitch Turbo or a channel sub — here's what's happening."
+        subtitle.text = String(localized: "Even with Twitch Turbo or a channel sub — here's what's happening.")
         subtitle.font = .systemFont(ofSize: 15, weight: .regular)
         subtitle.textColor = Theme.secondaryText
         subtitle.numberOfLines = 0
@@ -162,7 +162,7 @@ final class AdInfoViewController: UIViewController {
 
     private func makeDisclaimer() -> UIView {
         let label = UILabel()
-        label.text = "Embr is an independent, open-source client and isn't affiliated with Twitch. Ad handling is provided for personal use."
+        label.text = String(localized: "Embr is an independent, open-source client and isn't affiliated with Twitch. Ad handling is provided for personal use.")
         label.font = .systemFont(ofSize: 12, weight: .regular)
         label.textColor = Theme.secondaryText
         label.numberOfLines = 0
@@ -194,11 +194,11 @@ final class AdInfoViewController: UIViewController {
 
     private func makeDismissButton() -> UIButton {
         var config = UIButton.Configuration.filled()
-        config.title = "Got it"
+        config.title = String(localized: "Got it")
         config.baseBackgroundColor = Theme.accent
         config.baseForegroundColor = .white
         config.cornerStyle = .large
-        var title = AttributedString("Got it")
+        var title = AttributedString(String(localized: "Got it"))
         title.font = .systemFont(ofSize: 17, weight: .semibold)
         config.attributedTitle = title
         let button = UIButton(configuration: config)

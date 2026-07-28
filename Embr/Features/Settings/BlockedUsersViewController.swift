@@ -11,7 +11,7 @@ final class BlockedUsersViewController: UIViewController {
 
     init() {
         super.init(nibName: nil, bundle: nil)
-        title = "Blocked Users"
+        title = String(localized: "Blocked Users")
     }
 
     @available(*, unavailable)
@@ -36,7 +36,7 @@ final class BlockedUsersViewController: UIViewController {
         config.backgroundColor = Theme.background
         config.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
             guard let self, let userID = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
-            let unblock = UIContextualAction(style: .destructive, title: "Unblock") { [weak self] _, _, completion in
+            let unblock = UIContextualAction(style: .destructive, title: String(localized: "Unblock")) { [weak self] _, _, completion in
                 self?.unblock(userID: userID)
                 completion(true)
             }
@@ -56,7 +56,7 @@ final class BlockedUsersViewController: UIViewController {
     }
 
     private func setUpEmptyLabel() {
-        emptyLabel.text = "No blocked users.\nBlock someone from a chat message to hide them."
+        emptyLabel.text = String(localized: "No blocked users.\nBlock someone from a chat message to hide them.")
         emptyLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15))
         emptyLabel.adjustsFontForContentSizeCategory = true
         emptyLabel.textColor = Theme.secondaryText

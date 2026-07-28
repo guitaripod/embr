@@ -17,12 +17,12 @@ final class SettingsViewController: UIViewController {
 
         var title: String {
             switch self {
-            case .general: return "General"
-            case .chat: return "Chat"
-            case .safety: return "Safety & Moderation"
-            case .video: return "Video"
-            case .account: return "Account"
-            case .about: return "About"
+            case .general: return String(localized: "General")
+            case .chat: return String(localized: "Chat")
+            case .safety: return String(localized: "Safety & Moderation")
+            case .video: return String(localized: "Video")
+            case .account: return String(localized: "Account")
+            case .about: return String(localized: "About")
             }
         }
     }
@@ -76,9 +76,9 @@ final class SettingsViewController: UIViewController {
         self.store = store
         self.auth = auth
         super.init(nibName: nil, bundle: nil)
-        title = "Settings"
+        title = String(localized: "Settings")
         tabBarItem = UITabBarItem(
-            title: "Settings",
+            title: String(localized: "Settings"),
             image: UIImage(systemName: "gearshape"),
             selectedImage: UIImage(systemName: "gearshape.fill")
         )
@@ -149,12 +149,12 @@ final class SettingsViewController: UIViewController {
 
     private static func footerText(for section: Section) -> String? {
         switch section {
-        case .general: return "Appearance, link handling, and haptic feedback across the app."
-        case .chat: return "Readability, message size, and which emote sets load in chat."
-        case .safety: return "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review."
-        case .video: return "Stream quality, autoplay, and how chat stays in sync with the video."
-        case .account: return "Sign in with Twitch to follow channels and join chat."
-        case .about: return "Embr is an independent, open-source Twitch client. Not affiliated with Twitch."
+        case .general: return String(localized: "Appearance, link handling, and haptic feedback across the app.")
+        case .chat: return String(localized: "Readability, message size, and which emote sets load in chat.")
+        case .safety: return String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review.")
+        case .video: return String(localized: "Stream quality, autoplay, and how chat stays in sync with the video.")
+        case .account: return String(localized: "Sign in with Twitch to follow channels and join chat.")
+        case .about: return String(localized: "Embr is an independent, open-source Twitch client. Not affiliated with Twitch.")
         }
     }
 
@@ -219,31 +219,31 @@ final class SettingsViewController: UIViewController {
 
         switch row {
         case .theme:
-            content.text = "Theme"
+            content.text = String(localized: "Theme")
             cell.contentConfiguration = content
             cell.accessories = [.customView(configuration: .init(customView: themeButton(selected: settings.theme), placement: .trailing()))]
 
         case .openLinksInApp:
-            switchRow(cell, &content, title: "Open Links In App", isOn: settings.openLinksInApp) { store, on in
+            switchRow(cell, &content, title: String(localized: "Open Links In App"), isOn: settings.openLinksInApp) { store, on in
                 store.update { $0.openLinksInApp = on }
             }
         case .haptics:
-            switchRow(cell, &content, title: "Haptics", isOn: settings.hapticsEnabled) { store, on in
+            switchRow(cell, &content, title: String(localized: "Haptics"), isOn: settings.hapticsEnabled) { store, on in
                 store.update { $0.hapticsEnabled = on }
             }
 
         case .showTimestamps:
-            switchRow(cell, &content, title: "Show Timestamps", isOn: settings.showTimestamps) { store, on in
+            switchRow(cell, &content, title: String(localized: "Show Timestamps"), isOn: settings.showTimestamps) { store, on in
                 store.update { $0.showTimestamps = on }
             }
         case .compactChat:
-            switchRow(cell, &content, title: "Compact Chat", isOn: settings.compactChat) { store, on in
+            switchRow(cell, &content, title: String(localized: "Compact Chat"), isOn: settings.compactChat) { store, on in
                 store.update { $0.compactChat = on }
             }
         case .messageScale:
             sliderRow(
                 cell, icon: tile,
-                title: "Message Scale",
+                title: String(localized: "Message Scale"),
                 value: settings.messageScale, range: 0.75...1.5, step: 0.05,
                 format: { String(format: "%.2fx", $0) }
             ) { store, value in
@@ -252,66 +252,66 @@ final class SettingsViewController: UIViewController {
         case .fontSizeDelta:
             stepperRow(
                 cell, icon: tile,
-                title: "Font Size Adjustment",
+                title: String(localized: "Font Size Adjustment"),
                 value: Double(settings.fontSizeDelta), range: -4...8, step: 1,
                 format: { $0 >= 0 ? "+\(Int($0))" : "\(Int($0))" }
             ) { store, value in
                 store.update { $0.fontSizeDelta = Int(value.rounded()) }
             }
         case .highlightMentions:
-            switchRow(cell, &content, title: "Highlight Mentions", isOn: settings.highlightMentions) { store, on in
+            switchRow(cell, &content, title: String(localized: "Highlight Mentions"), isOn: settings.highlightMentions) { store, on in
                 store.update { $0.highlightMentions = on }
             }
         case .recentMessagesBackfill:
-            switchRow(cell, &content, title: "Backfill Recent Messages", isOn: settings.recentMessagesBackfill) { store, on in
+            switchRow(cell, &content, title: String(localized: "Backfill Recent Messages"), isOn: settings.recentMessagesBackfill) { store, on in
                 store.update { $0.recentMessagesBackfill = on }
             }
         case .animateEmotes:
-            switchRow(cell, &content, title: "Animate Emotes", isOn: settings.animateEmotes) { store, on in
+            switchRow(cell, &content, title: String(localized: "Animate Emotes"), isOn: settings.animateEmotes) { store, on in
                 store.update { $0.animateEmotes = on }
             }
         case let .thirdPartyEmotes(provider):
-            switchRow(cell, &content, title: provider.displayName + " Emotes", isOn: settings.thirdPartyEmotesEnabled(provider)) { store, on in
+            switchRow(cell, &content, title: String(localized: "\(provider.displayName) Emotes"), isOn: settings.thirdPartyEmotesEnabled(provider)) { store, on in
                 store.update { $0.showThirdPartyEmotes[provider] = on }
             }
         case .filterObjectionableContent:
-            switchRow(cell, &content, title: "Filter Objectionable Content", isOn: settings.objectionableFilterEnabled) { store, on in
+            switchRow(cell, &content, title: String(localized: "Filter Objectionable Content"), isOn: settings.objectionableFilterEnabled) { store, on in
                 store.update { $0.filterObjectionableContent = on }
             }
         case .mutedKeywords:
-            content.text = "Muted Keywords"
+            content.text = String(localized: "Muted Keywords")
             let count = settings.mutedKeywordList.count
-            content.secondaryText = count == 0 ? "None" : (count == 1 ? "1 word" : "\(count) words")
+            content.secondaryText = count == 0 ? String(localized: "None") : (count == 1 ? String(localized: "1 word") : String(localized: "\(count) words"))
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .blockedUsers:
-            content.text = "Blocked Users"
+            content.text = String(localized: "Blocked Users")
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
 
         case .autoplay:
-            switchRow(cell, &content, title: "Autoplay", isOn: settings.autoplay) { store, on in
+            switchRow(cell, &content, title: String(localized: "Autoplay"), isOn: settings.autoplay) { store, on in
                 store.update { $0.autoplay = on }
             }
         case .backgroundAudio:
-            switchRow(cell, &content, title: "Background Audio", isOn: settings.backgroundAudio ?? true) { store, on in
+            switchRow(cell, &content, title: String(localized: "Background Audio"), isOn: settings.backgroundAudio ?? true) { store, on in
                 store.update { $0.backgroundAudio = on }
             }
         case .chatDelaySeconds:
             sliderRow(
                 cell, icon: tile,
-                title: "Chat Delay",
+                title: String(localized: "Chat Delay"),
                 value: settings.chatDelaySeconds, range: 0...10, step: 0.5,
                 format: { String(format: "%.1fs", $0) }
             ) { store, value in
                 store.update { $0.chatDelaySeconds = value }
             }
         case .autoSyncChatDelay:
-            switchRow(cell, &content, title: "Auto-Sync Chat Delay", isOn: settings.autoSyncChatDelay) { store, on in
+            switchRow(cell, &content, title: String(localized: "Auto-Sync Chat Delay"), isOn: settings.autoSyncChatDelay) { store, on in
                 store.update { $0.autoSyncChatDelay = on }
             }
         case .keepScreenAwake:
-            switchRow(cell, &content, title: "Keep Screen Awake", isOn: settings.keepScreenAwake) { store, on in
+            switchRow(cell, &content, title: String(localized: "Keep Screen Awake"), isOn: settings.keepScreenAwake) { store, on in
                 store.update { $0.keepScreenAwake = on }
             }
 
@@ -321,52 +321,52 @@ final class SettingsViewController: UIViewController {
                 content.text = user.displayName
                 content.secondaryText = "@\(user.login)"
             case .anonymous:
-                content.text = "Not Logged In"
-                content.secondaryText = "Browsing anonymously"
+                content.text = String(localized: "Not Logged In")
+                content.secondaryText = String(localized: "Browsing anonymously")
             }
             cell.contentConfiguration = content
             cell.accessories = []
         case .accountAction:
             switch authState {
             case .authenticated:
-                content.text = "Log Out"
+                content.text = String(localized: "Log Out")
                 content.textProperties.color = .systemRed
             case .anonymous:
-                content.text = "Log In with Twitch"
+                content.text = String(localized: "Log In with Twitch")
                 content.textProperties.color = Theme.accent
             }
             cell.contentConfiguration = content
             cell.accessories = []
 
         case .version:
-            content.text = "Version"
+            content.text = String(localized: "Version")
             content.secondaryText = Self.versionString
             cell.contentConfiguration = content
             cell.accessories = []
         case .github:
-            content.text = "GitHub"
+            content.text = String(localized: "GitHub")
             content.textProperties.color = Theme.link
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .moreApps:
-            content.text = "More Apps"
+            content.text = String(localized: "More Apps")
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .termsOfUse:
-            content.text = "Terms of Use"
+            content.text = String(localized: "Terms of Use")
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .privacyPolicy:
-            content.text = "Privacy Policy"
+            content.text = String(localized: "Privacy Policy")
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
         case .contactSupport:
-            content.text = "Contact Support"
+            content.text = String(localized: "Contact Support")
             content.textProperties.color = Theme.accent
             cell.contentConfiguration = content
             cell.accessories = []
         case .shareLogs:
-            content.text = "Share Diagnostic Logs"
+            content.text = String(localized: "Share Diagnostic Logs")
             content.textProperties.color = Theme.accent
             cell.contentConfiguration = content
             cell.accessories = []
@@ -444,7 +444,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func themeButton(selected: Settings.ThemePreference) -> UIButton {
-        let options: [(String, Settings.ThemePreference)] = [("System", .system), ("Light", .light), ("Dark", .dark)]
+        let options: [(String, Settings.ThemePreference)] = [(String(localized: "System"), .system), (String(localized: "Light"), .light), (String(localized: "Dark"), .dark)]
         var configuration = UIButton.Configuration.plain()
         configuration.baseForegroundColor = Theme.secondaryText
         let button = UIButton(configuration: configuration)
@@ -528,8 +528,8 @@ final class SettingsViewController: UIViewController {
     private func shareLogs(from sourceView: UIView?) {
         let urls = AppLogger.shared.logFileURLs()
         guard !urls.isEmpty else {
-            let alert = UIAlertController(title: "No Logs Yet", message: "Diagnostic logs will appear here after you use the app.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            let alert = UIAlertController(title: String(localized: "No Logs Yet"), message: String(localized: "Diagnostic logs will appear here after you use the app."), preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
             present(alert, animated: true)
             return
         }
@@ -551,12 +551,12 @@ final class SettingsViewController: UIViewController {
     }
 
     private func confirmLogout() {
-        let alert = UIAlertController(title: "Log Out?", message: "You'll return to browsing as a guest.", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Log Out", style: .destructive) { [weak self] _ in
+        let alert = UIAlertController(title: String(localized: "Log Out?"), message: String(localized: "You'll return to browsing as a guest."), preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: String(localized: "Log Out"), style: .destructive) { [weak self] _ in
             guard let self else { return }
             Task { await self.auth.logout() }
         })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
         if let popover = alert.popoverPresentationController {
             popover.sourceView = view
             popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
@@ -594,7 +594,7 @@ extension SettingsViewController: UICollectionViewDelegate {
         case .github:
             openGitHub()
         case .moreApps:
-            Midgar.present(from: self, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
+            Midgar.present(from: self, config: MidgarConfig(accent: Theme.accent, title: String(localized: "More Apps")))
         case .accountAction:
             performAccountAction()
         case .mutedKeywords:
@@ -619,7 +619,7 @@ extension SettingsViewController: UICollectionViewDelegate {
     }
 
     private func openSupportEmail() {
-        let subject = "Embr Support (\(Self.versionString))"
+        let subject = String(localized: "Embr Support (\(Self.versionString))")
         var components = URLComponents()
         components.scheme = "mailto"
         components.path = LegalText.supportEmail
@@ -637,11 +637,11 @@ extension SettingsViewController: UICollectionViewDelegate {
     private func presentSupportFallback() {
         UIPasteboard.general.string = LegalText.supportEmail
         let alert = UIAlertController(
-            title: "Contact Support",
-            message: "Email \(LegalText.supportEmail)\n\nThe address has been copied to your clipboard.",
+            title: String(localized: "Contact Support"),
+            message: String(localized: "Email \(LegalText.supportEmail)\n\nThe address has been copied to your clipboard."),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
         present(alert, animated: true)
     }
 }
@@ -870,8 +870,8 @@ private final class StepperRowView: UIView, UIContentView {
         iconView.image = config.icon
         titleLabel.text = config.title
         valueLabel.text = config.format(liveValue)
-        minusButton.accessibilityLabel = "Decrease \(config.title)"
-        plusButton.accessibilityLabel = "Increase \(config.title)"
+        minusButton.accessibilityLabel = String(localized: "Decrease \(config.title)")
+        plusButton.accessibilityLabel = String(localized: "Increase \(config.title)")
         valueLabel.isAccessibilityElement = true
         valueLabel.accessibilityLabel = config.title
         valueLabel.accessibilityValue = config.format(liveValue)

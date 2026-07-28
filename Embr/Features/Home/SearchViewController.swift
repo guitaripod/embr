@@ -10,8 +10,8 @@ final class SearchViewController: UIViewController {
 
         var title: String {
             switch self {
-            case .channels: return "Channels"
-            case .categories: return "Categories"
+            case .channels: return String(localized: "Channels")
+            case .categories: return String(localized: "Categories")
             }
         }
     }
@@ -25,7 +25,7 @@ final class SearchViewController: UIViewController {
     private let searchController = UISearchController(searchResultsController: nil)
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
-    private let emptyView = EmptyStateView(symbol: "magnifyingglass", message: "Search for channels and categories.")
+    private let emptyView = EmptyStateView(symbol: "magnifyingglass", message: String(localized: "Search for channels and categories."))
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
@@ -39,8 +39,8 @@ final class SearchViewController: UIViewController {
     init(api: TwitchAPIProviding = TwitchAPIClient.shared) {
         self.api = api
         super.init(nibName: nil, bundle: nil)
-        title = "Search"
-        tabBarItem = UITabBarItem(title: "Search", image: UIImage(systemName: "magnifyingglass"), selectedImage: UIImage(systemName: "magnifyingglass"))
+        title = String(localized: "Search")
+        tabBarItem = UITabBarItem(title: String(localized: "Search"), image: UIImage(systemName: "magnifyingglass"), selectedImage: UIImage(systemName: "magnifyingglass"))
     }
 
     @available(*, unavailable)
@@ -72,9 +72,9 @@ final class SearchViewController: UIViewController {
     private func setUpSearch() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Channels & categories"
+        searchController.searchBar.placeholder = String(localized: "Channels & categories")
         searchController.searchBar.autocapitalizationType = .none
-        searchController.searchBar.scopeButtonTitles = ["All", "Live"]
+        searchController.searchBar.scopeButtonTitles = [String(localized: "All"), String(localized: "Live")]
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
@@ -144,7 +144,7 @@ final class SearchViewController: UIViewController {
             cell.backgroundConfiguration = background
             cell.accessories = [.disclosureIndicator()]
             cell.isAccessibilityElement = true
-            cell.accessibilityLabel = channel.isLive ? "\(channel.broadcasterName), live" : channel.broadcasterName
+            cell.accessibilityLabel = channel.isLive ? String(localized: "\(channel.broadcasterName), live") : channel.broadcasterName
             cell.accessibilityTraits = .button
         }
         let categoryRegistration = UICollectionView.CellRegistration<CategoryCell, GameCategory> { cell, _, category in
@@ -195,7 +195,7 @@ final class SearchViewController: UIViewController {
         guard !trimmed.isEmpty else {
             searchTask?.cancel()
             applyResults(channels: [], categories: [])
-            emptyView.setMessage("Search for channels and categories.")
+            emptyView.setMessage(String(localized: "Search for channels and categories."))
             emptyView.isHidden = false
             return
         }
@@ -216,9 +216,9 @@ final class SearchViewController: UIViewController {
             let categories = categoriesPage?.items ?? []
             self.applyResults(channels: channels, categories: categories)
             if channelsPage == nil && categoriesPage == nil {
-                self.emptyView.setMessage("Couldn't search — check your connection.")
+                self.emptyView.setMessage(String(localized: "Couldn't search — check your connection."))
             } else {
-                self.emptyView.setMessage("No results for \"\(trimmed)\".")
+                self.emptyView.setMessage(String(localized: "No results for \"\(trimmed)\"."))
             }
             self.emptyView.isHidden = !(channels.isEmpty && categories.isEmpty)
         }

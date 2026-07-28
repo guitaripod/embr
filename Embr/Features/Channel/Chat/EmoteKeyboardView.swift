@@ -76,7 +76,7 @@ final class EmoteKeyboardView: UIView {
         let recentIDs = Set(recents.map(\.id))
         var result: [(EmoteSection, [Emote])] = baseSections(catalog, excluding: recentIDs)
         if !recents.isEmpty {
-            result.insert((EmoteSection(title: "Recent"), recents), at: 0)
+            result.insert((EmoteSection(title: String(localized: "Recent")), recents), at: 0)
         }
         return result
     }
@@ -93,13 +93,13 @@ final class EmoteKeyboardView: UIView {
 
         var result: [(EmoteSection, [Emote])] = []
         let channelTwitch = take(channel.filter { $0.provider == .twitch })
-        if !channelTwitch.isEmpty { result.append((EmoteSection(title: "Channel"), channelTwitch)) }
+        if !channelTwitch.isEmpty { result.append((EmoteSection(title: String(localized: "Channel")), channelTwitch)) }
         for provider in [EmoteProvider.sevenTV, .betterTTV, .frankerFaceZ] {
             let group = take((channel + global).filter { $0.provider == provider })
             if !group.isEmpty { result.append((EmoteSection(title: provider.displayName), group)) }
         }
         let globalTwitch = take(global.filter { $0.provider == .twitch })
-        if !globalTwitch.isEmpty { result.append((EmoteSection(title: "Global"), globalTwitch)) }
+        if !globalTwitch.isEmpty { result.append((EmoteSection(title: String(localized: "Global")), globalTwitch)) }
         return result
     }
 
@@ -124,7 +124,7 @@ final class EmoteKeyboardView: UIView {
         addSubview(collectionView)
         configureDataSource()
 
-        emptyLabel.text = "No emotes available"
+        emptyLabel.text = String(localized: "No emotes available")
         emptyLabel.font = .systemFont(ofSize: 14)
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
@@ -134,8 +134,8 @@ final class EmoteKeyboardView: UIView {
 
         configureUtilityButton(keyboardButton, symbol: "keyboard")
         configureUtilityButton(backspaceButton, symbol: "delete.left")
-        keyboardButton.accessibilityLabel = "Keyboard"
-        backspaceButton.accessibilityLabel = "Delete"
+        keyboardButton.accessibilityLabel = String(localized: "Keyboard")
+        backspaceButton.accessibilityLabel = String(localized: "Delete")
         keyboardButton.addAction(UIAction { [weak self] _ in self?.onSwitchToKeyboard?() }, for: .touchUpInside)
         backspaceButton.addAction(UIAction { [weak self] _ in
             Haptics.impact(.light)

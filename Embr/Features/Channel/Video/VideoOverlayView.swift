@@ -115,7 +115,7 @@ final class VideoOverlayView: UIView {
         let symbol = playing ? "pause.fill" : "play.fill"
         let config = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
         playPauseButton.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
-        playPauseButton.accessibilityLabel = playing ? "Pause" : (isLive ? "Go to live" : "Play")
+        playPauseButton.accessibilityLabel = playing ? String(localized: "Pause") : (isLive ? String(localized: "Go to live") : String(localized: "Play"))
         applyLiveBadge(playing: playing)
     }
 
@@ -128,7 +128,7 @@ final class VideoOverlayView: UIView {
         liveBadge.isHidden = false
         if playing {
             liveBadge.tintColor = .systemRed
-            liveBadge.accessibilityLabel = "Live"
+            liveBadge.accessibilityLabel = String(localized: "Live")
             if !Motion.reduced {
                 liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
             } else {
@@ -137,7 +137,7 @@ final class VideoOverlayView: UIView {
         } else {
             liveBadge.removeAllSymbolEffects()
             liveBadge.tintColor = UIColor.white.withAlphaComponent(0.5)
-            liveBadge.accessibilityLabel = "Paused — tap play to return to live"
+            liveBadge.accessibilityLabel = String(localized: "Paused — tap play to return to live")
         }
     }
 
@@ -199,12 +199,12 @@ final class VideoOverlayView: UIView {
         playPauseButton.isUserInteractionEnabled = visible
     }
 
-    func showError(_ message: String, symbol: String, canRetry: Bool, actionTitle: String = "Try Again", tint: UIColor = .systemOrange) {
+    func showError(_ message: String, symbol: String, canRetry: Bool, actionTitle: String = String(localized: "Try Again"), tint: UIColor = .systemOrange) {
         presentNotice(message: message, symbol: symbol, tint: tint, actionTitle: canRetry ? actionTitle : nil)
     }
 
     func showEnded(_ message: String, symbol: String) {
-        presentNotice(message: message, symbol: symbol, tint: UIColor.white.withAlphaComponent(0.85), actionTitle: "Try Again")
+        presentNotice(message: message, symbol: symbol, tint: UIColor.white.withAlphaComponent(0.85), actionTitle: String(localized: "Try Again"))
     }
 
     private func presentNotice(message: String, symbol: String, tint: UIColor, actionTitle: String?) {
@@ -263,7 +263,7 @@ final class VideoOverlayView: UIView {
             UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
             for: .normal
         )
-        pipButton.accessibilityLabel = active ? "Exit Picture in Picture" : "Picture in Picture"
+        pipButton.accessibilityLabel = active ? String(localized: "Exit Picture in Picture") : String(localized: "Picture in Picture")
     }
 
     func setAirPlayHidden(_ hidden: Bool) {
@@ -281,12 +281,12 @@ final class VideoOverlayView: UIView {
         }
         let seconds = max(1, Int(remaining.rounded(.up)))
         let wasShowing = !adCover.isHidden && adCover.alpha > 0.01
-        adStatusLabel.text = "Ad break · stream resumes in \(seconds)s"
+        adStatusLabel.text = String(localized: "Ad break · stream resumes in \(seconds)s")
         setAdCoverVisible(true)
         bringSubviewToFront(adCover)
         bringSubviewToFront(topBar)
         if !wasShowing {
-            UIAccessibility.post(notification: .announcement, argument: "Ad break. Tap to play Embr Flyer while the stream resumes.")
+            UIAccessibility.post(notification: .announcement, argument: String(localized: "Ad break. Tap to play Embr Flyer while the stream resumes."))
         }
     }
 
@@ -424,7 +424,7 @@ final class VideoOverlayView: UIView {
         errorLabel.textAlignment = .center
         errorLabel.numberOfLines = 0
         var retryConfig = UIButton.Configuration.tinted()
-        retryConfig.title = "Retry"
+        retryConfig.title = String(localized: "Retry")
         retryConfig.cornerStyle = .large
         retryConfig.baseForegroundColor = .white
         retryButton.configuration = retryConfig
@@ -518,7 +518,7 @@ final class VideoOverlayView: UIView {
 
         reconnectSpinner.color = .white
         reconnectSpinner.hidesWhenStopped = false
-        reconnectLabel.text = "Reconnecting…"
+        reconnectLabel.text = String(localized: "Reconnecting…")
         reconnectLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         reconnectLabel.textColor = .white
         reconnectStack.axis = .horizontal
@@ -531,7 +531,7 @@ final class VideoOverlayView: UIView {
         reconnectStack.addArrangedSubview(reconnectLabel)
         reconnectPill.addSubview(reconnectStack)
         reconnectPill.isAccessibilityElement = true
-        reconnectPill.accessibilityLabel = "Reconnecting"
+        reconnectPill.accessibilityLabel = String(localized: "Reconnecting")
     }
 
     private func buildAdCover() {
@@ -558,7 +558,7 @@ final class VideoOverlayView: UIView {
         infoConfig.imagePadding = 5
         infoConfig.baseForegroundColor = .white
         infoConfig.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
-        var infoTitle = AttributedString("Why am I seeing ads?")
+        var infoTitle = AttributedString(String(localized: "Why am I seeing ads?"))
         infoTitle.font = .systemFont(ofSize: 12, weight: .semibold)
         infoConfig.attributedTitle = infoTitle
         adInfoButton.configuration = infoConfig
@@ -616,15 +616,15 @@ final class VideoOverlayView: UIView {
         scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
         scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside, .touchCancel])
 
-        backButton.accessibilityLabel = "Back"
-        playPauseButton.accessibilityLabel = "Play"
-        qualityButton.accessibilityLabel = "Quality"
-        pipButton.accessibilityLabel = "Picture in Picture"
-        muteButton.accessibilityLabel = "Mute"
-        fullscreenButton.accessibilityLabel = "Fullscreen"
-        speedButton.accessibilityLabel = "Playback Speed"
+        backButton.accessibilityLabel = String(localized: "Back")
+        playPauseButton.accessibilityLabel = String(localized: "Play")
+        qualityButton.accessibilityLabel = String(localized: "Quality")
+        pipButton.accessibilityLabel = String(localized: "Picture in Picture")
+        muteButton.accessibilityLabel = String(localized: "Mute")
+        fullscreenButton.accessibilityLabel = String(localized: "Fullscreen")
+        speedButton.accessibilityLabel = String(localized: "Playback Speed")
         liveBadge.isAccessibilityElement = true
-        liveBadge.accessibilityLabel = "Live"
+        liveBadge.accessibilityLabel = String(localized: "Live")
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
@@ -765,7 +765,7 @@ final class VideoOverlayView: UIView {
             UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)),
             for: .normal
         )
-        muteButton.accessibilityLabel = muted ? "Unmute" : "Mute"
+        muteButton.accessibilityLabel = muted ? String(localized: "Unmute") : String(localized: "Mute")
     }
 
     private static func makeTimeLabel() -> UILabel {

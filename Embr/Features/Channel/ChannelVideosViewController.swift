@@ -12,11 +12,11 @@ final class ChannelVideosViewController: UIViewController {
     private let broadcasterID: String
     private let api: TwitchAPIProviding
 
-    private let segmented = UISegmentedControl(items: ["Videos", "Clips", "Schedule"])
+    private let segmented = UISegmentedControl(items: [String(localized: "Videos"), String(localized: "Clips"), String(localized: "Schedule")])
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Int, Item>!
     private let spinner = UIActivityIndicatorView(style: .large)
-    private let emptyView = EmptyStateView(symbol: "film.stack", message: "Nothing here yet.")
+    private let emptyView = EmptyStateView(symbol: "film.stack", message: String(localized: "Nothing here yet."))
 
     private var vods: [VideoOnDemand] = []
     private var clips: [Clip] = []
@@ -102,7 +102,7 @@ final class ChannelVideosViewController: UIViewController {
             cell.configure(
                 thumbnail: clip.thumbnailURL,
                 title: clip.title,
-                meta: ["clipped by \(clip.creatorName)", MediaRowCell.views(clip.viewCount)].joined(separator: "  ·  "),
+                meta: [String(localized: "clipped by \(clip.creatorName)"), MediaRowCell.views(clip.viewCount)].joined(separator: "  ·  "),
                 duration: MediaRowCell.duration(clip.duration)
             )
         }
@@ -145,17 +145,17 @@ final class ChannelVideosViewController: UIViewController {
             items = schedule.map(Item.schedule)
             empty = schedule.isEmpty
             loadingNow = loadingSchedule
-            message = scheduleFailed ? "Couldn't load the schedule." : "No upcoming streams scheduled."
+            message = scheduleFailed ? String(localized: "Couldn't load the schedule.") : String(localized: "No upcoming streams scheduled.")
         } else if showingClips {
             items = clips.map(Item.clip)
             empty = clips.isEmpty
             loadingNow = loadingClips
-            message = "No clips yet."
+            message = String(localized: "No clips yet.")
         } else {
             items = vods.map(Item.vod)
             empty = vods.isEmpty
             loadingNow = loadingVods
-            message = "No past broadcasts available."
+            message = String(localized: "No past broadcasts available.")
         }
         snapshot.appendItems(items, toSection: 0)
         dataSource.apply(snapshot, animatingDifferences: true)
@@ -261,8 +261,8 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
                 if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
                     self.navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
                 } else {
-                    let alert = UIAlertController(title: "Clip Unavailable", message: "This clip can't be played right now.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    let alert = UIAlertController(title: String(localized: "Clip Unavailable"), message: String(localized: "This clip can't be played right now."), preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
                     self.present(alert, animated: true)
                 }
             }
@@ -395,9 +395,13 @@ private final class MediaRowCell: UICollectionViewListCell {
     }
 
     static func views(_ count: Int) -> String {
-        if count >= 1_000_000 { return String(format: "%.1fM views", Double(count) / 1_000_000) }
-        if count >= 1_000 { return String(format: "%.1fK views", Double(count) / 1_000) }
-        return "\(count) views"
+        if count >= 1_000_000 {
+            return String(localized: "\(String(format: "%.1fM", Double(count) / 1_000_000)) views")
+        }
+        if count >= 1_000 {
+            return String(localized: "\(String(format: "%.1fK", Double(count) / 1_000)) views")
+        }
+        return String(localized: "\(count) views")
     }
 
     static func relative(_ date: Date) -> String {
@@ -433,13 +437,13 @@ private final class ScheduleRowCell: UICollectionViewListCell {
     func configure(with segment: ScheduleSegment) {
         weekdayLabel.text = Self.weekday.string(from: segment.startTime).uppercased()
         dayLabel.text = Self.day.string(from: segment.startTime)
-        titleLabel.text = segment.title.isEmpty ? (segment.categoryName ?? "Scheduled stream") : segment.title
+        titleLabel.text = segment.title.isEmpty ? (segment.categoryName ?? String(localized: "Scheduled stream")) : segment.title
         var time = Self.time.string(from: segment.startTime)
         if let end = segment.endTime { time += " – " + Self.time.string(from: end) }
         timeLabel.text = time
         var meta: [String] = []
         if let category = segment.categoryName, !category.isEmpty { meta.append(category) }
-        if segment.isRecurring { meta.append("Weekly") }
+        if segment.isRecurring { meta.append(String(localized: "Weekly")) }
         metaLabel.text = meta.joined(separator: "  ·  ")
         metaLabel.isHidden = meta.isEmpty
     }

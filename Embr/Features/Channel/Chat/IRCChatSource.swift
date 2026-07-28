@@ -192,7 +192,7 @@ actor IRCChatSource: ChatSource {
         attempt += 1
         guard attempt <= Self.maxAttempts else {
             logger.warn("IRC gave up after \(attempt - 1) attempts", category: .chat)
-            continuation?.yield(.connection(.disconnected(reason: "Tap to reconnect")))
+            continuation?.yield(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
             return
         }
         let delay = Self.backoffSeconds(attempt: attempt)

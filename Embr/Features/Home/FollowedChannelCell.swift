@@ -43,10 +43,10 @@ final class FollowedChannelCell: UICollectionViewCell {
         currentID = channel.id
         let name = channel.broadcasterName.isEmpty ? channel.broadcasterLogin : channel.broadcasterName
         nameLabel.text = name
-        statusLabel.text = "Offline"
+        statusLabel.text = String(localized: "Offline")
         isAccessibilityElement = true
         accessibilityTraits = .button
-        accessibilityLabel = "\(name), offline"
+        accessibilityLabel = String(localized: "\(name), offline")
         avatar.image = nil
         guard let url = avatarURL else { return }
         if let cached = images.cachedImage(for: url) {

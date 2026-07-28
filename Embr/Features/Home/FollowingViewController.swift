@@ -17,15 +17,15 @@ final class FollowingViewController: UIViewController {
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let refreshControl = UIRefreshControl()
-    private let emptyView = EmptyStateView(symbol: "heart.slash", message: "You don't follow any channels yet.")
-    private let signInView = EmptyStateView(symbol: "person.crop.circle.badge.exclamationmark", message: "Sign in to see channels you follow.")
+    private let emptyView = EmptyStateView(symbol: "heart.slash", message: String(localized: "You don't follow any channels yet."))
+    private let signInView = EmptyStateView(symbol: "person.crop.circle.badge.exclamationmark", message: String(localized: "Sign in to see channels you follow."))
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
         indicator.color = Theme.secondaryText
         return indicator
     }()
-    private static let emptyMessage = "You don't follow any channels yet."
+    private static var emptyMessage: String { String(localized: "You don't follow any channels yet.") }
 
     private var liveStreams: [LiveStream] = []
     private var followedChannels: [FollowedChannel] = []
@@ -42,8 +42,8 @@ final class FollowingViewController: UIViewController {
         self.auth = auth
         self.api = api
         super.init(nibName: nil, bundle: nil)
-        title = "Following"
-        tabBarItem = UITabBarItem(title: "Following", image: UIImage(systemName: "heart"), selectedImage: UIImage(systemName: "heart.fill"))
+        title = String(localized: "Following")
+        tabBarItem = UITabBarItem(title: String(localized: "Following"), image: UIImage(systemName: "heart"), selectedImage: UIImage(systemName: "heart.fill"))
     }
 
     @available(*, unavailable)
@@ -250,7 +250,7 @@ final class FollowingViewController: UIViewController {
         }
         let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { [weak self] view, _, indexPath in
             let section = self?.dataSource.sectionIdentifier(for: indexPath.section)
-            view.configure(title: section == .offline ? "Channels" : "Live")
+            view.configure(title: section == .offline ? String(localized: "Channels") : String(localized: "Live"))
         }
         dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)

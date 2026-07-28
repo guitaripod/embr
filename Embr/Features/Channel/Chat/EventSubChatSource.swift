@@ -166,9 +166,9 @@ actor EventSubChatSource: ChatSource {
             logger.warn("EventSub revocation: \(reason)", category: .eventsub)
             if Self.isPermanentRevocation(reason) {
                 teardownSockets()
-                continuation?.yield(.connection(.disconnected(reason: "Chat unavailable")))
+                continuation?.yield(.connection(.disconnected(reason: String(localized: "Chat unavailable"))))
             } else {
-                continuation?.yield(.notice(SystemNotice(text: "Chat subscription revoked. Reconnecting.", isError: true)))
+                continuation?.yield(.notice(SystemNotice(text: String(localized: "Chat subscription revoked. Reconnecting."), isError: true)))
                 scheduleReconnect()
             }
         }
@@ -225,7 +225,7 @@ actor EventSubChatSource: ChatSource {
             if apiError == .unauthorized || apiError == .forbidden {
                 logger.warn("EventSub subscribe unauthorized; chat disabled until re-auth", category: .eventsub)
                 teardownSockets()
-                continuation?.yield(.connection(.disconnected(reason: "Sign in to chat")))
+                continuation?.yield(.connection(.disconnected(reason: String(localized: "Sign in to chat"))))
                 return
             }
             logger.error("EventSub subscription failed: \(error)", category: .eventsub)
@@ -269,7 +269,7 @@ actor EventSubChatSource: ChatSource {
         attempt += 1
         guard attempt <= Self.maxAttempts else {
             logger.warn("EventSub gave up after \(attempt - 1) attempts", category: .eventsub)
-            continuation?.yield(.connection(.disconnected(reason: "Tap to reconnect")))
+            continuation?.yield(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
             return
         }
         let delay = max(Self.backoffSeconds(attempt: attempt), minDelay ?? 0)

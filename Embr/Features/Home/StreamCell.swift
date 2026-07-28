@@ -53,7 +53,7 @@ final class StreamCell: UICollectionViewCell {
         titleLabel.text = stream.title.isEmpty ? " " : stream.title
         let category = stream.gameName
         if stream.isMature {
-            categoryLabel.text = category.isEmpty ? "🔞 Mature" : "🔞 " + category
+            categoryLabel.text = category.isEmpty ? String(localized: "🔞 Mature") : "🔞 " + category
         } else {
             categoryLabel.text = category
         }
@@ -90,11 +90,11 @@ final class StreamCell: UICollectionViewCell {
     private func applyAccessibility(_ stream: LiveStream) {
         isAccessibilityElement = true
         accessibilityTraits = .button
-        var parts = [stream.userName, "live"]
+        var parts = [stream.userName, String(localized: "live")]
         if !stream.gameName.isEmpty { parts.append(stream.gameName) }
-        parts.append("\(stream.viewerCount) viewers")
+        parts.append(String(localized: "\(stream.viewerCount) viewers"))
         if !stream.title.isEmpty { parts.append(stream.title) }
-        if stream.isMature { parts.append("mature audiences") }
+        if stream.isMature { parts.append(String(localized: "mature audiences")) }
         accessibilityLabel = parts.joined(separator: ", ")
     }
 
@@ -233,7 +233,7 @@ private final class LiveBadgeView: UIView {
         dot.contentMode = .scaleAspectFit
         if !Motion.reduced { dot.addSymbolEffect(.pulse, options: .repeating) }
 
-        label.text = "LIVE"
+        label.text = String(localized: "LIVE")
         label.font = .systemFont(ofSize: 10, weight: .heavy)
         label.textColor = .white
 
@@ -293,6 +293,6 @@ private final class UptimeBadgeView: UIView {
         isHidden = false
         let hours = Int(elapsed) / 3600
         let minutes = (Int(elapsed) % 3600) / 60
-        label.text = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+        label.text = hours > 0 ? String(localized: "\(hours)h \(minutes)m") : String(localized: "\(minutes)m")
     }
 }

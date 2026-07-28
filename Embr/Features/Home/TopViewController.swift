@@ -24,11 +24,11 @@ final class TopViewController: UIViewController {
     private var avatars: [String: URL] = [:]
     private var showsRecentRail: Bool { mode == .top }
 
-    private let segmented = UISegmentedControl(items: ["Streams", "Categories"])
+    private let segmented = UISegmentedControl(items: [String(localized: "Streams"), String(localized: "Categories")])
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let refreshControl = UIRefreshControl()
-    private let emptyView = EmptyStateView(symbol: "tv.slash", message: "Nothing live here right now.")
+    private let emptyView = EmptyStateView(symbol: "tv.slash", message: String(localized: "Nothing live here right now."))
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
@@ -36,8 +36,8 @@ final class TopViewController: UIViewController {
         return indicator
     }()
 
-    private static let emptyStreamsMessage = "Nothing live here right now."
-    private static let emptyCategoriesMessage = "No categories to show."
+    private static var emptyStreamsMessage: String { String(localized: "Nothing live here right now.") }
+    private static var emptyCategoriesMessage: String { String(localized: "No categories to show.") }
 
     private var streamsViewModel: StreamListViewModel!
     private var cancellables = Set<AnyCancellable>()
@@ -57,8 +57,8 @@ final class TopViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         switch mode {
         case .top:
-            title = "Top"
-            tabBarItem = UITabBarItem(title: "Top", image: UIImage(systemName: "chart.line.uptrend.xyaxis"), selectedImage: UIImage(systemName: "chart.line.uptrend.xyaxis"))
+            title = String(localized: "Top")
+            tabBarItem = UITabBarItem(title: String(localized: "Top"), image: UIImage(systemName: "chart.line.uptrend.xyaxis"), selectedImage: UIImage(systemName: "chart.line.uptrend.xyaxis"))
             streamsViewModel = StreamListViewModel(kind: .top, api: api)
         case .game(let category):
             title = category.name
@@ -207,7 +207,7 @@ final class TopViewController: UIViewController {
             }
         }
         let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { view, _, _ in
-            view.configure(title: "Recently Watched")
+            view.configure(title: String(localized: "Recently Watched"))
         }
         dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
@@ -375,7 +375,7 @@ final class TopViewController: UIViewController {
                 AppLogger.shared.warn("Top categories load failed: \(error)", category: .api)
                 guard self.showingCategories, self.categories.isEmpty else { return }
                 self.loadingIndicator.stopAnimating()
-                self.emptyView.setMessage("Couldn't load categories.")
+                self.emptyView.setMessage(String(localized: "Couldn't load categories."))
                 self.emptyView.onRetry = { [weak self] in self?.loadCategories(replacing: true) }
                 self.emptyView.isHidden = false
             }

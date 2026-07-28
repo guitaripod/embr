@@ -1,0 +1,835 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ Emotes" : {
+
+    },
+    "%@ is live" : {
+
+    },
+    "%@ is offline." : {
+
+    },
+    "%@ isn't live right now." : {
+
+    },
+    "%@ views" : {
+
+    },
+    "%@ went offline" : {
+
+    },
+    "%@, live" : {
+
+    },
+    "%@, offline" : {
+
+    },
+    "%lld new messages" : {
+
+    },
+    "%lld viewers" : {
+
+    },
+    "%lld views" : {
+
+    },
+    "%lld words" : {
+
+    },
+    "%lldh %lldm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lldh %2$lldm"
+          }
+        }
+      }
+    },
+    "%lldm" : {
+
+    },
+    "1 new message" : {
+
+    },
+    "1 word" : {
+
+    },
+    "A fast, native Twitch client. Browse live channels, watch streams, and chat — without the bloat." : {
+
+    },
+    "A subscription still goes to your streamer and unlocks their emotes and badges, even though it can't remove ads inside Embr. If ad-free viewing is what you're after, the official Twitch app honors your Turbo subscription." : {
+
+    },
+    "AFFILIATE" : {
+
+    },
+    "About" : {
+
+    },
+    "Account" : {
+
+    },
+    "Ad break · stream resumes in %llds" : {
+
+    },
+    "Ad break. Tap to play Embr Flyer while the stream resumes." : {
+
+    },
+    "Add" : {
+
+    },
+    "Ads are stitched into the stream" : {
+
+    },
+    "All" : {
+
+    },
+    "Animate Emotes" : {
+
+    },
+    "Appearance, link handling, and haptic feedback across the app." : {
+
+    },
+    "Audio Only" : {
+
+    },
+    "Auto" : {
+
+    },
+    "Auto-Sync Chat Delay" : {
+
+    },
+    "Autoplay" : {
+
+    },
+    "Back" : {
+
+    },
+    "Backfill Recent Messages" : {
+
+    },
+    "Background Audio" : {
+
+    },
+    "Ban" : {
+
+    },
+    "Banned %@" : {
+
+    },
+    "Best %lld · Tap to play again" : {
+
+    },
+    "Block @%@" : {
+
+    },
+    "Blocked %@" : {
+
+    },
+    "Blocked %@." : {
+
+    },
+    "Blocked %@. Their messages are now hidden." : {
+
+    },
+    "Blocked Users" : {
+
+    },
+    "Browsing anonymously" : {
+
+    },
+    "By continuing, you agree to our" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Categories" : {
+
+    },
+    "Channel" : {
+
+    },
+    "Channel Emotes" : {
+
+    },
+    "Channel Not Found" : {
+
+    },
+    "Channels" : {
+
+    },
+    "Channels & categories" : {
+
+    },
+    "Chat" : {
+
+    },
+    "Chat Delay" : {
+
+    },
+    "Chat Only" : {
+
+    },
+    "Chat subscription revoked. Reconnecting." : {
+
+    },
+    "Chat unavailable" : {
+
+    },
+    "Clip" : {
+
+    },
+    "Clip Unavailable" : {
+
+    },
+    "Clips" : {
+
+    },
+    "Closing" : {
+
+    },
+    "Commands: /ban /timeout <sec> /unban /block /unblock <user>" : {
+
+    },
+    "Compact Chat" : {
+
+    },
+    "Connect Twitch Account" : {
+
+    },
+    "Connecting…" : {
+
+    },
+    "Contact Support" : {
+
+    },
+    "Continue as Guest" : {
+
+    },
+    "Copy Message" : {
+
+    },
+    "Could not connect your Twitch account. You can continue as a guest and sign in later." : {
+
+    },
+    "Could not load streams" : {
+
+    },
+    "Could not open \"%@\"." : {
+
+    },
+    "Couldn't %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't %1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "Couldn't load categories." : {
+
+    },
+    "Couldn't load streams — try again." : {
+
+    },
+    "Couldn't load the schedule." : {
+
+    },
+    "Couldn't search — check your connection." : {
+
+    },
+    "Dark" : {
+
+    },
+    "Decrease %@" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete Message" : {
+
+    },
+    "Diagnostic logs will appear here after you use the app." : {
+
+    },
+    "Disconnected · Tap to reconnect" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Email %@\n\nThe address has been copied to your clipboard." : {
+
+    },
+    "Embr Flyer" : {
+
+    },
+    "Embr Support (%@)" : {
+
+    },
+    "Embr cuts the ads out" : {
+
+    },
+    "Embr detects those stitched-ad segments and drops them before they play. Instead of watching the ad you get a brief \"resuming shortly\" gap, because Twitch is still sending ad content during that window and there's nothing else to show. That gap is exactly when Embr Flyer appears." : {
+
+    },
+    "Embr is an independent, open-source Twitch client. Not affiliated with Twitch." : {
+
+    },
+    "Embr is an independent, open-source client and isn't affiliated with Twitch. Ad handling is provided for personal use." : {
+
+    },
+    "Embr is an independent, open-source client for watching Twitch streams and chat. It is not affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. By using Embr you agree to these terms and to Twitch's own Terms of Service and Community Guidelines.\n\nUser-generated content\nEmbr displays live chat and other content created by Twitch users. Embr does not create, endorse, or control that content. There is zero tolerance for objectionable content or abusive behaviour. Embr filters objectionable content automatically, and lets you mute keywords, report any message, and block any user — blocked and reported users are hidden from your chat instantly and flagged to the developer. Reports are reviewed and acted on within 24 hours: offending content is removed and offending users are ejected. Twitch's own moderation and reporting tools also apply.\n\nAcceptable use\nDo not use Embr to harass, threaten, or abuse others, to post unlawful content, or to circumvent Twitch's terms. Streams play through Twitch's official embedded player, including any advertising Twitch serves.\n\nNo warranty\nEmbr is provided \"as is\", without warranty of any kind. Availability depends on Twitch's services and may change at any time." : {
+
+    },
+    "Embr is designed to collect as little data as possible. The developer does not operate any advertising or analytics tracking, and does not sell or share your data.\n\nWhat stays on your device\nYour settings, watch history, list of channels, and blocked or hidden users are stored only on your device. Diagnostic logs are written to the app's private storage and never leave your device unless you explicitly choose to share them.\n\nSign in with Twitch\nIf you choose to sign in, authentication happens through Twitch's official OAuth flow. Your Twitch access token is stored in the device Keychain and is sent only to Twitch's own APIs (via a thin proxy that keeps no copy of it) to load chat and your follows. You can log out at any time, which removes the token from your device.\n\nReports\nWhen you report or block a chat message or user, the message, its author, and your selected reason are sent to the developer so the report can be reviewed and acted on. These reports do not include your identity.\n\nTwitch\nVideo and chat come from Twitch. Twitch's own privacy policy governs the data Twitch collects when its embedded player and services are used.\n\nContact\nQuestions about privacy: %@" : {
+
+    },
+    "Embr shows live Twitch chat — content created by other users that we don't control. There is zero tolerance for objectionable content or abusive behaviour: you can filter, report, and block from any message, and reports are reviewed and acted on." : {
+
+    },
+    "Emote-only" : {
+
+    },
+    "Emotes" : {
+
+    },
+    "Even with Twitch Turbo or a channel sub — here's what's happening." : {
+
+    },
+    "Exit Picture in Picture" : {
+
+    },
+    "Failed to send" : {
+
+    },
+    "Failed: /%@ %@ — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Failed: /%1$@ %2$@ — %3$@"
+          }
+        }
+      }
+    },
+    "Filter Objectionable Content" : {
+
+    },
+    "Followers %lldm" : {
+
+    },
+    "Followers-only" : {
+
+    },
+    "Following" : {
+
+    },
+    "Font Size Adjustment" : {
+
+    },
+    "Fullscreen" : {
+
+    },
+    "General" : {
+
+    },
+    "GitHub" : {
+
+    },
+    "Global" : {
+
+    },
+    "Global Emotes" : {
+
+    },
+    "Go to live" : {
+
+    },
+    "Got it" : {
+
+    },
+    "Haptics" : {
+
+    },
+    "Harassment or bullying" : {
+
+    },
+    "Hateful conduct" : {
+
+    },
+    "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review." : {
+
+    },
+    "Highlight Mentions" : {
+
+    },
+    "Increase %@" : {
+
+    },
+    "Keep Screen Awake" : {
+
+    },
+    "Keyboard" : {
+
+    },
+    "LIVE" : {
+
+    },
+    "Last updated %@." : {
+
+    },
+    "Light" : {
+
+    },
+    "Live" : {
+
+    },
+    "Locked" : {
+
+    },
+    "Log In" : {
+
+    },
+    "Log In with Twitch" : {
+
+    },
+    "Log Out" : {
+
+    },
+    "Log Out?" : {
+
+    },
+    "Log in to chat" : {
+
+    },
+    "Mature content" : {
+
+    },
+    "Message Scale" : {
+
+    },
+    "Message rejected" : {
+
+    },
+    "Messages containing this word or phrase will be hidden from chat." : {
+
+    },
+    "More Apps" : {
+
+    },
+    "Mute" : {
+
+    },
+    "Mute a Keyword" : {
+
+    },
+    "Muted Keywords" : {
+
+    },
+    "Network error" : {
+
+    },
+    "No Logs Yet" : {
+
+    },
+    "No blocked users.\nBlock someone from a chat message to hide them." : {
+
+    },
+    "No categories to show." : {
+
+    },
+    "No clips yet." : {
+
+    },
+    "No emotes available" : {
+
+    },
+    "No muted keywords.\nTap + to hide any chat message containing a word or phrase." : {
+
+    },
+    "No past broadcasts available." : {
+
+    },
+    "No results for \"%@\"." : {
+
+    },
+    "No upcoming streams scheduled." : {
+
+    },
+    "None" : {
+
+    },
+    "Normal" : {
+
+    },
+    "Not Logged In" : {
+
+    },
+    "Nothing here yet." : {
+
+    },
+    "Nothing live here right now." : {
+
+    },
+    "OK" : {
+
+    },
+    "Offline" : {
+
+    },
+    "On Twitch since %@" : {
+
+    },
+    "Open Links In App" : {
+
+    },
+    "Other" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Paused — tap play to return to live" : {
+
+    },
+    "Picture in Picture" : {
+
+    },
+    "Play" : {
+
+    },
+    "Playback Speed" : {
+
+    },
+    "Playback stopped. Check your connection and try again." : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Quality" : {
+
+    },
+    "Readability, message size, and which emote sets load in chat." : {
+
+    },
+    "Recent" : {
+
+    },
+    "Recently Used" : {
+
+    },
+    "Recently Watched" : {
+
+    },
+    "Reconnecting" : {
+
+    },
+    "Reconnecting (%lld)…" : {
+
+    },
+    "Reconnecting…" : {
+
+    },
+    "Reply" : {
+
+    },
+    "Replying to %@" : {
+
+    },
+    "Report @%@" : {
+
+    },
+    "Report Message" : {
+
+    },
+    "Reported %@." : {
+
+    },
+    "Reported %@. Their messages are now hidden." : {
+
+    },
+    "Reports are reviewed and this user will be hidden from your chat." : {
+
+    },
+    "Request timed out" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Safety & Moderation" : {
+
+    },
+    "Schedule" : {
+
+    },
+    "Scheduled stream" : {
+
+    },
+    "Score %lld" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search chat" : {
+
+    },
+    "Search emotes" : {
+
+    },
+    "Search for channels and categories." : {
+
+    },
+    "Send a message" : {
+
+    },
+    "Send a message · %@" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Share Diagnostic Logs" : {
+
+    },
+    "Show Timestamps" : {
+
+    },
+    "Show Video" : {
+
+    },
+    "Sign In Failed" : {
+
+    },
+    "Sign in to chat" : {
+
+    },
+    "Sign in to see channels you follow." : {
+
+    },
+    "Sign in to see this" : {
+
+    },
+    "Sign in with Twitch to follow channels and join chat." : {
+
+    },
+    "Slow %llds" : {
+
+    },
+    "Slow down — too many requests" : {
+
+    },
+    "Slow down — you're sending too fast" : {
+
+    },
+    "Spam" : {
+
+    },
+    "Stream quality, autoplay, and how chat stays in sync with the video." : {
+
+    },
+    "Streaming now" : {
+
+    },
+    "Streams" : {
+
+    },
+    "Subs-only" : {
+
+    },
+    "Supporting your streamer still matters" : {
+
+    },
+    "System" : {
+
+    },
+    "TWITCH PARTNER" : {
+
+    },
+    "Tap to fly through the ad break" : {
+
+    },
+    "Tap to fly · Best %lld" : {
+
+    },
+    "Tap to reconnect" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "Theme" : {
+
+    },
+    "This clip can't be played right now." : {
+
+    },
+    "This content isn't available right now." : {
+
+    },
+    "Timed out" : {
+
+    },
+    "Timed out %@ for %llds" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Timed out %1$@ for %2$llds"
+          }
+        }
+      }
+    },
+    "Timeout 10 min" : {
+
+    },
+    "Top" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Turbo's ad-free perk is tied to your account inside Twitch's own apps, applied the moment the official player requests a stream. Embr connects as an independent client and can't hand that entitlement to Twitch's ad system. Third-party clients used to forward a web login to request an ad-free stream, but Twitch closed that path — today the playback handshake returns \"ads on\" for everyone: Turbo members, subscribers, and logged-out viewers alike." : {
+
+    },
+    "Twitch uses server-side ad insertion: the ad video is spliced directly into the live stream's segments on Twitch's own servers, mixed in with the broadcast. By the time the stream reaches Embr the ad is already baked in — it isn't a separate track a player can simply switch off." : {
+
+    },
+    "Unbanned %@" : {
+
+    },
+    "Unblock" : {
+
+    },
+    "Unblocked %@ · reopen chat to show" : {
+
+    },
+    "Unique" : {
+
+    },
+    "Unmute" : {
+
+    },
+    "Usage: /%@ <user>" : {
+
+    },
+    "User %@ not found" : {
+
+    },
+    "Version" : {
+
+    },
+    "Video" : {
+
+    },
+    "Videos" : {
+
+    },
+    "Videos & Clips" : {
+
+    },
+    "View Profile" : {
+
+    },
+    "Violence or threats" : {
+
+    },
+    "Waiting for messages…" : {
+
+    },
+    "Weekly" : {
+
+    },
+    "Why Turbo or a sub doesn't skip them here" : {
+
+    },
+    "Why am I seeing ads?" : {
+
+    },
+    "Word or phrase" : {
+
+    },
+    "You can't send messages here" : {
+
+    },
+    "You don't follow any channels yet." : {
+
+    },
+    "You'll return to browsing as a guest." : {
+
+    },
+    "and" : {
+
+    },
+    "ban" : {
+
+    },
+    "clipped by %@" : {
+
+    },
+    "delete the message" : {
+
+    },
+    "emote-only" : {
+
+    },
+    "error" : {
+
+    },
+    "followers %lldm" : {
+
+    },
+    "followers-only" : {
+
+    },
+    "live" : {
+
+    },
+    "loading" : {
+
+    },
+    "mature audiences" : {
+
+    },
+    "not a moderator here" : {
+
+    },
+    "offline" : {
+
+    },
+    "rate limited" : {
+
+    },
+    "sign in required" : {
+
+    },
+    "slow %llds" : {
+
+    },
+    "subs-only" : {
+
+    },
+    "time out" : {
+
+    },
+    "unique" : {
+
+    },
+    "up %@" : {
+
+    },
+    "🔞 Mature" : {
+
+    }
+  },
+  "version" : "1.0"
+}

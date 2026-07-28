@@ -40,16 +40,16 @@ final class OnboardingViewController: UIViewController {
         title.textAlignment = .center
 
         let subtitle = UILabel()
-        subtitle.text = "A fast, native Twitch client. Browse live channels, watch streams, and chat — without the bloat."
+        subtitle.text = String(localized: "A fast, native Twitch client. Browse live channels, watch streams, and chat — without the bloat.")
         subtitle.font = .systemFont(ofSize: 17, weight: .regular)
         subtitle.textColor = Theme.secondaryText
         subtitle.textAlignment = .center
         subtitle.numberOfLines = 0
 
-        configure(connectButton, title: "Connect Twitch Account", filled: true)
+        configure(connectButton, title: String(localized: "Connect Twitch Account"), filled: true)
         connectButton.addTarget(self, action: #selector(connectTapped), for: .touchUpInside)
 
-        configure(guestButton, title: "Continue as Guest", filled: false)
+        configure(guestButton, title: String(localized: "Continue as Guest"), filled: false)
         guestButton.addTarget(self, action: #selector(guestTapped), for: .touchUpInside)
 
         activity.hidesWhenStopped = true
@@ -84,26 +84,26 @@ final class OnboardingViewController: UIViewController {
 
     private func makeLegalNotice() -> UIView {
         let notice = UILabel()
-        notice.text = "Embr shows live Twitch chat — content created by other users that we don't control. There is zero tolerance for objectionable content or abusive behaviour: you can filter, report, and block from any message, and reports are reviewed and acted on."
+        notice.text = String(localized: "Embr shows live Twitch chat — content created by other users that we don't control. There is zero tolerance for objectionable content or abusive behaviour: you can filter, report, and block from any message, and reports are reviewed and acted on.")
         notice.font = .systemFont(ofSize: 12, weight: .regular)
         notice.textColor = Theme.secondaryText
         notice.textAlignment = .center
         notice.numberOfLines = 0
 
         let caption = UILabel()
-        caption.text = "By continuing, you agree to our"
+        caption.text = String(localized: "By continuing, you agree to our")
         caption.font = .systemFont(ofSize: 12, weight: .regular)
         caption.textColor = Theme.secondaryText
         caption.textAlignment = .center
 
-        let terms = makeLinkButton(title: "Terms of Use") { [weak self] in
+        let terms = makeLinkButton(title: String(localized: "Terms of Use")) { [weak self] in
             self?.presentLegal(title: LegalText.termsTitle, body: LegalText.terms)
         }
         let and = UILabel()
-        and.text = "and"
+        and.text = String(localized: "and")
         and.font = .systemFont(ofSize: 12, weight: .regular)
         and.textColor = Theme.secondaryText
-        let privacy = makeLinkButton(title: "Privacy Policy") { [weak self] in
+        let privacy = makeLinkButton(title: String(localized: "Privacy Policy")) { [weak self] in
             self?.presentLegal(title: LegalText.privacyTitle, body: LegalText.privacy)
         }
 
@@ -202,11 +202,11 @@ final class OnboardingViewController: UIViewController {
 
     private func presentLoginError() {
         let alert = UIAlertController(
-            title: "Sign In Failed",
-            message: "Could not connect your Twitch account. You can continue as a guest and sign in later.",
+            title: String(localized: "Sign In Failed"),
+            message: String(localized: "Could not connect your Twitch account. You can continue as a guest and sign in later."),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
         present(alert, animated: true)
     }
 }

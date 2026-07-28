@@ -64,7 +64,7 @@ final class LegalViewController: UIViewController {
 
         let footerStyle = NSMutableParagraphStyle()
         footerStyle.paragraphSpacingBefore = 18
-        result.append(NSAttributedString(string: "Last updated \(LegalText.lastUpdated).", attributes: [
+        result.append(NSAttributedString(string: String(localized: "Last updated \(LegalText.lastUpdated)."), attributes: [
             .font: UIFont.preferredFont(forTextStyle: .caption1),
             .foregroundColor: Theme.secondaryText,
             .paragraphStyle: footerStyle

@@ -271,16 +271,16 @@ final class VideoViewController: UIViewController {
 
     private func presentSpeedPicker(from sourceView: UIView) {
         let rates: [Float] = [0.5, 1.0, 1.25, 1.5, 2.0]
-        let sheet = UIAlertController(title: "Playback Speed", message: nil, preferredStyle: .actionSheet)
+        let sheet = UIAlertController(title: String(localized: "Playback Speed"), message: nil, preferredStyle: .actionSheet)
         for rate in rates {
-            let title = rate == 1.0 ? "Normal" : Self.rateText(rate)
+            let title = rate == 1.0 ? String(localized: "Normal") : Self.rateText(rate)
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
                 self?.applyRate(rate)
             }
             action.setValue(rate == currentRate, forKey: "checked")
             sheet.addAction(action)
         }
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
         if let popover = sheet.popoverPresentationController {
             popover.sourceView = sourceView
             popover.sourceRect = sourceView.bounds
@@ -486,7 +486,7 @@ final class VideoViewController: UIViewController {
             recoveryAttempts = 0
             showingError = true
             logger.info("live source ended — presenting offline notice", category: .playback)
-            overlay.showEnded("\(login) is offline.", symbol: "tv.slash")
+            overlay.showEnded(String(localized: "\(login) is offline."), symbol: "tv.slash")
         case .vod, .clip:
             break
         }
@@ -560,8 +560,8 @@ final class VideoViewController: UIViewController {
     private var defaultNowPlayingTitle: String {
         switch source {
         case .live(let login): return login
-        case .vod: return "Video"
-        case .clip: return "Clip"
+        case .vod: return String(localized: "Video")
+        case .clip: return String(localized: "Clip")
         }
     }
 
@@ -668,7 +668,7 @@ final class VideoViewController: UIViewController {
             stallWork?.cancel(); stallWork = nil
             overlay.setReconnecting(false)
             player.pause()
-            overlay.showError("Playback stopped. Check your connection and try again.", symbol: "exclamationmark.triangle", canRetry: true)
+            overlay.showError(String(localized: "Playback stopped. Check your connection and try again."), symbol: "exclamationmark.triangle", canRetry: true)
             return
         }
         let delay = min(pow(2.0, Double(recoveryAttempts)), 16)
@@ -772,8 +772,8 @@ final class VideoViewController: UIViewController {
     }
 
     private var offlineMessage: String {
-        if case .live(let login) = source { return "\(login) isn't live right now." }
-        return "This content isn't available right now."
+        if case .live(let login) = source { return String(localized: "\(login) isn't live right now.") }
+        return String(localized: "This content isn't available right now.")
     }
 
     private func resolve() async throws -> PlaybackResolution {
@@ -789,15 +789,15 @@ final class VideoViewController: UIViewController {
 
     private func presentQualityPicker(from sourceView: UIView) {
         let qualities = player.availableQualities
-        let sheet = UIAlertController(title: "Quality", message: nil, preferredStyle: .actionSheet)
+        let sheet = UIAlertController(title: String(localized: "Quality"), message: nil, preferredStyle: .actionSheet)
 
-        sheet.addAction(qualityAction(named: "Auto", quality: autoQuality, isSelected: !isAudioOnly && player.currentQuality == nil))
+        sheet.addAction(qualityAction(named: String(localized: "Auto"), quality: autoQuality, isSelected: !isAudioOnly && player.currentQuality == nil))
         for quality in qualities where quality.name.caseInsensitiveCompare("auto") != .orderedSame {
             let selected = quality.isAudioOnly ? isAudioOnly : (!isAudioOnly && player.currentQuality == quality)
-            let label = quality.isAudioOnly ? "Audio Only" : quality.name
+            let label = quality.isAudioOnly ? String(localized: "Audio Only") : quality.name
             sheet.addAction(qualityAction(named: label, quality: quality, isSelected: selected))
         }
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
 
         if let popover = sheet.popoverPresentationController {
             popover.sourceView = sourceView

@@ -178,7 +178,7 @@ final class ChatViewController: UIViewController {
 
     private func setUpOverlays() {
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false
-        emptyLabel.text = "Waiting for messages…"
+        emptyLabel.text = String(localized: "Waiting for messages…")
         emptyLabel.font = .systemFont(ofSize: 14, weight: .regular)
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
@@ -193,7 +193,7 @@ final class ChatViewController: UIViewController {
         view.addSubview(statusBar)
 
         searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.placeholder = "Search chat"
+        searchField.placeholder = String(localized: "Search chat")
         searchField.isHidden = true
         searchField.returnKeyType = .search
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
@@ -446,31 +446,31 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         let isOwn = message.author.login.lowercased() == currentUserLogin?.lowercased()
         let sheet = UIAlertController(title: message.author.displayName, message: nil, preferredStyle: .actionSheet)
         if !isAnonymous {
-            sheet.addAction(UIAlertAction(title: "Reply", style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Reply"), style: .default) { [weak self] _ in
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didRequestReplyTo: message)
             })
         }
-        sheet.addAction(UIAlertAction(title: "View Profile", style: .default) { [weak self] _ in
+        sheet.addAction(UIAlertAction(title: String(localized: "View Profile"), style: .default) { [weak self] _ in
             guard let self else { return }
             self.delegate?.chatViewController(self, didTapUsername: message.author)
         })
-        sheet.addAction(UIAlertAction(title: "Copy Message", style: .default) { _ in
+        sheet.addAction(UIAlertAction(title: String(localized: "Copy Message"), style: .default) { _ in
             UIPasteboard.general.string = message.plainText
         })
         if canModerate, !isOwn {
-            sheet.addAction(UIAlertAction(title: "Delete Message", style: .destructive) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Delete Message"), style: .destructive) { [weak self] _ in
                 self?.viewModel.deleteMessage(messageID: message.id)
             })
-            sheet.addAction(UIAlertAction(title: "Timeout 10 min", style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Timeout 10 min"), style: .default) { [weak self] _ in
                 self?.viewModel.timeoutUser(userID: message.author.id, duration: 600)
             })
-            sheet.addAction(UIAlertAction(title: "Ban", style: .destructive) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Ban"), style: .destructive) { [weak self] _ in
                 self?.viewModel.banUser(userID: message.author.id)
             })
         }
         if !isOwn {
-            sheet.addAction(UIAlertAction(title: "Block @\(message.author.login)", style: .destructive) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Block @\(message.author.login)"), style: .destructive) { [weak self] _ in
                 guard let self else { return }
                 Haptics.notify(.success)
                 self.viewModel.block(
@@ -482,11 +482,11 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
             })
         }
         if !isOwn {
-            sheet.addAction(UIAlertAction(title: "Report Message", style: .destructive) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: String(localized: "Report Message"), style: .destructive) { [weak self] _ in
                 self?.presentReportReasons(for: message, sourceRect: sourceRect)
             })
         }
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
         if let popover = sheet.popoverPresentationController {
             popover.sourceView = view
             popover.sourceRect = sourceRect
@@ -498,20 +498,33 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         "Spam", "Harassment or bullying", "Hateful conduct", "Violence or threats", "Other"
     ]
 
+    /// A report reason is both the sheet button title and the value submitted to the
+    /// developer review endpoint, so the canonical English value stays on the wire while
+    /// only the presented title is localized.
+    private static func reportReasonTitle(_ reason: String) -> String {
+        switch reason {
+        case "Spam": return String(localized: "Spam")
+        case "Harassment or bullying": return String(localized: "Harassment or bullying")
+        case "Hateful conduct": return String(localized: "Hateful conduct")
+        case "Violence or threats": return String(localized: "Violence or threats")
+        default: return String(localized: "Other")
+        }
+    }
+
     private func presentReportReasons(for message: ChatMessage, sourceRect: CGRect) {
         let sheet = UIAlertController(
-            title: "Report @\(message.author.login)",
-            message: "Reports are reviewed and this user will be hidden from your chat.",
+            title: String(localized: "Report @\(message.author.login)"),
+            message: String(localized: "Reports are reviewed and this user will be hidden from your chat."),
             preferredStyle: .actionSheet
         )
         for reason in Self.reportReasons {
-            sheet.addAction(UIAlertAction(title: reason, style: .destructive) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: Self.reportReasonTitle(reason), style: .destructive) { [weak self] _ in
                 guard let self else { return }
                 Haptics.notify(.success)
                 self.viewModel.report(message: message, reason: reason, channelLogin: self.broadcasterLogin)
             })
         }
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
         if let popover = sheet.popoverPresentationController {
             popover.sourceView = view
             popover.sourceRect = sourceRect
@@ -554,7 +567,7 @@ extension ChatViewController: ChatInputViewDelegate {
                     input.hideReply()
                 } else {
                     Haptics.notify(.error)
-                    input.showDropReason(result.dropReason ?? "Message rejected")
+                    input.showDropReason(result.dropReason ?? String(localized: "Message rejected"))
                 }
             } catch {
                 Haptics.notify(.error)
@@ -566,15 +579,15 @@ extension ChatViewController: ChatInputViewDelegate {
     }
 
     private static func describe(_ error: Error) -> String {
-        guard let apiError = error as? APIError else { return "Failed to send" }
+        guard let apiError = error as? APIError else { return String(localized: "Failed to send") }
         switch apiError {
-        case .unauthorized: return "Sign in to chat"
-        case .forbidden: return "You can't send messages here"
-        case .rateLimited: return "Slow down — you're sending too fast"
+        case .unauthorized: return String(localized: "Sign in to chat")
+        case .forbidden: return String(localized: "You can't send messages here")
+        case .rateLimited: return String(localized: "Slow down — you're sending too fast")
         case .invalidRequest(let reason): return reason
-        case .network: return "Network error"
-        case .timeout: return "Timed out"
-        default: return "Failed to send"
+        case .network: return String(localized: "Network error")
+        case .timeout: return String(localized: "Timed out")
+        default: return String(localized: "Failed to send")
         }
     }
 
@@ -685,22 +698,24 @@ private final class ConnectionStatusBar: UIView {
             icon.removeAllSymbolEffects()
             updateContainerVisibility()
         case .connecting:
-            show(text: "Connecting…", symbol: "dot.radiowaves.left.and.right", pulse: true, color: Theme.slowMode)
+            show(text: String(localized: "Connecting…"), symbol: "dot.radiowaves.left.and.right", pulse: true, color: Theme.slowMode)
         case .reconnecting(let attempt):
-            show(text: "Reconnecting (\(attempt))…", symbol: "arrow.triangle.2.circlepath", pulse: true, color: Theme.slowMode)
+            show(text: String(localized: "Reconnecting (\(attempt))…"), symbol: "arrow.triangle.2.circlepath", pulse: true, color: Theme.slowMode)
         case .disconnected(let reason):
             canReconnect = true
-            show(text: reason ?? "Disconnected · Tap to reconnect", symbol: "arrow.clockwise", pulse: false, color: .systemRed)
+            show(text: reason ?? String(localized: "Disconnected · Tap to reconnect"), symbol: "arrow.clockwise", pulse: false, color: .systemRed)
         }
     }
 
     func update(roomState: RoomState) {
         var parts: [String] = []
-        if roomState.emoteOnly { parts.append("Emote-only") }
-        if roomState.subscribersOnly { parts.append("Subs-only") }
-        if let seconds = roomState.followersOnly { parts.append(seconds == 0 ? "Followers-only" : "Followers \(seconds)m") }
-        if let slow = roomState.slowMode { parts.append("Slow \(slow)s") }
-        if roomState.uniqueChat { parts.append("Unique") }
+        if roomState.emoteOnly { parts.append(String(localized: "Emote-only")) }
+        if roomState.subscribersOnly { parts.append(String(localized: "Subs-only")) }
+        if let seconds = roomState.followersOnly {
+            parts.append(seconds == 0 ? String(localized: "Followers-only") : String(localized: "Followers \(seconds)m"))
+        }
+        if let slow = roomState.slowMode { parts.append(String(localized: "Slow \(slow)s")) }
+        if roomState.uniqueChat { parts.append(String(localized: "Unique")) }
         roomStateLabel.text = parts.joined(separator: " · ")
         roomStateLabel.isHidden = parts.isEmpty
         updateContainerVisibility()
@@ -783,7 +798,7 @@ private final class NewMessagesPill: UIControl {
     required init?(coder: NSCoder) { fatalError() }
 
     func setCount(_ count: Int) {
-        label.text = count == 1 ? "1 new message" : "\(count) new messages"
+        label.text = count == 1 ? String(localized: "1 new message") : String(localized: "\(count) new messages")
     }
 
     private func setUp() {
@@ -853,12 +868,12 @@ private final class GuestChatBar: UIView {
         icon.setContentHuggingPriority(.required, for: .horizontal)
 
         let label = UILabel()
-        label.text = "Log in to chat"
+        label.text = String(localized: "Log in to chat")
         label.font = .systemFont(ofSize: 15, weight: .medium)
         label.textColor = Theme.secondaryText
 
         var configuration = UIButton.Configuration.tinted()
-        configuration.title = "Log In"
+        configuration.title = String(localized: "Log In")
         configuration.cornerStyle = .large
         configuration.baseForegroundColor = Theme.accent
         loginButton.configuration = configuration

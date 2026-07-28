@@ -254,7 +254,7 @@ final class ChannelViewController: UIViewController {
 
     private func updateChatOnlyButton() {
         chatOnlyItem.image = UIImage(systemName: isChatOnly ? "tv" : "bubble.left.and.bubble.right")
-        chatOnlyItem.accessibilityLabel = isChatOnly ? "Show Video" : "Chat Only"
+        chatOnlyItem.accessibilityLabel = isChatOnly ? String(localized: "Show Video") : String(localized: "Chat Only")
     }
 
     private func setChatOnly(_ on: Bool) {
@@ -648,7 +648,7 @@ private final class AudioOnlyBarView: UIView {
         liveBadge.contentMode = .scaleAspectFit
         liveBadge.setContentHuggingPriority(.required, for: .horizontal)
         liveBadge.isAccessibilityElement = true
-        liveBadge.accessibilityLabel = "Live"
+        liveBadge.accessibilityLabel = String(localized: "Live")
 
         let nameRow = UIStackView(arrangedSubviews: [nameLabel, liveBadge, UIView()])
         nameRow.axis = .horizontal
@@ -663,9 +663,9 @@ private final class AudioOnlyBarView: UIView {
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         nameLabel.lineBreakMode = .byTruncatingTail
 
-        configureButton(playPauseButton, symbol: "pause.fill", label: "Pause")
+        configureButton(playPauseButton, symbol: "pause.fill", label: String(localized: "Pause"))
         playPauseButton.addAction(UIAction { [weak self] _ in self?.onPlayPause?() }, for: .touchUpInside)
-        configureButton(restoreButton, symbol: "play.rectangle.fill", label: "Show Video")
+        configureButton(restoreButton, symbol: "play.rectangle.fill", label: String(localized: "Show Video"))
         restoreButton.addAction(UIAction { [weak self] _ in self?.onRestoreVideo?() }, for: .touchUpInside)
 
         let row = UIStackView(arrangedSubviews: [avatarView, textStack, playPauseButton, restoreButton])
@@ -726,7 +726,7 @@ private final class AudioOnlyBarView: UIView {
             withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
         )
         playPauseButton.configuration = config
-        playPauseButton.accessibilityLabel = playing ? "Pause" : "Play"
+        playPauseButton.accessibilityLabel = playing ? String(localized: "Pause") : String(localized: "Play")
         if playing, !Motion.reduced {
             liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
         } else {

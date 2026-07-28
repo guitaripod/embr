@@ -91,9 +91,9 @@ final class FollowedLiveService {
         guard settings.authorizationStatus == .authorized else { return }
         for stream in streams.prefix(5) {
             let content = UNMutableNotificationContent()
-            content.title = "\(stream.userName) is live"
+            content.title = String(localized: "\(stream.userName) is live")
             let detail = stream.title.isEmpty ? stream.gameName : stream.title
-            content.body = detail.isEmpty ? "Streaming now" : detail
+            content.body = detail.isEmpty ? String(localized: "Streaming now") : detail
             content.sound = .default
             let request = UNNotificationRequest(identifier: "live-\(stream.userID)", content: content, trigger: nil)
             try? await center.add(request)

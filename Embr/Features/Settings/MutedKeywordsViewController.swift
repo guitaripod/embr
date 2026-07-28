@@ -12,7 +12,7 @@ final class MutedKeywordsViewController: UIViewController {
         self.store = store
         self.keywords = store.current.mutedKeywordList
         super.init(nibName: nil, bundle: nil)
-        title = "Muted Keywords"
+        title = String(localized: "Muted Keywords")
     }
 
     @available(*, unavailable)
@@ -45,7 +45,7 @@ final class MutedKeywordsViewController: UIViewController {
         config.backgroundColor = Theme.background
         config.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
             guard let self, let keyword = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
-            let delete = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
+            let delete = UIContextualAction(style: .destructive, title: String(localized: "Delete")) { [weak self] _, _, completion in
                 self?.remove(keyword)
                 completion(true)
             }
@@ -65,7 +65,7 @@ final class MutedKeywordsViewController: UIViewController {
     }
 
     private func setUpEmptyLabel() {
-        emptyLabel.text = "No muted keywords.\nTap + to hide any chat message containing a word or phrase."
+        emptyLabel.text = String(localized: "No muted keywords.\nTap + to hide any chat message containing a word or phrase.")
         emptyLabel.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15))
         emptyLabel.adjustsFontForContentSizeCategory = true
         emptyLabel.textColor = Theme.secondaryText
@@ -105,18 +105,18 @@ final class MutedKeywordsViewController: UIViewController {
 
     private func presentAddKeyword() {
         let alert = UIAlertController(
-            title: "Mute a Keyword",
-            message: "Messages containing this word or phrase will be hidden from chat.",
+            title: String(localized: "Mute a Keyword"),
+            message: String(localized: "Messages containing this word or phrase will be hidden from chat."),
             preferredStyle: .alert
         )
         alert.addTextField { field in
-            field.placeholder = "Word or phrase"
+            field.placeholder = String(localized: "Word or phrase")
             field.autocapitalizationType = .none
             field.autocorrectionType = .no
             field.returnKeyType = .done
         }
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Add", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "Add"), style: .default) { [weak self, weak alert] _ in
             guard let self, let text = alert?.textFields?.first?.text else { return }
             self.add(text)
         })

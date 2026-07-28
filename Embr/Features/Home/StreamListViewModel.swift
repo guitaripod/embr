@@ -102,7 +102,7 @@ final class EmptyStateView: UIView {
         label.numberOfLines = 0
 
         var configuration = UIButton.Configuration.tinted()
-        configuration.title = "Retry"
+        configuration.title = String(localized: "Retry")
         configuration.cornerStyle = .large
         configuration.baseForegroundColor = Theme.accent
         retryButton.configuration = configuration
@@ -254,15 +254,15 @@ final class StreamListViewModel {
     }
 
     private func describe(_ error: Error) -> String {
-        guard let apiError = error as? APIError else { return "Could not load streams" }
+        guard let apiError = error as? APIError else { return String(localized: "Could not load streams") }
         switch apiError {
         case .unauthorized:
-            if case .followed = kind { return "Sign in to see this" }
-            return "Couldn't load streams — try again."
-        case .rateLimited: return "Slow down — too many requests"
-        case .network: return "Network error"
-        case .timeout: return "Request timed out"
-        default: return "Could not load streams"
+            if case .followed = kind { return String(localized: "Sign in to see this") }
+            return String(localized: "Couldn't load streams — try again.")
+        case .rateLimited: return String(localized: "Slow down — too many requests")
+        case .network: return String(localized: "Network error")
+        case .timeout: return String(localized: "Request timed out")
+        default: return String(localized: "Could not load streams")
         }
     }
 }
