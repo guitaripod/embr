@@ -2,7 +2,7 @@ import Foundation
 
 enum LegalText {
     static let supportEmail = "guitaripod@gmail.com"
-    static let lastUpdated = "2 July 2026"
+    static let lastUpdated = String(localized: "2 July 2026")
 
     static var termsURL: URL {
         Configuration.current.workerBaseURL.appendingPathComponent("legal/terms")

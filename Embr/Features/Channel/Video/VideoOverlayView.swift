@@ -249,7 +249,7 @@ final class VideoOverlayView: UIView {
             latencyLabel.text = nil
             return
         }
-        latencyLabel.text = String(format: "%.1fs", latency)
+        latencyLabel.text = String(localized: "\(String(format: "%.1f", latency))s")
     }
 
     func setPictureInPictureEnabled(_ enabled: Bool) {
@@ -743,7 +743,7 @@ final class VideoOverlayView: UIView {
     }
 
     func flashSeek(seconds: Int, forward: Bool) {
-        seekFlashLabel.text = (forward ? "+" : "−") + "\(seconds)s"
+        seekFlashLabel.text = (forward ? "+" : "−") + String(localized: "\(seconds)s")
         seekFlashCenterX?.constant = (forward ? 1 : -1) * bounds.width * 0.28
         seekFlashLabel.layer.removeAllAnimations()
         seekFlashLabel.alpha = 1
