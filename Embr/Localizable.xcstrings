@@ -45,6 +45,12 @@
             "value": "%@ 表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -92,6 +98,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 正在直播"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ 正在直播"
@@ -149,6 +161,12 @@
             "value": "%@ 未开播。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 未開播。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -199,6 +217,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 当前没有直播。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 目前沒有直播。"
           }
         },
         "pt-BR": {
@@ -253,6 +277,12 @@
             "value": "%@ 次观看"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 次觀看"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -300,6 +330,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 已下播"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ 已下播"
@@ -357,6 +393,12 @@
             "value": "%@，直播中"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@，直播中"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -407,6 +449,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@，未开播"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@，未開播"
           }
         },
         "pt-BR": {
@@ -466,6 +514,12 @@
             "state": "translated",
             "value": "%@ 秒"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 秒"
+          }
         }
       }
     },
@@ -511,6 +565,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 条新消息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 則新訊息"
           }
         },
         "pt-BR": {
@@ -611,6 +671,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 位观众"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 位觀眾"
           }
         },
         "pt-BR": {
@@ -725,6 +791,12 @@
             "value": "%lld 次观看"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 次觀看"
+          }
+        },
         "pt-BR": {
           "variations": {
             "plural": {
@@ -789,6 +861,12 @@
             "value": "%lld 个词"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個字詞"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -847,6 +925,12 @@
             "value": "%1$lld小时%2$lld分"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld小時%2$lld分"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -894,6 +978,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld分"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld分"
@@ -956,6 +1046,12 @@
             "state": "translated",
             "value": "%lld 秒"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 秒"
+          }
         }
       }
     },
@@ -1001,6 +1097,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 条新消息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 則新訊息"
           }
         },
         "pt-BR": {
@@ -1053,6 +1155,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 个词"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 個字詞"
           }
         },
         "pt-BR": {
@@ -1112,6 +1220,12 @@
             "state": "translated",
             "value": "2026年7月2日"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年7月2日"
+          }
         }
       }
     },
@@ -1157,6 +1271,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "快速的原生 Twitch 客户端。浏览直播频道、观看直播、参与聊天，没有多余的负担。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快速的原生 Twitch 用戶端。瀏覽直播頻道、觀看直播、參與聊天，沒有多餘的負擔。"
           }
         },
         "pt-BR": {
@@ -1211,6 +1331,12 @@
             "value": "订阅依然会支持你的主播，并解锁该频道的表情和徽章，只是无法去掉 Embr 里的广告。如果你想无广告观看，官方 Twitch 应用会认可你的 Turbo 订阅。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱依然會支持你的實況主，也會解鎖該頻道的表情符號和徽章，只是無法移除 Embr 裡的廣告。如果你要的是無廣告觀看，官方 Twitch App 會認可你的 Turbo 訂閱。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1261,6 +1387,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "联盟主播"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加盟實況主"
           }
         },
         "pt-BR": {
@@ -1315,6 +1447,12 @@
             "value": "关于"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1365,6 +1503,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "账号"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帳號"
           }
         },
         "pt-BR": {
@@ -1419,6 +1563,12 @@
             "value": "广告插播 · %lld 秒后恢复直播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "廣告時段 · %lld 秒後恢復直播"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1469,6 +1619,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "广告插播中。点按即可在直播恢复前玩 Embr Flyer。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "廣告時段。點一下即可在直播恢復前玩 Embr Flyer。"
           }
         },
         "pt-BR": {
@@ -1523,6 +1679,12 @@
             "value": "添加"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1575,6 +1737,12 @@
             "value": "广告被拼接进直播流中"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "廣告是直接拼接進直播串流的"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1622,6 +1790,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "全部"
@@ -1679,6 +1853,12 @@
             "value": "动态表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "動態表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1729,6 +1909,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "全应用的外观、链接打开方式和触感反馈。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "整個 App 的外觀、連結開啟方式與觸覺回饋。"
           }
         },
         "pt-BR": {
@@ -1783,6 +1969,12 @@
             "value": "仅音频"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅音訊"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1833,6 +2025,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "自动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動"
           }
         },
         "pt-BR": {
@@ -1887,6 +2085,12 @@
             "value": "自动同步聊天延迟"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動同步聊天延遲"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1939,6 +2143,12 @@
             "value": "自动播放"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動播放"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -1986,6 +2196,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "返回"
@@ -2043,6 +2259,12 @@
             "value": "载入最近消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入近期訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2093,6 +2315,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "后台音频"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "背景音訊"
           }
         },
         "pt-BR": {
@@ -2147,6 +2375,12 @@
             "value": "封禁"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停權"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2197,6 +2431,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已封禁 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已將 %@ 停權"
           }
         },
         "pt-BR": {
@@ -2251,6 +2491,12 @@
             "value": "最高 %lld · 点按再玩一次"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最佳 %lld · 點一下再玩一次"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2301,6 +2547,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "屏蔽 @%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "封鎖 @%@"
           }
         },
         "pt-BR": {
@@ -2355,6 +2607,12 @@
             "value": "已屏蔽 %@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已封鎖 %@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2405,6 +2663,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已屏蔽 %@。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已封鎖 %@。"
           }
         },
         "pt-BR": {
@@ -2459,6 +2723,12 @@
             "value": "已屏蔽 %@。该用户的消息将不再显示。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已封鎖 %@。對方的訊息將不再顯示。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2509,6 +2779,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已屏蔽的用户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已封鎖的使用者"
           }
         },
         "pt-BR": {
@@ -2563,6 +2839,12 @@
             "value": "匿名浏览中"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以匿名方式瀏覽"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2615,6 +2897,12 @@
             "value": "继续即表示你同意"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繼續即表示你同意"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2662,6 +2950,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "取消"
@@ -2719,6 +3013,12 @@
             "value": "分类"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分類"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2769,6 +3069,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "频道"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻道"
           }
         },
         "pt-BR": {
@@ -2823,6 +3129,12 @@
             "value": "频道表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻道表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2873,6 +3185,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未找到频道"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到頻道"
           }
         },
         "pt-BR": {
@@ -2927,6 +3245,12 @@
             "value": "频道"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻道"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -2979,6 +3303,12 @@
             "value": "频道和分类"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻道與分類"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3026,6 +3356,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "聊天"
@@ -3083,6 +3419,12 @@
             "value": "聊天延迟"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天延遲"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3133,6 +3475,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅聊天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅聊天"
           }
         },
         "pt-BR": {
@@ -3187,6 +3535,12 @@
             "value": "聊天连接已断开。正在重新连接。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天連線已中斷。正在重新連線。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3237,6 +3591,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "聊天不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天室無法使用"
           }
         },
         "pt-BR": {
@@ -3291,6 +3651,12 @@
             "value": "剪辑"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪輯"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3341,6 +3707,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "剪辑不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪輯無法播放"
           }
         },
         "pt-BR": {
@@ -3395,6 +3767,12 @@
             "value": "剪辑"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪輯"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3445,6 +3823,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "即将截止"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即將結束"
           }
         },
         "pt-BR": {
@@ -3499,6 +3883,12 @@
             "value": "命令：/ban /timeout <秒> /unban /block /unblock <用户>"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "指令：/ban /timeout <秒> /unban /block /unblock <使用者>"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3549,6 +3939,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "紧凑聊天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "精簡聊天"
           }
         },
         "pt-BR": {
@@ -3603,6 +3999,12 @@
             "value": "连接 Twitch 账号"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連結 Twitch 帳號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3653,6 +4055,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在连接…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在連線…"
           }
         },
         "pt-BR": {
@@ -3707,6 +4115,12 @@
             "value": "联系支持"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聯絡支援"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3757,6 +4171,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "以访客身份继续"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以訪客身分繼續"
           }
         },
         "pt-BR": {
@@ -3811,6 +4231,12 @@
             "value": "复制消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拷貝訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3861,6 +4287,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接你的 Twitch 账号。你可以先以访客身份继续，稍后再登录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法連結你的 Twitch 帳號。你可以先以訪客身分繼續，稍後再登入。"
           }
         },
         "pt-BR": {
@@ -3915,6 +4347,12 @@
             "value": "无法加载直播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入直播"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -3965,6 +4403,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法打开“%@”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法開啟「%@」。"
           }
         },
         "pt-BR": {
@@ -4025,6 +4469,12 @@
             "value": "%1$@失败 — %2$@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@失敗 — %2$@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4075,6 +4525,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法加载分类。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入分類。"
           }
         },
         "pt-BR": {
@@ -4129,6 +4585,12 @@
             "value": "无法加载直播，请重试。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入直播，請再試一次。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4179,6 +4641,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法加载直播日程。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法載入時間表。"
           }
         },
         "pt-BR": {
@@ -4233,6 +4701,12 @@
             "value": "无法搜索，请检查网络连接。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法搜尋，請檢查網路連線。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4280,6 +4754,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "深色"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "深色"
@@ -4337,6 +4817,12 @@
             "value": "减小%@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "調低%@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4387,6 +4873,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
           }
         },
         "pt-BR": {
@@ -4441,6 +4933,12 @@
             "value": "删除消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4491,6 +4989,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用应用后，诊断日志会显示在这里。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 App 之後，診斷記錄會顯示在這裡。"
           }
         },
         "pt-BR": {
@@ -4545,6 +5049,12 @@
             "value": "已断开 · 点按重新连接"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已中斷連線 · 點一下重新連線"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4595,6 +5105,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉"
           }
         },
         "pt-BR": {
@@ -4649,6 +5165,12 @@
             "value": "请发送邮件至 %@\n\n地址已复制到剪贴板。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請寄信至 %@\n\n地址已拷貝到剪貼板。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4696,6 +5218,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Flyer"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Embr Flyer"
@@ -4753,6 +5281,12 @@
             "value": "Embr 支持 (%@)"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 支援 (%@)"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4803,6 +5337,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr 会剪掉广告"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 會把廣告剪掉"
           }
         },
         "pt-BR": {
@@ -4857,6 +5397,12 @@
             "value": "Embr 会识别这些拼接进来的广告片段，并在播放前将其丢弃。你看到的不是广告，而是一段短暂的“即将恢复”空白——因为在那段时间里 Twitch 仍在发送广告内容，没有别的画面可以显示。Embr Flyer 正是在这段空白里出现的。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 會辨識這些拼接進來的廣告片段，並在播放前將它們丟棄。你看到的不是廣告，而是一段短暫的「即將恢復」空白——因為在那段時間裡 Twitch 仍在傳送廣告內容，沒有別的畫面可以顯示。Embr Flyer 正是在這段空白裡出現的。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -4907,6 +5453,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr 是独立的开源 Twitch 客户端，与 Twitch 无隶属关系。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 是獨立的開放原始碼 Twitch 用戶端，與 Twitch 沒有隸屬關係。"
           }
         },
         "pt-BR": {
@@ -4961,6 +5513,12 @@
             "value": "Embr 是独立的开源客户端，与 Twitch 无隶属关系。广告处理功能仅供个人使用。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 是獨立的開放原始碼用戶端，與 Twitch 沒有隸屬關係。廣告處理功能僅供個人使用。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5011,6 +5569,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr 是一款独立的开源客户端，用于观看 Twitch 直播和聊天。它与 Twitch Interactive, Inc. 无隶属关系，也未获得其背书或赞助。使用 Embr 即表示你同意本条款，以及 Twitch 自身的服务条款和社区准则。\n\n用户生成的内容\nEmbr 会显示由 Twitch 用户创建的实时聊天及其他内容。Embr 不创建、不背书、也不控制这些内容。对不当内容和辱骂行为零容忍。Embr 会自动过滤不当内容，并允许你屏蔽关键词、举报任何消息、屏蔽任何用户——被屏蔽或举报的用户会立即从你的聊天中隐藏，并上报给开发者。举报会在 24 小时内审核并处理：违规内容将被移除，违规用户将被清退。Twitch 自身的管理和举报工具同样适用。\n\n可接受的使用\n不得使用 Embr 骚扰、威胁或辱骂他人，不得发布违法内容，也不得规避 Twitch 的条款。直播通过 Twitch 官方嵌入式播放器播放，其中包含 Twitch 投放的任何广告。\n\n不提供担保\nEmbr 按“现状”提供，不附带任何形式的担保。可用性取决于 Twitch 的服务，并可能随时变化。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 是一款獨立的開放原始碼用戶端，用來觀看 Twitch 直播與聊天。它與 Twitch Interactive, Inc. 沒有隸屬關係，也未獲得其背書或贊助。使用 Embr 即表示你同意本條款，以及 Twitch 自身的服務條款與社群守則。\n\n使用者產生的內容\nEmbr 會顯示由 Twitch 使用者建立的即時聊天與其他內容。Embr 不建立、不背書，也不控制這些內容。對於不當內容與辱罵行為零容忍。Embr 會自動過濾不當內容，並讓你靜音關鍵字、檢舉任何訊息、封鎖任何使用者——被封鎖與被檢舉的使用者會立即從你的聊天室中隱藏，並回報給開發者。檢舉會在 24 小時內完成審核與處理：違規內容將被移除，違規使用者將被踢除。Twitch 自身的管理與檢舉工具同樣適用。\n\n可接受的使用方式\n不得使用 Embr 騷擾、威脅或辱罵他人，不得張貼違法內容，也不得規避 Twitch 的條款。直播透過 Twitch 官方的嵌入式播放器播放，其中包含 Twitch 所投放的任何廣告。\n\n不提供擔保\nEmbr 依「現狀」提供，不附帶任何形式的擔保。可用性取決於 Twitch 的服務，並可能隨時變動。"
           }
         },
         "pt-BR": {
@@ -5065,6 +5629,12 @@
             "value": "Embr 的设计目标是尽可能少地收集数据。开发者不运行任何广告或分析追踪，也不会出售或共享你的数据。\n\n留在你设备上的内容\n你的设置、观看记录、频道列表，以及被屏蔽或隐藏的用户，仅保存在你的设备上。诊断日志写入应用的私有存储，除非你明确选择分享，否则绝不会离开你的设备。\n\n使用 Twitch 登录\n如果你选择登录，认证将通过 Twitch 官方的 OAuth 流程完成。你的 Twitch 访问令牌保存在设备的钥匙串中，并且只会发送给 Twitch 自己的 API（经由一个不保留任何副本的轻量代理），用于加载聊天和你的关注列表。你可以随时退出登录，届时令牌会从你的设备上删除。\n\n举报\n当你举报或屏蔽某条聊天消息或某位用户时，该消息、其作者以及你所选的理由会发送给开发者，以便审核和处理。这些举报不包含你的身份信息。\n\nTwitch\n视频和聊天来自 Twitch。使用 Twitch 的嵌入式播放器和服务时，Twitch 所收集的数据受 Twitch 自身的隐私政策约束。\n\n联系方式\n隐私相关问题：%@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 的設計目標是盡可能少收集資料。開發者不執行任何廣告或分析追蹤，也不會出售或分享你的資料。\n\n留在你裝置上的內容\n你的設定、觀看紀錄、頻道清單，以及被封鎖或隱藏的使用者，都只儲存在你的裝置上。診斷記錄會寫入 App 的私人儲存空間，除非你明確選擇分享，否則絕不會離開你的裝置。\n\n使用 Twitch 登入\n如果你選擇登入，驗證會透過 Twitch 官方的 OAuth 流程進行。你的 Twitch 存取權杖儲存在裝置的鑰匙圈中，而且只會傳送給 Twitch 自己的 API（經由一個不保留任何副本的輕量代理伺服器），用來載入聊天與你的追蹤清單。你可以隨時登出，屆時權杖會從你的裝置上移除。\n\n檢舉\n當你檢舉或封鎖某則聊天訊息或某位使用者時，該訊息、其作者以及你所選的理由會傳送給開發者，以便審核與處理。這些檢舉不會包含你的身分資訊。\n\nTwitch\n影片與聊天來自 Twitch。使用 Twitch 的嵌入式播放器與服務時，Twitch 所收集的資料受 Twitch 自身的隱私權政策規範。\n\n聯絡方式\n隱私權相關問題：%@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5115,6 +5685,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr 会显示 Twitch 的实时聊天——这些内容由其他用户创建，我们无法控制。对不当内容和辱骂行为零容忍：你可以在任意消息上进行过滤、举报和屏蔽，所有举报都会经过审核并采取处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 會顯示 Twitch 的即時聊天——這些內容由其他使用者建立，我們無法控制。對於不當內容與辱罵行為零容忍：你可以在任何訊息上進行過濾、檢舉與封鎖，所有檢舉都會經過審核並處理。"
           }
         },
         "pt-BR": {
@@ -5169,6 +5745,12 @@
             "value": "仅表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5219,6 +5801,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "表情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號"
           }
         },
         "pt-BR": {
@@ -5273,6 +5861,12 @@
             "value": "即使有 Twitch Turbo 或频道订阅——原因在这里。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "即使有 Twitch Turbo 或頻道訂閱——原因在這裡。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5325,6 +5919,12 @@
             "value": "退出画中画"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "結束子母畫面"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5375,6 +5975,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送失敗"
           }
         },
         "pt-BR": {
@@ -5435,6 +6041,12 @@
             "value": "失败：/%1$@ %2$@ — %3$@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "失敗：/%1$@ %2$@ — %3$@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5485,6 +6097,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "过滤不当内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過濾不當內容"
           }
         },
         "pt-BR": {
@@ -5539,6 +6157,12 @@
             "value": "关注 %lld 分钟"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤 %lld 分鐘"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5589,6 +6213,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅关注者"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅限追蹤者"
           }
         },
         "pt-BR": {
@@ -5643,6 +6273,12 @@
             "value": "关注"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5693,6 +6329,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "字体大小调整"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字體大小調整"
           }
         },
         "pt-BR": {
@@ -5747,6 +6389,12 @@
             "value": "全屏"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全螢幕"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5799,6 +6447,12 @@
             "value": "通用"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一般"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5846,6 +6500,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "GitHub"
@@ -5903,6 +6563,12 @@
             "value": "全局"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全域"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -5955,6 +6621,12 @@
             "value": "全局表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全域表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6002,6 +6674,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回到直播"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "回到直播"
@@ -6059,6 +6737,12 @@
             "value": "知道了"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "瞭解"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6109,6 +6793,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "触感反馈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "觸覺回饋"
           }
         },
         "pt-BR": {
@@ -6163,6 +6853,12 @@
             "value": "骚扰或霸凌"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "騷擾或霸凌"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6213,6 +6909,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "仇恨行为"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仇恨行為"
           }
         },
         "pt-BR": {
@@ -6267,6 +6969,12 @@
             "value": "隐藏不当消息、屏蔽特定词语，并管理已屏蔽的用户。被屏蔽或举报的用户会立即隐藏，并提交给开发者审核。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏不當訊息、靜音特定字詞，並管理你已封鎖的使用者。被封鎖與被檢舉的使用者會立即隱藏，並送交開發者審核。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6317,6 +7025,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "高亮提及"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標示提及"
           }
         },
         "pt-BR": {
@@ -6371,6 +7085,12 @@
             "value": "增大%@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "調高%@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6421,6 +7141,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "保持屏幕常亮"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保持螢幕開啟"
           }
         },
         "pt-BR": {
@@ -6475,6 +7201,12 @@
             "value": "键盘"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵盤"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6522,6 +7254,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LIVE"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "LIVE"
@@ -6579,6 +7317,12 @@
             "value": "最后更新：%@。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後更新：%@。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6631,6 +7375,12 @@
             "value": "浅色"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "淺色"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6678,6 +7428,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播中"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "直播中"
@@ -6735,6 +7491,12 @@
             "value": "已锁定"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已鎖定"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6785,6 +7547,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入"
           }
         },
         "pt-BR": {
@@ -6839,6 +7607,12 @@
             "value": "使用 Twitch 登录"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Twitch 登入"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6889,6 +7663,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出登录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登出"
           }
         },
         "pt-BR": {
@@ -6943,6 +7723,12 @@
             "value": "要退出登录吗？"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要登出嗎？"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -6993,6 +7779,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录后即可聊天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後即可聊天"
           }
         },
         "pt-BR": {
@@ -7047,6 +7839,12 @@
             "value": "成人内容"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成人內容"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7097,6 +7895,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "消息缩放"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訊息縮放"
           }
         },
         "pt-BR": {
@@ -7151,6 +7955,12 @@
             "value": "消息被拒绝"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訊息遭到拒絕"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7201,6 +8011,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "包含该词语或短语的消息将不会显示在聊天中。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含這個字詞或短句的訊息將不會顯示在聊天室中。"
           }
         },
         "pt-BR": {
@@ -7255,6 +8071,12 @@
             "value": "更多应用"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多 App"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7305,6 +8127,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "静音"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "靜音"
           }
         },
         "pt-BR": {
@@ -7359,6 +8187,12 @@
             "value": "屏蔽关键词"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "靜音關鍵字"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7409,6 +8243,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已屏蔽的关键词"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已靜音的關鍵字"
           }
         },
         "pt-BR": {
@@ -7463,6 +8303,12 @@
             "value": "网络错误"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網路錯誤"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7513,6 +8359,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂无日志"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚無記錄"
           }
         },
         "pt-BR": {
@@ -7567,6 +8419,12 @@
             "value": "没有已屏蔽的用户。\n在聊天消息上屏蔽某人即可隐藏其消息。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有已封鎖的使用者。\n在聊天訊息上封鎖某人即可隱藏對方。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7617,6 +8475,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有可显示的分类。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可顯示的分類。"
           }
         },
         "pt-BR": {
@@ -7671,6 +8535,12 @@
             "value": "暂无剪辑。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚無剪輯。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7721,6 +8591,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有可用的表情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有可用的表情符號"
           }
         },
         "pt-BR": {
@@ -7775,6 +8651,12 @@
             "value": "没有已屏蔽的关键词。\n点按 + 即可隐藏包含某个词语或短语的聊天消息。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有已靜音的關鍵字。\n點一下 + 即可隱藏包含特定字詞或短句的聊天訊息。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7825,6 +8707,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有往期直播。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有過往的直播影片。"
           }
         },
         "pt-BR": {
@@ -7879,6 +8767,12 @@
             "value": "没有找到“%@”的结果。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到「%@」的結果。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -7929,6 +8823,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有已安排的直播。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有安排中的直播。"
           }
         },
         "pt-BR": {
@@ -7983,6 +8883,12 @@
             "value": "无"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8030,6 +8936,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正常"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "正常"
@@ -8087,6 +8999,12 @@
             "value": "未登录"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未登入"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8137,6 +9055,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "这里还没有内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這裡還沒有內容。"
           }
         },
         "pt-BR": {
@@ -8191,6 +9115,12 @@
             "value": "当前没有正在直播的内容。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前沒有正在直播的內容。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8238,6 +9168,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "好"
@@ -8295,6 +9231,12 @@
             "value": "未开播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未開播"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8345,6 +9287,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "自 %@ 年加入 Twitch"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 年加入 Twitch"
           }
         },
         "pt-BR": {
@@ -8399,6 +9347,12 @@
             "value": "在应用内打开链接"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 App 內開啟連結"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8446,6 +9400,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "其他"
@@ -8503,6 +9463,12 @@
             "value": "暂停"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫停"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8553,6 +9519,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已暂停 — 点按播放即可回到直播"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已暫停 — 點一下播放即可回到直播"
           }
         },
         "pt-BR": {
@@ -8607,6 +9579,12 @@
             "value": "画中画"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "子母畫面"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8654,6 +9632,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "播放"
@@ -8711,6 +9695,12 @@
             "value": "播放速度"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放速度"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8761,6 +9751,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "播放已停止。请检查网络连接后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "播放已停止。請檢查網路連線後再試一次。"
           }
         },
         "pt-BR": {
@@ -8815,6 +9811,12 @@
             "value": "隐私政策"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱私權政策"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8865,6 +9867,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "画质"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "畫質"
           }
         },
         "pt-BR": {
@@ -8919,6 +9927,12 @@
             "value": "可读性、消息大小，以及聊天中加载哪些表情集。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可讀性、訊息大小，以及聊天室要載入哪些表情符號組。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -8966,6 +9980,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "最近"
@@ -9023,6 +10043,12 @@
             "value": "最近使用"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近使用"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9073,6 +10099,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近观看"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近觀看"
           }
         },
         "pt-BR": {
@@ -9127,6 +10159,12 @@
             "value": "正在重新连接"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新連線"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9177,6 +10215,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在重新连接 (%lld)…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新連線 (%lld)…"
           }
         },
         "pt-BR": {
@@ -9231,6 +10275,12 @@
             "value": "正在重新连接…"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在重新連線…"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9281,6 +10331,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "回复"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回覆"
           }
         },
         "pt-BR": {
@@ -9335,6 +10391,12 @@
             "value": "回复 %@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在回覆 %@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9385,6 +10447,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "举报 @%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢舉 @%@"
           }
         },
         "pt-BR": {
@@ -9439,6 +10507,12 @@
             "value": "举报消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢舉訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9489,6 +10563,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "已举报 %@。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已檢舉 %@。"
           }
         },
         "pt-BR": {
@@ -9543,6 +10623,12 @@
             "value": "已举报 %@。该用户的消息将不再显示。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已檢舉 %@。對方的訊息將不再顯示。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9593,6 +10679,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "举报会经过审核，该用户将在你的聊天中被隐藏。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢舉會經過審核，這位使用者也會從你的聊天室中隱藏。"
           }
         },
         "pt-BR": {
@@ -9647,6 +10739,12 @@
             "value": "请求超时"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求逾時"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9697,6 +10795,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "重试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重試"
           }
         },
         "pt-BR": {
@@ -9751,6 +10855,12 @@
             "value": "安全与管理"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安全與管理"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9801,6 +10911,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "日程"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "時間表"
           }
         },
         "pt-BR": {
@@ -9855,6 +10971,12 @@
             "value": "预定直播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排定的直播"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -9902,6 +11024,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "得分 %lld"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "得分 %lld"
@@ -9959,6 +11087,12 @@
             "value": "搜索"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10009,6 +11143,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索聊天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋聊天訊息"
           }
         },
         "pt-BR": {
@@ -10063,6 +11203,12 @@
             "value": "搜索表情"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋表情符號"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10113,6 +11259,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索频道和分类。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋頻道與分類。"
           }
         },
         "pt-BR": {
@@ -10167,6 +11319,12 @@
             "value": "发送消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10217,6 +11375,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送消息 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傳送訊息 · %@"
           }
         },
         "pt-BR": {
@@ -10271,6 +11435,12 @@
             "value": "设置"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10321,6 +11491,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "分享诊断日志"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享診斷記錄"
           }
         },
         "pt-BR": {
@@ -10375,6 +11551,12 @@
             "value": "显示时间戳"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示時間戳記"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10425,6 +11607,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示视频"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示影片"
           }
         },
         "pt-BR": {
@@ -10479,6 +11667,12 @@
             "value": "登录失败"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入失敗"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10529,6 +11723,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录后即可聊天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後即可聊天"
           }
         },
         "pt-BR": {
@@ -10583,6 +11783,12 @@
             "value": "登录后即可查看你关注的频道。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後即可查看你追蹤的頻道。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10633,6 +11839,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录后即可查看"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後即可查看"
           }
         },
         "pt-BR": {
@@ -10687,6 +11899,12 @@
             "value": "使用 Twitch 登录即可关注频道并参与聊天。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Twitch 登入即可追蹤頻道並參與聊天。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10734,6 +11952,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢速 %lld 秒"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "慢速 %lld 秒"
@@ -10791,6 +12015,12 @@
             "value": "请慢一点 — 请求过多"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢一點 — 請求過多"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10841,6 +12071,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "请慢一点 — 你发送得太快了"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢一點 — 你傳送得太快了"
           }
         },
         "pt-BR": {
@@ -10895,6 +12131,12 @@
             "value": "垃圾信息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "垃圾訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10947,6 +12189,12 @@
             "value": "直播画质、自动播放，以及聊天与画面的同步方式。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播畫質、自動播放，以及聊天室與畫面的同步方式。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -10994,6 +12242,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在直播"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "正在直播"
@@ -11051,6 +12305,12 @@
             "value": "直播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11101,6 +12361,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅订阅者"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅限訂閱者"
           }
         },
         "pt-BR": {
@@ -11155,6 +12421,12 @@
             "value": "支持你的主播依然有意义"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持你的實況主依然有意義"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11205,6 +12477,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "跟随系统"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟隨系統"
           }
         },
         "pt-BR": {
@@ -11259,6 +12537,12 @@
             "value": "TWITCH 合作主播"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TWITCH 合作夥伴"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11309,6 +12593,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "点按，在广告时段里飞一会儿"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下，在廣告時段裡飛一下"
           }
         },
         "pt-BR": {
@@ -11363,6 +12653,12 @@
             "value": "点按起飞 · 最高 %lld"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下起飛 · 最佳 %lld"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11413,6 +12709,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "点按重新连接"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下重新連線"
           }
         },
         "pt-BR": {
@@ -11467,6 +12769,12 @@
             "value": "使用条款"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用條款"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11517,6 +12825,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "主题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題"
           }
         },
         "pt-BR": {
@@ -11571,6 +12885,12 @@
             "value": "该剪辑目前无法播放。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這則剪輯目前無法播放。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11623,6 +12943,12 @@
             "value": "该内容目前不可用。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這項內容目前無法使用。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11673,6 +12999,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "超时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線逾時"
           }
         },
         "pt-BR": {
@@ -11733,6 +13065,12 @@
             "value": "已将 %1$@ 禁言 %2$lld 秒"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已將 %1$@ 禁言 %2$lld 秒"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11783,6 +13121,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "禁言 10 分钟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "禁言 10 分鐘"
           }
         },
         "pt-BR": {
@@ -11837,6 +13181,12 @@
             "value": "热门"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "熱門"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11887,6 +13237,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "重试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再試一次"
           }
         },
         "pt-BR": {
@@ -11941,6 +13297,12 @@
             "value": "Turbo 的免广告权益绑定在 Twitch 自家应用内的账号上，在官方播放器请求直播流的那一刻生效。Embr 以独立客户端身份连接，无法把这项权益交给 Twitch 的广告系统。第三方客户端曾经可以转发网页登录来请求无广告的直播流，但 Twitch 已经封死了这条路——如今播放握手对所有人都返回“开启广告”：Turbo 会员、订阅者和未登录的观众一视同仁。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turbo 的免廣告權益綁定在 Twitch 自家 App 內的帳號上，在官方播放器請求串流的那一刻生效。Embr 以獨立用戶端的身分連線，無法把這項權益交給 Twitch 的廣告系統。第三方用戶端以前可以轉送網頁登入來請求無廣告的串流，但 Twitch 已經封死這條路——如今播放交握對所有人都回傳「開啟廣告」：Turbo 會員、訂閱者和未登入的觀眾都一樣。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -11991,6 +13353,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twitch 采用服务端广告插入：广告视频在 Twitch 自己的服务器上被直接拼接进直播流的分片中，与直播画面混在一起。当直播流到达 Embr 时，广告早已烘焙其中——它不是播放器可以随手关掉的独立轨道。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch 採用伺服器端廣告插入：廣告影片會在 Twitch 自己的伺服器上直接拼接進直播串流的片段裡，與直播畫面混在一起。當串流送到 Embr 時，廣告早已內嵌其中——它不是播放器可以隨手關掉的獨立軌道。"
           }
         },
         "pt-BR": {
@@ -12045,6 +13413,12 @@
             "value": "已解除 %@ 的封禁"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已解除 %@ 的停權"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12095,6 +13469,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消屏蔽"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解除封鎖"
           }
         },
         "pt-BR": {
@@ -12149,6 +13529,12 @@
             "value": "已取消屏蔽 %@ · 重新打开聊天即可显示"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已解除封鎖 %@ · 重新開啟聊天室即可顯示"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12199,6 +13585,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "禁止重复"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "禁止重複"
           }
         },
         "pt-BR": {
@@ -12253,6 +13645,12 @@
             "value": "取消静音"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消靜音"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12303,6 +13701,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "用法：/%@ <用户>"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用法：/%@ <使用者>"
           }
         },
         "pt-BR": {
@@ -12357,6 +13761,12 @@
             "value": "未找到用户 %@"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "找不到使用者 %@"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12404,6 +13814,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "版本"
@@ -12461,6 +13877,12 @@
             "value": "视频"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12511,6 +13933,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "视频"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片"
           }
         },
         "pt-BR": {
@@ -12565,6 +13993,12 @@
             "value": "视频和剪辑"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片與剪輯"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12615,6 +14049,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "查看主页"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看個人檔案"
           }
         },
         "pt-BR": {
@@ -12669,6 +14109,12 @@
             "value": "暴力或威胁"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暴力或威脅"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12719,6 +14165,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在等待消息…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待訊息…"
           }
         },
         "pt-BR": {
@@ -12773,6 +14225,12 @@
             "value": "每周"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每週"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12823,6 +14281,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "为什么 Turbo 或订阅在这里跳不过广告"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為什麼 Turbo 或訂閱在這裡跳不過廣告"
           }
         },
         "pt-BR": {
@@ -12877,6 +14341,12 @@
             "value": "为什么我会看到广告？"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為什麼我會看到廣告？"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -12927,6 +14397,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "词语或短语"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "字詞或短句"
           }
         },
         "pt-BR": {
@@ -12981,6 +14457,12 @@
             "value": "你无法在这里发送消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你無法在這裡傳送訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13031,6 +14513,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "你还没有关注任何频道。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你還沒有追蹤任何頻道。"
           }
         },
         "pt-BR": {
@@ -13085,6 +14573,12 @@
             "value": "你将回到访客浏览模式。"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你將回到以訪客身分瀏覽。"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13132,6 +14626,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "和"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "和"
@@ -13189,6 +14689,12 @@
             "value": "封禁"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停權"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13239,6 +14745,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 的剪辑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由 %@ 剪輯"
           }
         },
         "pt-BR": {
@@ -13293,6 +14805,12 @@
             "value": "删除消息"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除訊息"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13343,6 +14861,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅表情"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅表情符號"
           }
         },
         "pt-BR": {
@@ -13397,6 +14921,12 @@
             "value": "错误"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "錯誤"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13447,6 +14977,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "关注 %lld 分钟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "追蹤 %lld 分鐘"
           }
         },
         "pt-BR": {
@@ -13501,6 +15037,12 @@
             "value": "仅关注者"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅限追蹤者"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13548,6 +15090,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播中"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "直播中"
@@ -13605,6 +15153,12 @@
             "value": "加载中"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "載入中"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13655,6 +15209,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "成人内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成人內容"
           }
         },
         "pt-BR": {
@@ -13709,6 +15269,12 @@
             "value": "你不是该频道的管理员"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你不是這個頻道的管理員"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13759,6 +15325,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "未开播"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未開播"
           }
         },
         "pt-BR": {
@@ -13813,6 +15385,12 @@
             "value": "触发频率限制"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已觸發頻率限制"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13865,6 +15443,12 @@
             "value": "需要登录"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要登入"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -13912,6 +15496,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢速 %lld 秒"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "慢速 %lld 秒"
@@ -13969,6 +15559,12 @@
             "value": "仅订阅者"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅限訂閱者"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -14016,6 +15612,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "禁言"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "禁言"
@@ -14073,6 +15675,12 @@
             "value": "禁止重复"
           }
         },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "禁止重複"
+          }
+        },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
@@ -14120,6 +15728,12 @@
           }
         },
         "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已直播 %@"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "已直播 %@"
@@ -14175,6 +15789,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "🔞 成人内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔞 成人內容"
           }
         },
         "pt-BR": {
