@@ -170,6 +170,11 @@ final class ChatViewController: UIViewController {
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didRequestReplyTo: row.message)
             }
+            cell.onShowActions = { [weak self, weak cell] in
+                guard let self else { return }
+                let sourceRect = cell.map { self.view.convert($0.bounds, from: $0) } ?? .zero
+                self.presentMessageActions(for: row.message, sourceRect: sourceRect)
+            }
         }
         dataSource = UICollectionViewDiffableDataSource<Int, ChatRow>(collectionView: collectionView) { collectionView, indexPath, row in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: row)

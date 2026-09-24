@@ -23,6 +23,7 @@ final class MessageCell: UICollectionViewCell {
     var onTapEmote: ((Emote) -> Void)?
     var onTapLink: ((URL) -> Void)?
     var onSwipeReply: (() -> Void)?
+    var onShowActions: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -45,6 +46,16 @@ final class MessageCell: UICollectionViewCell {
         let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeReply))
         swipe.direction = .right
         contentView.addGestureRecognizer(swipe)
+
+        isAccessibilityElement = true
+        accessibilityTraits = .staticText
+    }
+
+    /// Built on demand because the owner assigns the callbacks after `configure`, and the
+    /// set of actions depends on which of them it provided.
+    override var accessibilityCustomActions: [UIAccessibilityCustomAction]? {
+        get { messageAccessibilityActions() }
+        set {}
     }
 
     @objc private func handleSwipeReply() {
@@ -98,6 +109,7 @@ final class MessageCell: UICollectionViewCell {
         self.laidOut = laidOut
         self.message = message
         self.animator = animator
+        accessibilityLabel = Self.spokenText(for: message, mentionsCurrentUser: laidOut.mentionsCurrentUser)
 
         let highlight = laidOut.mentionsCurrentUser || laidOut.isHighlighted || laidOut.isAnnouncement || laidOut.isCheer
         highlightView.isHidden = !highlight
@@ -130,6 +142,59 @@ final class MessageCell: UICollectionViewCell {
         configureBadges(laidOut.badgePlacements, images: images)
 
         setNeedsLayout()
+    }
+
+    /// What VoiceOver reads for a message: who wrote it and every word of it, with emotes
+    /// spoken by their names (the text the sender typed) instead of skipped as images.
+    private static func spokenText(for message: ChatMessage, mentionsCurrentUser: Bool) -> String {
+        var parts: [String] = []
+        if let notice = message.notice {
+            parts.append(notice.systemMessage)
+        }
+        if let reply = message.reply {
+            parts.append(String(localized: "Replying to \(reply.parentDisplayName)"))
+        }
+        let text = message.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty {
+            let name = message.author.displayName
+            parts.append(message.isAction ? "\(name) \(text)" : "\(name): \(text)")
+        }
+        if mentionsCurrentUser {
+            parts.append(String(localized: "Mentions you"))
+        }
+        switch message.moderation {
+        case .visible: break
+        case .deleted: parts.append(String(localized: "Message deleted"))
+        case .timedOut: parts.append(String(localized: "Sender timed out"))
+        case .banned: parts.append(String(localized: "Sender banned"))
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    private func messageAccessibilityActions() -> [UIAccessibilityCustomAction] {
+        var actions: [UIAccessibilityCustomAction] = []
+        if let reply = onSwipeReply {
+            actions.append(UIAccessibilityCustomAction(name: String(localized: "Reply")) { _ in
+                reply()
+                return true
+            })
+        }
+        if let show = onShowActions {
+            actions.append(UIAccessibilityCustomAction(name: String(localized: "Message Actions")) { _ in
+                show()
+                return true
+            })
+        }
+        if let open = onTapLink {
+            for link in (laidOut?.links ?? []).prefix(3) {
+                let name = link.url.host.map { String(localized: "Open \($0)") } ?? String(localized: "Open Link")
+                actions.append(UIAccessibilityCustomAction(name: name) { _ in
+                    open(link.url)
+                    return true
+                })
+            }
+        }
+        return actions
     }
 
     private func configureEmotes(_ placements: [LaidOutMessage.EmotePlacement], images: ImageLoading, animator: EmoteAnimator) {
@@ -266,6 +331,8 @@ final class MessageCell: UICollectionViewCell {
         onTapEmote = nil
         onTapLink = nil
         onSwipeReply = nil
+        onShowActions = nil
+        accessibilityLabel = nil
         contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
     }
 }
