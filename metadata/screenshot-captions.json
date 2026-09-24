@@ -1,0 +1,112 @@
+{
+  "en-US": {
+    "hero": "Watch live, with\nreal-time chat",
+    "favorites": "Star your favorites,\nno account needed",
+    "top": "Every live channel,\nat a glance",
+    "chat": "Native chat with\n7TV, BTTV & FFZ",
+    "audio": "Listen in the\nbackground",
+    "categories": "Browse by category",
+    "search": "Find channels\nand games instantly",
+    "settings": "Make it yours",
+    "onboarding": "A native Twitch\nclient for iPhone"
+  },
+  "de-DE": {
+    "hero": "Live schauen,\nmit Echtzeit-Chat",
+    "favorites": "Deine Favoriten,\nkein Konto nötig",
+    "top": "Alle Live-Kanäle\nauf einen Blick",
+    "chat": "Nativer Chat mit\n7TV, BTTV & FFZ",
+    "audio": "Audio im\nHintergrund",
+    "categories": "Nach Kategorien\nstöbern",
+    "search": "Kanäle & Spiele\nsofort finden",
+    "settings": "Mach's dir eigen",
+    "onboarding": "Twitch, nativ\nfürs iPhone"
+  },
+  "es-ES": {
+    "hero": "Mira en directo\ncon chat en vivo",
+    "favorites": "Marca tus favoritos,\nsin cuenta",
+    "top": "Canales en directo,\nde un vistazo",
+    "chat": "Chat nativo con\n7TV, BTTV & FFZ",
+    "audio": "Escucha en\nsegundo plano",
+    "categories": "Explora categorías",
+    "search": "Canales y juegos,\nal instante",
+    "settings": "Hazla tuya",
+    "onboarding": "Cliente Twitch\nnativo para iPhone"
+  },
+  "fr-FR": {
+    "hero": "Regardez en direct,\ntchat en temps réel",
+    "favorites": "Ajoutez vos favoris,\nsans compte",
+    "top": "Chaînes en direct,\nd'un coup d'œil",
+    "chat": "Tchat natif avec\n7TV, BTTV & FFZ",
+    "audio": "Écoutez en\narrière-plan",
+    "categories": "Parcourir par\ncatégorie",
+    "search": "Chaînes et jeux,\nen un instant",
+    "settings": "À votre image",
+    "onboarding": "Client Twitch\nnatif pour iPhone"
+  },
+  "it": {
+    "hero": "Guarda in diretta,\nchat in tempo reale",
+    "favorites": "Salva i preferiti,\nsenza account",
+    "top": "Canali in diretta,\na colpo d'occhio",
+    "chat": "Chat nativa con\n7TV, BTTV & FFZ",
+    "audio": "Ascolta in\nbackground",
+    "categories": "Sfoglia le categorie",
+    "search": "Canali e giochi,\nall'istante",
+    "settings": "Tutta a modo tuo",
+    "onboarding": "Client Twitch\nnativo per iPhone"
+  },
+  "ja": {
+    "hero": "配信を見ながら\nリアルタイムチャット",
+    "favorites": "お気に入りに追加\nアカウント不要",
+    "top": "配信中を\nひと目で",
+    "chat": "7TV・BTTV\nFFZ対応チャット",
+    "audio": "バックグラウンドで\n音声を再生",
+    "categories": "カテゴリから探す",
+    "search": "チャンネルと\nゲームをすぐに検索",
+    "settings": "自分好みに",
+    "onboarding": "iPhone向け\nネイティブTwitch"
+  },
+  "ko": {
+    "hero": "라이브 방송\n실시간 채팅",
+    "favorites": "즐겨찾기 등록,\n계정 없이도",
+    "top": "방송 중인 채널,\n한눈에",
+    "chat": "7TV·BTTV\nFFZ 채팅 지원",
+    "audio": "백그라운드에서\n오디오 재생",
+    "categories": "카테고리별로 찾기",
+    "search": "채널과 게임을\n바로 검색",
+    "settings": "내 맘대로",
+    "onboarding": "iPhone용\n네이티브 Twitch"
+  },
+  "pt-BR": {
+    "hero": "Assista ao vivo,\nchat em tempo real",
+    "favorites": "Marque favoritos,\nsem conta",
+    "top": "Canais ao vivo,\nde relance",
+    "chat": "Chat nativo com\n7TV, BTTV & FFZ",
+    "audio": "Ouça em\nsegundo plano",
+    "categories": "Explore categorias",
+    "search": "Canais e jogos,\nna hora",
+    "settings": "Do seu jeito",
+    "onboarding": "Cliente Twitch\nnativo para iPhone"
+  },
+  "zh-Hans": {
+    "hero": "边看直播\n实时聊天",
+    "favorites": "一键收藏\n无需账号",
+    "top": "所有直播频道\n一目了然",
+    "chat": "7TV、BTTV\nFFZ聊天支持",
+    "audio": "锁屏也能\n后台收听",
+    "categories": "按分类浏览",
+    "search": "频道游戏\n即时搜索",
+    "settings": "由你做主",
+    "onboarding": "iPhone原生\nTwitch客户端"
+  },
+  "zh-Hant": {
+    "hero": "邊看直播\n即時聊天",
+    "favorites": "一鍵加入我的最愛\n不需要帳號",
+    "top": "所有直播頻道\n一目瞭然",
+    "chat": "7TV、BTTV\nFFZ聊天支援",
+    "audio": "關閉螢幕\n背景繼續聽",
+    "categories": "依分類瀏覽",
+    "search": "頻道遊戲\n立即搜尋",
+    "settings": "由你做主",
+    "onboarding": "iPhone原生\nTwitch用戶端"
+  }
+}

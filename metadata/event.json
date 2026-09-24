@@ -1,0 +1,67 @@
+{
+  "en-US": {
+    "name": "Favorites Are Here",
+    "shortDescription": "Star any channel. No account needed.",
+    "longDescription": "Embr 1.1 adds Favorites: star any channel to keep it one tap away and see who's live at a glance. No account needed."
+  },
+  "en-GB": {
+    "name": "Favourites Are Here",
+    "shortDescription": "Star any channel. No account needed.",
+    "longDescription": "Embr 1.1 adds Favourites: star any channel to keep it one tap away and see who's live at a glance. No account needed."
+  },
+  "en-AU": {
+    "name": "Favourites Are Here",
+    "shortDescription": "Star any channel. No account needed.",
+    "longDescription": "Embr 1.1 adds Favourites: star any channel to keep it one tap away and see who's live at a glance. No account needed."
+  },
+  "de-DE": {
+    "name": "Favoriten sind da",
+    "shortDescription": "Markiere jeden Kanal. Kein Konto nötig.",
+    "longDescription": "Embr 1.1 bringt Favoriten: Stern antippen, Kanal ist griffbereit, auf einen Blick sehen, wer live ist. Kein Konto nötig."
+  },
+  "es-ES": {
+    "name": "Llegaron los favoritos",
+    "shortDescription": "Marca cualquier canal. Sin necesidad de cuenta.",
+    "longDescription": "Embr 1.1 añade Favoritos: marca un canal para tenerlo a mano y ver quién está en directo. Sin necesidad de cuenta."
+  },
+  "es-MX": {
+    "name": "Llegaron los favoritos",
+    "shortDescription": "Marca cualquier canal. No necesitas cuenta.",
+    "longDescription": "Embr 1.1 agrega Favoritos: marca un canal para tenerlo a la mano y ver quién está en vivo. No necesitas cuenta."
+  },
+  "fr-FR": {
+    "name": "Les favoris sont là",
+    "shortDescription": "Ajoutez une chaîne en favori. Aucun compte requis.",
+    "longDescription": "Embr 1.1 ajoute les favoris : gardez une chaîne à portée de main et voyez qui est en direct. Aucun compte requis."
+  },
+  "it": {
+    "name": "I preferiti sono qui",
+    "shortDescription": "Metti una stella su un canale. Niente account.",
+    "longDescription": "Embr 1.1 aggiunge i Preferiti: canale sempre a portata di tap, vedi subito chi è in diretta. Account non richiesto."
+  },
+  "ja": {
+    "name": "お気に入り機能が登場",
+    "shortDescription": "チャンネルにスターを付けるだけ。アカウントは不要です。",
+    "longDescription": "Embr 1.1でお気に入りが追加。スターを付ければワンタップで呼び出せて、誰が配信中かひと目でわかります。アカウント不要です。"
+  },
+  "ko": {
+    "name": "즐겨찾기가 추가되었습니다",
+    "shortDescription": "채널에 별표를 누르세요. 계정이 필요 없습니다.",
+    "longDescription": "Embr 1.1에 즐겨찾기 추가. 채널에 별표를 눌러 바로 꺼내 보고, 누가 방송 중인지 한눈에 확인하세요. 계정은 필요 없습니다."
+  },
+  "pt-BR": {
+    "name": "Favoritos chegaram",
+    "shortDescription": "Marque qualquer canal. Sem precisar de conta.",
+    "longDescription": "O Embr 1.1 traz os Favoritos: marque um canal para tê-lo à mão e veja quem está ao vivo. Sem precisar de conta."
+  },
+  "zh-Hans": {
+    "name": "收藏功能上线",
+    "shortDescription": "给任意频道加星标。无需账号。",
+    "longDescription": "Embr 1.1 新增收藏：给频道加星标，一键回访，一眼看清谁在直播。无需账号。"
+  },
+  "zh-Hant": {
+    "name": "我的最愛功能上線",
+    "shortDescription": "幫任何頻道加星號。不需要帳號。",
+    "longDescription": "Embr 1.1 新增「我的最愛」：幫頻道加星號，一鍵回訪，一眼看出誰在直播。不需要帳號。"
+  }
+}
