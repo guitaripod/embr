@@ -86,6 +86,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 tabBar.select(.favorites)
                 let logins = arg("-screenshotFavorites")?.split(separator: ",").map(String.init)
                 Task { await Self.seedScreenshotFavorites(logins ?? ScreenshotHarness.curatedFollowLogins) }
+            case "open":
+                if let target = arg("-screenshotURL"), let url = URL(string: target) {
+                    Task { await self.router.handle(url, from: tabBar) }
+                }
             case "following":
                 ScreenshotHarness.seededFollow = true
                 Task { await AuthService.shared.seedScreenshotAuth() }

@@ -11,6 +11,12 @@ final class DeepLinkRouter {
 
     @MainActor
     func handle(_ url: URL, from root: RootTabBarController) async {
+        if isFavoritesLink(url) {
+            AppLogger.shared.info("deep link opens Favorites", category: .app)
+            root.presentedViewController?.dismiss(animated: false)
+            root.select(.favorites)
+            return
+        }
         guard let login = channelLogin(from: url) else {
             AppLogger.shared.debug("ignored deep link \(url.absoluteString)", category: .app)
             return
@@ -50,6 +56,11 @@ final class DeepLinkRouter {
             return navigation
         }
         return root.selectedViewController?.navigationController
+    }
+
+    /// `embr://favorites`, the destination of the App Store in-app event that announces the tab.
+    private func isFavoritesLink(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "embr" && url.host?.lowercased() == "favorites"
     }
 
     private func channelLogin(from url: URL) -> String? {
