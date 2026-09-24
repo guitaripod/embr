@@ -38,7 +38,9 @@ live with a calm chat, and read every chat capture before uploading: chat is wri
 strangers.
 
 Other routes: `support` (Settings scrolled to the tip jar, with fixed US prices — the In-App
-Purchase review screenshot), `following` (seeded follows, signed-in look), `moreapps`.
+Purchase review screenshot), `following` (seeded follows, signed-in look), `moreapps`, and
+`open -screenshotURL <url>`, which sends any deep link (e.g. `embr://favorites`) through the
+router without the system's "Open in Embr?" prompt that `simctl openurl` stops at.
 
 ## Compose
 
