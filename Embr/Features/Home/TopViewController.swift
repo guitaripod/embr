@@ -295,6 +295,9 @@ final class TopViewController: UIViewController {
     }
 
     private func applyStreams(_ streams: [LiveStream]) {
+        #if DEBUG
+        let streams = ScreenshotHarness.isPosing ? streams.filter(ScreenshotHarness.suitsStoreShot) : streams
+        #endif
         loadingIndicator.stopAnimating()
         var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
         if showsRecentRail, !recentChannels.isEmpty {

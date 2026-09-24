@@ -1,35 +1,52 @@
 # App Store screenshots
 
-Screenshots are captured from the running app on a 6.9" simulator (iPhone 17 Pro Max,
-1320×2868), then framed with a headline + gradient for the App Store and landing page.
+Nine captioned panels per listing language, iPhone 6.9" (1320×2868). Captions live in
+`metadata/screenshot-captions.json`; raw captures and composed panels are generated into the
+gitignored `marketing/raw/` and `marketing/panels/`.
 
-## Capture (tap-free, deterministic)
+| # | Panel | Source |
+|---|-------|--------|
+| 1 | hero | `marketing/hero.png` — a device capture of live video beside chat, headline repainted per language |
+| 2 | favorites | `-screenshotRoute favorites -screenshotFavorites a,b,c` |
+| 3 | top | `-screenshotRoute top` |
+| 4 | chat | `-screenshotRoute channelchat -screenshotChannel <login>` |
+| 5 | audio | `-screenshotRoute channelaudio -screenshotChannel <login>` |
+| 6 | categories | `-screenshotRoute categories` |
+| 7 | search | `-screenshotRoute search -screenshotQuery "Just Chatting"` |
+| 8 | settings | `-screenshotRoute settings` |
+| 9 | onboarding | first plain launch of a fresh install |
 
-A DEBUG-only harness (`Embr/App/ScreenshotHarness.swift`, wired through
-`SceneDelegate.handleScreenshotRoute`) poses each screen from launch arguments, so no
-UI automation is needed. Build the Debug app onto the simulator, then launch per shot:
+The hero is the one panel a simulator cannot make: it does not decode live video. To refresh
+it, capture the channel screen on a device and replace `marketing/hero.png` with a framed
+panel of the same geometry.
+
+## Capture
+
+A DEBUG-only harness (`Embr/App/ScreenshotHarness.swift`, driven by
+`SceneDelegate.handleScreenshotRoute`) poses each screen from launch arguments, so nothing is
+tapped. Build the Debug app for the simulator, then:
 
 ```bash
-SIM=<6.9" simulator udid>; B=com.guitaripod.embr
-xcrun simctl status_bar $SIM override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3
-xcrun simctl launch $SIM $B -screenshotRoute top
-xcrun simctl launch $SIM $B -screenshotRoute categories
-xcrun simctl launch $SIM $B -screenshotRoute search   -screenshotQuery "Just Chatting"
-xcrun simctl launch $SIM $B -screenshotRoute following
-xcrun simctl launch $SIM $B -screenshotRoute channel      -screenshotChannel <live-login>
-xcrun simctl launch $SIM $B -screenshotRoute channelaudio  -screenshotChannel <live-login>
-xcrun simctl launch $SIM $B -screenshotRoute channelchat   -screenshotChannel <live-login>
-xcrun simctl launch $SIM $B -screenshotRoute settings -screenshotTheme dark
-# onboarding: fresh install, launch with no route
-xcrun simctl io $SIM screenshot <name>.png
+scripts/ios-build.sh "generic/platform=iOS Simulator"
+scripts/capture-store-shots.py --sim <iPhone 17 Pro Max udid> \
+  --app ~/Library/Developer/Xcode/DerivedData/Embr-*/Build/Products/Debug-iphonesimulator/Embr.app \
+  --chat-channel <live channel> --audio-channel <live channel> --favorites a,b,c
 ```
 
-Data is live from the Twitch API, so pick a currently-live channel with busy chat.
-Note: the simulator does not decode the live video layer — capture the video-forward
-"watch" hero on a physical device.
+Each language starts from a fresh install. Data is live from Twitch, so pick channels that are
+live with a calm chat, and read every chat capture before uploading: chat is written by
+strangers.
 
-## Frame
+Other routes: `support` (Settings scrolled to the tip jar, with fixed US prices — the In-App
+Purchase review screenshot), `following` (seeded follows, signed-in look), `moreapps`.
 
-`scripts/frame-shots.mjs` composites the raw captures into the store style (purple
-gradient, headline, rounded device). It uses the `canvas` module from a sibling Node
-project; adjust the paths at the top of the script for your machine.
+## Compose
+
+```bash
+scripts/compose-store-shots.py            # every language in the captions file
+scripts/compose-store-shots.py --locale ja
+```
+
+Headlines are drawn through AppKit, so Japanese, Korean and both Chinese scripts get the
+system's own faces and the right Han forms per language. es-MX uses the es-ES panels;
+en-GB and en-AU fall back to en-US.

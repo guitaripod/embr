@@ -29,3 +29,7 @@ workers/dist/
 
 # macOS
 .DS_Store
+
+# Store screenshot pipeline (reproducible from scripts/ + metadata/)
+marketing/raw/
+marketing/panels/

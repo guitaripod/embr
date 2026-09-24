@@ -52,6 +52,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "-screenshotRoute"), i + 1 < args.count else { return false }
         UserDefaults.standard.set(true, forKey: completedOnboardingKey)
+        ScreenshotHarness.isPosing = true
         let route = args[i + 1]
         func arg(_ name: String) -> String? {
             args.firstIndex(of: name).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
@@ -61,6 +62,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             SettingsStore.shared.update { $0.theme = theme == "dark" ? .dark : (theme == "light" ? .light : .system) }
         }
         ScreenshotHarness.searchQuery = arg("-screenshotQuery")
+        ScreenshotHarness.skippedLogins = Set(arg("-screenshotSkip")?.lowercased().split(separator: ",").map(String.init) ?? [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak tabBar] in
             guard let self, let tabBar else { return }
             switch route {
