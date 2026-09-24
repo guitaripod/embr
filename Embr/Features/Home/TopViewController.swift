@@ -79,6 +79,20 @@ final class TopViewController: UIViewController {
         bindStreams()
         bindHistory()
         streamsViewModel.load()
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: TopViewController, _) in
+            controller.reloadForWidthClass()
+        }
+    }
+
+    private var usesCards: Bool { StreamListLayout.usesCards(traitCollection) }
+
+    /// Crossing between compact and regular width swaps rows for cards, so every cell is
+    /// dequeued again from the other registration.
+    private func reloadForWidthClass() {
+        var snapshot = dataSource.snapshot()
+        guard !snapshot.sectionIdentifiers.isEmpty else { return }
+        snapshot.reloadSections(snapshot.sectionIdentifiers)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     #if DEBUG
@@ -143,14 +157,14 @@ final class TopViewController: UIViewController {
         UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
             MainActor.assumeIsolated {
                 if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .recent {
-                    return Self.recentRailSection()
+                    return Self.recentRailSection(environment: environment)
                 }
                 return StreamListLayout.streamsSection(environment: environment)
             }
         }
     }
 
-    private static func recentRailSection() -> NSCollectionLayoutSection {
+    private static func recentRailSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0)))
         let group = NSCollectionLayoutGroup.horizontal(
@@ -159,7 +173,13 @@ final class TopViewController: UIViewController {
         let section = NSCollectionLayoutSection(group: group)
         section.interGroupSpacing = 10
         section.orthogonalScrollingBehavior = .continuous
-        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12)
+        if StreamListLayout.usesCards(environment.traitCollection) {
+            section.contentInsetsReference = .layoutMargins
+            section.interGroupSpacing = 14
+            section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 12, trailing: 0)
+        } else {
+            section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12)
+        }
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(28)),
             elementKind: SectionHeaderView.elementKind, alignment: .top)
@@ -172,7 +192,9 @@ final class TopViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
         collectionView.alwaysBounceVertical = true
+        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
         collectionView.delegate = self
+        collectionView.dragDelegate = self
         collectionView.prefetchDataSource = self
         collectionView.refreshControl = refreshControl
         refreshControl.tintColor = Theme.accent
@@ -190,6 +212,9 @@ final class TopViewController: UIViewController {
         let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { [weak self] cell, _, stream in
             cell.configure(with: stream, avatarURL: self?.streamsViewModel.avatarURL(for: stream.userID))
         }
+        let cardRegistration = UICollectionView.CellRegistration<StreamCardCell, LiveStream> { [weak self] cell, _, stream in
+            cell.configure(with: stream, avatarURL: self?.streamsViewModel.avatarURL(for: stream.userID))
+        }
         let categoryRegistration = UICollectionView.CellRegistration<CategoryCell, GameCategory> { cell, _, category in
             cell.configure(with: category)
         }
@@ -199,6 +224,9 @@ final class TopViewController: UIViewController {
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { collectionView, indexPath, item in
             switch item {
             case .stream(let stream):
+                if StreamListLayout.usesCards(collectionView.traitCollection) {
+                    return collectionView.dequeueConfiguredReusableCell(using: cardRegistration, for: indexPath, item: stream)
+                }
                 return collectionView.dequeueConfiguredReusableCell(using: streamRegistration, for: indexPath, item: stream)
             case .category(let category):
                 return collectionView.dequeueConfiguredReusableCell(using: categoryRegistration, for: indexPath, item: category)
@@ -206,8 +234,11 @@ final class TopViewController: UIViewController {
                 return collectionView.dequeueConfiguredReusableCell(using: recentRegistration, for: indexPath, item: channel)
             }
         }
-        let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { view, _, _ in
-            view.configure(title: String(localized: "Recently Watched"))
+        let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { [weak self] view, _, _ in
+            view.configure(
+                title: String(localized: "Recently Watched"),
+                alignsWithMargins: self?.usesCards ?? false
+            )
         }
         dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
@@ -313,6 +344,9 @@ final class TopViewController: UIViewController {
     }
 
     private func applyCategories() {
+        #if DEBUG
+        let categories = ScreenshotHarness.isPosing ? categories.filter(ScreenshotHarness.suitsStoreShot) : categories
+        #endif
         loadingIndicator.stopAnimating()
         var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
         snapshot.appendSections([.main])
@@ -327,7 +361,7 @@ final class TopViewController: UIViewController {
         Haptics.selection()
         showingCategories = segmented.selectedSegmentIndex == 1
         if showingCategories {
-            collectionView.setCollectionViewLayout(StreamListLayout.grid(columns: 3), animated: false)
+            collectionView.setCollectionViewLayout(StreamListLayout.categoriesLayout(), animated: false)
             if categories.isEmpty { loadCategories(replacing: true) } else { applyCategories() }
         } else {
             collectionView.setCollectionViewLayout(makeStreamsLayout(), animated: false)
@@ -409,6 +443,19 @@ extension TopViewController: UICollectionViewDelegate {
             return ChannelActions.configuration(login: channel.login, broadcasterID: channel.id, name: channel.displayName, from: self)
         default:
             return nil
+        }
+    }
+}
+
+extension TopViewController: UICollectionViewDragDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        switch dataSource.itemIdentifier(for: indexPath) {
+        case .stream(let stream):
+            return ChannelActions.dragItems(login: stream.userLogin, name: stream.userName)
+        case .recentChannel(let channel):
+            return ChannelActions.dragItems(login: channel.login, name: channel.displayName)
+        default:
+            return []
         }
     }
 }

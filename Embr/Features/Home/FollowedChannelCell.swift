@@ -9,6 +9,18 @@ final class FollowedChannelCell: UICollectionViewCell {
     private let nameLabel = UILabel()
     private let statusLabel = UILabel()
     private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+    private let row = UIStackView()
+
+    /// In an iPad column grid the row starts on the layout margin with the cards above it, and
+    /// its highlight reaches outside the row instead.
+    var alignsWithMargins = false {
+        didSet {
+            guard alignsWithMargins != oldValue else { return }
+            let inset: CGFloat = alignsWithMargins ? 0 : 14
+            row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 5, leading: inset, bottom: 5, trailing: inset)
+            setNeedsUpdateConfiguration()
+        }
+    }
 
     private let images: ImageLoading
     private var imageTask: Task<Void, Never>?
@@ -27,7 +39,8 @@ final class FollowedChannelCell: UICollectionViewCell {
         var background = UIBackgroundConfiguration.listCell().updated(for: state)
         background.backgroundColor = state.isHighlighted ? Theme.surfaceElevated : .clear
         background.cornerRadius = 10
-        background.backgroundInsets = NSDirectionalEdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8)
+        let inset: CGFloat = alignsWithMargins ? -8 : 8
+        background.backgroundInsets = NSDirectionalEdgeInsets(top: 2, leading: inset, bottom: 2, trailing: inset)
         backgroundConfiguration = background
     }
 
@@ -63,6 +76,7 @@ final class FollowedChannelCell: UICollectionViewCell {
     }
 
     private func setUp() {
+        hoverStyle = UIHoverStyle(effect: .highlight, shape: .rect(cornerRadius: 10))
         avatar.translatesAutoresizingMaskIntoConstraints = false
         avatar.contentMode = .scaleAspectFill
         avatar.clipsToBounds = true
@@ -86,7 +100,9 @@ final class FollowedChannelCell: UICollectionViewCell {
         chevron.setContentHuggingPriority(.required, for: .horizontal)
         chevron.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
 
-        let row = UIStackView(arrangedSubviews: [avatar, labels, chevron])
+        row.addArrangedSubview(avatar)
+        row.addArrangedSubview(labels)
+        row.addArrangedSubview(chevron)
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 12

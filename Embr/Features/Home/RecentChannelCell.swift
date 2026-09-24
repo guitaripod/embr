@@ -65,6 +65,7 @@ final class RecentChannelCell: UICollectionViewCell {
 
     private func setUp() {
         contentView.backgroundColor = .clear
+        avatar.hoverStyle = UIHoverStyle(effect: .lift, shape: .circle)
 
         avatar.translatesAutoresizingMaskIntoConstraints = false
         avatar.contentMode = .scaleAspectFill
@@ -106,6 +107,7 @@ final class SectionHeaderView: UICollectionReusableView {
     static let reuseID = "SectionHeaderView"
 
     private let label = UILabel()
+    private var leadingConstraint: NSLayoutConstraint!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -113,8 +115,9 @@ final class SectionHeaderView: UICollectionReusableView {
         label.textColor = Theme.secondaryText
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
+        leadingConstraint = label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            leadingConstraint,
             label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -14),
             label.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
@@ -123,7 +126,10 @@ final class SectionHeaderView: UICollectionReusableView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(title: String) {
+    /// Over an iPad grid the header already sits on the layout margins with the cards; phone
+    /// lists indent it to line up with their rows.
+    func configure(title: String, alignsWithMargins: Bool = false) {
         label.text = title
+        leadingConstraint.constant = alignsWithMargins ? 0 : 14
     }
 }

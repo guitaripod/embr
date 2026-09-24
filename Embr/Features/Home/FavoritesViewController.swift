@@ -52,6 +52,9 @@ final class FavoritesViewController: UIViewController {
         setUpCollectionView()
         setUpDataSource()
         setUpStates()
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: FavoritesViewController, _) in
+            controller.reloadForWidthClass()
+        }
         bind()
         render()
     }
@@ -59,6 +62,17 @@ final class FavoritesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         monitor.refresh(force: false)
+    }
+
+    private var usesCards: Bool { StreamListLayout.usesCards(traitCollection) }
+
+    /// Crossing between compact and regular width swaps rows for cards, so every cell is
+    /// dequeued again from the other registration.
+    private func reloadForWidthClass() {
+        var snapshot = dataSource.snapshot()
+        guard !snapshot.sectionIdentifiers.isEmpty else { return }
+        snapshot.reloadSections(snapshot.sectionIdentifiers)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     func scrollToTop() {
@@ -86,7 +100,9 @@ final class FavoritesViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
         collectionView.alwaysBounceVertical = true
+        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
         collectionView.delegate = self
+        collectionView.dragDelegate = self
         collectionView.refreshControl = refreshControl
         refreshControl.tintColor = Theme.accent
         refreshControl.addTarget(self, action: #selector(pullToRefresh), for: .valueChanged)
@@ -103,7 +119,7 @@ final class FavoritesViewController: UIViewController {
         UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
             MainActor.assumeIsolated {
                 if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .offline {
-                    return Self.offlineSection()
+                    return Self.offlineSection(environment: environment)
                 }
                 return Self.liveSection(environment: environment)
             }
@@ -118,20 +134,18 @@ final class FavoritesViewController: UIViewController {
 
     private static func liveSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
         let section = StreamListLayout.streamsSection(environment: environment)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 0, bottom: 10, trailing: 0)
-        section.boundarySupplementaryItems = [headerItem()]
+        let cards = StreamListLayout.usesCards(environment.traitCollection)
+        section.contentInsets.top = 6
+        section.contentInsets.bottom = cards ? 24 : 10
+        StreamListLayout.attachHeader(headerItem(), to: section)
         return section
     }
 
-    private static func offlineSection() -> NSCollectionLayoutSection {
-        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(56)))
-        let group = NSCollectionLayoutGroup.vertical(
-            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(56)),
-            subitems: [item])
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 0, bottom: 16, trailing: 0)
-        section.boundarySupplementaryItems = [headerItem()]
+    private static func offlineSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        let section = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 56)
+        section.contentInsets.top = 4
+        section.contentInsets.bottom = 16
+        StreamListLayout.attachHeader(headerItem(), to: section)
         return section
     }
 
@@ -139,12 +153,19 @@ final class FavoritesViewController: UIViewController {
         let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { [weak self] cell, _, stream in
             cell.configure(with: stream, avatarURL: self?.monitor.avatars[stream.userID])
         }
+        let cardRegistration = UICollectionView.CellRegistration<StreamCardCell, LiveStream> { [weak self] cell, _, stream in
+            cell.configure(with: stream, avatarURL: self?.monitor.avatars[stream.userID])
+        }
         let channelRegistration = UICollectionView.CellRegistration<FollowedChannelCell, FavoriteChannel> { [weak self] cell, _, channel in
+            cell.alignsWithMargins = self?.usesCards ?? false
             cell.configure(with: Self.listing(for: channel), avatarURL: self?.monitor.avatars[channel.id])
         }
         dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { collectionView, indexPath, item in
             switch item {
             case .stream(let stream):
+                if StreamListLayout.usesCards(collectionView.traitCollection) {
+                    return collectionView.dequeueConfiguredReusableCell(using: cardRegistration, for: indexPath, item: stream)
+                }
                 return collectionView.dequeueConfiguredReusableCell(using: streamRegistration, for: indexPath, item: stream)
             case .channel(let channel):
                 return collectionView.dequeueConfiguredReusableCell(using: channelRegistration, for: indexPath, item: channel)
@@ -152,7 +173,10 @@ final class FavoritesViewController: UIViewController {
         }
         let headerRegistration = UICollectionView.SupplementaryRegistration<SectionHeaderView>(elementKind: SectionHeaderView.elementKind) { [weak self] view, _, indexPath in
             let section = self?.dataSource.sectionIdentifier(for: indexPath.section)
-            view.configure(title: section == .offline ? String(localized: "Channels") : String(localized: "Live"))
+            view.configure(
+                title: section == .offline ? String(localized: "Channels") : String(localized: "Live"),
+                alignsWithMargins: self?.usesCards ?? false
+            )
         }
         dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
@@ -229,6 +253,19 @@ final class FavoritesViewController: UIViewController {
 
     private static func channelInfo(for channel: FavoriteChannel) -> ChannelInfo {
         ChannelInfo(id: channel.id, broadcasterLogin: channel.login, broadcasterName: channel.displayName, gameID: "", gameName: "", title: "", language: "")
+    }
+}
+
+extension FavoritesViewController: UICollectionViewDragDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        switch dataSource.itemIdentifier(for: indexPath) {
+        case .stream(let stream):
+            return ChannelActions.dragItems(login: stream.userLogin, name: stream.userName)
+        case .channel(let channel):
+            return ChannelActions.dragItems(login: channel.login, name: channel.displayName)
+        case .none:
+            return []
+        }
     }
 }
 

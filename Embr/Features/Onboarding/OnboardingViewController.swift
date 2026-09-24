@@ -72,9 +72,13 @@ final class OnboardingViewController: UIViewController {
         container.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(container)
 
+        let fullWidth = container.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, constant: -64)
+        fullWidth.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 32),
-            container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -32),
+            container.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+            container.leadingAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 32),
+            container.widthAnchor.constraint(lessThanOrEqualToConstant: 460),
+            fullWidth,
             container.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             container.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             connectButton.heightAnchor.constraint(equalToConstant: 52),

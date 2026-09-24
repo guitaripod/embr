@@ -11,6 +11,8 @@ enum ScreenshotHarness {
         case normal
         case audio
         case chat
+        case fullscreen
+        case fullscreenChat
     }
 
     static var isPosing = false
@@ -19,6 +21,9 @@ enum ScreenshotHarness {
     static var searchQuery: String?
     static var seededFollow = false
     static var previewTips = false
+    /// Store panels on iPad are shot without the status bar, which iPadOS draws over the
+    /// navigation bar of a window turned by the capture copy.
+    static var hidesStatusBar = false
 
     /// Popular channels shown, live, in the posed Following tab. Real channels resolved
     /// live via the public API; only the "you follow these" relationship is seeded.
@@ -26,11 +31,17 @@ enum ScreenshotHarness {
     /// gambling, which Twitch's front page carries at any hour, and none of the channels the
     /// capture named with `-screenshotSkip` (a stream whose picture is black, say).
     static func suitsStoreShot(_ stream: LiveStream) -> Bool {
-        let gambling = ["Slots", "Virtual Casino", "Poker", "Casino"]
-        return !stream.isMature && !gambling.contains(stream.gameName)
+        !stream.isMature && !gamblingCategories.contains(stream.gameName)
             && !stream.title.contains("18+") && !stream.title.contains("+18")
             && !skippedLogins.contains(stream.userLogin.lowercased())
     }
+
+    /// The categories grid keeps gambling off the store too.
+    static func suitsStoreShot(_ category: GameCategory) -> Bool {
+        !gamblingCategories.contains(category.name)
+    }
+
+    private static let gamblingCategories = ["Slots", "Virtual Casino", "Poker", "Casino"]
 
     static let curatedFollowLogins = [
         "caedrel", "kaicenat", "hasanabi", "tarik", "loltyler1",

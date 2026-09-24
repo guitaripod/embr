@@ -70,14 +70,48 @@ final class ChannelViewController: UIViewController {
     }
 
     private let containerStack = UIStackView()
+    private let mainColumn = UIStackView()
+    private let mainSpacer = UIView()
     private let videoContainer = UIView()
     private let chatContainer = UIView()
-    private let dividerHandle = UIView()
+    private let dividerHandle = ColumnDividerView()
     private let infoView = StreamInfoView()
+    private let aboutView = ChannelAboutView()
     private var gameToOpen: GameCategory?
 
-    private var chatWidthFraction: CGFloat = 0.32
-    private var landscapeWidthConstraint: NSLayoutConstraint?
+    /// How the page is arranged: video above chat, video beside a chat column (iPad, wide
+    /// windows), or video filling the screen with chat floating over it.
+    private enum Arrangement: Equatable {
+        case stacked
+        case sideBySide
+        case immersive
+    }
+
+    private struct LayoutState: Equatable {
+        var arrangement: Arrangement
+        var showsInfo: Bool
+        var hidesNavigationBar: Bool
+        var hidesSystemChrome: Bool
+        var showsOverlayBackButton: Bool
+        var centersChatColumn: Bool
+    }
+
+    private static let sideBySideMinimumWidth: CGFloat = 600
+    private static let chatColumnWidthKey = "channel.chatColumnWidth"
+    private static let chatColumnMaximumWidth: CGFloat = 720
+
+    private var appliedLayout: LayoutState?
+    private var isApplyingLayout = false
+    private var prefersFullscreen = false
+    private var edgeConstraints: [NSLayoutConstraint] = []
+    private var safeAreaEdgeConstraints: [NSLayoutConstraint] = []
+    private var centeredColumnConstraints: [NSLayoutConstraint] = []
+    private var chatWidthConstraint: NSLayoutConstraint?
+    private var chatColumnWidth: CGFloat = {
+        let stored = UserDefaults.standard.double(forKey: chatColumnWidthKey)
+        return stored > 0 ? CGFloat(stored) : 0
+    }()
+    private var dividerStartWidth: CGFloat = 0
     private lazy var dividerPan = UIPanGestureRecognizer(target: self, action: #selector(handleDividerPan(_:)))
     private var isVideoFullscreen = false
     private let chatOverlay = UIView()
@@ -105,33 +139,59 @@ final class ChannelViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    var broadcasterID: String { channel.id }
+
+    var player: VideoViewController? { videoController }
+
+    /// Single-key shortcuts stand down while the viewer types a chat message.
+    var isTypingInChat: Bool { chatController?.isComposing ?? false }
+
+    func toggleFavoriteFromCommand() {
+        toggleFavorite()
+    }
+
     private var watchStartedAt: Date?
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        [.portrait, .landscapeLeft, .landscapeRight]
+        OrientationCoordinator.isPhone ? [.portrait, .landscapeLeft, .landscapeRight] : .all
     }
 
-    override var prefersStatusBarHidden: Bool { isLandscape }
-    override var prefersHomeIndicatorAutoHidden: Bool { isLandscape }
+    override var prefersStatusBarHidden: Bool { currentLayout.hidesSystemChrome }
+    override var prefersHomeIndicatorAutoHidden: Bool { currentLayout.hidesSystemChrome }
     override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation { .fade }
+
+    private var currentLayout: LayoutState {
+        appliedLayout ?? layoutState(for: view.bounds.size)
+    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         watchStartedAt = Date()
-        navigationController?.setNavigationBarHidden(isLandscape, animated: animated)
+        navigationController?.setNavigationBarHidden(currentLayout.hidesNavigationBar, animated: animated)
+        (tabBarController as? RootTabBarController)?.beginPlayback()
         eventsPoller.start()
         liveStatsPoller.start()
         eventCard.resume()
     }
 
+    /// Stage Manager and the app switcher label the window with the channel being watched.
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        view.window?.windowScene?.title = channel.broadcasterName
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        view.window?.windowScene?.title = nil
         if let startedAt = watchStartedAt {
             ReviewPrompt.recordWatchTime(
                 Date().timeIntervalSince(startedAt), in: view.window?.windowScene)
             watchStartedAt = nil
         }
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        if isMovingFromParent {
+            (tabBarController as? RootTabBarController)?.endPlayback()
+        }
         eventsPoller.stop()
         liveStatsPoller.stop()
         eventCard.pause()
@@ -167,6 +227,10 @@ final class ChannelViewController: UIViewController {
             switch pose {
             case .audio: self.videoController?.setAudioOnly(true)
             case .chat: self.setChatOnly(true)
+            case .fullscreen: self.videoController?.toggleFullscreen()
+            case .fullscreenChat:
+                self.videoController?.toggleFullscreen()
+                if !self.isFullscreenChatVisible { self.toggleFullscreenChat() }
             case .normal: break
             }
         }
@@ -219,8 +283,12 @@ final class ChannelViewController: UIViewController {
         observeLiveStats()
         Task { [weak self] in
             guard let self else { return }
-            let avatarURL = try? await AppContainer.shared.api.users(ids: [self.channel.id]).first?.profileImageURL
-            self.avatarURL = avatarURL ?? nil
+            let user = try? await AppContainer.shared.api.users(ids: [self.channel.id]).first
+            self.avatarURL = user?.profileImageURL
+            if let user {
+                self.aboutView.configure(user: user)
+                self.updateAboutVisibility()
+            }
             if let stream = try? await AppContainer.shared.api.streams(userIDs: [self.channel.id]).first {
                 self.applyLiveStream(stream)
             } else {
@@ -229,6 +297,7 @@ final class ChannelViewController: UIViewController {
             if let avatarURL = self.avatarURL,
                let image = await ImageLoader.shared.image(for: avatarURL, targetScale: 2.0) {
                 self.audioBar.setAvatar(image)
+                self.aboutView.setAvatar(image)
             }
         }
     }
@@ -291,7 +360,7 @@ final class ChannelViewController: UIViewController {
 
     private func setChatOnly(_ on: Bool) {
         guard on != isChatOnly else { return }
-        if isVideoFullscreen { setVideoFullscreen(false) }
+        prefersFullscreen = false
         Haptics.selection(store)
         isChatOnly = on
         store.update { $0.chatOnly = on }
@@ -304,12 +373,7 @@ final class ChannelViewController: UIViewController {
             }
         }
         videoController?.setStreamActive(!on)
-        if on {
-            videoContainer.removeConstraints(videoAspectConstraints)
-            videoAspectConstraints = []
-        }
-        videoContainer.isHidden = on
-        applyOrientation(isLandscape: isLandscape)
+        applyLayout()
     }
 
     private func observeAuth() {
@@ -333,14 +397,77 @@ final class ChannelViewController: UIViewController {
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        let landscape = size.width > size.height
         coordinator.animate(alongsideTransition: { [weak self] _ in
-            self?.applyOrientation(isLandscape: landscape)
-            self?.setVideoFullscreen(landscape)
+            self?.applyLayout(for: size)
         })
     }
 
-    private var isLandscape: Bool { view.bounds.width > view.bounds.height }
+    /// Window resizes on iPad do not all arrive as transitions, so the arrangement is also
+    /// rechecked whenever the page lays out at a size that calls for a different one.
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateAboutVisibility()
+        guard !isApplyingLayout, appliedLayout != nil, layoutState(for: view.bounds.size) != appliedLayout else { return }
+        applyLayout(for: view.bounds.size)
+    }
+
+    /// The About card appears only when the side-by-side layout leaves room for all of it under
+    /// the stream details; it never takes height from the video.
+    private func updateAboutVisibility() {
+        let width = mainColumn.bounds.width
+        var fits = false
+        if currentLayout.arrangement == .sideBySide, aboutView.hasContent, width > 0 {
+            let target = CGSize(width: width, height: UIView.layoutFittingCompressedSize.height)
+            let info = infoView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
+            let about = aboutView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
+            fits = width * 9 / 16 + info + about <= mainColumn.bounds.height
+        }
+        if aboutView.isHidden == fits {
+            aboutView.isHidden = !fits
+        }
+    }
+
+    private var isVideoShown: Bool { !isChatOnly && !isAudioOnly }
+
+    /// The phone keeps its rule: portrait stacks video over chat, landscape goes fullscreen.
+    /// iPad windows of any shape get video beside a chat column once they are wide enough, and
+    /// go fullscreen only when asked.
+    private func layoutState(for size: CGSize) -> LayoutState {
+        let landscape = size.width > size.height
+        if OrientationCoordinator.isPhone {
+            let immersive = landscape && isVideoShown
+            return LayoutState(
+                arrangement: immersive ? .immersive : .stacked,
+                showsInfo: !landscape && isVideoShown,
+                hidesNavigationBar: landscape && !isAudioOnly,
+                hidesSystemChrome: landscape,
+                showsOverlayBackButton: landscape || navigationController == nil,
+                centersChatColumn: false
+            )
+        }
+        let arrangement: Arrangement
+        var automaticFullscreen = false
+        if !isVideoShown {
+            arrangement = .stacked
+        } else if prefersFullscreen {
+            arrangement = .immersive
+        } else if landscape, size.width >= Self.sideBySideMinimumWidth {
+            arrangement = .sideBySide
+        } else if landscape {
+            arrangement = .immersive
+            automaticFullscreen = true
+        } else {
+            arrangement = .stacked
+        }
+        return LayoutState(
+            arrangement: arrangement,
+            showsInfo: isVideoShown && arrangement != .immersive,
+            hidesNavigationBar: arrangement == .immersive,
+            hidesSystemChrome: arrangement == .immersive,
+            showsOverlayBackButton: automaticFullscreen || navigationController == nil,
+            centersChatColumn: !isVideoShown && size.width > Self.chatColumnMaximumWidth + 40
+        )
+    }
 
     private func setUpLayout() {
         containerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -352,54 +479,128 @@ final class ChannelViewController: UIViewController {
         videoContainer.backgroundColor = .black
         chatContainer.translatesAutoresizingMaskIntoConstraints = false
         chatContainer.backgroundColor = Theme.background
+        infoView.setContentCompressionResistancePriority(.required, for: .vertical)
+        mainSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
+        mainSpacer.isHidden = true
 
-        containerStack.addArrangedSubview(videoContainer)
-        containerStack.addArrangedSubview(infoView)
+        mainColumn.axis = .vertical
+        mainColumn.alignment = .fill
+        mainColumn.distribution = .fill
+        mainColumn.addArrangedSubview(videoContainer)
+        mainColumn.addArrangedSubview(infoView)
+        mainColumn.addArrangedSubview(aboutView)
+        mainColumn.addArrangedSubview(mainSpacer)
+        aboutView.isHidden = true
+        aboutView.onShowVideos = { [weak self] in
+            self?.showVideos()
+        }
+
+        containerStack.addArrangedSubview(mainColumn)
         containerStack.addArrangedSubview(chatContainer)
 
         dividerHandle.translatesAutoresizingMaskIntoConstraints = false
-        dividerHandle.backgroundColor = Theme.surfaceElevated
         dividerHandle.addGestureRecognizer(dividerPan)
+        dividerHandle.onAccessibilityAdjust = { [weak self] delta in
+            self?.adjustChatColumn(by: delta)
+        }
 
-        videoContainer.isHidden = isChatOnly
         chatOverlay.addGestureRecognizer(chatOverlayDoubleTap)
 
-        NSLayoutConstraint.activate([
-            containerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+        let safeArea = view.safeAreaLayoutGuide
+        edgeConstraints = [
             containerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            containerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            containerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ]
+        safeAreaEdgeConstraints = [
+            containerStack.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            containerStack.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
+        ]
+        let fullWidth = containerStack.widthAnchor.constraint(equalTo: safeArea.widthAnchor)
+        fullWidth.priority = .defaultHigh
+        centeredColumnConstraints = [
+            containerStack.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
+            containerStack.widthAnchor.constraint(lessThanOrEqualToConstant: Self.chatColumnMaximumWidth),
+            containerStack.widthAnchor.constraint(lessThanOrEqualTo: safeArea.widthAnchor),
+            fullWidth
+        ]
+        NSLayoutConstraint.activate([
+            containerStack.topAnchor.constraint(equalTo: safeArea.topAnchor),
             containerStack.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        applyOrientation(isLandscape: isLandscape)
+        applyLayout()
     }
 
-    private func applyOrientation(isLandscape landscape: Bool) {
-        navigationController?.setNavigationBarHidden(landscape && !isAudioOnly, animated: true)
-        videoController?.setBackButtonHidden(navigationController != nil && !landscape)
-        infoView.isHidden = landscape || isChatOnly || isAudioOnly
-        if landscape, !isAudioOnly {
-            containerStack.axis = .horizontal
-            landscapeWidthConstraint?.isActive = false
-            if isChatOnly {
-                removeDivider()
-                landscapeWidthConstraint = nil
-            } else {
-                installDivider()
-                let constraint = chatContainer.widthAnchor.constraint(equalTo: containerStack.widthAnchor, multiplier: chatWidthFraction)
-                constraint.isActive = true
-                landscapeWidthConstraint = constraint
-            }
-            videoContainer.removeConstraints(videoAspectConstraints)
-            videoAspectConstraints = []
-        } else {
-            containerStack.axis = .vertical
-            removeDivider()
-            landscapeWidthConstraint?.isActive = false
-            landscapeWidthConstraint = nil
-            if !isChatOnly, !isAudioOnly { applyPortraitVideoAspect() }
-        }
+    private func applyLayout(for size: CGSize? = nil) {
+        let size = size ?? view.bounds.size
+        let state = layoutState(for: size)
+        isApplyingLayout = true
+        defer { isApplyingLayout = false }
+        appliedLayout = state
+
+        navigationController?.setNavigationBarHidden(state.hidesNavigationBar, animated: true)
+        videoController?.setBackButtonHidden(!state.showsOverlayBackButton)
+        videoContainer.isHidden = !isVideoShown
+        infoView.isHidden = !state.showsInfo
+        if state.arrangement != .sideBySide { aboutView.isHidden = true }
+        mainSpacer.isHidden = state.arrangement != .sideBySide
+        mainColumn.isHidden = !isVideoShown
+        containerStack.axis = state.arrangement == .stacked ? .vertical : .horizontal
+
+        applyContainerEdges(state)
+        applyVideoSizing(state)
+        applyChatColumn(state, width: size.width)
+        applyImmersive(state.arrangement == .immersive)
+        setNeedsStatusBarAppearanceUpdate()
+        setNeedsUpdateOfHomeIndicatorAutoHidden()
         view.layoutIfNeeded()
+    }
+
+    /// iPad content keeps clear of the sidebar and window controls through the safe area; the
+    /// phone's fullscreen video runs edge to edge; chat alone on a wide window is centered at
+    /// a readable width.
+    private func applyContainerEdges(_ state: LayoutState) {
+        NSLayoutConstraint.deactivate(edgeConstraints + safeAreaEdgeConstraints + centeredColumnConstraints)
+        if state.centersChatColumn {
+            NSLayoutConstraint.activate(centeredColumnConstraints)
+        } else if !OrientationCoordinator.isPhone, state.arrangement != .immersive {
+            NSLayoutConstraint.activate(safeAreaEdgeConstraints)
+        } else {
+            NSLayoutConstraint.activate(edgeConstraints)
+        }
+    }
+
+    /// Stacked, the video is exactly 16:9 across the width. Beside the chat column it may give
+    /// up height so the stream details below it stay on screen; the player letterboxes.
+    private func applyVideoSizing(_ state: LayoutState) {
+        videoContainer.removeConstraints(videoAspectConstraints)
+        videoAspectConstraints = []
+        guard isVideoShown, state.arrangement != .immersive else { return }
+        let aspect = videoContainer.heightAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 9.0 / 16.0)
+        aspect.priority = state.arrangement == .sideBySide ? UILayoutPriority(740) : .required
+        aspect.isActive = true
+        videoAspectConstraints = [aspect]
+    }
+
+    private func applyChatColumn(_ state: LayoutState, width: CGFloat) {
+        chatWidthConstraint?.isActive = false
+        chatWidthConstraint = nil
+        guard state.arrangement == .sideBySide else {
+            removeDivider()
+            return
+        }
+        let constraint = chatContainer.widthAnchor.constraint(equalToConstant: clampedChatWidth(chatColumnWidth, windowWidth: width))
+        constraint.isActive = true
+        chatWidthConstraint = constraint
+        installDivider()
+    }
+
+    /// The chat column starts near a third of the window, and whatever width the reader drags
+    /// it to is kept for the next channel, within bounds that leave the video usable.
+    private func clampedChatWidth(_ proposed: CGFloat, windowWidth: CGFloat) -> CGFloat {
+        let preferred = proposed > 0 ? proposed : windowWidth * 0.3
+        let maximum = max(280, min(560, windowWidth - 320))
+        return min(maximum, max(280, preferred))
     }
 
     /// Collapses the video area to a compact audio bar (chat fills the screen) or
@@ -407,13 +608,10 @@ final class ChannelViewController: UIViewController {
     /// while audio-only so chat stays primary in both orientations.
     private func applyAudioOnly(_ on: Bool) {
         guard on != isAudioOnly else { return }
-        if on, isVideoFullscreen { setVideoFullscreen(false) }
+        prefersFullscreen = false
         isAudioOnly = on
         Haptics.selection(store)
         if on {
-            videoContainer.removeConstraints(videoAspectConstraints)
-            videoAspectConstraints = []
-            videoContainer.isHidden = true
             if audioBar.superview == nil {
                 containerStack.insertArrangedSubview(audioBar, at: 0)
             }
@@ -421,20 +619,11 @@ final class ChannelViewController: UIViewController {
         } else {
             audioBar.isHidden = true
             audioBar.removeFromSuperview()
-            videoContainer.isHidden = isChatOnly
         }
-        applyOrientation(isLandscape: isLandscape)
+        applyLayout()
     }
 
     private var videoAspectConstraints: [NSLayoutConstraint] = []
-
-    private func applyPortraitVideoAspect() {
-        videoContainer.removeConstraints(videoAspectConstraints)
-        let aspect = videoContainer.heightAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 9.0 / 16.0)
-        aspect.priority = .required
-        aspect.isActive = true
-        videoAspectConstraints = [aspect]
-    }
 
     private func installDivider() {
         guard dividerHandle.superview == nil else { return }
@@ -442,8 +631,8 @@ final class ChannelViewController: UIViewController {
         NSLayoutConstraint.activate([
             dividerHandle.topAnchor.constraint(equalTo: containerStack.topAnchor),
             dividerHandle.bottomAnchor.constraint(equalTo: containerStack.bottomAnchor),
-            dividerHandle.trailingAnchor.constraint(equalTo: chatContainer.leadingAnchor),
-            dividerHandle.widthAnchor.constraint(equalToConstant: 8)
+            dividerHandle.centerXAnchor.constraint(equalTo: chatContainer.leadingAnchor),
+            dividerHandle.widthAnchor.constraint(equalToConstant: ColumnDividerView.hitWidth)
         ])
     }
 
@@ -452,25 +641,54 @@ final class ChannelViewController: UIViewController {
     }
 
     @objc private func handleDividerPan(_ recognizer: UIPanGestureRecognizer) {
-        guard isLandscape else { return }
-        let translation = recognizer.translation(in: containerStack)
-        let totalWidth = containerStack.bounds.width
-        guard totalWidth > 0 else { return }
-        let delta = -translation.x / totalWidth
-        let proposed = min(0.6, max(0.2, chatWidthFraction + delta))
-        landscapeWidthConstraint?.isActive = false
-        let constraint = chatContainer.widthAnchor.constraint(equalTo: containerStack.widthAnchor, multiplier: proposed)
-        constraint.isActive = true
-        landscapeWidthConstraint = constraint
-        view.layoutIfNeeded()
-        if recognizer.state == .ended || recognizer.state == .cancelled {
-            chatWidthFraction = proposed
-            recognizer.setTranslation(.zero, in: containerStack)
+        guard currentLayout.arrangement == .sideBySide, let constraint = chatWidthConstraint else { return }
+        switch recognizer.state {
+        case .began:
+            dividerStartWidth = constraint.constant
+            dividerHandle.setDragging(true)
+        case .changed:
+            let proposed = dividerStartWidth - recognizer.translation(in: view).x
+            constraint.constant = clampedChatWidth(proposed, windowWidth: view.bounds.width)
+            view.layoutIfNeeded()
+        default:
+            dividerHandle.setDragging(false)
+            chatColumnWidth = constraint.constant
+            UserDefaults.standard.set(Double(chatColumnWidth), forKey: Self.chatColumnWidthKey)
         }
     }
 
-    func setVideoFullscreen(_ fullscreen: Bool) {
-        let immersive = fullscreen && !isChatOnly && !isAudioOnly
+    private func adjustChatColumn(by delta: CGFloat) {
+        guard let constraint = chatWidthConstraint else { return }
+        constraint.constant = clampedChatWidth(constraint.constant + delta, windowWidth: view.bounds.width)
+        chatColumnWidth = constraint.constant
+        UserDefaults.standard.set(Double(chatColumnWidth), forKey: Self.chatColumnWidthKey)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    /// iPad fullscreen: the video takes the whole window and chat floats over it on demand.
+    /// The phone reaches fullscreen by turning to landscape instead.
+    func toggleFullscreen() {
+        guard !OrientationCoordinator.isPhone, isVideoShown else { return }
+        prefersFullscreen.toggle()
+        Haptics.selection(store)
+        let animations = { self.applyLayout() }
+        if Motion.reduced {
+            animations()
+        } else {
+            UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut], animations: animations)
+        }
+    }
+
+    var isFullscreen: Bool { isVideoFullscreen }
+
+    var isFullscreenChatVisible: Bool { isVideoFullscreen && !fullscreenChatHidden }
+
+    func exitFullscreen() {
+        guard prefersFullscreen else { return }
+        toggleFullscreen()
+    }
+
+    private func applyImmersive(_ immersive: Bool) {
         videoController?.setImmersiveState(immersive)
         guard immersive != isVideoFullscreen, let chat = chatController else { return }
         isVideoFullscreen = immersive
@@ -479,7 +697,6 @@ final class ChannelViewController: UIViewController {
         } else {
             removeChatOverlay(chat: chat)
         }
-        view.layoutIfNeeded()
     }
 
     private var fullscreenChatHidden = false
@@ -488,7 +705,7 @@ final class ChannelViewController: UIViewController {
         toggleFullscreenChat()
     }
 
-    private func toggleFullscreenChat() {
+    func toggleFullscreenChat() {
         guard isVideoFullscreen else { return }
         fullscreenChatHidden.toggle()
         chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
@@ -498,11 +715,14 @@ final class ChannelViewController: UIViewController {
         }
     }
 
+    /// Fullscreen chat floats over the right of the video. The phone shows it at once, since
+    /// turning sideways is how phone viewers watch with chat; an iPad asked for fullscreen
+    /// shows the video alone until chat is called up.
     private func installChatOverlay(chat: ChatViewController) {
         chatContainer.isHidden = true
-        fullscreenChatHidden = false
-        chatOverlay.alpha = 1
-        chatOverlay.isUserInteractionEnabled = true
+        fullscreenChatHidden = !OrientationCoordinator.isPhone
+        chatOverlay.alpha = fullscreenChatHidden ? 0 : 1
+        chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
         chatOverlay.translatesAutoresizingMaskIntoConstraints = false
         chatOverlay.backgroundColor = Theme.background.withAlphaComponent(0.35)
         videoContainer.addSubview(chatOverlay)
@@ -544,6 +764,12 @@ final class ChannelViewController: UIViewController {
         video.onPlaybackStateChanged = { [weak self] playing in
             self?.audioBar.setPlaying(playing)
         }
+        video.onToggleFullscreen = { [weak self] in
+            self?.toggleFullscreen()
+        }
+        video.hostImmersiveState = { [weak self] in
+            self?.isVideoFullscreen ?? false
+        }
         audioBar.onPlayPause = { [weak self] in
             self?.videoController?.togglePlayPause()
         }
@@ -561,7 +787,7 @@ final class ChannelViewController: UIViewController {
         ])
         video.didMove(toParent: self)
         videoController = video
-        video.setBackButtonHidden(navigationController != nil && !isLandscape)
+        video.setBackButtonHidden(!currentLayout.showsOverlayBackButton)
 
         Task { [weak self] in
             guard let self else { return }
@@ -588,7 +814,7 @@ final class ChannelViewController: UIViewController {
         chat.didMove(toParent: self)
         chatController = chat
         chatLoggedIn = loggedIn
-        setVideoFullscreen(isLandscape)
+        applyImmersive(currentLayout.arrangement == .immersive)
     }
 
     private func reattachChat(user: AuthenticatedUser?) {
@@ -764,5 +990,68 @@ private final class AudioOnlyBarView: UIView {
         } else {
             liveBadge.removeAllSymbolEffects()
         }
+    }
+}
+
+/// The seam between video and the chat column on iPad: a hairline with a grip, wide enough to
+/// catch a finger, highlighted under the pointer, and adjustable with VoiceOver.
+@MainActor
+final class ColumnDividerView: UIView {
+    static let hitWidth: CGFloat = 16
+
+    var onAccessibilityAdjust: ((CGFloat) -> Void)?
+
+    private let line = UIView()
+    private let grip = UIView()
+
+    init() {
+        super.init(frame: .zero)
+        backgroundColor = .clear
+        line.backgroundColor = Theme.surfaceElevated
+        line.translatesAutoresizingMaskIntoConstraints = false
+        grip.backgroundColor = Theme.secondaryText.withAlphaComponent(0.45)
+        grip.layer.cornerRadius = 2.5
+        grip.layer.cornerCurve = .continuous
+        grip.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(line)
+        addSubview(grip)
+        NSLayoutConstraint.activate([
+            line.topAnchor.constraint(equalTo: topAnchor),
+            line.bottomAnchor.constraint(equalTo: bottomAnchor),
+            line.centerXAnchor.constraint(equalTo: centerXAnchor),
+            line.widthAnchor.constraint(equalToConstant: 1),
+            grip.centerXAnchor.constraint(equalTo: centerXAnchor),
+            grip.centerYAnchor.constraint(equalTo: centerYAnchor),
+            grip.widthAnchor.constraint(equalToConstant: 5),
+            grip.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        addInteraction(UIPointerInteraction(delegate: self))
+        isAccessibilityElement = true
+        accessibilityLabel = String(localized: "Chat width")
+        accessibilityTraits = .adjustable
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    func setDragging(_ dragging: Bool) {
+        UIView.animate(withDuration: 0.15) {
+            self.grip.backgroundColor = dragging ? Theme.accent : Theme.secondaryText.withAlphaComponent(0.45)
+            self.grip.transform = dragging ? CGAffineTransform(scaleX: 1.4, y: 1.2) : .identity
+        }
+    }
+
+    override func accessibilityIncrement() {
+        onAccessibilityAdjust?(40)
+    }
+
+    override func accessibilityDecrement() {
+        onAccessibilityAdjust?(-40)
+    }
+}
+
+extension ColumnDividerView: UIPointerInteractionDelegate {
+    func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
+        UIPointerStyle(effect: .highlight(UITargetedPreview(view: grip)))
     }
 }

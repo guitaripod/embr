@@ -287,12 +287,20 @@ final class StreamInfoView: UIView {
         gameButton.configuration?.title = name
     }
 
+    /// Chips keep their own width; a trailing spacer takes the rest of the row so a single tag
+    /// is not stretched across it.
     private func setTags(_ tags: [String]) {
         tagsRow.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let chips = tags.prefix(3)
         for tag in chips {
-            tagsRow.addArrangedSubview(makeChip(tag))
+            let chip = makeChip(tag)
+            chip.setContentHuggingPriority(.required, for: .horizontal)
+            tagsRow.addArrangedSubview(chip)
         }
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        spacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+        tagsRow.addArrangedSubview(spacer)
         tagsRow.isHidden = chips.isEmpty
     }
 

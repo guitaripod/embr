@@ -125,6 +125,7 @@ final class StreamCell: UICollectionViewCell {
 
     private func setUp() {
         contentView.backgroundColor = .clear
+        hoverStyle = UIHoverStyle(effect: .highlight, shape: .rect(cornerRadius: 14))
 
         thumbnail.translatesAutoresizingMaskIntoConstraints = false
         thumbnail.contentMode = .scaleAspectFill

@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 import UserNotifications
 import EmbrCore
 
@@ -8,6 +9,9 @@ import EmbrCore
 @MainActor
 final class FollowedLiveService {
     static let shared = FollowedLiveService()
+
+    let changes = PassthroughSubject<Void, Never>()
+    private(set) var liveStreams: [LiveStream] = []
 
     private let auth: AuthControlling
     private let api: TwitchAPIProviding
@@ -47,7 +51,9 @@ final class FollowedLiveService {
         lastLiveIDs = []
         seeded = false
         lastRefreshAt = nil
+        liveStreams = []
         tabBar?.setFollowingBadge(0)
+        changes.send()
     }
 
     private func refresh(forced: Bool) async {
@@ -66,6 +72,8 @@ final class FollowedLiveService {
         let live = page.items
         let liveIDs = Set(live.map(\.userID))
         tabBar?.setFollowingBadge(live.count)
+        liveStreams = live
+        changes.send()
 
         if seeded {
             let newlyLive = live.filter { !lastLiveIDs.contains($0.userID) }

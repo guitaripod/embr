@@ -31,6 +31,16 @@ enum StreamRouting {
 
 @MainActor
 enum StreamListLayout {
+    private static let cardMinimumWidth: CGFloat = 280
+    private static let cardSpacing: CGFloat = 20
+    private static let regularMargin: CGFloat = 20
+
+    /// iPad windows of regular width show streams as a grid of cards; compact widths (the
+    /// phone, Slide Over, a narrow split) keep the thumbnail-beside-text rows.
+    static func usesCards(_ traits: UITraitCollection) -> Bool {
+        traits.userInterfaceIdiom != .phone && traits.horizontalSizeClass == .regular
+    }
+
     static func make() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
             MainActor.assumeIsolated {
@@ -40,6 +50,9 @@ enum StreamListLayout {
     }
 
     static func streamsSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        if usesCards(environment.traitCollection) {
+            return cardSection(environment: environment)
+        }
         let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
@@ -57,24 +70,117 @@ enum StreamListLayout {
         return section
     }
 
-    static func grid(columns: Int) -> UICollectionViewCompositionalLayout {
-        UICollectionViewCompositionalLayout { _, _ in
+    /// Cards at least 280 points wide, as many to a row as the window fits, aligned with the
+    /// large title on the layout margins.
+    static func cardSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        let columns = max(2, columnCount(environment: environment, minimumWidth: cardMinimumWidth, spacing: cardSpacing))
+        let section = grid(columns: columns, spacing: cardSpacing, estimatedHeight: 280)
+        section.interGroupSpacing = 26
+        section.contentInsets.top = 8
+        section.contentInsets.bottom = 28
+        return section
+    }
+
+    /// Equal columns with `spacing` between them, aligned to the layout margins. Fractional
+    /// items have no gutter of their own, so each gives up half the spacing on either side and
+    /// the section pulls its outer edges back out to the margins.
+    private static func grid(columns: Int, spacing: CGFloat, estimatedHeight: CGFloat) -> NSCollectionLayoutSection {
+        let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
+            heightDimension: .estimated(estimatedHeight)
+        ))
+        item.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: spacing / 2, bottom: 0, trailing: spacing / 2)
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(estimatedHeight)),
+            repeatingSubitem: item,
+            count: columns
+        )
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsetsReference = .layoutMargins
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: -spacing / 2, bottom: 0, trailing: -spacing / 2)
+        return section
+    }
+
+    /// Box art for categories: three across on the phone, as many as fit at 150 points or more
+    /// on iPad.
+    static func categoriesSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+        guard usesCards(environment.traitCollection) else {
+            let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0 / 3.0),
+                heightDimension: .fractionalHeight(1.0)
+            ))
+            item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+            let group = NSCollectionLayoutGroup.horizontal(
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(210)),
+                repeatingSubitem: item,
+                count: 3
+            )
+            let section = NSCollectionLayoutSection(group: group)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 9, bottom: 8, trailing: 9)
+            return section
+        }
+        let spacing: CGFloat = 16
+        let columns = max(4, columnCount(environment: environment, minimumWidth: 150, spacing: spacing))
+        let section = grid(columns: columns, spacing: spacing, estimatedHeight: 260)
+        section.interGroupSpacing = 18
+        section.contentInsets.top = 8
+        section.contentInsets.bottom = 24
+        return section
+    }
+
+    static func categoriesLayout() -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { _, environment in
             MainActor.assumeIsolated {
-                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                    heightDimension: .fractionalHeight(1.0)
-                ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-                let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(210)),
-                    repeatingSubitem: item,
-                    count: columns
-                )
-                let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 9, bottom: 8, trailing: 9)
+                categoriesSection(environment: environment)
+            }
+        }
+    }
+
+    /// Channel rows (offline follows and favorites, search results): one list on the phone,
+    /// side-by-side columns at least 300 points wide on iPad.
+    static func channelRowsSection(environment: NSCollectionLayoutEnvironment, estimatedHeight: CGFloat) -> NSCollectionLayoutSection {
+        guard usesCards(environment.traitCollection) else {
+            let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(estimatedHeight)))
+            let group = NSCollectionLayoutGroup.vertical(
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(estimatedHeight)),
+                subitems: [item])
+            return NSCollectionLayoutSection(group: group)
+        }
+        let spacing: CGFloat = 24
+        let columns = max(1, columnCount(environment: environment, minimumWidth: 300, spacing: spacing))
+        let section = grid(columns: columns, spacing: spacing, estimatedHeight: estimatedHeight)
+        section.interGroupSpacing = 4
+        return section
+    }
+
+    /// An inset-grouped list (Settings and its sub-screens) that keeps to a readable width on
+    /// iPad instead of stretching its rows across a wide window.
+    static func readableList(using configuration: UICollectionLayoutListConfiguration) -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { _, environment in
+            MainActor.assumeIsolated {
+                let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+                if environment.traitCollection.userInterfaceIdiom != .phone {
+                    section.contentInsetsReference = .readableContent
+                }
                 return section
             }
         }
+    }
+
+    /// Headers follow the section's content insets, so a grid's negative gutter insets are
+    /// handed back to the header and its title lines up with the first column.
+    static func attachHeader(_ header: NSCollectionLayoutBoundarySupplementaryItem, to section: NSCollectionLayoutSection) {
+        header.contentInsets = NSDirectionalEdgeInsets(
+            top: 0, leading: -section.contentInsets.leading, bottom: 0, trailing: -section.contentInsets.trailing)
+        section.boundarySupplementaryItems = [header]
+    }
+
+    /// How many items of at least `minimumWidth` fit across the content, which on iPad sits
+    /// inside 20-point layout margins.
+    static func columnCount(environment: NSCollectionLayoutEnvironment, minimumWidth: CGFloat, spacing: CGFloat) -> Int {
+        let width = environment.container.effectiveContentSize.width - 2 * regularMargin
+        return max(1, Int((width + spacing) / (minimumWidth + spacing)))
     }
 }
 

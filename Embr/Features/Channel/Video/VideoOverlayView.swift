@@ -626,6 +626,8 @@ final class VideoOverlayView: UIView {
         liveBadge.isAccessibilityElement = true
         liveBadge.accessibilityLabel = String(localized: "Live")
 
+        addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(didHover(_:))))
+
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapBackground))
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(didDoubleTap(_:)))
         doubleTap.numberOfTapsRequired = 2
@@ -638,6 +640,21 @@ final class VideoOverlayView: UIView {
 
     @objc private func didTapBackground() {
         toggleControls()
+    }
+
+    /// A pointer moving over the video brings the controls up, as on a Mac, and keeps them up
+    /// while it moves.
+    @objc private func didHover(_ recognizer: UIHoverGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed:
+            if controlsVisible {
+                scheduleAutoHide()
+            } else {
+                showControls()
+            }
+        default:
+            break
+        }
     }
 
     @objc private func didDoubleTap(_ recognizer: UITapGestureRecognizer) {
@@ -799,6 +816,7 @@ final class VideoOverlayView: UIView {
         configuration.baseForegroundColor = .white
         let button = UIButton(configuration: configuration)
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.isPointerInteractionEnabled = true
         return button
     }
 

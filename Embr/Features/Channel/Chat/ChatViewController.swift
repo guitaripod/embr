@@ -37,7 +37,6 @@ final class ChatViewController: UIViewController {
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
 
-    private var inputBottomConstraint: NSLayoutConstraint?
     private var catalog = EmoteCatalog()
     private var chatterIndex: [String: String] = [:]
     private static let chatterIndexCap = 2000
@@ -65,7 +64,6 @@ final class ChatViewController: UIViewController {
         setUpDataSource()
         setUpOverlays()
         setUpInput()
-        setUpKeyboardObservers()
         setUpReconnectObservers()
         bind()
         viewModel.start()
@@ -101,6 +99,10 @@ final class ChatViewController: UIViewController {
 
     func endSession() {
         viewModel.stop()
+    }
+
+    var isComposing: Bool {
+        !isAnonymous && composer.isEditing
     }
 
     func routeUsernameTap(_ user: ChatUser) {
@@ -234,13 +236,11 @@ final class ChatViewController: UIViewController {
         composer.delegate = self
         view.addSubview(composer)
 
-        let bottom = composer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        inputBottomConstraint = bottom
-
+        view.keyboardLayoutGuide.usesBottomSafeArea = false
         NSLayoutConstraint.activate([
             composer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             composer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottom,
+            composer.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: composer.topAnchor)
         ])
     }
@@ -258,15 +258,6 @@ final class ChatViewController: UIViewController {
             guestBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             collectionView.bottomAnchor.constraint(equalTo: guestBar.topAnchor)
         ])
-    }
-
-    private func setUpKeyboardObservers() {
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] note in
-                MainActor.assumeIsolated { self?.handleKeyboard(note) }
-            }
-            .store(in: &cancellables)
     }
 
     private func bind() {
@@ -387,17 +378,6 @@ final class ChatViewController: UIViewController {
         presentMessageActions(for: row.message, sourceRect: sourceRect)
     }
 
-    private func handleKeyboard(_ note: Notification) {
-        guard view.window != nil,
-              let frameValue = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
-        let endFrame = view.convert(frameValue.cgRectValue, from: view.window)
-        let intersection = view.bounds.intersection(endFrame)
-        let overlap = intersection.isNull ? 0 : intersection.height
-        guard inputBottomConstraint?.constant != -overlap else { return }
-        inputBottomConstraint?.constant = -overlap
-        let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.25
-        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
-    }
 }
 
 extension ChatViewController: UIGestureRecognizerDelegate {

@@ -56,10 +56,17 @@ final class ChannelVideosViewController: UIViewController {
         setUpDataSource()
         setUpStates()
         load()
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: ChannelVideosViewController, _) in
+            var snapshot = controller.dataSource.snapshot()
+            guard !snapshot.sectionIdentifiers.isEmpty else { return }
+            snapshot.reloadSections(snapshot.sectionIdentifiers)
+            controller.dataSource.apply(snapshot, animatingDifferences: false)
+        }
     }
 
     @objc private func segmentChanged() {
         Haptics.selection()
+        collectionView.collectionViewLayout.invalidateLayout()
         if needsLoad { load() } else { render() }
         collectionView.setContentOffset(CGPoint(x: 0, y: -collectionView.adjustedContentInset.top), animated: false)
     }
@@ -70,14 +77,35 @@ final class ChannelVideosViewController: UIViewController {
         return vods.isEmpty && !loadingVods
     }
 
+    private var usesGrid: Bool { StreamListLayout.usesCards(traitCollection) }
+
+    /// A plain list on the phone; on iPad, videos and clips become a card grid and the schedule
+    /// sits in columns.
+    private func makeLayout() -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { [weak self] _, environment in
+            MainActor.assumeIsolated {
+                guard StreamListLayout.usesCards(environment.traitCollection) else {
+                    var config = UICollectionLayoutListConfiguration(appearance: .plain)
+                    config.backgroundColor = .clear
+                    config.showsSeparators = false
+                    return NSCollectionLayoutSection.list(using: config, layoutEnvironment: environment)
+                }
+                if self?.showingSchedule == true {
+                    let section = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 80)
+                    section.contentInsets.top = 12
+                    section.contentInsets.bottom = 24
+                    return section
+                }
+                return StreamListLayout.cardSection(environment: environment)
+            }
+        }
+    }
+
     private func setUpCollectionView() {
-        var config = UICollectionLayoutListConfiguration(appearance: .plain)
-        config.backgroundColor = .clear
-        config.showsSeparators = false
-        let layout = UICollectionViewCompositionalLayout.list(using: config)
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
+        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         view.addSubview(collectionView)
@@ -106,14 +134,34 @@ final class ChannelVideosViewController: UIViewController {
                 duration: MediaRowCell.duration(clip.duration)
             )
         }
-        let scheduleReg = UICollectionView.CellRegistration<ScheduleRowCell, ScheduleSegment> { cell, _, segment in
+        let vodCardReg = UICollectionView.CellRegistration<MediaCardCell, VideoOnDemand> { cell, _, vod in
+            cell.configure(
+                thumbnail: MediaRowCell.thumbnailURL(vod.thumbnailURLTemplate, width: 640, height: 360),
+                title: vod.title,
+                meta: [MediaRowCell.relative(vod.publishedAt), MediaRowCell.views(vod.viewCount)].joined(separator: "  ·  "),
+                duration: MediaRowCell.duration(Double(vod.durationSeconds))
+            )
+        }
+        let clipCardReg = UICollectionView.CellRegistration<MediaCardCell, Clip> { cell, _, clip in
+            cell.configure(
+                thumbnail: clip.thumbnailURL,
+                title: clip.title,
+                meta: [String(localized: "clipped by \(clip.creatorName)"), MediaRowCell.views(clip.viewCount)].joined(separator: "  ·  "),
+                duration: MediaRowCell.duration(clip.duration)
+            )
+        }
+        let scheduleReg = UICollectionView.CellRegistration<ScheduleRowCell, ScheduleSegment> { [weak self] cell, _, segment in
+            cell.alignsWithMargins = self?.usesGrid ?? false
             cell.configure(with: segment)
         }
-        dataSource = UICollectionViewDiffableDataSource<Int, Item>(collectionView: collectionView) { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<Int, Item>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
+            let grid = self?.usesGrid ?? false
             switch item {
             case .vod(let vod):
+                if grid { return collectionView.dequeueConfiguredReusableCell(using: vodCardReg, for: indexPath, item: vod) }
                 return collectionView.dequeueConfiguredReusableCell(using: vodReg, for: indexPath, item: vod)
             case .clip(let clip):
+                if grid { return collectionView.dequeueConfiguredReusableCell(using: clipCardReg, for: indexPath, item: clip) }
                 return collectionView.dequeueConfiguredReusableCell(using: clipReg, for: indexPath, item: clip)
             case .schedule(let segment):
                 return collectionView.dequeueConfiguredReusableCell(using: scheduleReg, for: indexPath, item: segment)
@@ -375,11 +423,11 @@ private final class MediaRowCell: UICollectionViewListCell {
         ])
     }
 
-    static func thumbnailURL(_ template: String) -> URL? {
+    static func thumbnailURL(_ template: String, width: Int = 320, height: Int = 180) -> URL? {
         guard !template.isEmpty else { return nil }
         return URL(string: template
-            .replacingOccurrences(of: "%{width}", with: "320")
-            .replacingOccurrences(of: "%{height}", with: "180"))
+            .replacingOccurrences(of: "%{width}", with: String(width))
+            .replacingOccurrences(of: "%{height}", with: String(height)))
     }
 
     static func clipMP4(from thumbnail: URL?) -> URL? {
@@ -411,8 +459,123 @@ private final class MediaRowCell: UICollectionViewListCell {
     }
 }
 
+/// A video or clip as a card for the iPad grid: the thumbnail across the full width, title
+/// and details beneath it.
+@MainActor
+private final class MediaCardCell: UICollectionViewCell {
+    private let thumbnail = UIImageView()
+    private let durationBadge = PaddedBadge()
+    private let titleLabel = UILabel()
+    private let metaLabel = UILabel()
+    private let images = AppContainer.shared.images
+    private var imageTask: Task<Void, Never>?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setUp()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    override var isHighlighted: Bool {
+        didSet {
+            guard isHighlighted != oldValue else { return }
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.contentView.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.97, y: 0.97) : .identity
+                self.contentView.alpha = self.isHighlighted ? 0.85 : 1
+            }
+        }
+    }
+
+    func configure(thumbnail url: URL?, title: String, meta: String, duration: String) {
+        titleLabel.text = title
+        metaLabel.text = meta
+        durationBadge.text = duration
+        durationBadge.isHidden = duration.isEmpty
+        thumbnail.image = nil
+        imageTask?.cancel()
+        guard let url else { return }
+        if let cached = images.cachedImage(for: url) { thumbnail.image = cached; return }
+        let scale = traitCollection.displayScale > 0 ? traitCollection.displayScale : 2
+        imageTask = Task { [weak self] in
+            let image = await self?.images.image(for: url, targetScale: scale)
+            guard !Task.isCancelled else { return }
+            self?.thumbnail.image = image
+        }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        imageTask?.cancel()
+        thumbnail.image = nil
+        contentView.transform = .identity
+        contentView.alpha = 1
+    }
+
+    private func setUp() {
+        hoverStyle = UIHoverStyle(effect: .highlight, shape: .rect(cornerRadius: 14))
+
+        thumbnail.contentMode = .scaleAspectFill
+        thumbnail.clipsToBounds = true
+        thumbnail.backgroundColor = Theme.surface
+        thumbnail.layer.cornerRadius = 12
+        thumbnail.layer.cornerCurve = .continuous
+        thumbnail.translatesAutoresizingMaskIntoConstraints = false
+
+        durationBadge.translatesAutoresizingMaskIntoConstraints = false
+
+        titleLabel.font = UIFontMetrics(forTextStyle: .headline).scaledFont(for: .systemFont(ofSize: 15, weight: .semibold))
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = Theme.primaryText
+        titleLabel.numberOfLines = 2
+
+        metaLabel.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: .systemFont(ofSize: 12, weight: .regular))
+        metaLabel.adjustsFontForContentSizeCategory = true
+        metaLabel.textColor = Theme.secondaryText
+
+        let text = UIStackView(arrangedSubviews: [titleLabel, metaLabel])
+        text.axis = .vertical
+        text.spacing = 3
+        text.translatesAutoresizingMaskIntoConstraints = false
+
+        contentView.addSubview(thumbnail)
+        thumbnail.addSubview(durationBadge)
+        contentView.addSubview(text)
+
+        NSLayoutConstraint.activate([
+            thumbnail.topAnchor.constraint(equalTo: contentView.topAnchor),
+            thumbnail.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            thumbnail.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            thumbnail.heightAnchor.constraint(equalTo: thumbnail.widthAnchor, multiplier: 9.0 / 16.0),
+            durationBadge.trailingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: -8),
+            durationBadge.bottomAnchor.constraint(equalTo: thumbnail.bottomAnchor, constant: -8),
+            text.topAnchor.constraint(equalTo: thumbnail.bottomAnchor, constant: 9),
+            text.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            text.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            text.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4)
+        ])
+    }
+}
+
 @MainActor
 private final class ScheduleRowCell: UICollectionViewListCell {
+    /// In the iPad column grid the row starts on the layout margin; in the phone list it keeps
+    /// the list's own content margins.
+    var alignsWithMargins = false {
+        didSet {
+            guard alignsWithMargins != oldValue else { return }
+            leadingToMargin.isActive = !alignsWithMargins
+            leadingToEdge.isActive = alignsWithMargins
+            trailingToMargin.isActive = !alignsWithMargins
+            trailingToEdge.isActive = alignsWithMargins
+        }
+    }
+
+    private var leadingToMargin: NSLayoutConstraint!
+    private var leadingToEdge: NSLayoutConstraint!
+    private var trailingToMargin: NSLayoutConstraint!
+    private var trailingToEdge: NSLayoutConstraint!
     private let dateBlock = UIView()
     private let weekdayLabel = UILabel()
     private let dayLabel = UILabel()
@@ -485,8 +648,13 @@ private final class ScheduleRowCell: UICollectionViewListCell {
         contentView.addSubview(dateBlock)
         contentView.addSubview(text)
 
+        leadingToMargin = dateBlock.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor)
+        leadingToEdge = dateBlock.leadingAnchor.constraint(equalTo: contentView.leadingAnchor)
+        trailingToMargin = text.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor)
+        trailingToEdge = text.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
         NSLayoutConstraint.activate([
-            dateBlock.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            leadingToMargin,
+            trailingToMargin,
             dateBlock.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             dateBlock.widthAnchor.constraint(equalToConstant: 54),
             dateBlock.heightAnchor.constraint(equalToConstant: 54),
@@ -494,7 +662,6 @@ private final class ScheduleRowCell: UICollectionViewListCell {
             dateStack.centerXAnchor.constraint(equalTo: dateBlock.centerXAnchor),
             dateStack.centerYAnchor.constraint(equalTo: dateBlock.centerYAnchor),
             text.leadingAnchor.constraint(equalTo: dateBlock.trailingAnchor, constant: 14),
-            text.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
             text.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
             text.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
         ])

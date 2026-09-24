@@ -56,8 +56,9 @@ final class CategoryCell: UICollectionViewCell {
 
     private func loadBoxArt(_ category: GameCategory) {
         let scale = UIScreen.main.scale
-        let width = Int(144 * scale)
-        let height = Int(192 * scale)
+        let points: CGFloat = OrientationCoordinator.isPhone ? 144 : 210
+        let width = Int(points * scale)
+        let height = Int(points * 4 / 3 * scale)
         guard let url = category.boxArtURL(width: width, height: height) else { return }
         if let cached = images.cachedImage(for: url) {
             boxArt.image = cached
@@ -74,6 +75,7 @@ final class CategoryCell: UICollectionViewCell {
 
     private func setUp() {
         contentView.backgroundColor = .clear
+        hoverStyle = UIHoverStyle(effect: .highlight, shape: .rect(cornerRadius: 10))
 
         boxArt.translatesAutoresizingMaskIntoConstraints = false
         boxArt.contentMode = .scaleAspectFill

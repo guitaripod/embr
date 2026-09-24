@@ -51,7 +51,7 @@ final class MutedKeywordsViewController: UIViewController {
             }
             return UISwipeActionsConfiguration(actions: [delete])
         }
-        let layout = UICollectionViewCompositionalLayout.list(using: config)
+        let layout = StreamListLayout.readableList(using: config)
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = Theme.background
         collectionView.translatesAutoresizingMaskIntoConstraints = false

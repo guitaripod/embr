@@ -16,6 +16,11 @@ final class VideoViewController: UIViewController {
     var onDoubleTapToggleChat: (() -> Void)?
     var onAudioOnlyChanged: ((Bool) -> Void)?
     var onPlaybackStateChanged: ((Bool) -> Void)?
+    /// Set by a hosting channel page: on iPad the fullscreen button changes that page's layout
+    /// instead of rotating the device.
+    var onToggleFullscreen: (() -> Void)?
+    /// The hosting page's current fullscreen state, restored when Picture in Picture ends.
+    var hostImmersiveState: (() -> Bool)?
 
     private let source: VideoSource
     private var player: VideoPlaying
@@ -35,7 +40,7 @@ final class VideoViewController: UIViewController {
     private var isImmersive = false
     private var isResolving = false
     private var resolveGeneration = 0
-    private var isMuted = false
+    private(set) var isMuted = false
     private var lastProgress: PlaybackProgress = .empty
     private var currentRate: Float = 1.0
     private var adActive = false
@@ -92,14 +97,18 @@ final class VideoViewController: UIViewController {
         self.imageLoader = imageLoader
         self.streamActive = active
         super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        [.portrait, .landscapeLeft, .landscapeRight]
+        OrientationCoordinator.isPhone ? [.portrait, .landscapeLeft, .landscapeRight] : .all
     }
+
+    override var prefersStatusBarHidden: Bool { isStandaloneFullscreen }
+    override var prefersHomeIndicatorAutoHidden: Bool { isStandaloneFullscreen }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -179,16 +188,26 @@ final class VideoViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        OrientationCoordinator.mask = [.portrait, .landscapeLeft, .landscapeRight]
+        if isStandalone {
+            (tabBarController as? RootTabBarController)?.beginPlayback()
+        }
+        OrientationCoordinator.phoneMask = [.portrait, .landscapeLeft, .landscapeRight]
         UIApplication.shared.isIdleTimerDisabled = store.current.keepScreenAwake
         feedback.prepare()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        OrientationCoordinator.mask = .portrait
-        if isLandscape, let scene = view.window?.windowScene {
+        OrientationCoordinator.phoneMask = .portrait
+        if OrientationCoordinator.isPhone, isLandscape, let scene = view.window?.windowScene {
             scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
+        }
+        if isStandaloneFullscreen {
+            isStandaloneFullscreen = false
+            navigationController?.setNavigationBarHidden(false, animated: animated)
+        }
+        if isStandalone, isMovingFromParent {
+            (tabBarController as? RootTabBarController)?.endPlayback()
         }
     }
 
@@ -257,16 +276,72 @@ final class VideoViewController: UIViewController {
         overlay.setFullscreen(immersive)
     }
 
-    private func toggleFullscreen() {
+    /// The phone goes fullscreen by turning to landscape. An iPad window cannot be rotated from
+    /// inside, so there the hosting channel page (or, for a video pushed on its own, this
+    /// controller) hides its chrome instead.
+    func toggleFullscreen() {
+        guard OrientationCoordinator.isPhone else {
+            if let onToggleFullscreen {
+                onToggleFullscreen()
+            } else {
+                setStandaloneFullscreen(!isStandaloneFullscreen)
+            }
+            return
+        }
         let deviceLandscape = view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
         let goFullscreen = !deviceLandscape
-        OrientationCoordinator.mask = goFullscreen ? .landscape : [.portrait, .landscapeLeft, .landscapeRight]
+        OrientationCoordinator.phoneMask = goFullscreen ? .landscape : [.portrait, .landscapeLeft, .landscapeRight]
         guard let scene = view.window?.windowScene else { return }
         view.window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         let target: UIInterfaceOrientationMask = goFullscreen ? .landscapeRight : .portrait
         scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { error in
             AppLogger.shared.warn("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
         }
+    }
+
+    private(set) var isStandaloneFullscreen = false
+
+    /// Pushed on its own (a past broadcast or clip) rather than embedded in a channel page.
+    private var isStandalone: Bool {
+        parent is UINavigationController
+    }
+
+    /// Fullscreen for a video pushed on its own on iPad: the navigation bar and status bar go,
+    /// and the video fills the window.
+    func setStandaloneFullscreen(_ fullscreen: Bool) {
+        guard fullscreen != isStandaloneFullscreen else { return }
+        isStandaloneFullscreen = fullscreen
+        navigationController?.setNavigationBarHidden(fullscreen, animated: true)
+        setImmersiveState(fullscreen)
+        UIView.animate(withDuration: 0.25) {
+            self.setNeedsStatusBarAppearanceUpdate()
+            self.setNeedsUpdateOfHomeIndicatorAutoHidden()
+        }
+    }
+
+    private var restoredStandaloneImmersiveState: Bool {
+        guard OrientationCoordinator.isPhone else { return isStandaloneFullscreen }
+        return view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
+    }
+
+    var isPlaying: Bool { currentState == .playing }
+
+    var isSeekable: Bool { isSeekableSource }
+
+    /// Jumps a past broadcast or clip by `seconds`, clamped to its length.
+    func skip(by seconds: TimeInterval) {
+        guard isSeekableSource else { return }
+        resumeTarget = nil
+        let end = lastProgress.duration > 0 ? lastProgress.duration : .greatestFiniteMagnitude
+        let target = max(0, min(lastProgress.current + seconds, end))
+        player.seek(to: target)
+        overlay.flashSeek(seconds: Int(abs(seconds)), forward: seconds > 0)
+        lastProgress = PlaybackProgress(current: target, duration: lastProgress.duration, isLive: lastProgress.isLive)
+        updateNowPlaying()
+    }
+
+    func toggleMute() {
+        videoOverlayDidTapMute(overlay)
     }
 
     private func presentSpeedPicker(from sourceView: UIView) {
@@ -412,6 +487,9 @@ final class VideoViewController: UIViewController {
     }
 
     private func handleAdBreak(_ remaining: TimeInterval?) {
+        #if DEBUG
+        if ScreenshotHarness.isPosing { return }
+        #endif
         if let remaining {
             adGraceWork?.cancel()
             adGraceWork = nil
@@ -965,19 +1043,12 @@ extension VideoViewController: VideoOverlayViewDelegate {
     }
 
     func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool) {
-        let landscape = view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
-        if landscape, let onDoubleTapToggleChat {
+        if isImmersive, let onDoubleTapToggleChat {
             onDoubleTapToggleChat()
             return
         }
         if isSeekableSource {
-            resumeTarget = nil
-            let delta: TimeInterval = forward ? 10 : -10
-            let target = max(0, min(lastProgress.current + delta, lastProgress.duration > 0 ? lastProgress.duration : .greatestFiniteMagnitude))
-            player.seek(to: target)
-            overlay.flashSeek(seconds: 10, forward: forward)
-            lastProgress = PlaybackProgress(current: target, duration: lastProgress.duration, isLive: lastProgress.isLive)
-            updateNowPlaying()
+            skip(by: forward ? 10 : -10)
         } else {
             overlay.toggleControls()
         }
@@ -1016,7 +1087,7 @@ extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         isPiPActive = false
         overlay.setPictureInPictureActive(false)
-        setImmersiveState(view.window?.windowScene?.interfaceOrientation.isLandscape ?? false)
+        setImmersiveState(hostImmersiveState?() ?? restoredStandaloneImmersiveState)
         if pendingAudioOnlyOnPiPStop {
             pendingAudioOnlyOnPiPStop = false
             if isAudioOnly { enterAudioOnlyPlayback() }

@@ -147,6 +147,10 @@ final class ChatInputView: UIView {
         textView.becomeFirstResponder()
     }
 
+    var isEditing: Bool {
+        textView.isFirstResponder
+    }
+
     private func setUp() {
         backgroundColor = Glass.isAvailable ? .clear : Theme.surface
 

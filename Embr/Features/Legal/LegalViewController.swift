@@ -30,10 +30,11 @@ final class LegalViewController: UIViewController {
         textView.adjustsFontForContentSizeCategory = true
         view.addSubview(textView)
 
+        let horizontal = OrientationCoordinator.isPhone ? view.safeAreaLayoutGuide : view.readableContentGuide
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            textView.leadingAnchor.constraint(equalTo: horizontal.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: horizontal.trailingAnchor),
             textView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }

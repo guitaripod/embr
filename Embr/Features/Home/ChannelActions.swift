@@ -25,6 +25,17 @@ enum ChannelActions {
         }
     }
 
+    /// A channel dragged out of a list carries its twitch.tv link, so on iPad it drops into
+    /// Messages, Notes or Safari as the channel's page.
+    static func dragItems(login: String, name: String) -> [UIDragItem] {
+        guard let url = URL(string: "https://www.twitch.tv/\(login)") else { return [] }
+        let provider = NSItemProvider(object: url as NSURL)
+        provider.suggestedName = name
+        let item = UIDragItem(itemProvider: provider)
+        item.localObject = login
+        return [item]
+    }
+
     private static func favoriteAction(login: String, broadcasterID: String, name: String) -> UIAction {
         let favorites = FavoritesStore.shared
         let isFavorite = favorites.isFavorite(broadcasterID)

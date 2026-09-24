@@ -32,6 +32,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         observeThemeChanges(window)
 
         #if DEBUG
+        if let i = ProcessInfo.processInfo.arguments.firstIndex(of: "-screenshotOrientation"),
+           ProcessInfo.processInfo.arguments.dropFirst(i + 1).first == "landscape" {
+            requestScreenshotLandscape(from: tabBar, after: OrientationCoordinator.isPhone ? 3.5 : 0)
+        }
         if handleScreenshotRoute(tabBar) {
             AppLogger.shared.info("scene connected (screenshot route)", category: .app)
             return
@@ -61,7 +65,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let theme = arg("-screenshotTheme") {
             SettingsStore.shared.update { $0.theme = theme == "dark" ? .dark : (theme == "light" ? .light : .system) }
         }
+        if arg("-screenshotSidebar") == "shown" {
+            tabBar.sidebar.isHidden = false
+        }
+        if let seconds = arg("-screenshotPopAfter").flatMap(Double.init) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak tabBar] in
+                tabBar?.selectedNavigationController?.popToRootViewController(animated: true)
+            }
+        }
         ScreenshotHarness.searchQuery = arg("-screenshotQuery")
+        ScreenshotHarness.hidesStatusBar = arg("-screenshotStatusBar") == "hidden"
+        tabBar.setNeedsStatusBarAppearanceUpdate()
         ScreenshotHarness.skippedLogins = Set(arg("-screenshotSkip")?.lowercased().split(separator: ",").map(String.init) ?? [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak tabBar] in
             guard let self, let tabBar else { return }
@@ -86,6 +100,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 tabBar.select(.favorites)
                 let logins = arg("-screenshotFavorites")?.split(separator: ",").map(String.init)
                 Task { await Self.seedScreenshotFavorites(logins ?? ScreenshotHarness.curatedFollowLogins) }
+            case "videos":
+                if let channel {
+                    Task {
+                        guard let user = try? await AppContainer.shared.api.user(login: channel) else { return }
+                        tabBar.selectedNavigationController?.pushViewController(
+                            ChannelVideosViewController(broadcasterID: user.id, channelName: user.displayName), animated: false)
+                    }
+                }
             case "open":
                 if let target = arg("-screenshotURL"), let url = URL(string: target) {
                     Task { await self.router.handle(url, from: tabBar) }
@@ -99,8 +121,12 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
                     Midgar.present(from: top, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
                 }
-            case "channel", "channelaudio", "channelchat":
-                ScreenshotHarness.channelPose = route == "channelaudio" ? .audio : (route == "channelchat" ? .chat : .normal)
+            case "channel", "channelaudio", "channelchat", "channelfull", "channelfullchat":
+                let poses: [String: ScreenshotHarness.ChannelPose] = [
+                    "channelaudio": .audio, "channelchat": .chat,
+                    "channelfull": .fullscreen, "channelfullchat": .fullscreenChat
+                ]
+                ScreenshotHarness.channelPose = poses[route] ?? .normal
                 if let channel, let url = URL(string: "embr://channel/\(channel)") {
                     Task { await self.router.handle(url, from: tabBar) }
                 }
@@ -108,6 +134,19 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
         }
         return true
+    }
+
+    /// Turns the window sideways for a capture. An iPad app only accepts this when its capture
+    /// copy is marked full-screen (see docs/screenshots); the phone accepts it once a video page
+    /// that allows landscape is showing, hence the delay.
+    private func requestScreenshotLandscape(from tabBar: RootTabBarController, after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak tabBar] in
+            guard let scene = tabBar?.view.window?.windowScene else { return }
+            OrientationCoordinator.phoneMask = [.portrait, .landscapeLeft, .landscapeRight]
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { error in
+                AppLogger.shared.warn("screenshot rotation refused: \(error.localizedDescription)", category: .app)
+            }
+        }
     }
 
     /// Stars the given channels in memory only, resolving their ids live.

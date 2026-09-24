@@ -107,7 +107,7 @@ final class SettingsViewController: UIViewController {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
         config.headerMode = .supplementary
         config.footerMode = .supplementary
-        let layout = UICollectionViewCompositionalLayout.list(using: config)
+        let layout = StreamListLayout.readableList(using: config)
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = Theme.background
         collectionView.translatesAutoresizingMaskIntoConstraints = false

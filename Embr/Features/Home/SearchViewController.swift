@@ -53,6 +53,12 @@ final class SearchViewController: UIViewController {
         setUpCollectionView()
         setUpDataSource()
         setUpEmptyState()
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: SearchViewController, _) in
+            var snapshot = controller.dataSource.snapshot()
+            guard !snapshot.sectionIdentifiers.isEmpty else { return }
+            snapshot.reloadSections(snapshot.sectionIdentifiers)
+            controller.dataSource.apply(snapshot, animatingDifferences: false)
+        }
         #if DEBUG
         if let query = ScreenshotHarness.searchQuery {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
@@ -63,6 +69,15 @@ final class SearchViewController: UIViewController {
             }
         }
         #endif
+    }
+
+    /// ⌘F lands here with the field ready to type into.
+    func focusSearchField() {
+        navigationController?.popToRootViewController(animated: false)
+        searchController.isActive = true
+        DispatchQueue.main.async { [weak self] in
+            self?.searchController.searchBar.becomeFirstResponder()
+        }
     }
 
     func scrollToTop() {
@@ -77,6 +92,9 @@ final class SearchViewController: UIViewController {
         searchController.searchBar.scopeButtonTitles = [String(localized: "All"), String(localized: "Live")]
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        if !OrientationCoordinator.isPhone {
+            navigationItem.preferredSearchBarPlacement = .stacked
+        }
         definesPresentationContext = true
     }
 
@@ -84,7 +102,9 @@ final class SearchViewController: UIViewController {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
+        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
         collectionView.delegate = self
+        collectionView.dragDelegate = self
         collectionView.keyboardDismissMode = .onDrag
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([
@@ -97,29 +117,33 @@ final class SearchViewController: UIViewController {
 
     private func makeLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { [weak self] index, environment in
-            let section = Section(rawValue: index) ?? .channels
-            if section == .categories {
-                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1.0 / 3.0),
-                    heightDimension: .fractionalHeight(1.0)
-                ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-                let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(210)),
-                    repeatingSubitem: item,
-                    count: 3
-                )
-                let layoutSection = NSCollectionLayoutSection(group: group)
-                layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 9, bottom: 8, trailing: 9)
-                layoutSection.boundarySupplementaryItems = [self?.headerItem()].compactMap { $0 }
+            MainActor.assumeIsolated {
+                let section = self?.dataSource?.sectionIdentifier(for: index) ?? .channels
+                let grid = StreamListLayout.usesCards(environment.traitCollection)
+                if section == .categories {
+                    let layoutSection = StreamListLayout.categoriesSection(environment: environment)
+                    if let header = self?.headerItem() {
+                        StreamListLayout.attachHeader(header, to: layoutSection)
+                    }
+                    return layoutSection
+                }
+                guard grid else {
+                    var config = UICollectionLayoutListConfiguration(appearance: .plain)
+                    config.backgroundColor = .clear
+                    config.headerMode = .supplementary
+                    return NSCollectionLayoutSection.list(using: config, layoutEnvironment: environment)
+                }
+                let layoutSection = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 60)
+                layoutSection.contentInsets.bottom = 16
+                if let header = self?.headerItem() {
+                    StreamListLayout.attachHeader(header, to: layoutSection)
+                }
                 return layoutSection
             }
-            var config = UICollectionLayoutListConfiguration(appearance: .plain)
-            config.backgroundColor = .clear
-            config.headerMode = .supplementary
-            return NSCollectionLayoutSection.list(using: config, layoutEnvironment: environment)
         }
     }
+
+    private var usesGrid: Bool { StreamListLayout.usesCards(traitCollection) }
 
     private func headerItem() -> NSCollectionLayoutBoundarySupplementaryItem {
         NSCollectionLayoutBoundarySupplementaryItem(
@@ -130,8 +154,11 @@ final class SearchViewController: UIViewController {
     }
 
     private func setUpDataSource() {
-        let channelRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, ChannelInfo> { cell, _, channel in
+        let channelRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, ChannelInfo> { [weak self] cell, _, channel in
             var content = cell.defaultContentConfiguration()
+            if self?.usesGrid == true {
+                content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0)
+            }
             content.text = channel.broadcasterName
             content.secondaryText = channel.gameName.isEmpty ? channel.title : channel.gameName
             content.textProperties.color = Theme.primaryText
@@ -141,6 +168,10 @@ final class SearchViewController: UIViewController {
             cell.contentConfiguration = content
             var background = UIBackgroundConfiguration.listCell()
             background.backgroundColor = .clear
+            if self?.usesGrid == true {
+                background.cornerRadius = 10
+                background.backgroundInsets = NSDirectionalEdgeInsets(top: 0, leading: -8, bottom: 0, trailing: -8)
+            }
             cell.backgroundConfiguration = background
             cell.accessories = [.disclosureIndicator()]
             cell.isAccessibilityElement = true
@@ -156,6 +187,9 @@ final class SearchViewController: UIViewController {
             guard let self else { return }
             let section = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
             var content = header.defaultContentConfiguration()
+            if self.usesGrid {
+                content.directionalLayoutMargins.leading = 0
+            }
             content.text = section.title
             content.textProperties.color = Theme.secondaryText
             content.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -247,6 +281,13 @@ extension SearchViewController: UISearchResultsUpdating {
             if Task.isCancelled { return }
             self?.performSearch(text)
         }
+    }
+}
+
+extension SearchViewController: UICollectionViewDragDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        guard case let .channel(channel)? = dataSource.itemIdentifier(for: indexPath) else { return [] }
+        return ChannelActions.dragItems(login: channel.broadcasterLogin, name: channel.broadcasterName)
     }
 }
 

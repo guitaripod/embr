@@ -1,8 +1,19 @@
 import UIKit
 import EmbrCore
 
+/// The phone browses in portrait and turns to landscape only while a video is on screen. iPad
+/// windows resize freely, so every orientation is always allowed there.
+@MainActor
 enum OrientationCoordinator {
-    nonisolated(unsafe) static var mask: UIInterfaceOrientationMask = .portrait
+    static var phoneMask: UIInterfaceOrientationMask = .portrait
+
+    static var mask: UIInterfaceOrientationMask {
+        isPhone ? phoneMask : .all
+    }
+
+    static var isPhone: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone
+    }
 }
 
 @main
@@ -37,6 +48,21 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         )
         configuration.delegateClass = SceneDelegate.self
         return configuration
+    }
+
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        guard builder.system == .main else { return }
+        KeyCommands.build(into: builder)
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        KeyCommands.canPerform(action) ?? super.canPerformAction(action, withSender: sender)
+    }
+
+    override func validate(_ command: UICommand) {
+        super.validate(command)
+        KeyCommands.validate(command)
     }
 
     private func performFirstRunIfNeeded() {
