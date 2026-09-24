@@ -33,3 +33,5 @@ workers/dist/
 # Store screenshot pipeline (reproducible from scripts/ + metadata/)
 marketing/raw/
 marketing/panels/
+marketing/raw-ipad/
+marketing/panels-ipad/

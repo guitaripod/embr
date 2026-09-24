@@ -42,6 +42,31 @@ Purchase review screenshot), `following` (seeded follows, signed-in look), `more
 `open -screenshotURL <url>`, which sends any deep link (e.g. `embr://favorites`) through the
 router without the system's "Open in Embr?" prompt that `simctl openurl` stops at.
 
+## iPad
+
+The iPad build lays out by window size, so iPad screens come from an iPad Pro 13" simulator
+(2064×2752) with the same routes. Portrait needs nothing extra. Landscape needs the window
+turned, and an app that supports iPad multitasking may not turn itself; `requestGeometryUpdate`
+is refused with "The current windowing mode does not allow for programmatic changes to
+interface orientation". A capture copy marked full-screen may, so for landscape:
+
+```bash
+cp -R <Debug-iphonesimulator/Embr.app> /tmp/capture/
+/usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" /tmp/capture/Embr.app/Info.plist
+codesign --force --sign - /tmp/capture/Embr.app
+xcrun simctl install <ipad udid> /tmp/capture/Embr.app
+xcrun simctl launch <ipad udid> com.guitaripod.embr -screenshotRoute top -screenshotOrientation landscape
+```
+
+`simctl io screenshot` saves the framebuffer upright for portrait, so turn a landscape PNG a
+quarter turn counter-clockwise (PIL: `image.rotate(90, expand=True)`). Never ship that copy; it
+exists only to be photographed.
+
+iPad routes and switches: `channelfull` (video full screen), `channelfullchat` (with chat
+floating over it), `videos -screenshotChannel <login>` (a channel's videos grid),
+`-screenshotSidebar shown`, and `-screenshotPopAfter <seconds>`, which goes back to the list to
+check that the tab bar and sidebar return after a video page hid them.
+
 ## Compose
 
 ```bash
