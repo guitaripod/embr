@@ -9,7 +9,16 @@ final class RootTabBarController: UITabBarController {
     private var isLoggedIn = false
     private var hasBuiltTabs = false
 
+    enum Tab {
+        case following
+        case favorites
+        case top
+        case search
+        case settings
+    }
+
     private lazy var topNav = wrap(TopViewController())
+    private lazy var favoritesNav = wrap(FavoritesViewController())
     private lazy var searchNav = wrap(SearchViewController())
     private lazy var settingsNav = wrap(SettingsViewController())
     private var followingNav: UINavigationController?
@@ -33,10 +42,28 @@ final class RootTabBarController: UITabBarController {
         rebuildTabs()
         bind()
         FollowedLiveService.shared.start(tabBar: self)
+        FavoritesLiveMonitor.shared.start()
     }
 
     func setFollowingBadge(_ count: Int) {
         followingNav?.tabBarItem.badgeValue = count > 0 ? "\(count)" : nil
+    }
+
+    func select(_ tab: Tab) {
+        let target: UINavigationController?
+        switch tab {
+        case .following: target = followingNav
+        case .favorites: target = favoritesNav
+        case .top: target = topNav
+        case .search: target = searchNav
+        case .settings: target = settingsNav
+        }
+        guard let target, viewControllers?.contains(where: { $0 === target }) == true else { return }
+        selectedViewController = target
+    }
+
+    private func setFavoritesBadge(_ count: Int) {
+        favoritesNav.tabBarItem.badgeValue = count > 0 ? "\(count)" : nil
     }
 
     private func bind() {
@@ -44,6 +71,12 @@ final class RootTabBarController: UITabBarController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 MainActor.assumeIsolated { self?.handle(state) }
+            }
+            .store(in: &cancellables)
+        FavoritesLiveMonitor.shared.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeIsolated { self?.setFavoritesBadge(FavoritesLiveMonitor.shared.liveCount) }
             }
             .store(in: &cancellables)
     }
@@ -64,17 +97,20 @@ final class RootTabBarController: UITabBarController {
         }
     }
 
+    /// Signed in: Following leads and Favorites sits beside it. Signed out: Top leads, so a
+    /// first launch opens on something to watch rather than an empty Favorites list.
     private func rebuildTabs() {
         hasBuiltTabs = true
         var controllers: [UIViewController] = []
         if isLoggedIn {
             let following = followingNav ?? wrap(FollowingViewController())
             followingNav = following
-            controllers.append(following)
+            controllers.append(contentsOf: [following, favoritesNav, topNav])
         } else {
             followingNav = nil
+            controllers.append(contentsOf: [topNav, favoritesNav])
         }
-        controllers.append(contentsOf: [topNav, searchNav, settingsNav])
+        controllers.append(contentsOf: [searchNav, settingsNav])
         let previous = selectedViewController
         setViewControllers(controllers, animated: false)
         if isLoggedIn, let following = followingNav {
@@ -119,5 +155,6 @@ protocol ScrollsToTop: AnyObject {
 }
 
 extension FollowingViewController: ScrollsToTop {}
+extension FavoritesViewController: ScrollsToTop {}
 extension TopViewController: ScrollsToTop {}
 extension SearchViewController: ScrollsToTop {}

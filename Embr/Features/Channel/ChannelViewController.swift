@@ -32,6 +32,36 @@ final class ChannelViewController: UIViewController {
         action: #selector(showVideos)
     )
 
+    private lazy var favoriteItem = UIBarButtonItem(
+        image: UIImage(systemName: "star"),
+        style: .plain,
+        target: self,
+        action: #selector(toggleFavorite)
+    )
+
+    @objc private func toggleFavorite() {
+        let added = FavoritesStore.shared.toggle(
+            id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
+        Haptics.notify(added ? .success : .warning)
+    }
+
+    private func updateFavoriteButton() {
+        let isFavorite = FavoritesStore.shared.isFavorite(channel.id)
+        favoriteItem.image = UIImage(systemName: isFavorite ? "star.fill" : "star")
+        favoriteItem.accessibilityLabel = isFavorite
+            ? String(localized: "Remove from Favorites")
+            : String(localized: "Add to Favorites")
+    }
+
+    private func observeFavorites() {
+        FavoritesStore.shared.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateFavoriteButton() }
+            }
+            .store(in: &cancellables)
+    }
+
     @objc private func showVideos() {
         navigationController?.pushViewController(
             ChannelVideosViewController(broadcasterID: channel.id, channelName: channel.broadcasterName),
@@ -113,8 +143,10 @@ final class ChannelViewController: UIViewController {
         title = channel.broadcasterName
         navigationItem.largeTitleDisplayMode = .never
         isChatOnly = store.current.chatOnly ?? false
-        navigationItem.rightBarButtonItems = [chatOnlyItem, videosItem]
+        navigationItem.rightBarButtonItems = [chatOnlyItem, videosItem, favoriteItem]
         updateChatOnlyButton()
+        updateFavoriteButton()
+        observeFavorites()
         setUpLayout()
         loadChildren()
         loadStreamInfo()

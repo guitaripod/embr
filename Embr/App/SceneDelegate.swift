@@ -64,20 +64,24 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self, weak tabBar] in
             guard let self, let tabBar else { return }
             switch route {
-            case "top": tabBar.selectedIndex = 0
+            case "top": tabBar.select(.top)
             case "categories":
-                tabBar.selectedIndex = 0
+                tabBar.select(.top)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    let top = (tabBar.viewControllers?.first as? UINavigationController)?.viewControllers.first as? TopViewController
+                    let top = (tabBar.selectedViewController as? UINavigationController)?.viewControllers.first as? TopViewController
                     top?.showCategoriesForScreenshot()
                 }
-            case "search": tabBar.selectedIndex = 1
-            case "settings": tabBar.selectedIndex = 2
+            case "search": tabBar.select(.search)
+            case "settings": tabBar.select(.settings)
+            case "favorites":
+                tabBar.select(.favorites)
+                let logins = arg("-screenshotFavorites")?.split(separator: ",").map(String.init)
+                Task { await Self.seedScreenshotFavorites(logins ?? ScreenshotHarness.curatedFollowLogins) }
             case "following":
                 ScreenshotHarness.seededFollow = true
                 Task { await AuthService.shared.seedScreenshotAuth() }
             case "moreapps":
-                tabBar.selectedIndex = 2
+                tabBar.select(.settings)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                     guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
                     Midgar.present(from: top, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
@@ -91,6 +95,17 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
         }
         return true
+    }
+
+    /// Stars the given channels in memory only, resolving their ids live.
+    @MainActor
+    private static func seedScreenshotFavorites(_ logins: [String]) async {
+        var seeded: [FavoriteChannel] = []
+        for login in logins {
+            guard let user = try? await AppContainer.shared.api.user(login: login) else { continue }
+            seeded.append(FavoriteChannel(id: user.id, login: user.login, name: user.displayName, addedAt: Date()))
+        }
+        FavoritesStore.shared.seedForScreenshots(seeded)
     }
     #endif
 

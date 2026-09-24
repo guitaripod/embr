@@ -70,7 +70,7 @@ final class DatabaseManager: Sendable {
         return migrator
     }
 
-    func joinedChannels() async -> [JoinedChannelRecord] {
+    func favoriteChannels() async -> [JoinedChannelRecord] {
         await read { db in
             try JoinedChannelRecord
                 .order(JoinedChannelRecord.Columns.addedAt.desc)
@@ -78,13 +78,13 @@ final class DatabaseManager: Sendable {
         } ?? []
     }
 
-    func addJoinedChannel(_ record: JoinedChannelRecord) async {
+    func addFavoriteChannel(_ record: JoinedChannelRecord) async {
         await write { db in
             try record.save(db)
         }
     }
 
-    func removeJoinedChannel(broadcasterID: String) async {
+    func removeFavoriteChannel(broadcasterID: String) async {
         await write { db in
             _ = try JoinedChannelRecord.deleteOne(db, key: broadcasterID)
         }
@@ -172,10 +172,11 @@ final class DatabaseManager: Sendable {
         } ?? nil
     }
 
+    /// Clears what belongs to the signed-in Twitch account. Favorites are deliberately kept:
+    /// they are starred on this device, work without an account, and must survive a logout.
     func wipePersonalData() async {
         await write { db in
             try AccountRecord.deleteAll(db)
-            try JoinedChannelRecord.deleteAll(db)
             try BlockedUserRecord.deleteAll(db)
             try RecentEmoteRecord.deleteAll(db)
         }

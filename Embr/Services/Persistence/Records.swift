@@ -1,6 +1,8 @@
 import Foundation
 import GRDB
 
+/// A row of the Favorites list. The table was created in v1 for joined chat rooms and never
+/// used; Favorites adopted it as-is so the shipped migration stays untouched.
 nonisolated struct JoinedChannelRecord: Codable, Equatable, FetchableRecord, PersistableRecord {
     var broadcasterID: String
     var login: String
