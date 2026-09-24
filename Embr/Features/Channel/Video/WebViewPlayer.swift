@@ -179,6 +179,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
 extension WebViewPlayer: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "embrPlayer", let body = message.body as? String else { return }
+        logger.info("WebView player state: \(body)", category: .playback)
         switch body {
         case "playing": stateSubject.send(.playing)
         case "paused": stateSubject.send(.paused)

@@ -47,8 +47,16 @@ public struct WorkerEndpoints: Sendable {
         HTTPRequest(method: .get, url: url(for: "/events/\(escape(login))"))
     }
 
+    public func appConfig() -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/config"))
+    }
+
     public static func decodeChannelEvents(_ data: Data) throws -> ChannelEvents {
         try TwitchJSON.decode(ChannelEvents.self, from: data)
+    }
+
+    public static func decodeAppConfig(_ data: Data) throws -> WorkerAPI.AppConfig {
+        try TwitchJSON.decode(WorkerAPI.AppConfig.self, from: data)
     }
 
     public static func decodeToken(_ data: Data) throws -> WorkerAPI.TokenResponse {

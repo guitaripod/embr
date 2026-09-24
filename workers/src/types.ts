@@ -120,6 +120,17 @@ export const VIEWER_SCOPES = [
 
 export const PLAYBACK_HASH_KV_KEY = "playback_token_sha256";
 
+/// Which player the app starts live channels in. Flip it with
+/// `wrangler kv key put --binding TOKENS config:livePlayback embed` (and back with `native`)
+/// the day the native path breaks; the app picks it up on its next launch or foreground.
+export const LIVE_PLAYBACK_KV_KEY = "config:livePlayback";
+
+export type LivePlayback = "native" | "embed";
+
+export interface AppConfigResponse {
+  livePlayback: LivePlayback;
+}
+
 export const GQL_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
 export const PLAYBACK_ACCESS_TOKEN_SHA256 =

@@ -110,6 +110,35 @@ public enum WorkerAPI {
         }
     }
 
+    /// Operational switches the Worker serves at `/config`, so playback can be moved
+    /// to the official embed the same day the native path breaks, without a release.
+    public struct AppConfig: Codable, Sendable, Equatable {
+        public enum LivePlayback: String, Codable, Sendable {
+            case native
+            case embed
+        }
+
+        public let livePlayback: LivePlayback
+
+        public init(livePlayback: LivePlayback) {
+            self.livePlayback = livePlayback
+        }
+
+        public static let standard = AppConfig(livePlayback: .native)
+
+        private enum CodingKeys: String, CodingKey {
+            case livePlayback
+        }
+
+        /// Reads leniently: a missing field or a value this build does not know yet
+        /// falls back to the native path rather than failing the whole document.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let raw = try container.decodeIfPresent(String.self, forKey: .livePlayback)
+            livePlayback = raw.flatMap(LivePlayback.init(rawValue:)) ?? .native
+        }
+    }
+
     public struct ReportRequest: Codable, Sendable, Equatable {
         public let channel: String?
         public let messageID: String?

@@ -563,6 +563,38 @@ describe('GET /playback/clip/:slug', () => {
   });
 });
 
+describe('GET /config', () => {
+  it('defaults to the native player when no switch is set', async () => {
+    const res = await app.request('http://embr.test/config', {}, makeEnv());
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+    expect(await res.json()).toEqual({ livePlayback: 'native' });
+  });
+
+  it('serves the embed switch from KV', async () => {
+    const env = makeEnv(new Map([['config:livePlayback', 'embed']]));
+    const res = await app.request('http://embr.test/config', {}, env);
+    expect(await res.json()).toEqual({ livePlayback: 'embed' });
+  });
+
+  it('treats any other stored value as native', async () => {
+    const env = makeEnv(new Map([['config:livePlayback', 'hologram']]));
+    const res = await app.request('http://embr.test/config', {}, env);
+    expect(await res.json()).toEqual({ livePlayback: 'native' });
+  });
+
+  it('answers native when the KV read fails', async () => {
+    const env = makeEnv();
+    env.TOKENS.get = (async () => {
+      throw new Error('kv down');
+    }) as unknown as KVNamespace['get'];
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await app.request('http://embr.test/config', {}, env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ livePlayback: 'native' });
+  });
+});
+
 describe('GET /events/:login', () => {
   it('rejects an invalid channel login with 400', async () => {
     const res = await app.request('http://embr.test/events/bad%20name', {}, makeEnv());
@@ -576,14 +608,38 @@ describe('GET /embed', () => {
     expect(res.status).toBe(400);
   });
 
-  it('serves a Twitch player iframe with this worker host as parent', async () => {
+  it('serves the scriptable Twitch player with this worker host as parent', async () => {
     const res = await app.request('http://embr.test/embed?channel=somechannel', {}, makeEnv());
     expect(res.status).toBe(200);
     expect(res.headers.get('Content-Type')).toContain('text/html');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
     const html = await res.text();
-    expect(html).toContain('player.twitch.tv');
-    expect(html).toContain('channel=somechannel');
-    expect(html).toContain('parent=embr.test');
+    expect(html).toContain('https://player.twitch.tv/js/embed/v1.js');
+    expect(html).toContain('"channel":"somechannel"');
+    expect(html).toContain('"parent":["embr.test"]');
+    expect(html).toContain('"muted":false');
+  });
+
+  it('reports player state to the app and exposes its controls', async () => {
+    const res = await app.request('http://embr.test/embed?channel=somechannel&muted=true', {}, makeEnv());
+    const html = await res.text();
+    expect(html).toContain('"muted":true');
+    expect(html).toContain('messageHandlers.embrPlayer.postMessage');
+    for (const event of ['E.PLAYING', 'E.PAUSE', 'E.ENDED', 'E.OFFLINE']) {
+      expect(html).toContain(event);
+    }
+    for (const control of ['play:', 'pause:', 'setMuted:', 'setQuality:']) {
+      expect(html).toContain(control);
+    }
+  });
+
+  it('builds the player frame without a sandbox so it can autoplay with sound', async () => {
+    const res = await app.request('http://embr.test/embed?channel=somechannel', {}, makeEnv());
+    const html = await res.text();
+    expect(html).toContain("if(name==='sandbox'){return;}");
+    expect(html).toContain('autoplay; fullscreen; picture-in-picture');
+    expect(html.indexOf('document.createElement=function')).toBeLessThan(html.indexOf("new E('player'"));
+    expect(html).toContain('document.createElement=make;');
   });
 
   it('returns 400 without a channel', async () => {

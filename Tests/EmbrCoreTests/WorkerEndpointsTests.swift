@@ -168,4 +168,37 @@ struct WorkerEndpointsTests {
         #expect(playback.url == "https://worker.example.com/hls/master.m3u8")
         #expect(playback.expiresAt == 1718000000.5)
     }
+
+    @Test("appConfig builds a GET to /config with no body")
+    func appConfigRequest() {
+        let request = endpoints.appConfig()
+
+        #expect(request.method == .get)
+        #expect(request.url.absoluteString == "https://worker.example.com/config")
+        #expect(request.body == nil)
+    }
+
+    @Test("decodeAppConfig reads both playback paths")
+    func decodeAppConfigPaths() throws {
+        let native = try WorkerEndpoints.decodeAppConfig(Data(#"{ "livePlayback": "native" }"#.utf8))
+        let embed = try WorkerEndpoints.decodeAppConfig(Data(#"{ "livePlayback": "embed" }"#.utf8))
+
+        #expect(native.livePlayback == .native)
+        #expect(embed.livePlayback == .embed)
+    }
+
+    @Test("decodeAppConfig falls back to native for an unknown or missing path")
+    func decodeAppConfigFallback() throws {
+        let unknown = try WorkerEndpoints.decodeAppConfig(Data(#"{ "livePlayback": "hologram", "extra": 1 }"#.utf8))
+        let missing = try WorkerEndpoints.decodeAppConfig(Data("{}".utf8))
+
+        #expect(unknown == .standard)
+        #expect(missing == .standard)
+    }
+
+    @Test("AppConfig round-trips through the shared encoder")
+    func appConfigRoundTrip() throws {
+        let data = try TwitchJSON.encoder.encode(WorkerAPI.AppConfig(livePlayback: .embed))
+        #expect(try WorkerEndpoints.decodeAppConfig(data).livePlayback == .embed)
+    }
 }

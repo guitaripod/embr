@@ -109,7 +109,7 @@ final class VideoViewController: UIViewController {
         bindPlayer()
         observeLifecycle()
         registerRemoteCommands()
-        if streamActive { resolveAndLoad() }
+        startPlayback()
     }
 
     private var isPiPActive = false
@@ -373,7 +373,23 @@ final class VideoViewController: UIViewController {
         recoveryAttempts = 0
         cancelRecoveryTimers()
         logger.info("HLS recovery exhausted — falling back to web player", category: .playback)
+        installWebPlayer()
+        resolveAndLoad()
+    }
 
+    /// Starts playback, first moving a live channel onto the web embed when the Worker's
+    /// remote switch says the native path is out of service.
+    private func startPlayback() {
+        if case .live = source, RemoteConfigService.shared.startsLiveInEmbed, !(player is WebViewPlayer) {
+            triedWebFallback = true
+            logger.info("remote config routes live playback to the web player", category: .playback)
+            installWebPlayer()
+        }
+        guard streamActive else { return }
+        resolveAndLoad()
+    }
+
+    private func installWebPlayer() {
         if isAudioOnly { clearAudioOnlyState() }
         let previous = player
         previous.teardown()
@@ -393,13 +409,6 @@ final class VideoViewController: UIViewController {
         overlay.setMuted(isMuted)
         overlay.clearError()
         overlay.setReconnecting(false)
-        overlay.setBuffering(true)
-
-        if case .live(let login) = source {
-            web.loadChannel(login)
-        } else {
-            resolveAndLoad()
-        }
     }
 
     private func handleAdBreak(_ remaining: TimeInterval?) {
@@ -735,6 +744,11 @@ final class VideoViewController: UIViewController {
         resolveTask?.cancel()
         overlay.clearError()
         overlay.setBuffering(true)
+        if case .live(let login) = source, let web = player as? WebViewPlayer {
+            isResolving = false
+            web.loadChannel(login)
+            return
+        }
         isResolving = true
         resolveGeneration += 1
         let generation = resolveGeneration

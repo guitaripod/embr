@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type {
+  AppConfigResponse,
   AppTokenResponse,
   Bindings,
   ChannelEventsResponse,
@@ -9,7 +10,13 @@ import type {
   ReportRequest,
   TokenResponse,
 } from './types';
-import { PLAYBACK_HASH_KV_KEY, REPORT_KV_PREFIX, REPORT_TTL_SECONDS, VIEWER_SCOPES } from './types';
+import {
+  LIVE_PLAYBACK_KV_KEY,
+  PLAYBACK_HASH_KV_KEY,
+  REPORT_KV_PREFIX,
+  REPORT_TTL_SECONDS,
+  VIEWER_SCOPES,
+} from './types';
 import {
   buildLoginURL,
   clientCredentials,
@@ -23,6 +30,7 @@ import {
   validateToken,
 } from './twitch';
 import { isMediaPlaylist, rewriteUris, stripAds } from './hls';
+import { embedPage } from './embed';
 import { privacyPage, termsPage } from './legal';
 
 const APP_TOKEN_KEY = 'app_token';
@@ -267,25 +275,36 @@ app.get('/playback/clip/:slug', async (c) => {
   }
 });
 
-/// Serves a minimal page that embeds the official Twitch player with this worker's
-/// own host as `parent`, so `WebViewPlayer` has a working compliant fallback when
-/// the ad-stripped HLS path fails. Anonymous playback (shows ads) is the trade-off.
+/// Serves the official Twitch player for a channel, with this worker's own host as
+/// `parent`, so `WebViewPlayer` has a compliant path: the automatic fallback when the
+/// native HLS path fails, and the only path while `/config` says `embed`. Anonymous
+/// playback (shows ads) is the trade-off.
 app.get('/embed', (c) => {
   const channel = c.req.query('channel');
   if (!channel) return fail(400, 'channel is required');
   if (!CHANNEL_LOGIN_RE.test(channel)) return fail(400, 'invalid channel');
   const host = new URL(c.req.url).hostname;
-  const safeChannel = encodeURIComponent(channel);
-  const safeParent = encodeURIComponent(host);
-  const muted = c.req.query('muted') === 'true' ? 'true' : 'false';
-  const html = `<!doctype html><html><head><meta charset="utf-8">` +
-    `<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">` +
-    `<style>html,body{margin:0;background:#000;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%}</style></head>` +
-    `<body><iframe src="https://player.twitch.tv/?channel=${safeChannel}&parent=${safeParent}&autoplay=true&muted=${muted}&playsinline=true" ` +
-    `allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></body></html>`;
-  return new Response(html, {
+  const muted = c.req.query('muted') === 'true';
+  return new Response(embedPage(channel, host, muted), {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+});
+
+/// Serves the app's operational switches. Any KV value other than "embed" — including a
+/// missing key or a failed read — answers "native", so a KV outage can never strand
+/// playback on the fallback path.
+app.get('/config', async (c) => {
+  let livePlayback: AppConfigResponse['livePlayback'] = 'native';
+  try {
+    if ((await c.env.TOKENS.get(LIVE_PLAYBACK_KV_KEY)) === 'embed') livePlayback = 'embed';
+  } catch (err) {
+    console.error('config lookup failed:', err);
+  }
+  const body: AppConfigResponse = { livePlayback };
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 });
 
