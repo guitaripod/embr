@@ -73,6 +73,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 }
             case "search": tabBar.select(.search)
             case "settings": tabBar.select(.settings)
+            case "support":
+                ScreenshotHarness.previewTips = true
+                tabBar.select(.settings)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    let settings = (tabBar.selectedViewController as? UINavigationController)?.viewControllers.first as? SettingsViewController
+                    settings?.showSupportForScreenshot()
+                }
             case "favorites":
                 tabBar.select(.favorites)
                 let logins = arg("-screenshotFavorites")?.split(separator: ",").map(String.init)

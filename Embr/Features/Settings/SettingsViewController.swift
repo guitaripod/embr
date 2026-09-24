@@ -13,6 +13,7 @@ final class SettingsViewController: UIViewController {
         case safety
         case video
         case account
+        case support
         case about
 
         var title: String {
@@ -22,6 +23,7 @@ final class SettingsViewController: UIViewController {
             case .safety: return String(localized: "Safety & Moderation")
             case .video: return String(localized: "Video")
             case .account: return String(localized: "Account")
+            case .support: return String(localized: "Support Embr")
             case .about: return String(localized: "About")
             }
         }
@@ -53,6 +55,11 @@ final class SettingsViewController: UIViewController {
 
         case accountStatus
         case accountAction
+
+        case rateApp
+        case shareApp
+        case tip(String)
+        case tipsStatus
 
         case version
         case github
@@ -154,6 +161,10 @@ final class SettingsViewController: UIViewController {
         case .safety: return String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review.")
         case .video: return String(localized: "Stream quality, autoplay, and how chat stays in sync with the video.")
         case .account: return String(localized: "Sign in with Twitch to follow channels and join chat.")
+        case .support:
+            return TipJarStore.shared.hasTipped
+                ? String(localized: "Thank you for supporting Embr. Tips unlock nothing — every feature is free for everyone.")
+                : String(localized: "Embr is free and independent. Tips unlock nothing; they just help keep the app going.")
         case .about: return String(localized: "Embr is an independent, open-source Twitch client. Not affiliated with Twitch.")
         }
     }
@@ -173,6 +184,14 @@ final class SettingsViewController: UIViewController {
                 self?.reconfigureAccountRows()
             }
             .store(in: &cancellables)
+
+        TipJarStore.shared.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.reloadSupportSection()
+            }
+            .store(in: &cancellables)
+        TipJarStore.shared.loadProducts()
     }
 
     private func applySnapshot() {
@@ -191,9 +210,45 @@ final class SettingsViewController: UIViewController {
             toSection: .video
         )
         snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
+        snapshot.appendItems(supportRows(), toSection: .support)
         snapshot.appendItems([.version, .github, .moreApps, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
+
+    /// Rate and Share always; then one row per tip once the App Store has answered, or a
+    /// single status row while it is loading or unreachable.
+    private func supportRows() -> [Row] {
+        var rows: [Row] = [.rateApp, .shareApp]
+        #if DEBUG
+        if ScreenshotHarness.previewTips {
+            return rows + TipJarStore.productIDs.map(Row.tip)
+        }
+        #endif
+        let store = TipJarStore.shared
+        if store.state == .loaded {
+            rows += store.products.map { Row.tip($0.id) }
+        } else {
+            rows.append(.tipsStatus)
+        }
+        return rows
+    }
+
+    private func reloadSupportSection() {
+        var snapshot = dataSource.snapshot()
+        snapshot.deleteItems(snapshot.itemIdentifiers(inSection: .support))
+        snapshot.appendItems(supportRows(), toSection: .support)
+        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .support))
+        snapshot.reloadSections([.support])
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+
+    #if DEBUG
+    func showSupportForScreenshot() {
+        applySnapshot()
+        guard let section = dataSource.snapshot().indexOfSection(.support) else { return }
+        collectionView.scrollToItem(at: IndexPath(item: 0, section: section), at: .centeredVertically, animated: false)
+    }
+    #endif
 
     private func reconfigureVisibleRows() {
         var snapshot = dataSource.snapshot()
@@ -337,6 +392,36 @@ final class SettingsViewController: UIViewController {
             }
             cell.contentConfiguration = content
             cell.accessories = []
+
+        case .rateApp:
+            content.text = String(localized: "Rate Embr")
+            content.textProperties.color = Theme.accent
+            cell.contentConfiguration = content
+            cell.accessories = []
+        case .shareApp:
+            content.text = String(localized: "Share Embr")
+            content.textProperties.color = Theme.accent
+            cell.contentConfiguration = content
+            cell.accessories = []
+        case let .tip(id):
+            let (name, price) = tipLabels(for: id)
+            content.text = name
+            cell.contentConfiguration = content
+            cell.accessories = price.map { [.label(text: $0, options: .init(tintColor: Theme.accent, font: .preferredFont(forTextStyle: .body)))] } ?? []
+        case .tipsStatus:
+            switch TipJarStore.shared.state {
+            case .unavailable:
+                content.text = String(localized: "Tips Unavailable")
+                content.secondaryText = String(localized: "Couldn't reach the App Store. Tap to try again.")
+                cell.accessories = []
+            case .idle, .loading, .loaded:
+                content.text = String(localized: "Loading Tips…")
+                let spinner = UIActivityIndicatorView(style: .medium)
+                spinner.startAnimating()
+                cell.accessories = [.customView(configuration: .init(customView: spinner, placement: .trailing()))]
+            }
+            content.textProperties.color = Theme.secondaryText
+            cell.contentConfiguration = content
 
         case .version:
             content.text = String(localized: "Version")
@@ -482,6 +567,10 @@ final class SettingsViewController: UIViewController {
         case .keepScreenAwake: spec = ("sun.max.fill", .systemYellow)
         case .accountStatus: spec = ("person.crop.circle.fill", Theme.accent)
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
+        case .rateApp: spec = ("star.fill", .systemYellow)
+        case .shareApp: spec = ("square.and.arrow.up.fill", .systemGreen)
+        case let .tip(id): spec = (Self.tipSymbol(for: id), .systemOrange)
+        case .tipsStatus: spec = ("flame.fill", .systemOrange)
         case .version: spec = ("info.circle.fill", .systemGray)
         case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
         case .moreApps: spec = ("square.grid.2x2.fill", Theme.accent)
@@ -505,6 +594,34 @@ final class SettingsViewController: UIViewController {
             let s = symbolImage.size
             symbolImage.draw(in: CGRect(x: (size.width - s.width) / 2, y: (size.height - s.height) / 2, width: s.width, height: s.height))
         }
+    }
+
+    private static func tipSymbol(for id: String) -> String {
+        switch TipJarStore.productIDs.firstIndex(of: id) {
+        case 0: return "flame"
+        case 1: return "flame.fill"
+        default: return "flame.circle.fill"
+        }
+    }
+
+    /// The App Store's own localized name and price for a tip. The DEBUG screenshot preview
+    /// substitutes fixed US-priced rows because a simulator launched by `simctl` has no
+    /// StoreKit configuration to answer from.
+    private func tipLabels(for id: String) -> (String, String?) {
+        if let product = TipJarStore.shared.product(id: id) {
+            return (product.displayName, product.displayPrice)
+        }
+        #if DEBUG
+        if ScreenshotHarness.previewTips, let index = TipJarStore.productIDs.firstIndex(of: id) {
+            let previews = [
+                (String(localized: "Small Tip"), "$1.99"),
+                (String(localized: "Medium Tip"), "$4.99"),
+                (String(localized: "Large Tip"), "$9.99"),
+            ]
+            return previews[index]
+        }
+        #endif
+        return (String(localized: "Tip"), nil)
     }
 
     private static var versionString: String {
@@ -580,8 +697,11 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .moreApps, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs:
+        case .github, .moreApps, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
+             .rateApp, .shareApp, .tip:
             return true
+        case .tipsStatus:
+            return TipJarStore.shared.state == .unavailable
         default:
             return false
         }
@@ -613,9 +733,60 @@ extension SettingsViewController: UICollectionViewDelegate {
             openSupportEmail()
         case .shareLogs:
             shareLogs(from: collectionView.cellForItem(at: indexPath))
+        case .rateApp:
+            UIApplication.shared.open(AppStoreLinks.writeReview)
+        case .shareApp:
+            shareApp(from: collectionView.cellForItem(at: indexPath))
+        case let .tip(id):
+            leaveTip(id)
+        case .tipsStatus:
+            TipJarStore.shared.retry()
         default:
             break
         }
+    }
+
+    private func shareApp(from sourceView: UIView?) {
+        let activity = UIActivityViewController(activityItems: AppStoreLinks.shareItems, applicationActivities: nil)
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = sourceView ?? view
+            popover.sourceRect = (sourceView ?? view).bounds
+        }
+        present(activity, animated: true)
+    }
+
+    private func leaveTip(_ id: String) {
+        guard let product = TipJarStore.shared.product(id: id) else { return }
+        collectionView.isUserInteractionEnabled = false
+        Task { [weak self] in
+            let outcome = await TipJarStore.shared.purchase(product, in: self?.view.window?.windowScene)
+            guard let self else { return }
+            self.collectionView.isUserInteractionEnabled = true
+            self.presentTipOutcome(outcome)
+        }
+    }
+
+    private func presentTipOutcome(_ outcome: TipJarStore.Outcome) {
+        let title: String
+        let message: String
+        switch outcome {
+        case .thanked:
+            Haptics.notify(.success)
+            title = String(localized: "Thank You!")
+            message = String(localized: "Your tip keeps Embr going.")
+        case .pending:
+            title = String(localized: "Waiting for Approval")
+            message = String(localized: "Your tip will go through once it's approved.")
+        case let .failed(reason):
+            Haptics.notify(.error)
+            title = String(localized: "Couldn't Complete the Tip")
+            message = reason
+        case .cancelled:
+            return
+        }
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
+        present(alert, animated: true)
     }
 
     private func openSupportEmail() {

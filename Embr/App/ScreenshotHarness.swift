@@ -15,6 +15,7 @@ enum ScreenshotHarness {
     static var channelPose: ChannelPose = .normal
     static var searchQuery: String?
     static var seededFollow = false
+    static var previewTips = false
 
     /// Popular channels shown, live, in the posed Following tab. Real channels resolved
     /// live via the public API; only the "you follow these" relationship is seeded.

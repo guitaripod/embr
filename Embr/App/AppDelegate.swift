@@ -20,6 +20,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         performFirstRunIfNeeded()
         _ = AppContainer.shared
         NetworkMonitor.shared.start()
+        TipJarStore.shared.start()
         AppLogger.shared.info("app launched", category: .app)
         return true
     }
