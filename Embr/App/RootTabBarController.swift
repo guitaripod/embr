@@ -242,9 +242,11 @@ final class RootTabBarController: UITabBarController {
         let item = navigation.viewControllers.first?.tabBarItem
         let uiTab = UITab(title: item?.title ?? "", image: item?.image, identifier: tab.rawValue) { _ in navigation }
         uiTab.preferredPlacement = .fixed
+        #if compiler(>=6.4)
         if #available(iOS 26.1, *) {
             uiTab.selectedImage = item?.selectedImage
         }
+        #endif
         return uiTab
     }
 
