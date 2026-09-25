@@ -193,11 +193,13 @@ final class ChannelViewController: UIViewController {
         eventCard.pause()
     }
 
-    /// Credits a review-prompt success once this visit has stayed on a live stream continuously
-    /// for `ReviewPrompt.continuousWatchSecondsForSuccess`; leaving before then earns nothing.
+    /// Credits a review-prompt success once this visit has stayed on a confirmed live stream
+    /// continuously for `ReviewPrompt.continuousWatchSecondsForSuccess`; leaving before then, or
+    /// never getting a positive live confirmation (an offline channel, or a run of failed polls),
+    /// earns nothing.
     private func scheduleReviewWatchSuccess() {
         let work = DispatchWorkItem { [weak self] in
-            guard let self, !self.isStreamOffline else { return }
+            guard let self, self.hasConfirmedLiveStream, !self.isStreamOffline else { return }
             ReviewPrompt.recordStreamWatched(in: self.view.window?.windowScene)
         }
         reviewWatchWork = work
@@ -330,10 +332,12 @@ final class ChannelViewController: UIViewController {
     }
 
     private var isStreamOffline = false
+    private var hasConfirmedLiveStream = false
     private var lastAppliedTitle: String?
 
     private func applyLiveStream(_ stream: LiveStream) {
         isStreamOffline = false
+        hasConfirmedLiveStream = true
         infoView.configure(stream: stream)
         if !stream.gameName.isEmpty {
             gameToOpen = GameCategory(id: stream.gameID, name: stream.gameName, boxArtURLTemplate: "")
