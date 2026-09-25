@@ -150,7 +150,7 @@ final class ChannelViewController: UIViewController {
         toggleFavorite()
     }
 
-    private var watchStartedAt: Date?
+    private var reviewWatchWork: DispatchWorkItem?
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         OrientationCoordinator.isPhone ? [.portrait, .landscapeLeft, .landscapeRight] : .all
@@ -166,7 +166,7 @@ final class ChannelViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        watchStartedAt = Date()
+        scheduleReviewWatchSuccess()
         navigationController?.setNavigationBarHidden(currentLayout.hidesNavigationBar, animated: animated)
         (tabBarController as? RootTabBarController)?.beginPlayback()
         eventsPoller.start()
@@ -183,11 +183,7 @@ final class ChannelViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         view.window?.windowScene?.title = nil
-        if let startedAt = watchStartedAt {
-            ReviewPrompt.recordWatchTime(
-                Date().timeIntervalSince(startedAt), in: view.window?.windowScene)
-            watchStartedAt = nil
-        }
+        cancelReviewWatchSuccess()
         navigationController?.setNavigationBarHidden(false, animated: animated)
         if isMovingFromParent {
             (tabBarController as? RootTabBarController)?.endPlayback()
@@ -195,6 +191,22 @@ final class ChannelViewController: UIViewController {
         eventsPoller.stop()
         liveStatsPoller.stop()
         eventCard.pause()
+    }
+
+    /// Credits a review-prompt success once this visit has stayed on a live stream continuously
+    /// for `ReviewPrompt.continuousWatchSecondsForSuccess`; leaving before then earns nothing.
+    private func scheduleReviewWatchSuccess() {
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, !self.isStreamOffline else { return }
+            ReviewPrompt.recordStreamWatched(in: self.view.window?.windowScene)
+        }
+        reviewWatchWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + ReviewPrompt.continuousWatchSecondsForSuccess, execute: work)
+    }
+
+    private func cancelReviewWatchSuccess() {
+        reviewWatchWork?.cancel()
+        reviewWatchWork = nil
     }
 
     override func viewDidLoad() {
