@@ -60,7 +60,7 @@ final class OnboardingViewController: UIViewController {
         header.alignment = .center
         header.spacing = 16
 
-        let buttons = UIStackView(arrangedSubviews: [connectButton, guestButton, activity, makeLegalNotice()])
+        let buttons = UIStackView(arrangedSubviews: [connectButton, guestButton, makeFavoritesHint(), activity, makeLegalNotice()])
         buttons.axis = .vertical
         buttons.alignment = .fill
         buttons.spacing = 12
@@ -84,6 +84,16 @@ final class OnboardingViewController: UIViewController {
             connectButton.heightAnchor.constraint(equalToConstant: 52),
             guestButton.heightAnchor.constraint(equalToConstant: 52)
         ])
+    }
+
+    private func makeFavoritesHint() -> UIView {
+        let label = UILabel()
+        label.text = String(localized: "No account needed: tap the star on any channel to keep it in Favorites.")
+        label.font = .systemFont(ofSize: 14, weight: .regular)
+        label.textColor = Theme.secondaryText
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
     }
 
     private func makeLegalNotice() -> UIView {

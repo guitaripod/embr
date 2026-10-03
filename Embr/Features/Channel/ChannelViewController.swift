@@ -877,6 +877,7 @@ extension ChannelViewController: ChatViewControllerDelegate {
             guard let self else { return }
             do {
                 _ = try await self.auth.login(presentationAnchor: anchor)
+                LiveAlertsPrompt.offerAfterSignIn(from: self)
             } catch {
                 AppLogger.shared.warn("channel chat login failed: \(error)", category: .auth)
             }

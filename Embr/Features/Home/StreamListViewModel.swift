@@ -189,6 +189,8 @@ final class EmptyStateView: UIView {
     private let iconView = UIImageView()
     private let label = UILabel()
     private let retryButton = UIButton(type: .system)
+    private let footnoteLabel = UILabel()
+    private let actionButton = UIButton(type: .system)
 
     var onRetry: (() -> Void)? {
         didSet { retryButton.isHidden = onRetry == nil }
@@ -215,9 +217,18 @@ final class EmptyStateView: UIView {
         retryButton.isHidden = true
         retryButton.addAction(UIAction { [weak self] _ in self?.onRetry?() }, for: .touchUpInside)
 
-        let stack = UIStackView(arrangedSubviews: [iconView, label, retryButton])
+        footnoteLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        footnoteLabel.textColor = Theme.secondaryText
+        footnoteLabel.textAlignment = .center
+        footnoteLabel.numberOfLines = 0
+        footnoteLabel.isHidden = true
+
+        actionButton.isHidden = true
+
+        let stack = UIStackView(arrangedSubviews: [iconView, label, actionButton, footnoteLabel, retryButton])
         stack.axis = .vertical
         stack.spacing = 12
+        stack.setCustomSpacing(20, after: label)
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
@@ -235,6 +246,35 @@ final class EmptyStateView: UIView {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    /// A filled primary button under the message, with an optional smaller note beneath it.
+    func setAction(title: String, footnote: String?, handler: @escaping () -> Void) {
+        var configuration = UIButton.Configuration.filled()
+        configuration.attributedTitle = Self.centeredTitle(title)
+        configuration.cornerStyle = .large
+        configuration.baseBackgroundColor = Theme.accent
+        configuration.baseForegroundColor = .white
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 28, bottom: 14, trailing: 28)
+        actionButton.configuration = configuration
+        actionButton.addAction(UIAction { _ in handler() }, for: .touchUpInside)
+        actionButton.isHidden = false
+        footnoteLabel.text = footnote
+        footnoteLabel.isHidden = footnote == nil
+    }
+
+    /// A configuration title wraps left-aligned unless its paragraph style says otherwise, which
+    /// shows when a long translation or a large text size breaks the title over two lines.
+    private static func centeredTitle(_ title: String) -> AttributedString {
+        let style = NSMutableParagraphStyle()
+        style.alignment = .center
+        var attributed = AttributedString(title)
+        attributed.paragraphStyle = style
+        return attributed
+    }
+
+    func setActionEnabled(_ enabled: Bool) {
+        actionButton.isEnabled = enabled
+    }
 
     func setMessage(_ message: String) {
         label.text = message

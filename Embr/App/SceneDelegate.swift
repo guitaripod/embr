@@ -115,6 +115,16 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             case "following":
                 ScreenshotHarness.seededFollow = true
                 Task { await AuthService.shared.seedScreenshotAuth() }
+            case "alertsprompt":
+                tabBar.select(.top)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    LiveAlertsPrompt.offerAfterSignIn(from: tabBar)
+                }
+            case "followingsignin":
+                tabBar.select(.top)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    tabBar.selectedNavigationController?.pushViewController(FollowingViewController(), animated: false)
+                }
             case "moreapps":
                 tabBar.select(.settings)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -203,6 +213,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Task { await router.handle(url, from: root) }
     }
 
+    private func offerLiveAlertsIfSignedIn(from presenter: UIViewController?) {
+        guard let presenter else { return }
+        Task {
+            guard await AuthService.shared.currentUser() != nil else { return }
+            LiveAlertsPrompt.offerAfterSignIn(from: presenter)
+        }
+    }
+
     @discardableResult
     private func presentOnboardingIfNeeded(over presenter: UIViewController, then pending: Set<UIOpenURLContext>) -> Bool {
         guard !UserDefaults.standard.bool(forKey: completedOnboardingKey) else { return false }
@@ -210,6 +228,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             UserDefaults.standard.set(true, forKey: self?.completedOnboardingKey ?? "completedOnboarding")
             presenter?.dismiss(animated: true) {
                 self?.handle(pending)
+                self?.offerLiveAlertsIfSignedIn(from: presenter)
             }
         }
         onboarding.modalPresentationStyle = .fullScreen

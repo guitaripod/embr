@@ -19,7 +19,6 @@ final class FollowedLiveService {
     private var lastLiveIDs: Set<String> = []
     private var seeded = false
     private var refreshing = false
-    private var requestedAuthorization = false
     private var generation = 0
     private var lastRefreshAt: Date?
     private let minRefreshInterval: TimeInterval = 60
@@ -80,17 +79,10 @@ final class FollowedLiveService {
             if !newlyLive.isEmpty { await notify(newlyLive) }
         } else {
             seeded = true
-            requestAuthorizationIfNeeded()
         }
         guard token == generation else { return }
         lastLiveIDs = liveIDs
         lastRefreshAt = Date()
-    }
-
-    private func requestAuthorizationIfNeeded() {
-        guard !requestedAuthorization else { return }
-        requestedAuthorization = true
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
     private func notify(_ streams: [LiveStream]) async {

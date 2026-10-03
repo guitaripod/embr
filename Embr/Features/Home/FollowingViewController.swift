@@ -56,6 +56,7 @@ final class FollowingViewController: UIViewController {
         setUpCollectionView()
         setUpDataSource()
         setUpStates()
+        setUpSignInAction()
         registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: FollowingViewController, _) in
             controller.reloadForWidthClass()
         }
@@ -299,6 +300,49 @@ final class FollowingViewController: UIViewController {
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+    }
+
+    private func setUpSignInAction() {
+        signInView.setAction(
+            title: String(localized: "Connect Twitch"),
+            footnote: String(localized: "No account? Star channels to keep them in Favorites.")
+        ) { [weak self] in self?.connectTwitch() }
+    }
+
+    private func connectTwitch() {
+        guard let anchor = view.window else {
+            AppLogger.shared.warn("following login: no window anchor available", category: .auth)
+            return
+        }
+        signInView.setActionEnabled(false)
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let user = try await self.auth.login(presentationAnchor: anchor)
+                AppLogger.shared.info("following login succeeded for \(user.login)", category: .auth)
+                self.signInView.isHidden = true
+                self.signInView.setActionEnabled(true)
+                self.bootstrap()
+                LiveAlertsPrompt.offerAfterSignIn(from: self)
+            } catch APIError.cancelled {
+                AppLogger.shared.info("following login cancelled by user", category: .auth)
+                self.signInView.setActionEnabled(true)
+            } catch {
+                AppLogger.shared.warn("following login failed: \(error)", category: .auth)
+                self.signInView.setActionEnabled(true)
+                self.presentLoginError()
+            }
+        }
+    }
+
+    private func presentLoginError() {
+        let alert = UIAlertController(
+            title: String(localized: "Sign In Failed"),
+            message: String(localized: "Could not connect your Twitch account. You can continue as a guest and sign in later."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
+        present(alert, animated: true)
     }
 
     private func applyLive(_ streams: [LiveStream]) {
