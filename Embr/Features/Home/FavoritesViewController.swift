@@ -100,7 +100,8 @@ final class FavoritesViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
         collectionView.alwaysBounceVertical = true
-        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
+        collectionView.preservesSuperviewLayoutMargins = true
+        Fold.invalidateLayout(of: collectionView)
         collectionView.delegate = self
         collectionView.dragDelegate = self
         collectionView.refreshControl = refreshControl
@@ -119,9 +120,9 @@ final class FavoritesViewController: UIViewController {
         UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
             MainActor.assumeIsolated {
                 if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .offline {
-                    return Self.offlineSection(environment: environment)
+                    return Self.offlineSection(environment: environment, fold: self?.foldGrid)
                 }
-                return Self.liveSection(environment: environment)
+                return Self.liveSection(environment: environment, fold: self?.foldGrid)
             }
         }
     }
@@ -132,8 +133,10 @@ final class FavoritesViewController: UIViewController {
             elementKind: SectionHeaderView.elementKind, alignment: .top)
     }
 
-    private static func liveSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let section = StreamListLayout.streamsSection(environment: environment)
+    private var foldGrid: FoldGrid? { StreamListLayout.foldGrid(in: collectionView) }
+
+    private static func liveSection(environment: NSCollectionLayoutEnvironment, fold: FoldGrid?) -> NSCollectionLayoutSection {
+        let section = StreamListLayout.streamsSection(environment: environment, fold: fold)
         let cards = StreamListLayout.usesCards(environment.traitCollection)
         section.contentInsets.top = 6
         section.contentInsets.bottom = cards ? 24 : 10
@@ -141,8 +144,8 @@ final class FavoritesViewController: UIViewController {
         return section
     }
 
-    private static func offlineSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let section = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 56)
+    private static func offlineSection(environment: NSCollectionLayoutEnvironment, fold: FoldGrid?) -> NSCollectionLayoutSection {
+        let section = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 56, fold: fold)
         section.contentInsets.top = 4
         section.contentInsets.bottom = 16
         StreamListLayout.attachHeader(headerItem(), to: section)
@@ -160,10 +163,10 @@ final class FavoritesViewController: UIViewController {
             cell.alignsWithMargins = self?.usesCards ?? false
             cell.configure(with: Self.listing(for: channel), avatarURL: self?.monitor.avatars[channel.id])
         }
-        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
             switch item {
             case .stream(let stream):
-                if StreamListLayout.usesCards(collectionView.traitCollection) {
+                if StreamListLayout.usesCards(self?.traitCollection ?? collectionView.traitCollection) {
                     return collectionView.dequeueConfiguredReusableCell(using: cardRegistration, for: indexPath, item: stream)
                 }
                 return collectionView.dequeueConfiguredReusableCell(using: streamRegistration, for: indexPath, item: stream)

@@ -102,7 +102,8 @@ final class SearchViewController: UIViewController {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
-        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
+        collectionView.preservesSuperviewLayoutMargins = true
+        Fold.invalidateLayout(of: collectionView)
         collectionView.delegate = self
         collectionView.dragDelegate = self
         collectionView.keyboardDismissMode = .onDrag
@@ -121,7 +122,7 @@ final class SearchViewController: UIViewController {
                 let section = self?.dataSource?.sectionIdentifier(for: index) ?? .channels
                 let grid = StreamListLayout.usesCards(environment.traitCollection)
                 if section == .categories {
-                    let layoutSection = StreamListLayout.categoriesSection(environment: environment)
+                    let layoutSection = StreamListLayout.categoriesSection(environment: environment, fold: StreamListLayout.foldGrid(in: self?.collectionView))
                     if let header = self?.headerItem() {
                         StreamListLayout.attachHeader(header, to: layoutSection)
                     }
@@ -133,7 +134,8 @@ final class SearchViewController: UIViewController {
                     config.headerMode = .supplementary
                     return NSCollectionLayoutSection.list(using: config, layoutEnvironment: environment)
                 }
-                let layoutSection = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 60)
+                let layoutSection = StreamListLayout.channelRowsSection(
+                    environment: environment, estimatedHeight: 60, fold: StreamListLayout.foldGrid(in: self?.collectionView))
                 layoutSection.contentInsets.bottom = 16
                 if let header = self?.headerItem() {
                     StreamListLayout.attachHeader(header, to: layoutSection)

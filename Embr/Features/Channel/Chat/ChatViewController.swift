@@ -90,11 +90,20 @@ final class ChatViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if !isAnonymous { composer.setEmoteKeyboardPageLeading(foldPageLeading) }
         let width = collectionView.bounds.width
         guard width > 0, width != lastLayoutWidth else { return }
         lastLayoutWidth = width
         viewModel.updateWidth(width)
         collectionView.collectionViewLayout.invalidateLayout()
+    }
+
+    /// Where the page this chat is on begins when the device is open like a book and the chat sits
+    /// on the page after the fold; zero when there is no fold or the chat does not start beyond it.
+    private var foldPageLeading: CGFloat {
+        guard let window = view.window, case .vertical(_, let maxX)? = Fold.region(in: window),
+              view.convert(view.bounds, to: window).minX >= maxX - 1 else { return 0 }
+        return maxX
     }
 
     func endSession() {
@@ -130,7 +139,7 @@ final class ChatViewController: UIViewController {
         collectionView.delegate = self
         collectionView.alwaysBounceVertical = true
         collectionView.keyboardDismissMode = .interactive
-        collectionView.contentInsetAdjustmentBehavior = .never
+        collectionView.contentInsetAdjustmentBehavior = .scrollableAxes
         let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboardOnTap))
         dismissTap.cancelsTouchesInView = false
         dismissTap.delegate = self
@@ -217,8 +226,8 @@ final class ChatViewController: UIViewController {
             statusBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
             searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            searchField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12),
+            searchField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12),
 
             newMessagesPill.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             newMessagesPill.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: -12)
@@ -320,9 +329,14 @@ final class ChatViewController: UIViewController {
         diff.appendSections([0])
         diff.appendItems(snapshot.rows.reversed(), toSection: 0)
         let shouldStickToBottom = !snapshot.isPaused
-        dataSource.apply(diff, animatingDifferences: false) { [weak self] in
+        let finish = { [weak self] in
             guard let self, shouldStickToBottom else { return }
             self.scrollToLatest(animated: false)
+        }
+        if snapshot.relayout {
+            dataSource.applySnapshotUsingReloadData(diff, completion: finish)
+        } else {
+            dataSource.apply(diff, animatingDifferences: false, completion: finish)
         }
 
         if snapshot.isPaused, snapshot.newCount > 0 {

@@ -72,6 +72,9 @@ final class ChannelViewController: UIViewController {
     private let containerStack = UIStackView()
     private let mainColumn = UIStackView()
     private let mainSpacer = UIView()
+    private let foldGap = UIView()
+    private var foldGapHeight: NSLayoutConstraint!
+    private var videoHeightConstraint: NSLayoutConstraint?
     private let videoContainer = UIView()
     private let chatContainer = UIView()
     private let dividerHandle = ColumnDividerView()
@@ -94,9 +97,11 @@ final class ChannelViewController: UIViewController {
         var hidesSystemChrome: Bool
         var showsOverlayBackButton: Bool
         var centersChatColumn: Bool
+        var fold: FoldRegion?
     }
 
     private static let sideBySideMinimumWidth: CGFloat = 600
+    private static let minimumFoldColumn: CGFloat = 240
     private static let chatColumnWidthKey = "channel.chatColumnWidth"
     private static let chatColumnMaximumWidth: CGFloat = 720
 
@@ -436,7 +441,8 @@ final class ChannelViewController: UIViewController {
             let target = CGSize(width: width, height: UIView.layoutFittingCompressedSize.height)
             let info = infoView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
             let about = aboutView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
-            fits = width * 9 / 16 + info + about <= mainColumn.bounds.height
+            let video = isVideoShown ? width * 9 / 16 : 0
+            fits = video + info + about <= mainColumn.bounds.height
         }
         if aboutView.isHidden == fits {
             aboutView.isHidden = !fits
@@ -445,12 +451,13 @@ final class ChannelViewController: UIViewController {
 
     private var isVideoShown: Bool { !isChatOnly && !isAudioOnly }
 
-    /// The phone keeps its rule: portrait stacks video over chat, landscape goes fullscreen.
-    /// iPad windows of any shape get video beside a chat column once they are wide enough, and
-    /// go fullscreen only when asked.
+    /// A phone-sized window keeps the phone rule: portrait stacks video over chat, landscape goes
+    /// fullscreen. Windows with room for it (every iPad window, the inner display of a foldable
+    /// phone) get video beside a chat column once they are wide enough, and go fullscreen only when
+    /// asked. A partly folded device adds the fold to the state, so the columns divide on it.
     private func layoutState(for size: CGSize) -> LayoutState {
         let landscape = size.width > size.height
-        if OrientationCoordinator.isPhone {
+        if !OrientationCoordinator.usesTabletLayout(for: size) {
             let immersive = landscape && isVideoShown
             return LayoutState(
                 arrangement: immersive ? .immersive : .stacked,
@@ -458,12 +465,18 @@ final class ChannelViewController: UIViewController {
                 hidesNavigationBar: landscape && !isAudioOnly,
                 hidesSystemChrome: landscape,
                 showsOverlayBackButton: landscape || navigationController == nil,
-                centersChatColumn: false
+                centersChatColumn: false,
+                fold: nil
             )
         }
+        let fold = isViewLoaded ? Fold.region(in: view) : nil
         let arrangement: Arrangement
         var automaticFullscreen = false
-        if !isVideoShown {
+        let detailsBesideChat = isChatOnly && !isAudioOnly && fold.map(Self.isVertical) == true
+            && landscape && size.width >= Self.sideBySideMinimumWidth
+        if detailsBesideChat {
+            arrangement = .sideBySide
+        } else if !isVideoShown {
             arrangement = .stacked
         } else if prefersFullscreen {
             arrangement = .immersive
@@ -475,14 +488,25 @@ final class ChannelViewController: UIViewController {
         } else {
             arrangement = .stacked
         }
+        var foldInUse: FoldRegion?
+        switch (fold, arrangement) {
+        case (.vertical?, .sideBySide), (.horizontal?, .stacked): foldInUse = fold
+        default: foldInUse = nil
+        }
         return LayoutState(
             arrangement: arrangement,
-            showsInfo: isVideoShown && arrangement != .immersive,
+            showsInfo: (isVideoShown || detailsBesideChat) && arrangement != .immersive,
             hidesNavigationBar: arrangement == .immersive,
             hidesSystemChrome: arrangement == .immersive,
             showsOverlayBackButton: automaticFullscreen || navigationController == nil,
-            centersChatColumn: !isVideoShown && size.width > Self.chatColumnMaximumWidth + 40
+            centersChatColumn: !isVideoShown && size.width > Self.chatColumnMaximumWidth + 40 && foldInUse == nil,
+            fold: foldInUse
         )
+    }
+
+    private static func isVertical(_ fold: FoldRegion) -> Bool {
+        if case .vertical = fold { return true }
+        return false
     }
 
     private func setUpLayout() {
@@ -498,11 +522,16 @@ final class ChannelViewController: UIViewController {
         infoView.setContentCompressionResistancePriority(.required, for: .vertical)
         mainSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
         mainSpacer.isHidden = true
+        foldGap.translatesAutoresizingMaskIntoConstraints = false
+        foldGap.isHidden = true
+        foldGapHeight = foldGap.heightAnchor.constraint(equalToConstant: 0)
+        foldGapHeight.isActive = true
 
         mainColumn.axis = .vertical
         mainColumn.alignment = .fill
         mainColumn.distribution = .fill
         mainColumn.addArrangedSubview(videoContainer)
+        mainColumn.addArrangedSubview(foldGap)
         mainColumn.addArrangedSubview(infoView)
         mainColumn.addArrangedSubview(aboutView)
         mainColumn.addArrangedSubview(mainSpacer)
@@ -544,6 +573,7 @@ final class ChannelViewController: UIViewController {
             containerStack.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
+        Fold.relayout(view)
         applyLayout()
     }
 
@@ -560,26 +590,27 @@ final class ChannelViewController: UIViewController {
         infoView.isHidden = !state.showsInfo
         if state.arrangement != .sideBySide { aboutView.isHidden = true }
         mainSpacer.isHidden = state.arrangement != .sideBySide
-        mainColumn.isHidden = !isVideoShown
+        mainColumn.isHidden = !isVideoShown && state.arrangement != .sideBySide
         containerStack.axis = state.arrangement == .stacked ? .vertical : .horizontal
 
         applyContainerEdges(state)
         applyVideoSizing(state)
         applyChatColumn(state, width: size.width)
+        applyFold(state)
         applyImmersive(state.arrangement == .immersive)
         setNeedsStatusBarAppearanceUpdate()
         setNeedsUpdateOfHomeIndicatorAutoHidden()
         view.layoutIfNeeded()
     }
 
-    /// iPad content keeps clear of the sidebar and window controls through the safe area; the
-    /// phone's fullscreen video runs edge to edge; chat alone on a wide window is centered at
-    /// a readable width.
+    /// Content keeps clear of the sidebar, window controls and a foldable phone's side bar through
+    /// the safe area; fullscreen video runs edge to edge; chat alone on a wide window is centered
+    /// at a readable width.
     private func applyContainerEdges(_ state: LayoutState) {
         NSLayoutConstraint.deactivate(edgeConstraints + safeAreaEdgeConstraints + centeredColumnConstraints)
         if state.centersChatColumn {
             NSLayoutConstraint.activate(centeredColumnConstraints)
-        } else if !OrientationCoordinator.isPhone, state.arrangement != .immersive {
+        } else if state.arrangement != .immersive {
             NSLayoutConstraint.activate(safeAreaEdgeConstraints)
         } else {
             NSLayoutConstraint.activate(edgeConstraints)
@@ -593,9 +624,42 @@ final class ChannelViewController: UIViewController {
         videoAspectConstraints = []
         guard isVideoShown, state.arrangement != .immersive else { return }
         let aspect = videoContainer.heightAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 9.0 / 16.0)
-        aspect.priority = state.arrangement == .sideBySide ? UILayoutPriority(740) : .required
+        aspect.priority = state.arrangement == .sideBySide || state.fold != nil ? UILayoutPriority(740) : .required
         aspect.isActive = true
         videoAspectConstraints = [aspect]
+    }
+
+    /// Divides the page on the fold. Beside a vertical fold the video column ends where the fold
+    /// begins and the chat column starts where it ends, so nothing sits on the crease. Above a
+    /// horizontal fold the video keeps to the top region and everything under it, the stream
+    /// details, chat and the message field, starts below the crease.
+    private func applyFold(_ state: LayoutState) {
+        foldGapHeight.constant = 0
+        foldGap.isHidden = true
+        containerStack.spacing = 0
+        videoHeightConstraint?.isActive = false
+        videoHeightConstraint = nil
+        guard let fold = state.fold else { return }
+        let insets = view.safeAreaInsets
+        switch fold {
+        case .vertical(let minX, let maxX):
+            let chatWidth = view.bounds.width - insets.right - maxX
+            guard chatWidth >= Self.minimumFoldColumn, minX - insets.left >= Self.minimumFoldColumn else { return }
+            containerStack.spacing = maxX - minX
+            chatWidthConstraint?.constant = chatWidth
+            removeDivider()
+        case .horizontal(let minY, let maxY):
+            guard isVideoShown else { return }
+            let available = minY - insets.top
+            guard available >= Self.minimumFoldColumn / 2 else { return }
+            let width = view.bounds.width - insets.left - insets.right
+            let videoHeight = min(width * 9.0 / 16.0, available)
+            let cap = videoContainer.heightAnchor.constraint(lessThanOrEqualToConstant: available)
+            cap.isActive = true
+            videoHeightConstraint = cap
+            foldGapHeight.constant = max(0, maxY - (insets.top + videoHeight))
+            foldGap.isHidden = false
+        }
     }
 
     private func applyChatColumn(_ state: LayoutState, width: CGFloat) {
@@ -684,7 +748,7 @@ final class ChannelViewController: UIViewController {
     /// iPad fullscreen: the video takes the whole window and chat floats over it on demand.
     /// The phone reaches fullscreen by turning to landscape instead.
     func toggleFullscreen() {
-        guard !OrientationCoordinator.isPhone, isVideoShown else { return }
+        guard OrientationCoordinator.usesTabletLayout(for: view.bounds.size), isVideoShown else { return }
         prefersFullscreen.toggle()
         Haptics.selection(store)
         let animations = { self.applyLayout() }
@@ -736,7 +800,7 @@ final class ChannelViewController: UIViewController {
     /// shows the video alone until chat is called up.
     private func installChatOverlay(chat: ChatViewController) {
         chatContainer.isHidden = true
-        fullscreenChatHidden = !OrientationCoordinator.isPhone
+        fullscreenChatHidden = OrientationCoordinator.usesTabletLayout(for: view.bounds.size)
         chatOverlay.alpha = fullscreenChatHidden ? 0 : 1
         chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
         chatOverlay.translatesAutoresizingMaskIntoConstraints = false
@@ -747,7 +811,7 @@ final class ChannelViewController: UIViewController {
         NSLayoutConstraint.activate([
             chatOverlay.topAnchor.constraint(equalTo: videoContainer.topAnchor),
             chatOverlay.bottomAnchor.constraint(equalTo: videoContainer.bottomAnchor),
-            chatOverlay.trailingAnchor.constraint(equalTo: videoContainer.trailingAnchor),
+            chatOverlay.trailingAnchor.constraint(equalTo: videoContainer.safeAreaLayoutGuide.trailingAnchor),
             chatOverlay.widthAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 0.34),
             chat.view.topAnchor.constraint(equalTo: chatOverlay.topAnchor),
             chat.view.leadingAnchor.constraint(equalTo: chatOverlay.leadingAnchor),
@@ -956,6 +1020,10 @@ private final class AudioOnlyBarView: UIView {
         separator.backgroundColor = Theme.surfaceElevated
         separator.translatesAutoresizingMaskIntoConstraints = false
         addSubview(separator)
+        let separatorHeight = separator.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1))
+        registerForTraitChanges([UITraitDisplayScale.self]) { (bar: AudioOnlyBarView, _) in
+            separatorHeight.constant = 1.0 / max(bar.traitCollection.displayScale, 1)
+        }
 
         NSLayoutConstraint.activate([
             row.topAnchor.constraint(equalTo: topAnchor),
@@ -967,7 +1035,7 @@ private final class AudioOnlyBarView: UIView {
             separator.leadingAnchor.constraint(equalTo: leadingAnchor),
             separator.trailingAnchor.constraint(equalTo: trailingAnchor),
             separator.bottomAnchor.constraint(equalTo: bottomAnchor),
-            separator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale)
+            separatorHeight
         ])
     }
 

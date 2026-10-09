@@ -29,16 +29,37 @@ enum StreamRouting {
     }
 }
 
+/// The fold across a grid, with the margins its columns keep to, when the device is open like a book.
+struct FoldGrid: Equatable {
+    let minX: CGFloat
+    let maxX: CGFloat
+    let leading: CGFloat
+    let trailing: CGFloat
+}
+
 @MainActor
 enum StreamListLayout {
     private static let cardMinimumWidth: CGFloat = 280
+    private static let foldableCardMinimumWidth: CGFloat = 220
+    private static let minimumDividedColumn: CGFloat = 120
     private static let cardSpacing: CGFloat = 20
     private static let regularMargin: CGFloat = 20
 
-    /// iPad windows of regular width show streams as a grid of cards; compact widths (the
-    /// phone, Slide Over, a narrow split) keep the thumbnail-beside-text rows.
+    /// Windows of regular width show streams as a grid of cards; compact widths (the phone, the
+    /// outer display of a foldable, Slide Over, a narrow split) keep the thumbnail-beside-text
+    /// rows. A phone turned on its side is regular wide but compact tall, and keeps the rows.
     static func usesCards(_ traits: UITraitCollection) -> Bool {
-        traits.userInterfaceIdiom != .phone && traits.horizontalSizeClass == .regular
+        traits.horizontalSizeClass == .regular && (!OrientationCoordinator.isPhone || traits.verticalSizeClass != .compact)
+    }
+
+    /// The vertical fold across `collectionView`, if the device is open like a book, so a grid can
+    /// put half its columns on each page and leave the crease clear. Read when the layout is
+    /// built, since the system reports regions only after the first pass.
+    static func foldGrid(in collectionView: UICollectionView?) -> FoldGrid? {
+        guard let collectionView, case .vertical(let minX, let maxX)? = Fold.region(in: collectionView) else { return nil }
+        let margins = collectionView.layoutMargins
+        return FoldGrid(
+            minX: minX, maxX: maxX, leading: margins.left, trailing: collectionView.bounds.width - margins.right)
     }
 
     static func make() -> UICollectionViewCompositionalLayout {
@@ -49,9 +70,9 @@ enum StreamListLayout {
         }
     }
 
-    static func streamsSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+    static func streamsSection(environment: NSCollectionLayoutEnvironment, fold: FoldGrid? = nil) -> NSCollectionLayoutSection {
         if usesCards(environment.traitCollection) {
-            return cardSection(environment: environment)
+            return cardSection(environment: environment, fold: fold)
         }
         let columns = environment.container.effectiveContentSize.width > 700 ? 2 : 1
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
@@ -72,9 +93,10 @@ enum StreamListLayout {
 
     /// Cards at least 280 points wide, as many to a row as the window fits, aligned with the
     /// large title on the layout margins.
-    static func cardSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let columns = max(2, columnCount(environment: environment, minimumWidth: cardMinimumWidth, spacing: cardSpacing))
-        let section = grid(columns: columns, spacing: cardSpacing, estimatedHeight: 280)
+    static func cardSection(environment: NSCollectionLayoutEnvironment, fold: FoldGrid? = nil) -> NSCollectionLayoutSection {
+        let minimumWidth = OrientationCoordinator.isPhone ? foldableCardMinimumWidth : cardMinimumWidth
+        let columns = max(2, columnCount(environment: environment, minimumWidth: minimumWidth, spacing: cardSpacing))
+        let section = grid(columns: columns, spacing: cardSpacing, estimatedHeight: 280, fold: fold)
         section.interGroupSpacing = 26
         section.contentInsets.top = 8
         section.contentInsets.bottom = 28
@@ -84,7 +106,10 @@ enum StreamListLayout {
     /// Equal columns with `spacing` between them, aligned to the layout margins. Fractional
     /// items have no gutter of their own, so each gives up half the spacing on either side and
     /// the section pulls its outer edges back out to the margins.
-    private static func grid(columns: Int, spacing: CGFloat, estimatedHeight: CGFloat) -> NSCollectionLayoutSection {
+    private static func grid(columns: Int, spacing: CGFloat, estimatedHeight: CGFloat, fold: FoldGrid? = nil) -> NSCollectionLayoutSection {
+        if let fold, let divided = dividedGrid(columns: columns, spacing: spacing, estimatedHeight: estimatedHeight, fold: fold) {
+            return divided
+        }
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
             heightDimension: .estimated(estimatedHeight)
@@ -101,9 +126,55 @@ enum StreamListLayout {
         return section
     }
 
+    /// A grid with half its columns on each side of the fold: the left page's columns end where the
+    /// fold begins and the right page's start where it ends. Items are sized in points from the
+    /// pages' widths and keep their height estimate. The section sits on the layout margins like
+    /// the plain grid, pulled out by half the spacing, so headers line up the same way. When the
+    /// pages are too narrow for the columns, two fewer are tried; nil when none fit.
+    private static func dividedGrid(columns: Int, spacing: CGFloat, estimatedHeight: CGFloat, fold: FoldGrid) -> NSCollectionLayoutSection? {
+        var count = columns
+        while count >= 2 {
+            if count % 2 == 0, let section = dividedGrid(exactly: count, spacing: spacing, estimatedHeight: estimatedHeight, fold: fold) {
+                return section
+            }
+            count -= 1
+        }
+        return nil
+    }
+
+    private static func dividedGrid(exactly columns: Int, spacing: CGFloat, estimatedHeight: CGFloat, fold: FoldGrid) -> NSCollectionLayoutSection? {
+        let perPage = columns / 2
+        let gaps = CGFloat(perPage - 1) * spacing
+        let leftWidth = (fold.minX - fold.leading - gaps) / CGFloat(perPage)
+        let rightWidth = (fold.trailing - fold.maxX - gaps) / CGFloat(perPage)
+        guard leftWidth >= minimumDividedColumn, rightWidth >= minimumDividedColumn else { return nil }
+        var subitems: [NSCollectionLayoutItem] = []
+        for column in 0..<columns {
+            let width = column < perPage ? leftWidth : rightWidth
+            let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+                widthDimension: .absolute(width), heightDimension: .estimated(estimatedHeight)))
+            let leading: CGFloat
+            switch column {
+            case 0: leading = spacing / 2
+            case perPage: leading = fold.maxX - (fold.leading + CGFloat(perPage) * leftWidth + gaps)
+            default: leading = spacing
+            }
+            item.edgeSpacing = NSCollectionLayoutEdgeSpacing(leading: .fixed(leading), top: nil, trailing: nil, bottom: nil)
+            subitems.append(item)
+        }
+        let group = NSCollectionLayoutGroup.horizontal(
+            layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(estimatedHeight)),
+            subitems: subitems
+        )
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsetsReference = .layoutMargins
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: -spacing / 2, bottom: 0, trailing: -spacing / 2)
+        return section
+    }
+
     /// Box art for categories: three across on the phone, as many as fit at 150 points or more
     /// on iPad.
-    static func categoriesSection(environment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
+    static func categoriesSection(environment: NSCollectionLayoutEnvironment, fold: FoldGrid? = nil) -> NSCollectionLayoutSection {
         guard usesCards(environment.traitCollection) else {
             let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0 / 3.0),
@@ -121,24 +192,24 @@ enum StreamListLayout {
         }
         let spacing: CGFloat = 16
         let columns = max(4, columnCount(environment: environment, minimumWidth: 150, spacing: spacing))
-        let section = grid(columns: columns, spacing: spacing, estimatedHeight: 260)
+        let section = grid(columns: columns, spacing: spacing, estimatedHeight: 260, fold: fold)
         section.interGroupSpacing = 18
         section.contentInsets.top = 8
         section.contentInsets.bottom = 24
         return section
     }
 
-    static func categoriesLayout() -> UICollectionViewCompositionalLayout {
+    static func categoriesLayout(fold: @escaping @MainActor () -> FoldGrid? = { nil }) -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
             MainActor.assumeIsolated {
-                categoriesSection(environment: environment)
+                categoriesSection(environment: environment, fold: fold())
             }
         }
     }
 
     /// Channel rows (offline follows and favorites, search results): one list on the phone,
     /// side-by-side columns at least 300 points wide on iPad.
-    static func channelRowsSection(environment: NSCollectionLayoutEnvironment, estimatedHeight: CGFloat) -> NSCollectionLayoutSection {
+    static func channelRowsSection(environment: NSCollectionLayoutEnvironment, estimatedHeight: CGFloat, fold: FoldGrid? = nil) -> NSCollectionLayoutSection {
         guard usesCards(environment.traitCollection) else {
             let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(estimatedHeight)))
@@ -149,7 +220,7 @@ enum StreamListLayout {
         }
         let spacing: CGFloat = 24
         let columns = max(1, columnCount(environment: environment, minimumWidth: 300, spacing: spacing))
-        let section = grid(columns: columns, spacing: spacing, estimatedHeight: estimatedHeight)
+        let section = grid(columns: columns, spacing: spacing, estimatedHeight: estimatedHeight, fold: fold)
         section.interGroupSpacing = 4
         return section
     }
@@ -160,7 +231,7 @@ enum StreamListLayout {
         UICollectionViewCompositionalLayout { _, environment in
             MainActor.assumeIsolated {
                 let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
-                if environment.traitCollection.userInterfaceIdiom != .phone {
+                if usesCards(environment.traitCollection) {
                     section.contentInsetsReference = .readableContent
                 }
                 return section
@@ -180,7 +251,16 @@ enum StreamListLayout {
     /// inside 20-point layout margins.
     static func columnCount(environment: NSCollectionLayoutEnvironment, minimumWidth: CGFloat, spacing: CGFloat) -> Int {
         let width = environment.container.effectiveContentSize.width - 2 * regularMargin
-        return max(1, Int((width + spacing) / (minimumWidth + spacing)))
+        let fitted = max(1, Int((width + spacing) / (minimumWidth + spacing)))
+        return evenIfFoldable(fitted)
+    }
+
+    /// A phone-idiom window wide enough for columns is a foldable's inner display, which a fold can
+    /// halve, so its grids use an even number of columns and none straddles the crease. iPad
+    /// grids keep the count that fits.
+    private static func evenIfFoldable(_ count: Int) -> Int {
+        guard OrientationCoordinator.isPhone, count > 1 else { return count }
+        return count + count % 2
     }
 }
 

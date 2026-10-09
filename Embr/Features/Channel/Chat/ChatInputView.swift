@@ -58,6 +58,10 @@ final class ChatInputView: UIView {
         textView.setCatalog(catalog)
     }
 
+    func setEmoteKeyboardPageLeading(_ inset: CGFloat) {
+        emoteKeyboard.setPageLeading(inset)
+    }
+
     func setSending(_ sending: Bool) {
         isSending = sending
     }

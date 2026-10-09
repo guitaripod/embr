@@ -32,10 +32,14 @@ struct ChatSnapshot: Sendable {
     let rows: [ChatRow]
     let isPaused: Bool
     let newCount: Int
+    /// Set when the rows were laid out again at a new width: a diffable data source keeps the old
+    /// value of a row it already holds, so the list has to be reloaded to show the new layout.
+    let relayout: Bool
 
-    init(rows: [ChatRow], isPaused: Bool, newCount: Int) {
+    init(rows: [ChatRow], isPaused: Bool, newCount: Int, relayout: Bool = false) {
         self.rows = rows
         self.isPaused = isPaused
         self.newCount = newCount
+        self.relayout = relayout
     }
 }

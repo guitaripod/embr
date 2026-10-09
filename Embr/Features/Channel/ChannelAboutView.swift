@@ -70,6 +70,8 @@ final class ChannelAboutView: UIView {
         typeLabel.font = .systemFont(ofSize: 10, weight: .heavy)
         typeLabel.textColor = Theme.accent
         typeLabel.setContentHuggingPriority(.required, for: .horizontal)
+        typeLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         joinedLabel.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: .systemFont(ofSize: 12))
         joinedLabel.adjustsFontForContentSizeCategory = true

@@ -24,6 +24,16 @@ final class EmoteKeyboardView: UIView {
     private let emptyLabel = UILabel()
     private var bottomBarBottom: NSLayoutConstraint!
     private var homeInset: CGFloat = 0
+    private let pageGuide = UILayoutGuide()
+    private var pageLeading: NSLayoutConstraint!
+
+    /// Keeps the keyboard's content to the page beside the fold that the chat is on, so no emote
+    /// sits on the crease. The system keyboard splits itself across a fold; this one is a plain
+    /// view and is told where the page begins.
+    func setPageLeading(_ inset: CGFloat) {
+        guard pageLeading.constant != inset else { return }
+        pageLeading.constant = inset
+    }
 
     override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: 320 + homeInset) }
 
@@ -38,7 +48,7 @@ final class EmoteKeyboardView: UIView {
 
     init(images: ImageLoading) {
         self.images = images
-        super.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 320))
+        super.init(frame: CGRect(x: 0, y: 0, width: 0, height: 320))
         autoresizingMask = .flexibleWidth
         backgroundColor = Theme.surface
         build()
@@ -104,6 +114,12 @@ final class EmoteKeyboardView: UIView {
     }
 
     private func build() {
+        addLayoutGuide(pageGuide)
+        pageLeading = pageGuide.leadingAnchor.constraint(equalTo: leadingAnchor)
+        NSLayoutConstraint.activate([
+            pageLeading,
+            pageGuide.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
         chipsScroll.translatesAutoresizingMaskIntoConstraints = false
         chipsScroll.showsHorizontalScrollIndicator = false
         chipsStack.axis = .horizontal
@@ -157,8 +173,8 @@ final class EmoteKeyboardView: UIView {
 
         NSLayoutConstraint.activate([
             chipsScroll.topAnchor.constraint(equalTo: topAnchor),
-            chipsScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
-            chipsScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            chipsScroll.leadingAnchor.constraint(equalTo: pageGuide.leadingAnchor),
+            chipsScroll.trailingAnchor.constraint(equalTo: pageGuide.trailingAnchor),
             chipsScroll.heightAnchor.constraint(equalToConstant: 40),
             chipsStack.topAnchor.constraint(equalTo: chipsScroll.contentLayoutGuide.topAnchor),
             chipsStack.bottomAnchor.constraint(equalTo: chipsScroll.contentLayoutGuide.bottomAnchor),
@@ -167,20 +183,20 @@ final class EmoteKeyboardView: UIView {
             chipsStack.heightAnchor.constraint(equalTo: chipsScroll.frameLayoutGuide.heightAnchor),
 
             collectionView.topAnchor.constraint(equalTo: chipsScroll.bottomAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: pageGuide.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: pageGuide.trailingAnchor),
 
             emptyLabel.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor),
 
-            separator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: trailingAnchor),
+            separator.leadingAnchor.constraint(equalTo: pageGuide.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: pageGuide.trailingAnchor),
             separator.heightAnchor.constraint(equalToConstant: 0.5),
             separator.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
 
             bottomBar.topAnchor.constraint(equalTo: collectionView.bottomAnchor),
-            bottomBar.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomBar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bottomBar.leadingAnchor.constraint(equalTo: pageGuide.leadingAnchor),
+            bottomBar.trailingAnchor.constraint(equalTo: pageGuide.trailingAnchor),
             bottomBar.heightAnchor.constraint(equalToConstant: 44),
             bottomBarBottom
         ])

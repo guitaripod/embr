@@ -95,8 +95,8 @@ final class ProfileSheetViewController: UIViewController {
 
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 28),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            stack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
             avatar.widthAnchor.constraint(equalToConstant: 80),
             avatar.heightAnchor.constraint(equalToConstant: 80),
             spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -119,7 +119,7 @@ final class ProfileSheetViewController: UIViewController {
                 return
             }
             self.apply(user)
-            if let url = user.profileImageURL, let image = await self.images.image(for: url, targetScale: UIScreen.main.scale) {
+            if let url = user.profileImageURL, let image = await self.images.image(for: url, targetScale: self.traitCollection.displayScale) {
                 self.avatar.image = image
             }
         }

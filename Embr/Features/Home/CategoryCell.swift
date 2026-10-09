@@ -55,8 +55,8 @@ final class CategoryCell: UICollectionViewCell {
     }
 
     private func loadBoxArt(_ category: GameCategory) {
-        let scale = UIScreen.main.scale
-        let points: CGFloat = OrientationCoordinator.isPhone ? 144 : 210
+        let scale = traitCollection.displayScale
+        let points: CGFloat = traitCollection.horizontalSizeClass == .regular ? 210 : 144
         let width = Int(points * scale)
         let height = Int(points * 4 / 3 * scale)
         guard let url = category.boxArtURL(width: width, height: height) else { return }

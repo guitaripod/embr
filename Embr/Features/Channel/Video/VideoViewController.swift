@@ -113,6 +113,7 @@ final class VideoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
+        Fold.relayout(view)
         installPlayerView()
         installOverlay()
         bindPlayer()
@@ -196,11 +197,18 @@ final class VideoViewController: UIViewController {
         feedback.prepare()
     }
 
+    /// The window only knows which orientations a video allows once this page is on screen, so it
+    /// is asked again here; until then it keeps the portrait-only answer it was given while browsing.
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        view.window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         OrientationCoordinator.phoneMask = .portrait
-        if OrientationCoordinator.isPhone, isLandscape, let scene = view.window?.windowScene {
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
+        if !usesTabletLayout, isLandscape, let scene = view.window?.windowScene {
+            OrientationCoordinator.rotate(scene, to: .portrait)
         }
         if isStandaloneFullscreen {
             isStandaloneFullscreen = false
@@ -230,7 +238,16 @@ final class VideoViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        player.view.frame = view.bounds
+        player.view.frame = playerFrame
+    }
+
+    /// A video that has the page to itself sits in the top region while the device is folded like a
+    /// laptop, so the picture stays off the crease and the controls on the overlay keep to the
+    /// stable half below it.
+    private var playerFrame: CGRect {
+        guard isStandalone, !isStandaloneFullscreen, case .horizontal(let minY, _)? = Fold.region(in: view),
+              minY > view.bounds.height / 4 else { return view.bounds }
+        return CGRect(x: 0, y: 0, width: view.bounds.width, height: minY)
     }
 
     func setBackButtonHidden(_ hidden: Bool) {
@@ -270,6 +287,11 @@ final class VideoViewController: UIViewController {
         view.bounds.width > view.bounds.height
     }
 
+    /// Judged on the window, not on this view, which may be a small player inside a page.
+    private var usesTabletLayout: Bool {
+        OrientationCoordinator.usesTabletLayout(for: view.window?.bounds.size ?? view.bounds.size)
+    }
+
     func setImmersiveState(_ immersive: Bool) {
         guard immersive != isImmersive else { return }
         isImmersive = immersive
@@ -280,7 +302,7 @@ final class VideoViewController: UIViewController {
     /// inside, so there the hosting channel page (or, for a video pushed on its own, this
     /// controller) hides its chrome instead.
     func toggleFullscreen() {
-        guard OrientationCoordinator.isPhone else {
+        guard !usesTabletLayout else {
             if let onToggleFullscreen {
                 onToggleFullscreen()
             } else {
@@ -288,13 +310,12 @@ final class VideoViewController: UIViewController {
             }
             return
         }
-        let deviceLandscape = view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
-        let goFullscreen = !deviceLandscape
+        let goFullscreen = !OrientationCoordinator.isLandscape(view.window?.windowScene)
         OrientationCoordinator.phoneMask = goFullscreen ? .landscape : [.portrait, .landscapeLeft, .landscapeRight]
         guard let scene = view.window?.windowScene else { return }
         view.window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         let target: UIInterfaceOrientationMask = goFullscreen ? .landscapeRight : .portrait
-        scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { error in
+        OrientationCoordinator.rotate(scene, to: target) { error in
             AppLogger.shared.warn("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
         }
     }
@@ -320,8 +341,8 @@ final class VideoViewController: UIViewController {
     }
 
     private var restoredStandaloneImmersiveState: Bool {
-        guard OrientationCoordinator.isPhone else { return isStandaloneFullscreen }
-        return view.window?.windowScene?.interfaceOrientation.isLandscape ?? false
+        guard !usesTabletLayout else { return isStandaloneFullscreen }
+        return OrientationCoordinator.isLandscape(view.window?.windowScene)
     }
 
     var isPlaying: Bool { currentState == .playing }

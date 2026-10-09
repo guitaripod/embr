@@ -91,12 +91,13 @@ final class ChannelVideosViewController: UIViewController {
                     return NSCollectionLayoutSection.list(using: config, layoutEnvironment: environment)
                 }
                 if self?.showingSchedule == true {
-                    let section = StreamListLayout.channelRowsSection(environment: environment, estimatedHeight: 80)
+                    let section = StreamListLayout.channelRowsSection(
+                        environment: environment, estimatedHeight: 80, fold: StreamListLayout.foldGrid(in: self?.collectionView))
                     section.contentInsets.top = 12
                     section.contentInsets.bottom = 24
                     return section
                 }
-                return StreamListLayout.cardSection(environment: environment)
+                return StreamListLayout.cardSection(environment: environment, fold: StreamListLayout.foldGrid(in: self?.collectionView))
             }
         }
     }
@@ -105,7 +106,8 @@ final class ChannelVideosViewController: UIViewController {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
-        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
+        collectionView.preservesSuperviewLayoutMargins = true
+        Fold.invalidateLayout(of: collectionView)
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
         view.addSubview(collectionView)
@@ -367,8 +369,9 @@ private final class MediaRowCell: UICollectionViewListCell {
         imageTask?.cancel()
         guard let url else { return }
         if let cached = images.cachedImage(for: url) { thumbnail.image = cached; return }
+        let scale = traitCollection.displayScale
         imageTask = Task { [weak self] in
-            let image = await self?.images.image(for: url, targetScale: UIScreen.main.scale)
+            let image = await self?.images.image(for: url, targetScale: scale)
             guard !Task.isCancelled else { return }
             self?.thumbnail.image = image
         }

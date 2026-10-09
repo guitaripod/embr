@@ -30,13 +30,31 @@ final class LegalViewController: UIViewController {
         textView.adjustsFontForContentSizeCategory = true
         view.addSubview(textView)
 
-        let horizontal = OrientationCoordinator.isPhone ? view.safeAreaLayoutGuide : view.readableContentGuide
+        let safeArea = view.safeAreaLayoutGuide
+        let readable = view.readableContentGuide
+        let safeEdges = [
+            textView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor)
+        ]
+        let readableEdges = [
+            textView.leadingAnchor.constraint(equalTo: readable.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: readable.trailingAnchor)
+        ]
         NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.leadingAnchor.constraint(equalTo: horizontal.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: horizontal.trailingAnchor),
+            textView.topAnchor.constraint(equalTo: safeArea.topAnchor),
             textView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        applyEdges(safe: safeEdges, readable: readableEdges)
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: LegalViewController, _) in
+            controller.applyEdges(safe: safeEdges, readable: readableEdges)
+        }
+    }
+
+    /// Wide windows keep the text to a readable column; compact ones run it to the safe area.
+    private func applyEdges(safe: [NSLayoutConstraint], readable: [NSLayoutConstraint]) {
+        let wide = traitCollection.horizontalSizeClass == .regular
+        NSLayoutConstraint.deactivate(wide ? safe : readable)
+        NSLayoutConstraint.activate(wide ? readable : safe)
     }
 
     private static func render(title: String, body: String) -> NSAttributedString {

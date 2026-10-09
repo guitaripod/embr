@@ -67,9 +67,10 @@ final class FollowedChannelCell: UICollectionViewCell {
             return
         }
         let target = channel.id
+        let scale = traitCollection.displayScale
         imageTask?.cancel()
         imageTask = Task { [weak self] in
-            let image = await self?.images.image(for: url, targetScale: UIScreen.main.scale)
+            let image = await self?.images.image(for: url, targetScale: scale)
             guard let self, !Task.isCancelled, self.currentID == target else { return }
             self.avatar.image = image
         }

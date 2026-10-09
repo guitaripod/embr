@@ -99,7 +99,7 @@ final class StreamCell: UICollectionViewCell {
     }
 
     private func loadThumbnail(_ stream: LiveStream) {
-        let scale = UIScreen.main.scale
+        let scale = traitCollection.displayScale
         guard let url = stream.thumbnailURL(width: Int(Self.thumbnailWidth * scale), height: Int(Self.thumbnailWidth * scale * 9 / 16)) else { return }
         if let cached = images.cachedImage(for: url) { thumbnail.image = cached; return }
         let targetID = stream.id
@@ -116,8 +116,9 @@ final class StreamCell: UICollectionViewCell {
         guard let url else { avatar.image = nil; return }
         if let cached = images.cachedImage(for: url) { avatar.image = cached; return }
         let targetID = currentStreamID
+        let scale = traitCollection.displayScale
         avatarTask = Task { [weak self] in
-            let image = await self?.images.image(for: url, targetScale: UIScreen.main.scale)
+            let image = await self?.images.image(for: url, targetScale: scale)
             guard let self, !Task.isCancelled, self.currentStreamID == targetID else { return }
             self.avatar.image = image
         }

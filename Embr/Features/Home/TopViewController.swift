@@ -159,7 +159,7 @@ final class TopViewController: UIViewController {
                 if self?.dataSource?.sectionIdentifier(for: sectionIndex) == .recent {
                     return Self.recentRailSection(environment: environment)
                 }
-                return StreamListLayout.streamsSection(environment: environment)
+                return StreamListLayout.streamsSection(environment: environment, fold: StreamListLayout.foldGrid(in: self?.collectionView))
             }
         }
     }
@@ -192,7 +192,8 @@ final class TopViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
         collectionView.alwaysBounceVertical = true
-        collectionView.preservesSuperviewLayoutMargins = !OrientationCoordinator.isPhone
+        collectionView.preservesSuperviewLayoutMargins = true
+        Fold.invalidateLayout(of: collectionView)
         collectionView.delegate = self
         collectionView.dragDelegate = self
         collectionView.prefetchDataSource = self
@@ -221,10 +222,10 @@ final class TopViewController: UIViewController {
         let recentRegistration = UICollectionView.CellRegistration<RecentChannelCell, WatchedChannel> { [weak self] cell, _, channel in
             cell.configure(with: channel, avatarURL: self?.avatars[channel.id])
         }
-        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { collectionView, indexPath, item in
+        dataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: collectionView) { [weak self] collectionView, indexPath, item in
             switch item {
             case .stream(let stream):
-                if StreamListLayout.usesCards(collectionView.traitCollection) {
+                if StreamListLayout.usesCards(self?.traitCollection ?? collectionView.traitCollection) {
                     return collectionView.dequeueConfiguredReusableCell(using: cardRegistration, for: indexPath, item: stream)
                 }
                 return collectionView.dequeueConfiguredReusableCell(using: streamRegistration, for: indexPath, item: stream)
@@ -361,7 +362,8 @@ final class TopViewController: UIViewController {
         Haptics.selection()
         showingCategories = segmented.selectedSegmentIndex == 1
         if showingCategories {
-            collectionView.setCollectionViewLayout(StreamListLayout.categoriesLayout(), animated: false)
+            collectionView.setCollectionViewLayout(
+                StreamListLayout.categoriesLayout { [weak self] in StreamListLayout.foldGrid(in: self?.collectionView) }, animated: false)
             if categories.isEmpty { loadCategories(replacing: true) } else { applyCategories() }
         } else {
             collectionView.setCollectionViewLayout(makeStreamsLayout(), animated: false)

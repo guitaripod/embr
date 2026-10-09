@@ -240,7 +240,11 @@ final class ChatViewModel {
     }
 
     func updateWidth(_ width: CGFloat) {
-        Task { await store.updateWidth(width) }
+        Task {
+            if let snapshot = await store.updateWidth(width) {
+                snapshotSubject.send(snapshot)
+            }
+        }
     }
 
     func setReply(parentID: String?) {
@@ -337,10 +341,13 @@ private actor MessageStore {
         return currentSnapshot()
     }
 
-    func updateWidth(_ width: CGFloat) {
-        guard width > 0, width != self.width else { return }
+    func updateWidth(_ width: CGFloat) -> ChatSnapshot? {
+        guard width > 0, width != self.width else { return nil }
         self.width = width
         rebuildLayout()
+        guard !rows.isEmpty else { return nil }
+        let current = currentSnapshot()
+        return ChatSnapshot(rows: current.rows, isPaused: current.isPaused, newCount: current.newCount, relayout: true)
     }
 
     func setCatalogs(catalog: EmoteCatalog, badges: BadgeCatalog) {
