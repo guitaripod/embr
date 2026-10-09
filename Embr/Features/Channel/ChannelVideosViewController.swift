@@ -64,6 +64,14 @@ final class ChannelVideosViewController: UIViewController {
         }
     }
 
+    #if DEBUG
+    func selectSegmentForScreenshot(_ index: Int) {
+        guard isViewLoaded, index < segmented.numberOfSegments else { return }
+        segmented.selectedSegmentIndex = index
+        segmentChanged()
+    }
+    #endif
+
     @objc private func segmentChanged() {
         Haptics.selection()
         collectionView.collectionViewLayout.invalidateLayout()

@@ -13,6 +13,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        #if DEBUG
+        DemoWorld.resetLaunchState()
+        #endif
         performFirstRunIfNeeded()
         _ = AppContainer.shared
         NetworkMonitor.shared.start()

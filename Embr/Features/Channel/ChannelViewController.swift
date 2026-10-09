@@ -239,6 +239,11 @@ final class ChannelViewController: UIViewController {
 
     #if DEBUG
     private func applyScreenshotPose() {
+        if let keyboard = ScreenshotRouter.option("Keyboard") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
+                self?.chatController?.raiseKeyboardForScreenshot(emotes: keyboard == "emotes")
+            }
+        }
         let pose = ScreenshotHarness.channelPose
         guard pose != .normal else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in

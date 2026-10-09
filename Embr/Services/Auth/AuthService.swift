@@ -305,10 +305,17 @@ actor AuthService: AuthControlling {
     }
 
     #if DEBUG
-    /// Seeds an authenticated identity for App Store screenshot capture (no real token).
-    /// The posed Following tab renders curated live channels via the public API.
+    /// Signs in the invented viewer for App Store screenshot capture. Nothing is stored, so a
+    /// relaunch starts signed out again unless the capture asks for the session once more.
     func seedScreenshotAuth() {
-        publish(.authenticated(AuthenticatedUser(id: "0", login: "embrdemo", displayName: "Embr", scopes: [])))
+        loadedFromStore = true
+        let demo = StoredCredentials(
+            userID: DemoWorld.userID, login: DemoWorld.userLogin, accessToken: "demo-user-token", refreshToken: nil,
+            expiresAt: Date().addingTimeInterval(86400 * 365),
+            scopes: ["user:read:follows", "user:write:chat", "chat:read"]
+        )
+        credentials = demo
+        publish(.authenticated(Self.user(from: demo)))
     }
     #endif
 

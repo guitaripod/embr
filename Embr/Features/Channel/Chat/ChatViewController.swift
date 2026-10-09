@@ -110,6 +110,18 @@ final class ChatViewController: UIViewController {
         viewModel.stop()
     }
 
+    #if DEBUG
+    /// Brings up the system keyboard, or the emote keyboard, for a screenshot of the composer.
+    func raiseKeyboardForScreenshot(emotes: Bool) {
+        guard !isAnonymous else { return }
+        if emotes {
+            composer.showEmoteKeyboardForScreenshot()
+        } else {
+            _ = composer.becomeFirstResponder()
+        }
+    }
+    #endif
+
     var isComposing: Bool {
         !isAnonymous && composer.isEditing
     }

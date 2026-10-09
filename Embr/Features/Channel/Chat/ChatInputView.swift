@@ -104,6 +104,12 @@ final class ChatInputView: UIView {
         refreshAutocomplete()
     }
 
+    #if DEBUG
+    func showEmoteKeyboardForScreenshot() {
+        showEmoteKeyboard()
+    }
+    #endif
+
     @objc private func emoteTapped() {
         if showingEmoteKeyboard {
             switchToSystemKeyboard()

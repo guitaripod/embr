@@ -27,6 +27,14 @@ final class WatchHistoryStore {
         self.recent = Self.load(from: defaults, key: "watchHistory")
     }
 
+    #if DEBUG
+    /// Poses the Recently Watched row for screenshots without writing to the device's real history.
+    func seedForScreenshots(_ entries: [WatchedChannel]) {
+        recent = entries
+        changes.send(entries)
+    }
+    #endif
+
     func record(id: String, login: String, name: String) {
         guard !id.isEmpty, !login.isEmpty else { return }
         let entry = WatchedChannel(id: id, login: login, name: name)
@@ -47,6 +55,9 @@ final class WatchHistoryStore {
     }
 
     private func persist(_ entries: [WatchedChannel]) {
+        #if DEBUG
+        if DemoWorld.isActive { return }
+        #endif
         guard let data = try? JSONEncoder().encode(entries) else { return }
         defaults.set(data, forKey: key)
     }

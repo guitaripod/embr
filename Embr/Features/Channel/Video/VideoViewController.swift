@@ -82,7 +82,7 @@ final class VideoViewController: UIViewController {
 
     init(
         source: VideoSource,
-        player: VideoPlaying = HLSVideoPlayer(),
+        player: VideoPlaying = VideoViewController.makeDefaultPlayer(),
         resolver: PlaybackResolving = PlaybackResolver.shared,
         logger: AppLogger = .shared,
         store: SettingsStore = .shared,
@@ -102,6 +102,13 @@ final class VideoViewController: UIViewController {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    static func makeDefaultPlayer() -> VideoPlaying {
+        #if DEBUG
+        if DemoWorld.isActive { return DemoVideoPlayer() }
+        #endif
+        return HLSVideoPlayer()
+    }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         OrientationCoordinator.isPhone ? [.portrait, .landscapeLeft, .landscapeRight] : .all

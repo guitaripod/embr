@@ -19,6 +19,9 @@ final class URLSessionTransport: HTTPTransport {
     }
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        #if DEBUG
+        if DemoWorld.isActive { return DemoTransport.response(for: request) }
+        #endif
         let urlRequest = Self.urlRequest(from: request)
         do {
             let (data, response) = try await session.data(for: urlRequest)

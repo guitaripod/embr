@@ -178,9 +178,7 @@ actor ChatRoom {
     }
 
     private func consumeSource() {
-        let source: ChatSource = loggedIn
-            ? EventSubChatSource(channel: channel, api: api, auth: auth)
-            : IRCChatSource(channel: channel)
+        let source = makeSource()
         self.source = source
         let stream = source.start()
         consumeTask = Task { [weak self] in
@@ -188,6 +186,15 @@ actor ChatRoom {
                 await self?.ingest(event)
             }
         }
+    }
+
+    private func makeSource() -> ChatSource {
+        #if DEBUG
+        if DemoWorld.isActive { return DemoChatSource(channel: channel) }
+        #endif
+        return loggedIn
+            ? EventSubChatSource(channel: channel, api: api, auth: auth)
+            : IRCChatSource(channel: channel)
     }
 
     private func ingest(_ event: ChatEvent) {
