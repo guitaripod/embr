@@ -1,7 +1,6 @@
 import UIKit
 import Combine
 import EmbrCore
-import MidgarKit
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?

@@ -139,7 +139,7 @@ enum ScreenshotRouter {
             tabBar.select(.settings)
             after(0.8) {
                 guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
-                Midgar.present(from: top, config: MidgarConfig(accent: Theme.accent, title: "More Apps"))
+                Midgar.present(from: top)
             }
         case "profile":
             openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)

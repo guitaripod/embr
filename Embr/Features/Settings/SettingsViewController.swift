@@ -8,6 +8,7 @@ import MidgarKit
 @MainActor
 final class SettingsViewController: UIViewController {
     private enum Section: Int, CaseIterable {
+        case midgar
         case general
         case chat
         case safety
@@ -18,6 +19,7 @@ final class SettingsViewController: UIViewController {
 
         var title: String {
             switch self {
+            case .midgar: return ""
             case .general: return String(localized: "General")
             case .chat: return String(localized: "Chat")
             case .safety: return String(localized: "Safety & Moderation")
@@ -30,6 +32,8 @@ final class SettingsViewController: UIViewController {
     }
 
     private enum Row: Hashable {
+        case midgarEntry
+
         case theme
         case openLinksInApp
         case haptics
@@ -63,7 +67,6 @@ final class SettingsViewController: UIViewController {
 
         case version
         case github
-        case moreApps
         case termsOfUse
         case privacyPolicy
         case contactSupport
@@ -107,7 +110,9 @@ final class SettingsViewController: UIViewController {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
         config.headerMode = .supplementary
         config.footerMode = .supplementary
-        let layout = StreamListLayout.readableList(using: config)
+        let layout = StreamListLayout.readableList { section in
+            section == Section.midgar.rawValue ? Self.entryListConfiguration() : config
+        }
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = Theme.background
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -121,12 +126,29 @@ final class SettingsViewController: UIViewController {
         ])
     }
 
+    /// The portal card sits alone above every section, so its list has no header, footer,
+    /// separator or grouped background of its own.
+    private static func entryListConfiguration() -> UICollectionLayoutListConfiguration {
+        var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+        config.headerMode = .none
+        config.footerMode = .none
+        config.showsSeparators = false
+        config.backgroundColor = .clear
+        return config
+    }
+
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Row> { [weak self] cell, _, row in
             self?.configure(cell, for: row)
         }
+        let entryRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Row> { cell, _, _ in
+            cell.backgroundConfiguration = .clear()
+            guard !cell.contentView.subviews.contains(where: { $0 is MidgarEntryView }) else { return }
+            MidgarEntryView().embed(in: cell.contentView, verticalInset: 8)
+        }
         dataSource = UICollectionViewDiffableDataSource<Section, Row>(collectionView: collectionView) { collectionView, indexPath, row in
-            collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: row)
+            let registration = row == .midgarEntry ? entryRegistration : cellRegistration
+            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: row)
         }
 
         let headerRegistration = UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
@@ -156,6 +178,7 @@ final class SettingsViewController: UIViewController {
 
     private static func footerText(for section: Section) -> String? {
         switch section {
+        case .midgar: return nil
         case .general: return String(localized: "Appearance, link handling, and haptic feedback across the app.")
         case .chat: return String(localized: "Readability, message size, and which emote sets load in chat.")
         case .safety: return String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review.")
@@ -197,6 +220,7 @@ final class SettingsViewController: UIViewController {
     private func applySnapshot() {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
         snapshot.appendSections(Section.allCases)
+        snapshot.appendItems([.midgarEntry], toSection: .midgar)
         snapshot.appendItems([.theme, .openLinksInApp, .haptics], toSection: .general)
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
@@ -211,7 +235,7 @@ final class SettingsViewController: UIViewController {
         )
         snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
         snapshot.appendItems(supportRows(), toSection: .support)
-        snapshot.appendItems([.version, .github, .moreApps, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
+        snapshot.appendItems([.version, .github, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -273,6 +297,8 @@ final class SettingsViewController: UIViewController {
         content.imageToTextPadding = 12
 
         switch row {
+        case .midgarEntry:
+            break
         case .theme:
             content.text = String(localized: "Theme")
             cell.contentConfiguration = content
@@ -433,10 +459,6 @@ final class SettingsViewController: UIViewController {
             content.textProperties.color = Theme.link
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
-        case .moreApps:
-            content.text = String(localized: "More Apps")
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
         case .termsOfUse:
             content.text = String(localized: "Terms of Use")
             cell.contentConfiguration = content
@@ -546,6 +568,7 @@ final class SettingsViewController: UIViewController {
     private static func iconImage(for row: Row) -> UIImage {
         let spec: (String, UIColor)
         switch row {
+        case .midgarEntry: spec = ("circle.hexagongrid.fill", Theme.accent)
         case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
         case .openLinksInApp: spec = ("safari.fill", .systemBlue)
         case .haptics: spec = ("hand.tap.fill", .systemPink)
@@ -573,7 +596,6 @@ final class SettingsViewController: UIViewController {
         case .tipsStatus: spec = ("flame.fill", .systemOrange)
         case .version: spec = ("info.circle.fill", .systemGray)
         case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
-        case .moreApps: spec = ("square.grid.2x2.fill", Theme.accent)
         case .termsOfUse: spec = ("doc.text.fill", .systemGray)
         case .privacyPolicy: spec = ("hand.raised.fill", .systemBlue)
         case .contactSupport: spec = ("envelope.fill", Theme.accent)
@@ -698,7 +720,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .moreApps, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
+        case .github, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
              .rateApp, .shareApp, .tip:
             return true
         case .tipsStatus:
@@ -714,8 +736,6 @@ extension SettingsViewController: UICollectionViewDelegate {
         switch row {
         case .github:
             openGitHub()
-        case .moreApps:
-            Midgar.present(from: self, config: MidgarConfig(accent: Theme.accent, title: String(localized: "More Apps")))
         case .accountAction:
             performAccountAction()
         case .mutedKeywords:

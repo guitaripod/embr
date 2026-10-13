@@ -228,9 +228,15 @@ enum StreamListLayout {
     /// An inset-grouped list (Settings and its sub-screens) that keeps to a readable width on
     /// iPad instead of stretching its rows across a wide window.
     static func readableList(using configuration: UICollectionLayoutListConfiguration) -> UICollectionViewCompositionalLayout {
-        UICollectionViewCompositionalLayout { _, environment in
+        readableList { _ in configuration }
+    }
+
+    static func readableList(
+        configurationForSection configuration: @escaping @MainActor (Int) -> UICollectionLayoutListConfiguration
+    ) -> UICollectionViewCompositionalLayout {
+        UICollectionViewCompositionalLayout { index, environment in
             MainActor.assumeIsolated {
-                let section = NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+                let section = NSCollectionLayoutSection.list(using: configuration(index), layoutEnvironment: environment)
                 if usesCards(environment.traitCollection) {
                     section.contentInsetsReference = .readableContent
                 }

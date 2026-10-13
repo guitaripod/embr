@@ -20,7 +20,7 @@ packages:
     from: "0.14.0"
   MidgarKit:
     url: https://github.com/guitaripod/MidgarKit
-    from: "2.0.0"
+    branch: portal-3.0
 
 targets:
   Embr:
@@ -94,6 +94,24 @@ targets:
           - CFBundleURLName: ${EMBR_BUNDLE_ID}
             CFBundleURLSchemes:
               - embr
+              - ${EMBR_BUNDLE_ID}
+        LSApplicationQueriesSchemes:
+          - com.guitaripod.embr
+          - com.guitaripod.helia
+          - com.guitaripod.payday
+          - com.guitaripod.pixie
+          - com.guitaripod.psybeam
+          - com.guitaripod.tailscode
+          - com.marcusziade.aotd
+          - com.marcusziade.doublekick
+          - com.marcusziade.dreameater
+          - com.marcusziade.inventory
+          - com.marcusziade.knowtheflag
+          - com.marcusziade.psywave
+          - com.marcusziade.sforesight
+          - com.marcusziade.solarbeam
+          - com.midgarcorp.flaccy
+          - com.midgarcorp.flaccy.mac
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
 
