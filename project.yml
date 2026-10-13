@@ -20,7 +20,7 @@ packages:
     from: "0.14.0"
   MidgarKit:
     url: https://github.com/guitaripod/MidgarKit
-    branch: portal-3.0
+    from: "3.0.0"
 
 targets:
   Embr:
