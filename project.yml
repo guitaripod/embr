@@ -95,6 +95,7 @@ targets:
             CFBundleURLSchemes:
               - embr
               - ${EMBR_BUNDLE_ID}
+        CADisableMinimumFrameDurationOnPhone: true
         LSApplicationQueriesSchemes:
           - com.guitaripod.embr
           - com.guitaripod.helia
