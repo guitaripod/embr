@@ -1,4 +1,4 @@
-export const PROXY_SIGNATURE_TTL_SECONDS = 6 * 60 * 60;
+export const PROXY_SIGNATURE_TTL_SECONDS = 24 * 60 * 60;
 
 export interface ProxySignature {
   exp: number;
