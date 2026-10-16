@@ -5349,6 +5349,70 @@
         }
       }
     },
+    "Couldn't Delete Account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto konnte nicht gelöscht werden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de supprimer le compte"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo eliminar la cuenta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile eliminare l'account"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アカウントを削除できませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계정을 삭제하지 못했습니다"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法删除账户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法刪除帳號"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível excluir a conta"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć konta"
+          }
+        }
+      }
+    },
     "Couldn't check which favorites are live.": {
       "localizations": {
         "de": {
@@ -5925,6 +5989,134 @@
         }
       }
     },
+    "Delete Account": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto löschen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le compte"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar cuenta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina account"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アカウントを削除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계정 삭제"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除账户"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除帳號"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir conta"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń konto"
+          }
+        }
+      }
+    },
+    "Delete Account?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto löschen?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le compte ?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar la cuenta?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare l'account?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アカウントを削除しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계정을 삭제할까요?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要删除账户吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除帳號嗎？"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir conta?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć konto?"
+          }
+        }
+      }
+    },
     "Delete Message": {
       "localizations": {
         "de": {
@@ -6369,6 +6561,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wsparcie Embr (%@)"
+          }
+        }
+      }
+    },
+    "Embr couldn't reach Twitch to revoke its access. Check your connection and try again. Nothing on this device was erased.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr konnte Twitch nicht erreichen, um den Zugriff zu widerrufen. Prüfe deine Verbindung und versuche es erneut. Auf diesem Gerät wurde nichts gelöscht."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr n'a pas pu joindre Twitch pour révoquer son accès. Vérifiez votre connexion et réessayez. Rien n'a été effacé sur cet appareil."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr no pudo conectar con Twitch para revocar su acceso. Comprueba tu conexión e inténtalo de nuevo. No se borró nada de este dispositivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr non è riuscito a contattare Twitch per revocare il proprio accesso. Controlla la connessione e riprova. Su questo dispositivo non è stato cancellato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EmbrがTwitchに接続できず、アクセスを取り消せませんでした。接続を確認して、もう一度お試しください。このデバイス上のデータは消去されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr가 Twitch에 연결하지 못해 접근 권한을 취소하지 못했습니다. 연결을 확인하고 다시 시도하세요. 이 기기의 데이터는 지워지지 않았습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 无法连接 Twitch 以撤销其访问权限。请检查网络连接后重试。此设备上的任何内容均未被清除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 無法連線至 Twitch 以撤銷其存取權限。請檢查網路連線後重試。此裝置上的任何內容均未被清除。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Embr não conseguiu alcançar a Twitch para revogar o acesso. Verifique sua conexão e tente novamente. Nada foi apagado neste dispositivo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr nie mógł połączyć się z Twitchem, aby cofnąć dostęp. Sprawdź połączenie i spróbuj ponownie. Nic nie zostało skasowane na tym urządzeniu."
           }
         }
       }
@@ -17128,6 +17384,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta treść jest teraz niedostępna."
+          }
+        }
+      }
+    },
+    "This signs you out and revokes Embr's access to your Twitch account. Your favorites, settings, watch history and caches on this device are erased, and Embr returns to first launch. This can't be undone.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du wirst abgemeldet und Embrs Zugriff auf dein Twitch-Konto wird widerrufen. Favoriten, Einstellungen, Verlauf und Caches auf diesem Gerät werden gelöscht und Embr kehrt zum ersten Start zurück. Das lässt sich nicht rückgängig machen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous êtes déconnecté et l'accès d'Embr à votre compte Twitch est révoqué. Vos favoris, réglages, historique de visionnage et caches sur cet appareil sont effacés, et Embr revient à son premier lancement. Cette action est irréversible."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se cerrará tu sesión y se revocará el acceso de Embr a tu cuenta de Twitch. Tus favoritos, ajustes, historial de reproducción y cachés en este dispositivo se borrarán y Embr volverá al primer inicio. Esta acción no se puede deshacer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrai disconnesso e l'accesso di Embr al tuo account Twitch verrà revocato. Preferiti, impostazioni, cronologia di visione e cache su questo dispositivo verranno cancellati e Embr tornerà al primo avvio. Questa azione non può essere annullata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログアウトし、EmbrによるTwitchアカウントへのアクセスを取り消します。このデバイス上のお気に入り、設定、視聴履歴、キャッシュは消去され、Embrは初回起動の状態に戻ります。この操作は取り消せません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그아웃되고 Embr의 Twitch 계정 접근 권한이 취소됩니다. 이 기기의 즐겨찾기, 설정, 시청 기록, 캐시가 삭제되며 Embr는 처음 실행 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这将使你退出登录，并撤销 Embr 对你 Twitch 账户的访问权限。此设备上的收藏、设置、观看记录和缓存将被清除，Embr 会恢复到首次启动状态。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這將使你登出，並撤銷 Embr 對你 Twitch 帳號的存取權限。此裝置上的最愛、設定、觀看紀錄和快取將被清除，Embr 會恢復到首次啟動狀態。此操作無法復原。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso encerra sua sessão e revoga o acesso do Embr à sua conta da Twitch. Seus favoritos, ajustes, histórico de exibição e caches neste dispositivo serão apagados e o Embr voltará ao primeiro uso. Esta ação não pode ser desfeita."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spowoduje to wylogowanie i cofnięcie dostępu Embr do Twojego konta Twitch. Ulubione, ustawienia, historia oglądania i pamięć podręczna na tym urządzeniu zostaną usunięte, a Embr wróci do pierwszego uruchomienia. Tej operacji nie można cofnąć."
           }
         }
       }

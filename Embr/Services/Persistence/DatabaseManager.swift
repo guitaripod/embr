@@ -182,6 +182,20 @@ final class DatabaseManager: Sendable {
         }
     }
 
+    /// Empties every table, favorites and custom commands included. The schema and migration
+    /// history stay, so the next launch opens a fresh, fully migrated store.
+    func eraseAllData() async {
+        await write { db in
+            let tables = try String.fetchAll(
+                db,
+                sql: "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'grdb_%'"
+            )
+            for table in tables {
+                try db.execute(sql: "DELETE FROM \(table.quotedDatabaseIdentifier)")
+            }
+        }
+    }
+
     func clearAccount() async {
         await write { db in
             try AccountRecord.deleteAll(db)

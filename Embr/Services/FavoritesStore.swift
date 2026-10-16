@@ -37,6 +37,11 @@ final class FavoritesStore {
         apply(starredWhileLoading + stored)
     }
 
+    func reset() {
+        isLoaded = false
+        apply([])
+    }
+
     func isFavorite(_ id: String) -> Bool {
         ids.contains(id)
     }

@@ -47,6 +47,20 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         AppLogger.shared.info("scene connected", category: .app)
     }
 
+    /// Returns the app to its first-run state after the user deleted their account: back to the
+    /// first tab with every pushed page closed, then onboarding over it. The stores were already
+    /// emptied by ``AppDataEraser``, which also cleared the onboarding flag.
+    func restartToFirstRun() {
+        guard let root else { return }
+        root.dismiss(animated: false)
+        root.tabs.forEach { ($0.viewController as? UINavigationController)?.popToRootViewController(animated: false) }
+        if let first = root.tabs.first {
+            root.selectedTab = first
+        }
+        window?.overrideUserInterfaceStyle = Self.interfaceStyle(for: SettingsStore.shared.current.theme)
+        presentOnboardingIfNeeded(over: root, then: [])
+    }
+
     private func observeThemeChanges(_ window: UIWindow) {
         SettingsStore.shared.changes
             .receive(on: DispatchQueue.main)

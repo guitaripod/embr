@@ -62,6 +62,38 @@ actor AuthService: AuthControlling {
         AppLogger.shared.info("logged out", category: .auth)
     }
 
+    /// Revokes the Twitch token, deletes the Keychain credentials and erases all on-device data.
+    /// Throws, with nothing erased, when the revoke fails so the user can retry.
+    func deleteAccount() async throws {
+        await ensureLoaded()
+        let accessToken = try await liveAccessToken()
+        let coordinator = AccountDeletionCoordinator(
+            store: store,
+            revoker: TwitchTokenRevoker(transport: transport, clientID: clientID),
+            erasers: [AppDataEraser()]
+        )
+        try await coordinator.deleteAccount(accessToken: accessToken)
+        credentials = nil
+        appToken = nil
+        cancelTokenTasks()
+        validateTask?.cancel()
+        validateTask = nil
+        publish(.anonymous)
+        AppLogger.shared.info("account deleted", category: .auth)
+    }
+
+    /// An expired access token cannot be revoked, so refresh first when the stored one is
+    /// about to lapse. Returns nil only when there is no valid session left to revoke; a transient
+    /// refresh failure is thrown so the deletion can be retried.
+    private func liveAccessToken() async throws -> String? {
+        guard credentials != nil else { return nil }
+        do {
+            return try await validAccessToken()
+        } catch APIError.unauthorized {
+            return nil
+        }
+    }
+
     private func wipePersonalData() async {
         await DatabaseManager.shared.wipePersonalData()
         await WatchHistoryStore.shared.clear()

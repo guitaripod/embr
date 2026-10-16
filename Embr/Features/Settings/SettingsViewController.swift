@@ -59,6 +59,7 @@ final class SettingsViewController: UIViewController {
 
         case accountStatus
         case accountAction
+        case deleteAccount
 
         case rateApp
         case shareApp
@@ -233,7 +234,7 @@ final class SettingsViewController: UIViewController {
             [.autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
             toSection: .video
         )
-        snapshot.appendItems([.accountStatus, .accountAction], toSection: .account)
+        snapshot.appendItems(accountRows(), toSection: .account)
         snapshot.appendItems(supportRows(), toSection: .support)
         snapshot.appendItems([.version, .github, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
         dataSource.apply(snapshot, animatingDifferences: false)
@@ -282,6 +283,8 @@ final class SettingsViewController: UIViewController {
 
     private func reconfigureAccountRows() {
         var snapshot = dataSource.snapshot()
+        snapshot.deleteItems(snapshot.itemIdentifiers(inSection: .account))
+        snapshot.appendItems(accountRows(), toSection: .account)
         snapshot.reconfigureItems([.accountStatus, .accountAction])
         dataSource.apply(snapshot, animatingDifferences: false)
     }
@@ -416,6 +419,12 @@ final class SettingsViewController: UIViewController {
                 content.text = String(localized: "Log In with Twitch")
                 content.textProperties.color = Theme.accent
             }
+            cell.contentConfiguration = content
+            cell.accessories = []
+
+        case .deleteAccount:
+            content.text = String(localized: "Delete Account")
+            content.textProperties.color = .systemRed
             cell.contentConfiguration = content
             cell.accessories = []
 
@@ -590,6 +599,7 @@ final class SettingsViewController: UIViewController {
         case .keepScreenAwake: spec = ("sun.max.fill", .systemYellow)
         case .accountStatus: spec = ("person.crop.circle.fill", Theme.accent)
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
+        case .deleteAccount: spec = ("person.crop.circle.badge.xmark", .systemRed)
         case .rateApp: spec = ("star.fill", .systemYellow)
         case .shareApp: spec = ("square.and.arrow.up.fill", .systemGreen)
         case let .tip(id): spec = (Self.tipSymbol(for: id), .systemOrange)
@@ -703,6 +713,52 @@ final class SettingsViewController: UIViewController {
         present(alert, animated: true)
     }
 
+    private func accountRows() -> [Row] {
+        switch authState {
+        case .authenticated: return [.accountStatus, .accountAction, .deleteAccount]
+        case .anonymous: return [.accountStatus, .accountAction]
+        }
+    }
+
+    private func confirmDeleteAccount() {
+        let alert = UIAlertController(
+            title: String(localized: "Delete Account?"),
+            message: String(localized: "This signs you out and revokes Embr's access to your Twitch account. Your favorites, settings, watch history and caches on this device are erased, and Embr returns to first launch. This can't be undone."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Delete Account"), style: .destructive) { [weak self] _ in
+            self?.performAccountDeletion()
+        })
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        present(alert, animated: true)
+    }
+
+    private func performAccountDeletion() {
+        view.isUserInteractionEnabled = false
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.auth.deleteAccount()
+                self.view.isUserInteractionEnabled = true
+                (self.view.window?.windowScene?.delegate as? SceneDelegate)?.restartToFirstRun()
+            } catch {
+                AppLogger.shared.warn("account deletion failed: \(error)", category: .auth)
+                self.view.isUserInteractionEnabled = true
+                self.presentDeletionFailure()
+            }
+        }
+    }
+
+    private func presentDeletionFailure() {
+        let alert = UIAlertController(
+            title: String(localized: "Couldn't Delete Account"),
+            message: String(localized: "Embr couldn't reach Twitch to revoke its access. Check your connection and try again. Nothing on this device was erased."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
+        present(alert, animated: true)
+    }
+
     private func login() {
         guard let anchor = view.window else { return }
         Task { [weak self] in
@@ -720,7 +776,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .accountAction, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
+        case .github, .accountAction, .deleteAccount, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
              .rateApp, .shareApp, .tip:
             return true
         case .tipsStatus:
@@ -738,6 +794,8 @@ extension SettingsViewController: UICollectionViewDelegate {
             openGitHub()
         case .accountAction:
             performAccountAction()
+        case .deleteAccount:
+            confirmDeleteAccount()
         case .mutedKeywords:
             navigationController?.pushViewController(MutedKeywordsViewController(), animated: true)
         case .blockedUsers:

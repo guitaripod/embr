@@ -30,6 +30,15 @@ final class SettingsStore {
         schedulePersist(next)
     }
 
+    func reset() {
+        pendingWrite?.cancel()
+        pendingWrite = nil
+        defaults.removeObject(forKey: key)
+        defaults.removeObject(forKey: "\(key).backup")
+        current = .default
+        changes.send(current)
+    }
+
     func flush() {
         pendingWrite?.cancel()
         pendingWrite = nil
