@@ -1,3 +1,7 @@
+export type SignQuery = (absoluteURI: string) => Promise<string>;
+
+const noSignature: SignQuery = async () => '';
+
 const STITCHED_AD_CLASS = 'twitch-stitched-ad';
 const STITCHED_AD_ID_PREFIX = 'stitched-ad-';
 
@@ -130,17 +134,32 @@ function resolveURI(uri: string, base: string): string {
   }
 }
 
-function proxied(absoluteURI: string, proxyBase: string | null): string {
-  return proxyBase === null ? absoluteURI : `${proxyBase}?src=${encodeURIComponent(absoluteURI)}`;
+async function proxied(
+  absoluteURI: string,
+  proxyBase: string | null,
+  signQuery: SignQuery,
+): Promise<string> {
+  if (proxyBase === null) return absoluteURI;
+  return `${proxyBase}?src=${encodeURIComponent(absoluteURI)}${await signQuery(absoluteURI)}`;
 }
 
 const URI_ATTR_TAGS = ['#EXT-X-MEDIA', '#EXT-X-MAP', '#EXT-X-KEY', '#EXT-X-PART', '#EXT-X-PRELOAD-HINT'];
 
-function rewriteUriAttribute(line: string, base: string, proxyBase: string | null): string {
-  return line.replace(/URI="([^"]*)"/g, (_full, uri: string) => {
-    const abs = resolveURI(uri, base);
-    return `URI="${proxied(abs, proxyBase)}"`;
-  });
+async function rewriteUriAttribute(
+  line: string,
+  base: string,
+  proxyBase: string | null,
+  signQuery: SignQuery,
+): Promise<string> {
+  let out = '';
+  let last = 0;
+  for (const match of line.matchAll(/URI="([^"]*)"/g)) {
+    const start = match.index ?? 0;
+    const rewritten = await proxied(resolveURI(match[1] ?? '', base), proxyBase, signQuery);
+    out += `${line.slice(last, start)}URI="${rewritten}"`;
+    last = start + match[0].length;
+  }
+  return out + line.slice(last);
 }
 
 /// Rewrites child playlist/segment references in an HLS playlist.
@@ -148,12 +167,19 @@ function rewriteUriAttribute(line: string, base: string, proxyBase: string | nul
 /// `base` resolves relative URIs to absolute upstream URLs. When `proxyBase` is a
 /// string, references are routed back through this worker's `/hls/proxy` endpoint
 /// (used for master playlists so each variant's media playlist gets ad-stripped).
+/// `signQuery` supplies the extra query string appended to each proxied reference
+/// (for example `&exp=…&sig=…`); it is unused when `proxyBase` is `null`.
 /// When `proxyBase` is `null`, references are only made absolute and point straight
 /// at Twitch's CDN (used for media playlists so binary segments download directly
 /// instead of being corrupted by a text-mode proxy round-trip).
 /// Handles bare URI lines, `#EXT-X-TWITCH-PREFETCH` targets, and `URI="..."`
 /// attributes on MEDIA/MAP/KEY/PART tags.
-export function rewriteUris(playlist: string, base: string, proxyBase: string | null): string {
+export async function rewriteUris(
+  playlist: string,
+  base: string,
+  proxyBase: string | null,
+  signQuery: SignQuery = noSignature,
+): Promise<string> {
   const lines = playlist.split('\n');
   const out: string[] = [];
 
@@ -168,12 +194,12 @@ export function rewriteUris(playlist: string, base: string, proxyBase: string | 
     if (line.startsWith('#EXT-X-TWITCH-PREFETCH:')) {
       const uri = line.slice('#EXT-X-TWITCH-PREFETCH:'.length).trim();
       const abs = resolveURI(uri, base);
-      out.push(`#EXT-X-TWITCH-PREFETCH:${proxied(abs, proxyBase)}`);
+      out.push(`#EXT-X-TWITCH-PREFETCH:${await proxied(abs, proxyBase, signQuery)}`);
       continue;
     }
 
     if (URI_ATTR_TAGS.some((tag) => line.startsWith(tag))) {
-      out.push(rewriteUriAttribute(line, base, proxyBase));
+      out.push(await rewriteUriAttribute(line, base, proxyBase, signQuery));
       continue;
     }
 
@@ -183,7 +209,7 @@ export function rewriteUris(playlist: string, base: string, proxyBase: string | 
     }
 
     const abs = resolveURI(line.trim(), base);
-    out.push(proxied(abs, proxyBase));
+    out.push(await proxied(abs, proxyBase, signQuery));
   }
 
   return out.join('\n');

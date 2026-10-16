@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import app from '../src/index';
 import type { Bindings } from '../src/types';
+import { nowSeconds, PROXY_SIGNATURE_TTL_SECONDS, signProxySrc } from '../src/proxy-signing';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -777,6 +778,143 @@ describe('GET /hls/proxy', () => {
     const text = await res.text();
     const variantAbs = 'https://video-weaver.example/720.m3u8';
     expect(text).toContain(`http://embr.test/hls/proxy?src=${encodeURIComponent(variantAbs)}`);
+  });
+});
+
+describe('GET /hls/proxy with HLS_SIGNING_KEY', () => {
+  const KEY = 'test-hls-signing-key';
+  const LIVE_MASTER = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+  const VOD_VARIANT = 'https://d2nvs31859zcd8.cloudfront.net/vod/chunked/0.m3u8';
+  const MASTER = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8';
+
+  function signedEnv(): Bindings {
+    return { ...makeEnv(), HLS_SIGNING_KEY: KEY };
+  }
+
+  async function signedQuery(src: string, now = nowSeconds(), key = KEY): Promise<{ exp: number; sig: string; query: string }> {
+    const { exp, sig } = await signProxySrc(key, src, now);
+    return { exp, sig, query: `src=${encodeURIComponent(src)}&exp=${exp}&sig=${sig}` };
+  }
+
+  async function proxyRequest(query: string): Promise<Response> {
+    return app.request(`http://embr.test/hls/proxy?${query}`, {}, signedEnv());
+  }
+
+  it('rejects a foreign cloudfront host without a signature', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => textResponse('#EXTM3U'));
+    vi.stubGlobal('fetch', fetchMock);
+    const src = 'https://d9attacker0x.cloudfront.net/steal.m3u8';
+    const res = await proxyRequest(`src=${encodeURIComponent(src)}`);
+    expect(res.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unsigned Twitch host once signing is enabled', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => textResponse(MASTER));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await proxyRequest(`src=${encodeURIComponent(LIVE_MASTER)}`);
+    expect(res.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('proxies a signed cloudfront VOD media playlist', async () => {
+    const media = '#EXTM3U\n#EXT-X-TARGETDURATION:2\n#EXTINF:2.0,\nseg0.ts';
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(media)));
+    const { query } = await signedQuery(VOD_VARIANT);
+    const res = await proxyRequest(query);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('https://d2nvs31859zcd8.cloudfront.net/vod/chunked/seg0.ts');
+  });
+
+  it('signs each variant a master playlist routes back through the proxy, and those variants proxy', async () => {
+    const variant = 'https://video-weaver.hel01.hls.ttvnw.net/v1/playlist/abc.m3u8';
+    const master = `#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000\n${variant}`;
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(master)));
+    const { query } = await signedQuery(LIVE_MASTER);
+    const res = await proxyRequest(query);
+    const text = await res.text();
+    const variantPath = text.split('\n').find((line) => line.startsWith('http://embr.test/hls/proxy?')) ?? '';
+    const variantSearch = new URL(variantPath).search;
+    expect(new URL(variantPath).searchParams.get('src')).toBe(variant);
+    expect(variantSearch).toMatch(/&exp=\d+&sig=[0-9a-f]{64}$/);
+
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse('#EXTM3U\n#EXTINF:2.0,\nseg0.ts')));
+    const variantRes = await proxyRequest(variantSearch.slice(1));
+    expect(variantRes.status).toBe(200);
+  });
+
+  it('serves a playback url that plays end to end when signing is enabled', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('gql.twitch.tv/gql')) {
+          return jsonResponse({ data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig123' } } });
+        }
+        if (url.includes('usher.ttvnw.net')) return textResponse(MASTER);
+        throw new Error(`unexpected fetch ${url}`);
+      }),
+    );
+
+    const playback = await app.request('http://embr.test/playback/somechannel', {}, signedEnv());
+    expect(playback.status).toBe(200);
+    const body = (await playback.json()) as { url: string };
+    const playbackURL = new URL(body.url);
+    expect(playbackURL.searchParams.get('exp')).toMatch(/^\d+$/);
+    expect(playbackURL.searchParams.get('sig')).toMatch(/^[0-9a-f]{64}$/);
+
+    const res = await app.request(body.url, {}, signedEnv());
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('&sig=');
+  });
+
+  it('rejects a tampered signature', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(MASTER)));
+    const { query } = await signedQuery(LIVE_MASTER);
+    const tampered = query.replace(/.$/, (c) => (c === '0' ? '1' : '0'));
+    expect((await proxyRequest(tampered)).status).toBe(403);
+  });
+
+  it('rejects a changed expiry because the signature covers exp', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(MASTER)));
+    const { exp, sig } = await signedQuery(LIVE_MASTER);
+    const extended = `src=${encodeURIComponent(LIVE_MASTER)}&exp=${exp - 1}&sig=${sig}`;
+    expect((await proxyRequest(extended)).status).toBe(403);
+  });
+
+  it('rejects a signature replayed against a different src', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fetchMock = vi.fn(async () => textResponse(MASTER));
+    vi.stubGlobal('fetch', fetchMock);
+    const { exp, sig } = await signedQuery(LIVE_MASTER);
+    const other = 'https://video-weaver.hel01.hls.ttvnw.net/v1/playlist/abc.m3u8';
+    expect((await proxyRequest(`src=${encodeURIComponent(other)}&exp=${exp}&sig=${sig}`)).status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an expired signature', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(MASTER)));
+    const stale = nowSeconds() - PROXY_SIGNATURE_TTL_SECONDS - 60;
+    const { query } = await signedQuery(LIVE_MASTER, stale);
+    expect((await proxyRequest(query)).status).toBe(403);
+  });
+
+  it('rejects a signature minted with a different key', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(MASTER)));
+    const { query } = await signedQuery(LIVE_MASTER, nowSeconds(), 'some-other-key');
+    expect((await proxyRequest(query)).status).toBe(403);
+  });
+
+  it('keeps unsigned proxying when HLS_SIGNING_KEY is unset', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(MASTER)));
+    const res = await app.request(`http://embr.test/hls/proxy?src=${encodeURIComponent(LIVE_MASTER)}`, {}, makeEnv());
+    expect(res.status).toBe(200);
   });
 });
 

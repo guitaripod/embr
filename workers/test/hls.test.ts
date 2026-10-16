@@ -187,46 +187,46 @@ describe('rewriteUris', () => {
   const base = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
   const proxyBase = 'https://embr.example.workers.dev/hls/proxy';
 
-  it('rewrites bare variant URIs through the proxy as absolute URLs', () => {
+  it('rewrites bare variant URIs through the proxy as absolute URLs', async () => {
     const master = [
       '#EXTM3U',
       '#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=1280x720',
       'https://video-weaver.example/720p.m3u8',
     ].join('\n');
 
-    const out = rewriteUris(master, base, proxyBase);
+    const out = await rewriteUris(master, base, proxyBase);
     const expected = `${proxyBase}?src=${encodeURIComponent('https://video-weaver.example/720p.m3u8')}`;
     expect(out).toContain(expected);
     expect(out).toContain('#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=1280x720');
   });
 
-  it('resolves relative segment URIs against the base before proxying', () => {
+  it('resolves relative segment URIs against the base before proxying', async () => {
     const media = [
       '#EXTM3U',
       '#EXTINF:2.0,live',
       'seg0.ts',
     ].join('\n');
 
-    const out = rewriteUris(media, base, proxyBase);
+    const out = await rewriteUris(media, base, proxyBase);
     const abs = 'https://usher.ttvnw.net/api/channel/hls/seg0.ts';
     expect(out).toContain(`${proxyBase}?src=${encodeURIComponent(abs)}`);
   });
 
-  it('rewrites EXT-X-TWITCH-PREFETCH targets through the proxy', () => {
+  it('rewrites EXT-X-TWITCH-PREFETCH targets through the proxy', async () => {
     const media = '#EXTM3U\n#EXT-X-TWITCH-PREFETCH:https://video.example/p.ts';
-    const out = rewriteUris(media, base, proxyBase);
+    const out = await rewriteUris(media, base, proxyBase);
     const abs = 'https://video.example/p.ts';
     expect(out).toContain(`#EXT-X-TWITCH-PREFETCH:${proxyBase}?src=${encodeURIComponent(abs)}`);
   });
 
-  it('rewrites URI attributes on MAP/MEDIA tags', () => {
+  it('rewrites URI attributes on MAP/MEDIA tags', async () => {
     const media = '#EXTM3U\n#EXT-X-MAP:URI="init.mp4"\n#EXTINF:2.0,\nseg.ts';
-    const out = rewriteUris(media, base, proxyBase);
+    const out = await rewriteUris(media, base, proxyBase);
     const abs = 'https://usher.ttvnw.net/api/channel/hls/init.mp4';
     expect(out).toContain(`URI="${proxyBase}?src=${encodeURIComponent(abs)}"`);
   });
 
-  it('absolutizes media-playlist segments without proxying when proxyBase is null', () => {
+  it('absolutizes media-playlist segments without proxying when proxyBase is null', async () => {
     const media = [
       '#EXTM3U',
       '#EXT-X-MAP:URI="init.mp4"',
@@ -235,10 +235,23 @@ describe('rewriteUris', () => {
       '#EXT-X-TWITCH-PREFETCH:https://video.example/p.ts',
     ].join('\n');
 
-    const out = rewriteUris(media, base, null);
+    const out = await rewriteUris(media, base, null);
     expect(out).toContain('https://usher.ttvnw.net/api/channel/hls/seg0.ts');
     expect(out).toContain('URI="https://usher.ttvnw.net/api/channel/hls/init.mp4"');
     expect(out).toContain('#EXT-X-TWITCH-PREFETCH:https://video.example/p.ts');
     expect(out).not.toContain('/hls/proxy');
+  });
+
+  it('appends the signature query to every proxied reference', async () => {
+    const master = [
+      '#EXTM3U',
+      '#EXT-X-STREAM-INF:BANDWIDTH=1000000,RESOLUTION=1280x720',
+      'https://video-weaver.example/720p.m3u8',
+    ].join('\n');
+    const signQuery = async (abs: string) => `&exp=123&sig=${abs.length}`;
+
+    const out = await rewriteUris(master, base, proxyBase, signQuery);
+    const src = encodeURIComponent('https://video-weaver.example/720p.m3u8');
+    expect(out).toContain(`${proxyBase}?src=${src}&exp=123&sig=${'https://video-weaver.example/720p.m3u8'.length}`);
   });
 });

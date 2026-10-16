@@ -30,6 +30,7 @@ import {
   validateToken,
 } from './twitch';
 import { isMediaPlaylist, rewriteUris, stripAds } from './hls';
+import { isValidProxySignature, nowSeconds, signProxySrc } from './proxy-signing';
 import { embedPage } from './embed';
 import { privacyPage, termsPage } from './legal';
 
@@ -228,14 +229,27 @@ async function fetchUpstream(url: string, timeoutMs: number, label: string): Pro
   }
 }
 
-async function playbackResponse(c: { req: { url: string } }, usher: string): Promise<Response> {
+async function signedProxyQuery(env: Bindings, src: string): Promise<string> {
+  if (!env.HLS_SIGNING_KEY) return '';
+  const { exp, sig } = await signProxySrc(env.HLS_SIGNING_KEY, src, nowSeconds());
+  return `&exp=${exp}&sig=${sig}`;
+}
+
+async function proxySrcAuthorized(env: Bindings, src: string, exp: string | undefined, sig: string | undefined): Promise<boolean> {
+  if (!env.HLS_SIGNING_KEY) return true;
+  return isValidProxySignature(env.HLS_SIGNING_KEY, src, exp ?? null, sig ?? null, nowSeconds());
+}
+
+async function playbackResponse(c: { req: { url: string }; env: Bindings }, usher: string): Promise<Response> {
   const check = await fetchUpstream(usher, 5000, 'usher preflight');
   await check.body?.cancel();
   if (!check.ok) {
     return fail(check.status === 404 ? 404 : 502, `stream unavailable (${check.status})`);
   }
   const { proxyBase } = proxyURLFor(c);
-  const response: PlaybackResponse = { url: `${proxyBase}?src=${encodeURIComponent(usher)}` };
+  const response: PlaybackResponse = {
+    url: `${proxyBase}?src=${encodeURIComponent(usher)}${await signedProxyQuery(c.env, usher)}`,
+  };
   const expiresAt = expiresFromUsher(usher);
   if (expiresAt !== undefined) response.expiresAt = expiresAt;
   return new Response(JSON.stringify(response), {
@@ -351,6 +365,10 @@ app.get('/hls/proxy', async (c) => {
     console.error(`hls proxy rejected host: ${target.hostname}`);
     return fail(403, 'src host not allowed');
   }
+  if (!(await proxySrcAuthorized(c.env, src, c.req.query('exp'), c.req.query('sig')))) {
+    console.error(`hls proxy rejected signature for host: ${target.hostname}`);
+    return fail(403, 'src signature missing, invalid or expired');
+  }
   try {
     const upstream = await fetchUpstream(target.toString(), 8000, 'hls proxy upstream');
     if (!upstream.ok) {
@@ -363,9 +381,9 @@ app.get('/hls/proxy', async (c) => {
     if (isMediaPlaylist(text)) {
       const stripped = stripAds(text);
       const safe = stripped.includes('#EXTINF') ? stripped : text;
-      playlist = rewriteUris(safe, target.toString(), null);
+      playlist = await rewriteUris(safe, target.toString(), null);
     } else {
-      playlist = rewriteUris(text, target.toString(), proxyBase);
+      playlist = await rewriteUris(text, target.toString(), proxyBase, (abs) => signedProxyQuery(c.env, abs));
     }
 
     return new Response(playlist, {

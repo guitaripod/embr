@@ -5,6 +5,10 @@ export interface Bindings {
   /// Optional. When set (via `wrangler secret put REPORTS_ADMIN_TOKEN`), enables the
   /// authenticated `GET /reports` review endpoint. Absent = endpoint disabled (404).
   REPORTS_ADMIN_TOKEN?: string;
+  /// Optional. HMAC-SHA256 key (`wrangler secret put HLS_SIGNING_KEY`) that signs every `/hls/proxy`
+  /// URL the worker emits. Set = `/hls/proxy` rejects any `src` without an unexpired signature.
+  /// Absent = unsigned proxying, the behaviour before signing, so deploy order cannot break playback.
+  HLS_SIGNING_KEY?: string;
 }
 
 export interface TokenResponse {
