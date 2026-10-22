@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import Network
+import MidgarCore
 
 /// App-wide connectivity awareness. Publishes a one-shot signal each time the
 /// network transitions from offline → online, so subsystems can proactively
@@ -32,7 +33,7 @@ final class NetworkMonitor {
         guard online != isOnline else { return }
         let wasOffline = !isOnline
         isOnline = online
-        AppLogger.shared.info("network \(online ? "online" : "offline")", category: .app)
+        MidgarLog.info("network \(online ? "online" : "offline")", category: .app)
         if online && wasOffline {
             restored.send(())
         }

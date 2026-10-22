@@ -11,8 +11,9 @@ enum DemoTransport {
         if url.host == "api.twitch.tv", path.hasPrefix("/helix/") {
             return helix(String(path.dropFirst("/helix/".count)), query: Query(url: url), request: request)
         }
-        if url.host == Configuration.current.workerBaseURL.host {
-            return worker(path: path)
+        let mount = Configuration.current.workerBaseURL
+        if url.host == mount.host, path.hasPrefix(mount.path) {
+            return worker(path: String(path.dropFirst(mount.path.count)))
         }
         return notFound()
     }

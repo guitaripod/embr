@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class FollowingViewController: UIViewController {
@@ -314,7 +315,7 @@ final class FollowingViewController: UIViewController {
 
     private func connectTwitch() {
         guard let anchor = view.window else {
-            AppLogger.shared.warn("following login: no window anchor available", category: .auth)
+            MidgarLog.notice("following login: no window anchor available", category: .auth)
             return
         }
         signInView.setActionEnabled(false)
@@ -322,16 +323,16 @@ final class FollowingViewController: UIViewController {
             guard let self else { return }
             do {
                 let user = try await self.auth.login(presentationAnchor: anchor)
-                AppLogger.shared.info("following login succeeded for \(user.login)", category: .auth)
+                MidgarLog.info("following login succeeded for \(user.login)", category: .auth)
                 self.signInView.isHidden = true
                 self.signInView.setActionEnabled(true)
                 self.bootstrap()
                 LiveAlertsPrompt.offerAfterSignIn(from: self)
             } catch APIError.cancelled {
-                AppLogger.shared.info("following login cancelled by user", category: .auth)
+                MidgarLog.info("following login cancelled by user", category: .auth)
                 self.signInView.setActionEnabled(true)
             } catch {
-                AppLogger.shared.warn("following login failed: \(error)", category: .auth)
+                MidgarLog.notice("following login failed: \(error)", category: .auth)
                 self.signInView.setActionEnabled(true)
                 self.presentLoginError()
             }

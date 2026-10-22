@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 /// Reads the Worker's `/config` switches at launch and on every return to the foreground, and
 /// remembers the last answer so a cold start offline still honours it. Playback asks this
@@ -21,7 +22,7 @@ final class RemoteConfigService {
     private static let minimumFetchInterval: TimeInterval = 300
 
     init(
-        transport: HTTPTransport = URLSessionTransport.shared,
+        transport: HTTPTransport = MidgarGatewayTransport.shared,
         endpoints: WorkerEndpoints = WorkerEndpoints(baseURL: Configuration.current.workerBaseURL),
         defaults: UserDefaults = .standard
     ) {
@@ -55,7 +56,7 @@ final class RemoteConfigService {
                   let config = try? WorkerEndpoints.decodeAppConfig(response.body) else { return }
             self.lastFetchAt = Date()
             if config != self.current {
-                AppLogger.shared.info("remote config: live playback -> \(config.livePlayback.rawValue)", category: .playback)
+                MidgarLog.info("remote config: live playback -> \(config.livePlayback.rawValue)", category: .playback)
             }
             self.current = config
             self.defaults.set(response.body, forKey: Self.cacheKey)

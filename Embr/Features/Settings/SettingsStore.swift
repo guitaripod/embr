@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class SettingsStore {
@@ -12,7 +13,6 @@ final class SettingsStore {
 
     private let defaults: UserDefaults
     private let key = "settings"
-    private let logger = AppLogger.shared
     private var pendingWrite: DispatchWorkItem?
     private let writeDelay: TimeInterval = 0.5
 
@@ -59,7 +59,7 @@ final class SettingsStore {
             let data = try JSONEncoder().encode(settings)
             defaults.set(data, forKey: key)
         } catch {
-            logger.error("failed to persist settings: \(error)", category: .persistence)
+            MidgarLog.error("failed to persist settings: \(error)", category: .persistence)
         }
     }
 
@@ -68,7 +68,7 @@ final class SettingsStore {
         do {
             return try JSONDecoder().decode(Settings.self, from: data)
         } catch {
-            AppLogger.shared.error("failed to decode settings, preserving raw blob under \(key).backup: \(error)", category: .persistence)
+            MidgarLog.error("failed to decode settings, preserving raw blob under \(key).backup: \(error)", category: .persistence)
             defaults.set(data, forKey: "\(key).backup")
             return .default
         }

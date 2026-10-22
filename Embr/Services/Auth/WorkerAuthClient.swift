@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 final class WorkerAuthClient: Sendable {
     static let shared = WorkerAuthClient()
@@ -8,7 +9,7 @@ final class WorkerAuthClient: Sendable {
     private let endpoints: WorkerEndpoints
 
     init(
-        transport: HTTPTransport = URLSessionTransport.shared,
+        transport: HTTPTransport = MidgarGatewayTransport.shared,
         endpoints: WorkerEndpoints = WorkerEndpoints(baseURL: Configuration.current.workerBaseURL)
     ) {
         self.transport = transport
@@ -55,7 +56,7 @@ final class WorkerAuthClient: Sendable {
         let response = try await transport.send(request)
         guard response.isSuccess else {
             if let error = try? decode(WorkerAPI.ErrorResponse.self, from: response.body) {
-                AppLogger.shared.warn("worker auth \(response.status): \(error.error)", category: .auth)
+                MidgarLog.notice("worker auth \(response.status): \(error.error)", category: .auth)
             }
             throw APIError.from(status: response.status, rateLimitReset: response.rateLimit?.resetAt)
         }

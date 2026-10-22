@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 final class TwitchAPIClient: TwitchAPIProviding {
     static let shared = TwitchAPIClient()
@@ -7,7 +8,6 @@ final class TwitchAPIClient: TwitchAPIProviding {
     private let transport: HTTPTransport
     private let auth: AuthControlling
     private let factory: HelixRequestFactory
-    private let logger = AppLogger.shared
 
     init(
         transport: HTTPTransport = URLSessionTransport.shared,
@@ -210,7 +210,7 @@ final class TwitchAPIClient: TwitchAPIProviding {
 
     private func mappedError(_ response: HTTPResponse) -> APIError {
         let error = APIError.from(status: response.status, rateLimitReset: response.rateLimit?.resetAt)
-        logger.error("Helix \(response.status): \(error)", category: .api)
+        MidgarLog.error("Helix \(response.status): \(error)", category: .api)
         return error
     }
 

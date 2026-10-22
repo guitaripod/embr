@@ -1,12 +1,12 @@
 import Foundation
 import GRDB
 import EmbrCore
+import MidgarCore
 
 final class DatabaseManager: Sendable {
     static let shared = DatabaseManager()
 
     private let queue: DatabaseQueue
-    private let logger = AppLogger.shared
     private let recentEmoteCap = 48
 
     init(queue: DatabaseQueue? = nil) {
@@ -18,7 +18,7 @@ final class DatabaseManager: Sendable {
         do {
             try Self.migrator.migrate(self.queue)
         } catch {
-            AppLogger.shared.error("database migration failed: \(error)", category: .persistence)
+            MidgarLog.error("database migration failed: \(error)", category: .persistence)
         }
     }
 
@@ -34,7 +34,7 @@ final class DatabaseManager: Sendable {
             let url = support.appendingPathComponent("embr.sqlite")
             return try DatabaseQueue(path: url.path)
         } catch {
-            AppLogger.shared.error("failed to open database, using in-memory: \(error)", category: .persistence)
+            MidgarLog.error("failed to open database, using in-memory: \(error)", category: .persistence)
             return try! DatabaseQueue()
         }
     }
@@ -207,7 +207,7 @@ final class DatabaseManager: Sendable {
         do {
             return try await queue.write(body)
         } catch {
-            logger.error("database write failed: \(error)", category: .persistence)
+            MidgarLog.error("database write failed: \(error)", category: .persistence)
             return nil
         }
     }
@@ -216,7 +216,7 @@ final class DatabaseManager: Sendable {
         do {
             return try await queue.read(body)
         } catch {
-            logger.error("database read failed: \(error)", category: .persistence)
+            MidgarLog.error("database read failed: \(error)", category: .persistence)
             return nil
         }
     }

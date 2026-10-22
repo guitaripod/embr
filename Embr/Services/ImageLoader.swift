@@ -2,11 +2,14 @@ import UIKit
 import EmbrCore
 import SDWebImage
 import SDWebImageWebPCoder
+import MidgarCore
 
 final class ImageLoader: ImageLoading {
     static let shared = ImageLoader()
 
+    /// SDWebImage documents its manager and prefetcher as safe to call from any queue; they are never reassigned.
     nonisolated(unsafe) private let manager: SDWebImageManager
+    /// See `manager`.
     nonisolated(unsafe) private let prefetcher: SDWebImagePrefetcher
 
     init(manager: SDWebImageManager = .shared, prefetcher: SDWebImagePrefetcher = .shared) {
@@ -54,7 +57,7 @@ final class ImageLoader: ImageLoading {
                 progress: nil
             ) { image, _, error, _, _, _ in
                 if let error {
-                    AppLogger.shared.debug("Image load failed for \(url): \(error)", category: .ui)
+                    MidgarLog.debug("Image load failed for \(url): \(error)", category: .ui)
                 }
                 continuation.resume(returning: image)
             }

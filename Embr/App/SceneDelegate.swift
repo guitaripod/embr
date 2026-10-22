@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -35,7 +36,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             ScreenshotRouter.requestLandscape(from: tabBar, after: OrientationCoordinator.isPhone ? 3.5 : 0)
         }
         if ScreenshotRouter.handle(tabBar, deepLinks: router) {
-            AppLogger.shared.info("scene connected (screenshot route)", category: .app)
+            MidgarLog.info("scene connected (screenshot route)", category: .app)
             return
         }
         #endif
@@ -44,7 +45,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if !presentOnboardingIfNeeded(over: tabBar, then: pending) {
             handle(pending)
         }
-        AppLogger.shared.info("scene connected", category: .app)
+        MidgarLog.info("scene connected", category: .app)
     }
 
     /// Returns the app to its first-run state after the user deleted their account: back to the

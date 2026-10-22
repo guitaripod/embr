@@ -2,6 +2,7 @@ import Foundation
 import UserNotifications
 import SDWebImage
 import EmbrCore
+import MidgarCore
 
 /// Erases everything Embr keeps on this device: the GRDB store, the in-memory stores that
 /// mirror it, every UserDefaults key, pending and delivered notifications, and the image and
@@ -13,7 +14,7 @@ struct AppDataEraser: LocalDataErasing {
         clearDefaults()
         clearNotifications()
         await clearCaches()
-        AppLogger.shared.info("erased all on-device data", category: .persistence)
+        MidgarLog.info("erased all on-device data", category: .persistence)
     }
 
     @MainActor

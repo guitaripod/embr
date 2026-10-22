@@ -139,7 +139,7 @@ enum ScreenshotRouter {
             tabBar.select(.settings)
             after(0.8) {
                 guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
-                Midgar.present(from: top)
+                Midgar.present(from: top, config: EmbrMidgar.shared.portalConfig)
             }
         case "profile":
             openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
@@ -176,7 +176,7 @@ enum ScreenshotRouter {
             guard let scene = tabBar?.view.window?.windowScene else { return }
             OrientationCoordinator.phoneMask = [.portrait, .landscapeLeft, .landscapeRight]
             OrientationCoordinator.rotate(scene, to: .landscapeRight) { error in
-                AppLogger.shared.warn("screenshot rotation refused: \(error.localizedDescription)", category: .app)
+                MidgarLog.notice("screenshot rotation refused: \(error.localizedDescription)", category: .app)
             }
         }
     }

@@ -3,6 +3,7 @@ import Combine
 import MediaPlayer
 import UIKit
 import EmbrCore
+import MidgarCore
 
 enum VideoSource: Sendable, Equatable {
     case live(login: String)
@@ -22,48 +23,47 @@ final class VideoViewController: UIViewController {
     /// The hosting page's current fullscreen state, restored when Picture in Picture ends.
     var hostImmersiveState: (() -> Bool)?
 
-    private let source: VideoSource
-    private var player: VideoPlaying
+    let source: VideoSource
+    var player: VideoPlaying
     private let resolver: PlaybackResolving
-    private let logger: AppLogger
     private let store: SettingsStore
-    private let imageLoader: ImageLoading
+    let imageLoader: ImageLoading
     private let feedback = UIImpactFeedbackGenerator(style: .medium)
 
-    private let overlay = VideoOverlayView()
+    let overlay = VideoOverlayView()
     private var cancellables = Set<AnyCancellable>()
     private var playerCancellables = Set<AnyCancellable>()
     private var triedWebFallback = false
     private var resolveTask: Task<Void, Never>?
 
-    private var currentState: VideoState = .idle
-    private var isImmersive = false
+    var currentState: VideoState = .idle
+    var isImmersive = false
     private var isResolving = false
     private var resolveGeneration = 0
-    private(set) var isMuted = false
-    private var lastProgress: PlaybackProgress = .empty
-    private var currentRate: Float = 1.0
+    var isMuted = false
+    var lastProgress: PlaybackProgress = .empty
+    var currentRate: Float = 1.0
     private var adActive = false
     private var adGraceWork: DispatchWorkItem?
 
-    private var recoveryAttempts = 0
+    var recoveryAttempts = 0
     private var recoveryWork: DispatchWorkItem?
     private var stallWork: DispatchWorkItem?
     private var stableWork: DispatchWorkItem?
     private var refreshWork: DispatchWorkItem?
-    private var resumeTarget: TimeInterval?
+    var resumeTarget: TimeInterval?
     private var seekLiveOnReady = false
-    private var showingError = false
-    private var didTeardownPlayer = false
-    private let nowPlaying = NowPlayingCoordinator()
-    private var nowPlayingTitle: String?
-    private var nowPlayingChannelName: String?
-    private var nowPlayingArtwork: MPMediaItemArtwork?
-    private var artworkURL: URL?
+    var showingError = false
+    var didTeardownPlayer = false
+    let nowPlaying = NowPlayingCoordinator()
+    var nowPlayingTitle: String?
+    var nowPlayingChannelName: String?
+    var nowPlayingArtwork: MPMediaItemArtwork?
+    var artworkURL: URL?
     private(set) var isAudioOnly = false
     private static let maxRecoveryAttempts = 6
 
-    private var isSeekableSource: Bool {
+    var isSeekableSource: Bool {
         switch source {
         case .live: return false
         case .vod, .clip: return true
@@ -76,7 +76,7 @@ final class VideoViewController: UIViewController {
     }
 
     private var dragStartCenter: CGPoint = .zero
-    private lazy var swipeDown = UIPanGestureRecognizer(target: self, action: #selector(handleSwipeDown(_:)))
+    lazy var swipeDown = UIPanGestureRecognizer(target: self, action: #selector(handleSwipeDown(_:)))
 
     private var streamActive: Bool
 
@@ -84,7 +84,6 @@ final class VideoViewController: UIViewController {
         source: VideoSource,
         player: VideoPlaying = VideoViewController.makeDefaultPlayer(),
         resolver: PlaybackResolving = PlaybackResolver.shared,
-        logger: AppLogger = .shared,
         store: SettingsStore = .shared,
         imageLoader: ImageLoading = ImageLoader.shared,
         active: Bool = true
@@ -92,7 +91,6 @@ final class VideoViewController: UIViewController {
         self.source = source
         self.player = player
         self.resolver = resolver
-        self.logger = logger
         self.store = store
         self.imageLoader = imageLoader
         self.streamActive = active
@@ -129,8 +127,8 @@ final class VideoViewController: UIViewController {
         startPlayback()
     }
 
-    private var isPiPActive = false
-    private var pendingAudioOnlyOnPiPStop = false
+    var isPiPActive = false
+    var pendingAudioOnlyOnPiPStop = false
 
     private func observeLifecycle() {
         NotificationCenter.default.addObserver(
@@ -148,7 +146,7 @@ final class VideoViewController: UIViewController {
         NetworkMonitor.shared.restored
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.logger.info("network restored, recovering playback", category: .playback)
+                MidgarLog.info("network restored, recovering playback", category: .playback)
                 self?.handleForeground()
             }
             .store(in: &cancellables)
@@ -323,7 +321,7 @@ final class VideoViewController: UIViewController {
         view.window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         let target: UIInterfaceOrientationMask = goFullscreen ? .landscapeRight : .portrait
         OrientationCoordinator.rotate(scene, to: target) { error in
-            AppLogger.shared.warn("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
+            MidgarLog.notice("fullscreen rotate failed: \(error.localizedDescription)", category: .ui)
         }
     }
 
@@ -347,7 +345,7 @@ final class VideoViewController: UIViewController {
         }
     }
 
-    private var restoredStandaloneImmersiveState: Bool {
+    var restoredStandaloneImmersiveState: Bool {
         guard !usesTabletLayout else { return isStandaloneFullscreen }
         return OrientationCoordinator.isLandscape(view.window?.windowScene)
     }
@@ -372,7 +370,7 @@ final class VideoViewController: UIViewController {
         videoOverlayDidTapMute(overlay)
     }
 
-    private func presentSpeedPicker(from sourceView: UIView) {
+    func presentSpeedPicker(from sourceView: UIView) {
         let rates: [Float] = [0.5, 1.0, 1.25, 1.5, 2.0]
         let sheet = UIAlertController(title: String(localized: "Playback Speed"), message: nil, preferredStyle: .actionSheet)
         for rate in rates {
@@ -475,7 +473,7 @@ final class VideoViewController: UIViewController {
         triedWebFallback = true
         recoveryAttempts = 0
         cancelRecoveryTimers()
-        logger.info("HLS recovery exhausted — falling back to web player", category: .playback)
+        MidgarLog.info("HLS recovery exhausted — falling back to web player", category: .playback)
         installWebPlayer()
         resolveAndLoad()
     }
@@ -485,7 +483,7 @@ final class VideoViewController: UIViewController {
     private func startPlayback() {
         if case .live = source, RemoteConfigService.shared.startsLiveInEmbed, !(player is WebViewPlayer) {
             triedWebFallback = true
-            logger.info("remote config routes live playback to the web player", category: .playback)
+            MidgarLog.info("remote config routes live playback to the web player", category: .playback)
             installWebPlayer()
         }
         guard streamActive else { return }
@@ -526,7 +524,7 @@ final class VideoViewController: UIViewController {
                 adActive = true
                 player.setMuted(true)
                 overlay.setMuted(true)
-                logger.info("ad break started", category: .playback)
+                MidgarLog.info("ad break started", category: .playback)
             }
         } else if adActive, adGraceWork == nil {
             let work = DispatchWorkItem { [weak self] in self?.endAdSession() }
@@ -542,7 +540,7 @@ final class VideoViewController: UIViewController {
         overlay.updateAdCountdown(nil)
         player.setMuted(isMuted)
         overlay.setMuted(isMuted)
-        logger.info("ad break ended", category: .playback)
+        MidgarLog.info("ad break ended", category: .playback)
         if case .live = source { player.seekToLive() }
     }
 
@@ -600,37 +598,11 @@ final class VideoViewController: UIViewController {
             cancelRecoveryTimers()
             recoveryAttempts = 0
             showingError = true
-            logger.info("live source ended — presenting offline notice", category: .playback)
+            MidgarLog.info("live source ended — presenting offline notice", category: .playback)
             overlay.showEnded(String(localized: "\(login) is offline."), symbol: "tv.slash")
         case .vod, .clip:
             break
         }
-    }
-
-    func setNowPlayingMetadata(title: String?, channelName: String?, avatarURL: URL? = nil) {
-        nowPlayingTitle = title
-        nowPlayingChannelName = channelName
-        updateNowPlaying()
-        loadArtworkIfNeeded(avatarURL)
-    }
-
-    private func loadArtworkIfNeeded(_ url: URL?) {
-        guard let url, url != artworkURL else { return }
-        artworkURL = url
-        Task { [weak self, imageLoader] in
-            let image = await imageLoader.image(for: url, targetScale: 2.0)
-            guard let self, self.artworkURL == url else { return }
-            guard let image else {
-                self.artworkURL = nil
-                return
-            }
-            self.nowPlayingArtwork = Self.makeArtwork(image)
-            self.updateNowPlaying()
-        }
-    }
-
-    private nonisolated static func makeArtwork(_ image: UIImage) -> MPMediaItemArtwork {
-        MPMediaItemArtwork(boundsSize: image.size) { _ in image }
     }
 
     func setAudioOnly(_ on: Bool) {
@@ -648,11 +620,11 @@ final class VideoViewController: UIViewController {
             setLayerAttached(true)
             (player as? HLSVideoPlayer)?.setAudioOnly(false)
         }
-        logger.info("audio-only \(on ? "enabled" : "disabled")", category: .playback)
+        MidgarLog.info("audio-only \(on ? "enabled" : "disabled")", category: .playback)
         onAudioOnlyChanged?(on)
     }
 
-    private func enterAudioOnlyPlayback() {
+    func enterAudioOnlyPlayback() {
         (player as? HLSVideoPlayer)?.setAudioOnly(true)
         setLayerAttached(false)
     }
@@ -672,55 +644,7 @@ final class VideoViewController: UIViewController {
         videoOverlayDidTapPlayPause(overlay)
     }
 
-    private var defaultNowPlayingTitle: String {
-        switch source {
-        case .live(let login): return login
-        case .vod: return String(localized: "Video")
-        case .clip: return String(localized: "Clip")
-        }
-    }
-
-    private var defaultNowPlayingArtist: String? {
-        if case .live(let login) = source { return login }
-        return nil
-    }
-
-    private func updateNowPlaying() {
-        guard !didTeardownPlayer else { return }
-        nowPlaying.update(
-            title: nowPlayingTitle ?? defaultNowPlayingTitle,
-            artist: nowPlayingChannelName ?? defaultNowPlayingArtist,
-            isLive: !isSeekableSource,
-            elapsed: lastProgress.current,
-            duration: lastProgress.duration,
-            isPlaying: currentState == .playing,
-            rate: currentRate,
-            artwork: nowPlayingArtwork
-        )
-    }
-
-    private func registerRemoteCommands() {
-        nowPlaying.register(
-            play: { [weak self] in self?.remotePlay() },
-            pause: { [weak self] in self?.player.pause() },
-            toggle: { [weak self] in self?.remoteTogglePlayPause() }
-        )
-    }
-
-    private func remotePlay() {
-        if case .live = source { player.seekToLive() }
-        player.play()
-    }
-
-    private func remoteTogglePlayPause() {
-        if currentState == .playing {
-            player.pause()
-        } else {
-            remotePlay()
-        }
-    }
-
-    private func teardownPlayerIfNeeded() {
+    func teardownPlayerIfNeeded() {
         guard !didTeardownPlayer else { return }
         didTeardownPlayer = true
         cancelRecoveryTimers()
@@ -754,11 +678,11 @@ final class VideoViewController: UIViewController {
     private func handlePlaybackError(_ message: String) {
         guard !isResolving else { return }
         if adActive {
-            logger.info("ad-break reload: \(message)", category: .playback)
+            MidgarLog.info("ad-break reload: \(message)", category: .playback)
             reload(preservingPosition: false)
             return
         }
-        logger.warn("playback error, scheduling recovery: \(message)", category: .playback)
+        MidgarLog.notice("playback error, scheduling recovery: \(message)", category: .playback)
         scheduleRecovery()
     }
 
@@ -817,7 +741,7 @@ final class VideoViewController: UIViewController {
         guard streamActive, !isResolving, !adActive else { return }
         switch currentState {
         case .buffering, .loading:
-            logger.warn("stall watchdog fired after 15s buffering", category: .playback)
+            MidgarLog.notice("stall watchdog fired after 15s buffering", category: .playback)
             scheduleRecovery()
         default:
             break
@@ -830,7 +754,7 @@ final class VideoViewController: UIViewController {
         guard !isClipSource else { return }
         let interval: TimeInterval = expiresAt.map { max(60, $0.timeIntervalSinceNow - 120) } ?? (50 * 60)
         let work = DispatchWorkItem { [weak self] in
-            self?.logger.info("playback token nearing expiry, re-resolving", category: .playback)
+            MidgarLog.info("playback token nearing expiry, re-resolving", category: .playback)
             self?.reload(preservingPosition: true)
         }
         refreshWork = work
@@ -846,7 +770,7 @@ final class VideoViewController: UIViewController {
         seekLiveOnReady = false
     }
 
-    private func resolveAndLoad() {
+    func resolveAndLoad() {
         resolveTask?.cancel()
         overlay.clearError()
         overlay.setBuffering(true)
@@ -881,11 +805,11 @@ final class VideoViewController: UIViewController {
             recoveryWork?.cancel(); recoveryWork = nil
             showingError = true
             overlay.setReconnecting(false)
-            logger.info("resolve: channel offline (\(error.localizedDescription))", category: .playback)
+            MidgarLog.info("resolve: channel offline (\(error.localizedDescription))", category: .playback)
             overlay.setPlaying(false)
             overlay.showEnded(offlineMessage, symbol: "tv.slash")
         } else {
-            logger.warn("resolve failed (\(error.localizedDescription)), scheduling recovery", category: .playback)
+            MidgarLog.notice("resolve failed (\(error.localizedDescription)), scheduling recovery", category: .playback)
             overlay.setPlaying(false)
             scheduleRecovery()
         }
@@ -907,7 +831,7 @@ final class VideoViewController: UIViewController {
         }
     }
 
-    private func presentQualityPicker(from sourceView: UIView) {
+    func presentQualityPicker(from sourceView: UIView) {
         let qualities = player.availableQualities
         let sheet = UIAlertController(title: String(localized: "Quality"), message: nil, preferredStyle: .actionSheet)
 
@@ -944,7 +868,7 @@ final class VideoViewController: UIViewController {
         StreamQuality(name: "Auto", url: URL(string: "embr://auto")!)
     }
 
-    private func dismissSelf() {
+    func dismissSelf() {
         teardownPlayerIfNeeded()
         if let navigationController, navigationController.viewControllers.first !== self {
             navigationController.popViewController(animated: true)
@@ -976,7 +900,7 @@ final class VideoViewController: UIViewController {
         }
     }
 
-    private func triggerPictureInPicture() {
+    func triggerPictureInPicture() {
         feedback.impactOccurred()
         if let hls = player as? HLSVideoPlayer, hls.canStartPictureInPicture {
             hls.startPictureInPicture()
@@ -1007,189 +931,5 @@ final class VideoViewController: UIViewController {
         adGraceWork?.cancel()
         teardownPlayerIfNeeded()
         NotificationCenter.default.removeObserver(self)
-    }
-}
-
-extension VideoViewController: VideoOverlayViewDelegate {
-    func videoOverlayDidTapBack(_ overlay: VideoOverlayView) {
-        dismissSelf()
-    }
-
-    func videoOverlayDidTapPlayPause(_ overlay: VideoOverlayView) {
-        switch currentState {
-        case .playing, .buffering, .loading:
-            player.pause()
-        case .ended where isSeekableSource:
-            player.seek(to: 0)
-            player.play()
-        default:
-            if case .live = source { player.seekToLive() }
-            player.play()
-        }
-    }
-
-    func videoOverlayDidTapQuality(_ overlay: VideoOverlayView, from sourceView: UIView) {
-        presentQualityPicker(from: sourceView)
-    }
-
-    func videoOverlayDidTapPictureInPicture(_ overlay: VideoOverlayView) {
-        triggerPictureInPicture()
-    }
-
-    func videoOverlayDidTapRetry(_ overlay: VideoOverlayView) {
-        guard !didTeardownPlayer else { return }
-        showingError = false
-        recoveryAttempts = 0
-        resolveAndLoad()
-    }
-
-    func videoOverlayDidTapMute(_ overlay: VideoOverlayView) {
-        isMuted.toggle()
-        player.setMuted(isMuted)
-        overlay.setMuted(isMuted)
-    }
-
-    func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView) {
-        toggleFullscreen()
-    }
-
-    func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView) {
-        present(AdInfoViewController(), animated: true)
-    }
-
-    func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView) {
-        presentSpeedPicker(from: sourceView)
-    }
-
-    func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView) {}
-
-    func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval) {
-        resumeTarget = nil
-        player.seek(to: seconds)
-        lastProgress = PlaybackProgress(current: seconds, duration: lastProgress.duration, isLive: lastProgress.isLive)
-        updateNowPlaying()
-    }
-
-    func videoOverlay(_ overlay: VideoOverlayView, didDoubleTapForward forward: Bool) {
-        if isImmersive, let onDoubleTapToggleChat {
-            onDoubleTapToggleChat()
-            return
-        }
-        if isSeekableSource {
-            skip(by: forward ? 10 : -10)
-        } else {
-            overlay.toggleControls()
-        }
-    }
-}
-
-extension VideoViewController: UIGestureRecognizerDelegate {
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        true
-    }
-
-    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard gestureRecognizer === swipeDown else { return true }
-        let velocity = swipeDown.velocity(in: view)
-        return abs(velocity.y) > abs(velocity.x)
-    }
-
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard gestureRecognizer === swipeDown else { return true }
-        return !overlay.isScrubberTouch(touch)
-    }
-}
-
-extension VideoViewController: @MainActor AVPictureInPictureControllerDelegate {
-    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
-        logger.error("PiP failed: \(error.localizedDescription)", category: .playback)
-    }
-
-    func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        isPiPActive = true
-        overlay.setPictureInPictureActive(true)
-        overlay.hideControls()
-        setImmersiveState(false)
-    }
-
-    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        isPiPActive = false
-        overlay.setPictureInPictureActive(false)
-        setImmersiveState(hostImmersiveState?() ?? restoredStandaloneImmersiveState)
-        if pendingAudioOnlyOnPiPStop {
-            pendingAudioOnlyOnPiPStop = false
-            if isAudioOnly { enterAudioOnlyPlayback() }
-        }
-        if view.window == nil { teardownPlayerIfNeeded() }
-    }
-
-    func pictureInPictureController(
-        _ pictureInPictureController: AVPictureInPictureController,
-        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
-    ) {
-        let host = parent ?? self
-        if let presented = host.presentedViewController {
-            presented.dismiss(animated: false)
-        }
-        if let nav = host.navigationController,
-           nav.topViewController !== host,
-           nav.viewControllers.contains(host) {
-            nav.popToViewController(host, animated: false)
-        }
-        completionHandler(true)
-    }
-}
-
-@MainActor
-private final class NowPlayingCoordinator {
-    private var commandTargets: [(MPRemoteCommand, Any)] = []
-
-    func register(
-        play: @escaping @MainActor () -> Void,
-        pause: @escaping @MainActor () -> Void,
-        toggle: @escaping @MainActor () -> Void
-    ) {
-        guard commandTargets.isEmpty else { return }
-        let center = MPRemoteCommandCenter.shared()
-        add(center.playCommand, handler: play)
-        add(center.pauseCommand, handler: pause)
-        add(center.togglePlayPauseCommand, handler: toggle)
-    }
-
-    private func add(_ command: MPRemoteCommand, handler: @escaping @MainActor () -> Void) {
-        command.isEnabled = true
-        let target = command.addTarget { _ in
-            MainActor.assumeIsolated { handler() }
-            return .success
-        }
-        commandTargets.append((command, target))
-    }
-
-    func update(
-        title: String,
-        artist: String?,
-        isLive: Bool,
-        elapsed: TimeInterval,
-        duration: TimeInterval,
-        isPlaying: Bool,
-        rate: Float,
-        artwork: MPMediaItemArtwork?
-    ) {
-        var info: [String: Any] = [MPMediaItemPropertyTitle: title]
-        if let artist { info[MPMediaItemPropertyArtist] = artist }
-        if let artwork { info[MPMediaItemPropertyArtwork] = artwork }
-        info[MPNowPlayingInfoPropertyIsLiveStream] = isLive
-        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? Double(rate) : 0.0
-        if !isLive, duration > 0 {
-            info[MPMediaItemPropertyPlaybackDuration] = duration
-            info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
-        }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-    }
-
-    func clear() {
-        commandTargets.forEach { $0.0.removeTarget($0.1) }
-        commandTargets.removeAll()
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 }

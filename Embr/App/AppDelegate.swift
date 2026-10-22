@@ -1,5 +1,6 @@
 import UIKit
 import EmbrCore
+import MidgarCore
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -13,15 +14,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        EmbrMidgar.configureLogging()
         #if DEBUG
         DemoWorld.resetLaunchState()
         #endif
         performFirstRunIfNeeded()
         _ = AppContainer.shared
+        EmbrMidgar.shared.start()
+        ReviewPrompt.beginSession()
         NetworkMonitor.shared.start()
         RemoteConfigService.shared.start()
         TipJarStore.shared.start()
-        AppLogger.shared.info("app launched", category: .app)
+        MidgarLog.info("app launched", category: .app)
         return true
     }
 
@@ -58,6 +62,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         guard !defaults.bool(forKey: didFirstRunKey) else { return }
         KeychainTokenStore.shared.clearSync()
         defaults.set(true, forKey: didFirstRunKey)
-        AppLogger.shared.info("first run: wiped stale credentials", category: .app)
+        MidgarLog.info("first run: wiped stale credentials", category: .app)
     }
 }

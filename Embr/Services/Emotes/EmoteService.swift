@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 actor EmoteService: EmoteCataloging {
     static let shared = EmoteService()
@@ -66,7 +67,7 @@ actor EmoteService: EmoteCataloging {
             isEmpty: merged.isEmpty && twitchBadgeDict.isEmpty
         )
         globalCache = entry
-        AppLogger.shared.info("Loaded \(merged.count) global emotes", category: .emote)
+        MidgarLog.info("Loaded \(merged.count) global emotes", category: .emote)
         return (catalog, badgeCatalog)
     }
 
@@ -107,7 +108,7 @@ actor EmoteService: EmoteCataloging {
             isEmpty: globalLoad.emotes.global.isEmpty
         )
         channelCache[broadcasterID] = entry
-        AppLogger.shared.info("Loaded \(merged.count) channel emotes for \(login)", category: .emote)
+        MidgarLog.info("Loaded \(merged.count) channel emotes for \(login)", category: .emote)
         return (catalog, badgeCatalog)
     }
 
@@ -125,22 +126,22 @@ actor EmoteService: EmoteCataloging {
 
     private nonisolated func fetchTwitchGlobalEmotes() async -> [Emote] {
         do { return try await api.globalEmotes() }
-        catch { AppLogger.shared.warn("Twitch global emotes failed: \(error)", category: .emote); return [] }
+        catch { MidgarLog.notice("Twitch global emotes failed: \(error)", category: .emote); return [] }
     }
 
     private nonisolated func fetchTwitchChannelEmotes(broadcasterID: String) async -> [Emote] {
         do { return try await api.channelEmotes(broadcasterID: broadcasterID) }
-        catch { AppLogger.shared.warn("Twitch channel emotes failed: \(error)", category: .emote); return [] }
+        catch { MidgarLog.notice("Twitch channel emotes failed: \(error)", category: .emote); return [] }
     }
 
     private nonisolated func fetchTwitchGlobalBadges() async -> [Badge] {
         do { return try await api.globalBadges() }
-        catch { AppLogger.shared.warn("Twitch global badges failed: \(error)", category: .emote); return [] }
+        catch { MidgarLog.notice("Twitch global badges failed: \(error)", category: .emote); return [] }
     }
 
     private nonisolated func fetchTwitchChannelBadges(broadcasterID: String) async -> [Badge] {
         do { return try await api.channelBadges(broadcasterID: broadcasterID) }
-        catch { AppLogger.shared.warn("Twitch channel badges failed: \(error)", category: .emote); return [] }
+        catch { MidgarLog.notice("Twitch channel badges failed: \(error)", category: .emote); return [] }
     }
 }
 

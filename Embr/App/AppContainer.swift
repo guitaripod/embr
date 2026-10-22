@@ -3,6 +3,7 @@ import EmbrCore
 
 struct Configuration: Sendable {
     let twitchClientID: String
+    /// Where Embr's worker answers: the `embr` route of the Midgar gateway.
     let workerBaseURL: URL
     let redirectURI: String
     let recentMessagesBaseURL: URL
@@ -13,7 +14,7 @@ struct Configuration: Sendable {
 
     static let current = Configuration(
         twitchClientID: Secrets.twitchClientID,
-        workerBaseURL: URL(string: Secrets.workerBaseURL) ?? URL(string: "https://embr.example.workers.dev")!,
+        workerBaseURL: MidgarGatewayTransport.routeBaseURL,
         redirectURI: Secrets.redirectURI,
         recentMessagesBaseURL: URL(string: "https://recent-messages.robotty.de/api/v2")!
     )
@@ -23,7 +24,6 @@ struct Configuration: Sendable {
 final class AppContainer {
     static let shared = AppContainer()
 
-    let logger = AppLogger.shared
     let configuration = Configuration.current
     let transport: HTTPTransport = URLSessionTransport.shared
     let auth = AuthService.shared

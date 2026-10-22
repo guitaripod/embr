@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 actor SevenTVEventClient: EmoteEventStreaming {
     private static let endpoint = URL(string: "wss://events.7tv.io/v3")!
@@ -27,7 +28,7 @@ actor SevenTVEventClient: EmoteEventStreaming {
             await consume(socket: socket, emoteSetID: emoteSetID, continuation: continuation)
             socket.cancel(with: .goingAway, reason: nil)
             if Task.isCancelled { break }
-            AppLogger.shared.warn("7TV events disconnected, reconnecting", category: .emote)
+            MidgarLog.notice("7TV events disconnected, reconnecting", category: .emote)
             try? await Task.sleep(nanoseconds: Self.reconnectDelay)
         }
         continuation.finish()
@@ -43,7 +44,7 @@ actor SevenTVEventClient: EmoteEventStreaming {
             do {
                 message = try await socket.receive()
             } catch {
-                AppLogger.shared.warn("7TV events receive failed: \(error)", category: .emote)
+                MidgarLog.notice("7TV events receive failed: \(error)", category: .emote)
                 return
             }
             guard let data = data(from: message) else { continue }
@@ -68,9 +69,9 @@ actor SevenTVEventClient: EmoteEventStreaming {
         guard let frame = try? SevenTVEventFrame.subscribeFrame(emoteSetID: emoteSetID) else { return }
         do {
             try await socket.send(.data(frame))
-            AppLogger.shared.info("7TV subscribed to emote set \(emoteSetID)", category: .emote)
+            MidgarLog.info("7TV subscribed to emote set \(emoteSetID)", category: .emote)
         } catch {
-            AppLogger.shared.warn("7TV subscribe failed: \(error)", category: .emote)
+            MidgarLog.notice("7TV subscribe failed: \(error)", category: .emote)
         }
     }
 

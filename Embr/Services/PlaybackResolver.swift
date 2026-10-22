@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 actor PlaybackResolver: PlaybackResolving {
     static let shared = PlaybackResolver()
@@ -8,7 +9,7 @@ actor PlaybackResolver: PlaybackResolving {
     private let endpoints: WorkerEndpoints
 
     init(
-        transport: HTTPTransport = URLSessionTransport.shared,
+        transport: HTTPTransport = MidgarGatewayTransport.shared,
         endpoints: WorkerEndpoints = WorkerEndpoints(baseURL: Configuration.current.workerBaseURL)
     ) {
         self.transport = transport
@@ -30,14 +31,14 @@ actor PlaybackResolver: PlaybackResolving {
     private func resolve(request: HTTPRequest, label: String) async throws -> PlaybackResolution {
         let response = try await transport.send(request)
         guard response.isSuccess else {
-            AppLogger.shared.warn("Playback resolve failed for \(label): status \(response.status)", category: .playback)
+            MidgarLog.notice("Playback resolve failed for \(label): status \(response.status)", category: .playback)
             throw APIError.from(status: response.status, rateLimitReset: response.rateLimit?.resetAt)
         }
         let decoded = try WorkerEndpoints.decodePlayback(response.body)
         guard let url = URL(string: decoded.url) else {
             throw APIError.decoding("Invalid playback URL: \(decoded.url)")
         }
-        AppLogger.shared.info("Resolved playback for \(label)", category: .playback)
+        MidgarLog.info("Resolved playback for \(label)", category: .playback)
         return PlaybackResolution(
             masterPlaylistURL: url,
             qualities: [],

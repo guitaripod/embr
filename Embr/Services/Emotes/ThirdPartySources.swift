@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 final class SevenTVSource: ThirdPartyEmoteSource {
     let provider: EmoteProvider = .sevenTV
@@ -24,7 +25,7 @@ final class SevenTVSource: ThirdPartyEmoteSource {
             guard response.isSuccess else { return [] }
             return try parse(response.body)
         } catch {
-            AppLogger.shared.warn("7TV fetch failed: \(error)", category: .emote)
+            MidgarLog.notice("7TV fetch failed: \(error)", category: .emote)
             return []
         }
     }
@@ -53,7 +54,7 @@ final class BetterTTVSource: ThirdPartyEmoteSource {
             guard response.isSuccess else { return [] }
             return try parse(response.body)
         } catch {
-            AppLogger.shared.warn("BetterTTV fetch failed: \(error)", category: .emote)
+            MidgarLog.notice("BetterTTV fetch failed: \(error)", category: .emote)
             return []
         }
     }
@@ -82,7 +83,7 @@ final class FrankerFaceZSource: ThirdPartyEmoteSource {
             guard response.isSuccess else { return [] }
             return try parse(response.body)
         } catch {
-            AppLogger.shared.warn("FrankerFaceZ fetch failed: \(error)", category: .emote)
+            MidgarLog.notice("FrankerFaceZ fetch failed: \(error)", category: .emote)
             return []
         }
     }

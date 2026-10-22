@@ -1,6 +1,7 @@
 import UIKit
 import AuthenticationServices
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class OnboardingViewController: UIViewController {
@@ -171,20 +172,20 @@ final class OnboardingViewController: UIViewController {
 
     @objc private func connectTapped() {
         guard let anchor = presentationAnchor() else {
-            AppLogger.shared.warn("onboarding login: no window anchor available", category: .auth)
+            MidgarLog.notice("onboarding login: no window anchor available", category: .auth)
             return
         }
         setBusy(true)
         Task {
             do {
                 let user = try await auth.login(presentationAnchor: anchor)
-                AppLogger.shared.info("onboarding login succeeded for \(user.login)", category: .auth)
+                MidgarLog.info("onboarding login succeeded for \(user.login)", category: .auth)
                 finish()
             } catch APIError.cancelled {
-                AppLogger.shared.info("onboarding login cancelled by user", category: .auth)
+                MidgarLog.info("onboarding login cancelled by user", category: .auth)
                 setBusy(false)
             } catch {
-                AppLogger.shared.warn("onboarding login failed: \(error)", category: .auth)
+                MidgarLog.notice("onboarding login failed: \(error)", category: .auth)
                 setBusy(false)
                 presentLoginError()
             }
@@ -200,7 +201,7 @@ final class OnboardingViewController: UIViewController {
     }
 
     @objc private func guestTapped() {
-        AppLogger.shared.info("onboarding: continuing as guest", category: .app)
+        MidgarLog.info("onboarding: continuing as guest", category: .app)
         finish()
     }
 

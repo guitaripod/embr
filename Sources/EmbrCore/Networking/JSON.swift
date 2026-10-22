@@ -1,6 +1,7 @@
 import Foundation
 
 public enum TwitchJSON {
+    /// Configured once in the initializer and never mutated afterwards; `JSONDecoder.decode` is safe to call concurrently.
     nonisolated(unsafe) public static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         let iso = makeFormatter(fractional: false)

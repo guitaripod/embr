@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 enum StreamRouting {
     static func channel(from stream: LiveStream) -> ChannelInfo {
@@ -469,7 +470,7 @@ final class StreamListViewModel {
             return
         } catch {
             guard !Task.isCancelled, generation == self.generation else { return }
-            AppLogger.shared.warn("Stream list load failed: \(error)", category: .api)
+            MidgarLog.notice("Stream list load failed: \(error)", category: .api)
             errorSubject.send(describe(error))
         }
     }

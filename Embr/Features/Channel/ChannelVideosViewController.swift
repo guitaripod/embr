@@ -1,5 +1,6 @@
 import UIKit
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class ChannelVideosViewController: UIViewController {
@@ -251,7 +252,7 @@ final class ChannelVideosViewController: UIViewController {
                     self.vods.append(contentsOf: page.items.filter { !known.contains($0.id) })
                 }
             } catch {
-                AppLogger.shared.warn("media load \(self.broadcasterID) failed: \(error)", category: .api)
+                MidgarLog.notice("media load \(self.broadcasterID) failed: \(error)", category: .api)
             }
             if clipsMode { self.loadingClips = false } else { self.loadingVods = false }
             self.render()
@@ -269,15 +270,15 @@ final class ChannelVideosViewController: UIViewController {
                 let segments = try await TwitchAPIClient.shared.schedule(broadcasterID: self.broadcasterID)
                 self.schedule = segments.filter { $0.canceledUntil == nil }
                 self.scheduleLoaded = true
-                AppLogger.shared.info("schedule \(self.broadcasterID): \(self.schedule.count) segments", category: .api)
+                MidgarLog.info("schedule \(self.broadcasterID): \(self.schedule.count) segments", category: .api)
             } catch APIError.notFound {
                 self.schedule = []
                 self.scheduleLoaded = true
-                AppLogger.shared.info("schedule \(self.broadcasterID): none published", category: .api)
+                MidgarLog.info("schedule \(self.broadcasterID): none published", category: .api)
             } catch {
                 self.schedule = []
                 self.scheduleFailed = true
-                AppLogger.shared.warn("schedule \(self.broadcasterID) failed: \(error)", category: .api)
+                MidgarLog.notice("schedule \(self.broadcasterID) failed: \(error)", category: .api)
             }
             self.loadingSchedule = false
             self.render()
@@ -315,7 +316,7 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
                 let url = try await PlaybackResolver.shared.resolveClip(slug: clip.id)
                 self.navigationController?.pushViewController(VideoViewController(source: .clip(url: url)), animated: true)
             } catch {
-                AppLogger.shared.warn("clip resolve \(clip.id) failed: \(error)", category: .playback)
+                MidgarLog.notice("clip resolve \(clip.id) failed: \(error)", category: .playback)
                 if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
                     self.navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
                 } else {

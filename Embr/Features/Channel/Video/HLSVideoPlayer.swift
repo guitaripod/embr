@@ -3,6 +3,7 @@ import AVFoundation
 import Combine
 import UIKit
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class HLSVideoPlayer: NSObject, VideoPlaying {
@@ -44,7 +45,6 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private let adBreakSubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let progressSubject = CurrentValueSubject<PlaybackProgress, Never>(.empty)
     private var preferredRate: Float = 1.0
-    private let logger: AppLogger
 
     private let metadataCollector = AVPlayerItemMetadataCollector()
     private var adRanges: [AdRange] = []
@@ -74,8 +74,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         case liveEdge
     }
 
-    init(logger: AppLogger = .shared) {
-        self.logger = logger
+    override init() {
         super.init()
         player.automaticallyWaitsToMinimizeStalling = true
         playerView.player = player
@@ -165,7 +164,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         playbackIntended = true
         player.play()
         startLatencySampling()
-        logger.info("HLS load url=\(url.absoluteString) qualities=\(availableQualities.count)", category: .playback)
+        MidgarLog.info("HLS load url=\(url.absoluteString) qualities=\(availableQualities.count)", category: .playback)
     }
 
     func play() {
@@ -185,13 +184,13 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
         if isAutoQuality(quality) {
             currentItem?.preferredPeakBitRate = 0
-            logger.info("HLS quality -> Auto", category: .playback)
+            MidgarLog.info("HLS quality -> Auto", category: .playback)
             return
         }
 
         if let bandwidth = quality.bandwidth, qualityBelongsToMaster(quality), !quality.isAudioOnly {
             currentItem?.preferredPeakBitRate = Double(bandwidth)
-            logger.info("HLS quality -> \(quality.name) peakBitRate=\(bandwidth)", category: .playback)
+            MidgarLog.info("HLS quality -> \(quality.name) peakBitRate=\(bandwidth)", category: .playback)
             return
         }
 
@@ -219,7 +218,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         progressSubject.send(.empty)
         stateSubject.send(.idle)
         deactivateAudioSession()
-        logger.info("HLS teardown", category: .playback)
+        MidgarLog.info("HLS teardown", category: .playback)
     }
 
     /// Detaches or reattaches the AVPlayer from the on-screen AVPlayerLayer.
@@ -230,7 +229,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         let target: AVPlayer? = attached ? player : nil
         guard playerView.player !== target else { return }
         playerView.player = target
-        logger.info("HLS layer \(attached ? "attached" : "detached")", category: .playback)
+        MidgarLog.info("HLS layer \(attached ? "attached" : "detached")", category: .playback)
     }
 
     var audioOnlyQuality: StreamQuality? {
@@ -280,7 +279,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         preferredQualityName = audio.name
         currentQuality = audio
         swapVariant(to: audio)
-        logger.info("HLS audio-only variant applied", category: .playback)
+        MidgarLog.info("HLS audio-only variant applied", category: .playback)
     }
 
     private func restoreMasterPlaylist() {
@@ -295,7 +294,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         playbackIntended = true
         player.play()
         startLatencySampling()
-        logger.info("HLS restore master after audio-only", category: .playback)
+        MidgarLog.info("HLS restore master after audio-only", category: .playback)
     }
 
     var canStartPictureInPicture: Bool {
@@ -334,7 +333,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         playbackIntended = true
         player.play()
         startLatencySampling()
-        logger.info("HLS quality swap variant -> \(quality.name) url=\(quality.url.absoluteString)", category: .playback)
+        MidgarLog.info("HLS quality swap variant -> \(quality.name) url=\(quality.url.absoluteString)", category: .playback)
     }
 
     private func attach(_ item: AVPlayerItem) {
@@ -399,7 +398,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         case .failed:
             let message = item.error?.localizedDescription ?? "Playback failed"
             stateSubject.send(.error(message))
-            logger.error("HLS item failed: \(message)", category: .playback)
+            MidgarLog.error("HLS item failed: \(message)", category: .playback)
         case .unknown:
             break
         @unknown default:
@@ -428,7 +427,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private func itemFailedToPlayToEnd(itemID: ObjectIdentifier, message: String) {
         guard let currentItem, ObjectIdentifier(currentItem) == itemID else { return }
         stateSubject.send(.error(message))
-        logger.error("HLS failed to play to end: \(message)", category: .playback)
+        MidgarLog.error("HLS failed to play to end: \(message)", category: .playback)
     }
 
     private func parseMasterIfNeeded(_ item: AVPlayerItem) {
@@ -440,7 +439,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             let parsed = HLSPlaylistParser.qualities(text)
             guard !parsed.isEmpty, let self, self.loadGeneration == generation else { return }
             self.availableQualities = parsed
-            self.logger.info("HLS parsed master qualities=\(parsed.count)", category: .playback)
+            MidgarLog.info("HLS parsed master qualities=\(parsed.count)", category: .playback)
             self.applyAudioOnlyVariantIfAvailable()
         }
     }
@@ -512,7 +511,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
     private func configurePictureInPicture() {
         guard AVPictureInPictureController.isPictureInPictureSupported() else {
-            logger.info("HLS PiP unsupported on device", category: .playback)
+            MidgarLog.info("HLS PiP unsupported on device", category: .playback)
             return
         }
         pictureInPictureController = AVPictureInPictureController(playerLayer: playerView.playerLayer)
@@ -528,7 +527,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             try session.setActive(true)
             appliedAudioOptions = options
         } catch {
-            logger.warn("HLS audio session activate failed: \(error.localizedDescription)", category: .playback)
+            MidgarLog.notice("HLS audio session activate failed: \(error.localizedDescription)", category: .playback)
         }
     }
 
@@ -619,7 +618,7 @@ extension HLSVideoPlayer: AVPlayerItemMetadataCollectorPushDelegate {
         let labels = Set(metadataGroups.compactMap { $0.classifyingLabel }).sorted()
         MainActor.assumeIsolated {
             if !labels.isEmpty {
-                self.logger.info("HLS metadata labels=\(labels) adRanges=\(ranges.count)", category: .playback)
+                MidgarLog.info("HLS metadata labels=\(labels) adRanges=\(ranges.count)", category: .playback)
             }
             self.adRanges = ranges
             self.evaluateAdBreak()

@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class TopViewController: UIViewController {
@@ -411,7 +412,7 @@ final class TopViewController: UIViewController {
                 if self.showingCategories { self.applyCategories() }
             } catch {
                 if Task.isCancelled { return }
-                AppLogger.shared.warn("Top categories load failed: \(error)", category: .api)
+                MidgarLog.notice("Top categories load failed: \(error)", category: .api)
                 guard self.showingCategories, self.categories.isEmpty else { return }
                 self.loadingIndicator.stopAnimating()
                 self.emptyView.setMessage(String(localized: "Couldn't load categories."))

@@ -2,6 +2,7 @@ import WebKit
 import Combine
 import UIKit
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class WebViewPlayer: NSObject, VideoPlaying {
@@ -22,7 +23,6 @@ final class WebViewPlayer: NSObject, VideoPlaying {
 
     private let stateSubject = CurrentValueSubject<VideoState, Never>(.idle)
     private let latencySubject = CurrentValueSubject<TimeInterval?, Never>(nil)
-    private let logger: AppLogger
     private let workerBaseURL: URL
     private let parentHost: String
     private var muted = false
@@ -46,11 +46,9 @@ final class WebViewPlayer: NSObject, VideoPlaying {
     }()
 
     init(
-        logger: AppLogger = .shared,
         workerBaseURL: URL = Configuration.current.workerBaseURL,
         parentHost: String = "embr.twitch.tv"
     ) {
-        self.logger = logger
         self.workerBaseURL = workerBaseURL
         self.parentHost = parentHost
         super.init()
@@ -100,7 +98,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "embrPlayer")
         webView.loadHTMLString("", baseURL: nil)
         stateSubject.send(.idle)
-        logger.info("WebView teardown", category: .playback)
+        MidgarLog.info("WebView teardown", category: .playback)
     }
 
     private func loadEmbed(channel: String) {
@@ -114,7 +112,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
             return
         }
         webView.load(URLRequest(url: url))
-        logger.info("WebView embed channel=\(channel) url=\(url.absoluteString)", category: .playback)
+        MidgarLog.info("WebView embed channel=\(channel) url=\(url.absoluteString)", category: .playback)
     }
 
     private func loadPlayerTwitchFallback(channel: String) {
@@ -130,13 +128,13 @@ final class WebViewPlayer: NSObject, VideoPlaying {
             return
         }
         webView.load(URLRequest(url: url))
-        logger.info("WebView player.twitch.tv fallback channel=\(channel)", category: .playback)
+        MidgarLog.info("WebView player.twitch.tv fallback channel=\(channel)", category: .playback)
     }
 
     private func loadDirect(_ url: URL) {
         let html = directHLSHTML(url: url)
         webView.loadHTMLString(html, baseURL: workerBaseURL)
-        logger.info("WebView direct HLS url=\(url.absoluteString)", category: .playback)
+        MidgarLog.info("WebView direct HLS url=\(url.absoluteString)", category: .playback)
     }
 
     private func directHLSHTML(url: URL) -> String {
@@ -179,7 +177,7 @@ final class WebViewPlayer: NSObject, VideoPlaying {
 extension WebViewPlayer: WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "embrPlayer", let body = message.body as? String else { return }
-        logger.info("WebView player state: \(body)", category: .playback)
+        MidgarLog.info("WebView player state: \(body)", category: .playback)
         switch body {
         case "playing": stateSubject.send(.playing)
         case "paused": stateSubject.send(.paused)
@@ -203,6 +201,6 @@ private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
 extension WebViewPlayer: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         stateSubject.send(.error(error.localizedDescription))
-        logger.error("WebView navigation failed: \(error.localizedDescription)", category: .playback)
+        MidgarLog.error("WebView navigation failed: \(error.localizedDescription)", category: .playback)
     }
 }

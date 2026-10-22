@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import EmbrCore
+import MidgarCore
 
 struct FavoriteChannel: Sendable, Hashable, Identifiable {
     let id: String
@@ -62,14 +63,14 @@ final class FavoritesStore {
         apply([channel] + channels)
         let record = JoinedChannelRecord(broadcasterID: id, login: login, displayName: name, addedAt: channel.addedAt)
         Task { await database.addFavoriteChannel(record) }
-        AppLogger.shared.info("favorited \(login)", category: .persistence)
+        MidgarLog.info("favorited \(login)", category: .persistence)
     }
 
     func remove(id: String) {
         guard isFavorite(id) else { return }
         apply(channels.filter { $0.id != id })
         Task { await database.removeFavoriteChannel(broadcasterID: id) }
-        AppLogger.shared.info("unfavorited \(id)", category: .persistence)
+        MidgarLog.info("unfavorited \(id)", category: .persistence)
     }
 
     #if DEBUG

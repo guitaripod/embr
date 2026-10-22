@@ -1,9 +1,9 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 actor IRCChatSource: ChatSource {
     private let channel: ChannelInfo
-    private let logger = AppLogger.shared
 
     private let endpoint = URL(string: "wss://irc-ws.chat.twitch.tv:443")!
 
@@ -83,7 +83,7 @@ actor IRCChatSource: ChatSource {
 
     private func handleSendFailure(_ error: Error) {
         guard !stopped else { return }
-        logger.warn("IRC send failed: \(error)", category: .chat)
+        MidgarLog.notice("IRC send failed: \(error)", category: .chat)
         scheduleReconnect()
     }
 
@@ -102,7 +102,7 @@ actor IRCChatSource: ChatSource {
             } catch {
                 if stopped || Task.isCancelled { return }
                 if generation == self.generation {
-                    logger.warn("IRC receive failed: \(error)", category: .chat)
+                    MidgarLog.notice("IRC receive failed: \(error)", category: .chat)
                     scheduleReconnect()
                 }
                 return
@@ -183,7 +183,7 @@ actor IRCChatSource: ChatSource {
         guard !stopped else { return }
         attempt = 0
         continuation?.yield(.connection(.connected))
-        logger.info("IRC joined #\(channel.broadcasterLogin)", category: .chat)
+        MidgarLog.info("IRC joined #\(channel.broadcasterLogin)", category: .chat)
     }
 
     private func scheduleReconnect() {
@@ -191,7 +191,7 @@ actor IRCChatSource: ChatSource {
         teardownSocket()
         attempt += 1
         guard attempt <= Self.maxAttempts else {
-            logger.warn("IRC gave up after \(attempt - 1) attempts", category: .chat)
+            MidgarLog.notice("IRC gave up after \(attempt - 1) attempts", category: .chat)
             continuation?.yield(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
             return
         }
@@ -208,7 +208,7 @@ actor IRCChatSource: ChatSource {
 
     func wake() async {
         guard !stopped, socket == nil else { return }
-        logger.info("IRC wake → reconnect", category: .chat)
+        MidgarLog.info("IRC wake → reconnect", category: .chat)
         attempt = 0
         connect()
     }

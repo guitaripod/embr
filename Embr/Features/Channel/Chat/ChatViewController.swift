@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 @MainActor
 protocol ChatViewControllerDelegate: AnyObject {
@@ -584,7 +585,7 @@ extension ChatViewController: ChatInputViewDelegate {
                 Haptics.notify(.error)
                 input.setSending(false)
                 input.showDropReason(Self.describe(error))
-                AppLogger.shared.warn("Chat send failed: \(error)", category: .chat)
+                MidgarLog.notice("Chat send failed: \(error)", category: .chat)
             }
         }
     }

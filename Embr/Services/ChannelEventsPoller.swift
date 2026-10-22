@@ -25,7 +25,7 @@ final class ChannelEventsPoller {
 
     init(
         login: String,
-        transport: HTTPTransport = URLSessionTransport.shared,
+        transport: HTTPTransport = MidgarGatewayTransport.shared,
         endpoints: WorkerEndpoints = WorkerEndpoints(baseURL: Configuration.current.workerBaseURL),
         activeIntervalSeconds: Double = 5,
         idleIntervalSeconds: Double = 15

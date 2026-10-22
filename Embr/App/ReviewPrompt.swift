@@ -1,83 +1,80 @@
-import EmbrCore
+import MidgarCommerce
+import MidgarCore
 import StoreKit
 import UIKit
 
-/// Asks for an App Store rating once Embr has actually delivered its value — a live stream
-/// watched continuously for `continuousWatchSecondsForSuccess` — and paces every later ask
-/// against `ReviewPromptPolicy`.
+/// Asks for an App Store rating once Embr has actually delivered its value, a live stream watched continuously for
+/// `continuousWatchSecondsForSuccess`. `MidgarReviewPolicy` decides whether the ask is due; this type only reports
+/// the success and, when the policy says yes, shows Apple's prompt if nothing else is on screen.
 @MainActor
 enum ReviewPrompt {
     static let continuousWatchSecondsForSuccess: TimeInterval = 3 * 60
 
     private static let askDelay: TimeInterval = 1.5
 
-    private static let defaults = UserDefaults.standard
-    private static let successCountKey = "embr.review.successCount"
-    private static let askDatesKey = "embr.review.askDates"
-    private static let successCountAtLastAskKey = "embr.review.successCountAtLastAsk"
-    private static let migratedLegacyStateKey = "embr.review.migratedLegacyState"
-    private static let legacyPromptedVersionKey = "embr.review.promptedVersion"
+    static let policy: MidgarReviewPolicy = {
+        let storage = MidgarReviewFileStorage(appID: EmbrMidgar.appID)
+        LegacyReviewState.migrate(from: .standard, into: storage)
+        return MidgarReviewPolicy(storage: storage)
+    }()
 
-    /// Banks a success and, if `ReviewPromptPolicy` now calls for it, requests a review shortly
-    /// after so the success UI lands first.
+    /// Counts one session. Call it once per launch.
+    static func beginSession() {
+        policy.beginSession()
+    }
+
+    /// Banks a success and, if the policy now calls for it, requests a review shortly after so the success UI
+    /// lands first.
     static func recordStreamWatched(in scene: UIWindowScene?) {
-        migrateLegacyStateIfNeeded()
-
-        let successCount = defaults.integer(forKey: successCountKey) + 1
-        defaults.set(successCount, forKey: successCountKey)
-        AppLogger.shared.info("review success #\(successCount): watched a stream", category: .app)
-
-        guard ReviewPromptPolicy.shouldAsk(
-            successCount: successCount,
-            askDates: storedAskDates(),
-            successCountAtLastAsk: defaults.integer(forKey: successCountAtLastAskKey),
-            now: Date()
-        ) else {
-            AppLogger.shared.info("review prompt skipped: not due yet", category: .app)
-            return
-        }
+        let due = policy.noteSuccess()
+        MidgarLog.info("review success: watched a stream, due=\(due)", category: .app)
+        guard due else { return }
         guard let scene else {
-            AppLogger.shared.info("review prompt skipped: no window scene", category: .app)
+            MidgarLog.info("review prompt skipped: no window scene", category: .app)
             return
         }
-        let work = DispatchWorkItem { requestReviewIfStillSafe(successCount: successCount, scene: scene) }
+        let work = DispatchWorkItem { requestReviewIfStillSafe(scene: scene) }
         DispatchQueue.main.asyncAfter(deadline: .now() + askDelay, execute: work)
     }
 
-    private static func requestReviewIfStillSafe(successCount: Int, scene: UIWindowScene) {
+    private static func requestReviewIfStillSafe(scene: UIWindowScene) {
         guard scene.activationState == .foregroundActive else {
-            AppLogger.shared.info("review prompt skipped: scene not foreground-active", category: .app)
+            MidgarLog.info("review prompt skipped: scene not foreground-active", category: .app)
             return
         }
         guard let keyWindow = scene.keyWindow, keyWindow.rootViewController?.presentedViewController == nil else {
-            AppLogger.shared.info("review prompt skipped: other UI on screen", category: .app)
+            MidgarLog.info("review prompt skipped: other UI on screen", category: .app)
             return
         }
-        let askDates = storedAskDates() + [Date()]
-        persist(askDates: askDates)
-        defaults.set(successCount, forKey: successCountAtLastAskKey)
-        AppLogger.shared.info("review prompt requested (ask #\(askDates.count))", category: .app)
+        policy.notePrompted()
+        MidgarLog.info("review prompt requested", category: .app)
         AppStore.requestReview(in: scene)
     }
+}
 
-    private static func storedAskDates() -> [Date] {
-        (defaults.array(forKey: askDatesKey) as? [Double] ?? []).map(Date.init(timeIntervalSince1970:))
+/// The ask history Embr kept before MidgarReviewPolicy: a list of ask dates, and before that a flag with the app
+/// version that had asked. A person who was asked recently must not be asked again the day the policy changes, so
+/// the newest ask becomes the policy's last prompt the first time it runs.
+enum LegacyReviewState {
+    static let askDatesKey = "embr.review.askDates"
+    static let legacyPromptedVersionKey = "embr.review.promptedVersion"
+    static let migratedKey = "embr.review.migratedToMidgar"
+
+    static func migrate(from defaults: UserDefaults, into storage: any MidgarReviewStorage, now: Date = Date()) {
+        guard !defaults.bool(forKey: migratedKey) else { return }
+        defaults.set(true, forKey: migratedKey)
+        guard let lastAsk = lastAsk(in: defaults, now: now) else { return }
+        var state = storage.load()
+        guard state.lastPrompt == nil else { return }
+        state.lastPrompt = lastAsk
+        state.lastPromptedVersion = defaults.string(forKey: legacyPromptedVersionKey)
+        storage.save(state)
     }
 
-    private static func persist(askDates: [Date]) {
-        defaults.set(askDates.map(\.timeIntervalSince1970), forKey: askDatesKey)
-    }
-
-    /// The old policy banked accumulated watch time across visits and prompted at most once per
-    /// app version; it left no ask date behind, only a flag that it had fired. Any such flag
-    /// counts as one prior ask toward the rolling-year cap, dated at migration time since the
-    /// real date was never recorded.
-    private static func migrateLegacyStateIfNeeded() {
-        guard !defaults.bool(forKey: migratedLegacyStateKey) else { return }
-        defaults.set(true, forKey: migratedLegacyStateKey)
-        guard defaults.string(forKey: legacyPromptedVersionKey) != nil else { return }
-        persist(askDates: [Date()])
-        defaults.set(0, forKey: successCountAtLastAskKey)
-        AppLogger.shared.info("review prompt: migrated a prior ask from the retired watch-time mechanism", category: .app)
+    /// The newest recorded ask, or `now` when only the old per-version flag survives, since its date was never kept.
+    private static func lastAsk(in defaults: UserDefaults, now: Date) -> Date? {
+        let dates = (defaults.array(forKey: askDatesKey) as? [Double] ?? []).map(Date.init(timeIntervalSince1970:))
+        if let newest = dates.max() { return newest }
+        return defaults.string(forKey: legacyPromptedVersionKey) == nil ? nil : now
     }
 }

@@ -1,5 +1,6 @@
 import UIKit
 import EmbrCore
+import MidgarCore
 
 final class DeepLinkRouter {
     private let api: TwitchAPIProviding
@@ -12,16 +13,16 @@ final class DeepLinkRouter {
     @MainActor
     func handle(_ url: URL, from root: RootTabBarController) async {
         if isFavoritesLink(url) {
-            AppLogger.shared.info("deep link opens Favorites", category: .app)
+            MidgarLog.info("deep link opens Favorites", category: .app)
             root.presentedViewController?.dismiss(animated: false)
             root.select(.favorites)
             return
         }
         guard let login = channelLogin(from: url) else {
-            AppLogger.shared.debug("ignored deep link \(url.absoluteString)", category: .app)
+            MidgarLog.debug("ignored deep link \(url.absoluteString)", category: .app)
             return
         }
-        AppLogger.shared.info("resolving deep link channel \(login)", category: .app)
+        MidgarLog.info("resolving deep link channel \(login)", category: .app)
         await open(login: login, from: root)
     }
 
@@ -35,7 +36,7 @@ final class DeepLinkRouter {
             }
             push(channel, from: root)
         } catch {
-            AppLogger.shared.warn("deep link resolution failed for \(login): \(error)", category: .app)
+            MidgarLog.notice("deep link resolution failed for \(login): \(error)", category: .app)
             presentNotFound(login: login, from: root)
         }
     }

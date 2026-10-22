@@ -1,12 +1,12 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 actor EventSubChatSource: ChatSource {
     private let channel: ChannelInfo
     private let api: TwitchAPIProviding
     private let auth: AuthControlling
     private let subscriber: EventSubSubscriber
-    private let logger = AppLogger.shared
 
     private let endpoint = URL(string: "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30")!
     private let defaultKeepalive = 30
@@ -102,7 +102,7 @@ actor EventSubChatSource: ChatSource {
                 if stopped || Task.isCancelled { return }
                 guard sockets[generation] != nil else { return }
                 if generation == liveGeneration {
-                    logger.warn("EventSub receive failed: \(error)", category: .eventsub)
+                    MidgarLog.notice("EventSub receive failed: \(error)", category: .eventsub)
                     scheduleReconnect()
                 } else {
                     sockets[generation] = nil
@@ -117,7 +117,7 @@ actor EventSubChatSource: ChatSource {
         do {
             decoded = try EventSubMessage.decode(data)
         } catch {
-            logger.warn("EventSub decode failed: \(error)", category: .eventsub)
+            MidgarLog.notice("EventSub decode failed: \(error)", category: .eventsub)
             return
         }
 
@@ -150,7 +150,7 @@ actor EventSubChatSource: ChatSource {
                 )
                 continuation?.yield(chatEvent)
             } catch {
-                logger.warn("EventSub map \(subscriptionType) failed: \(error)", category: .eventsub)
+                MidgarLog.notice("EventSub map \(subscriptionType) failed: \(error)", category: .eventsub)
             }
 
         case .reconnect(let urlString):
@@ -159,11 +159,11 @@ actor EventSubChatSource: ChatSource {
                 scheduleReconnect()
                 return
             }
-            logger.info("EventSub session_reconnect", category: .eventsub)
+            MidgarLog.info("EventSub session_reconnect", category: .eventsub)
             openSocket(at: url)
 
         case .revocation(let reason):
-            logger.warn("EventSub revocation: \(reason)", category: .eventsub)
+            MidgarLog.notice("EventSub revocation: \(reason)", category: .eventsub)
             if Self.isPermanentRevocation(reason) {
                 teardownSockets()
                 continuation?.yield(.connection(.disconnected(reason: String(localized: "Chat unavailable"))))
@@ -182,7 +182,7 @@ actor EventSubChatSource: ChatSource {
         guard !stopped else { return }
         let stale = sockets.isEmpty || Date().timeIntervalSince(lastKeepalive) > Double(keepaliveSeconds)
         guard stale else { return }
-        logger.info("EventSub wake → reconnect", category: .eventsub)
+        MidgarLog.info("EventSub wake → reconnect", category: .eventsub)
         attempt = 0
         connect()
     }
@@ -218,17 +218,17 @@ actor EventSubChatSource: ChatSource {
             guard !stopped else { return }
             attempt = 0
             continuation?.yield(.connection(.connected))
-            logger.info("EventSub subscribed to chat for \(channel.broadcasterLogin)", category: .eventsub)
+            MidgarLog.info("EventSub subscribed to chat for \(channel.broadcasterLogin)", category: .eventsub)
         } catch {
             if stopped { return }
             let apiError = error as? APIError
             if apiError == .unauthorized || apiError == .forbidden {
-                logger.warn("EventSub subscribe unauthorized; chat disabled until re-auth", category: .eventsub)
+                MidgarLog.notice("EventSub subscribe unauthorized; chat disabled until re-auth", category: .eventsub)
                 teardownSockets()
                 continuation?.yield(.connection(.disconnected(reason: String(localized: "Sign in to chat"))))
                 return
             }
-            logger.error("EventSub subscription failed: \(error)", category: .eventsub)
+            MidgarLog.error("EventSub subscription failed: \(error)", category: .eventsub)
             if case .rateLimited(let resetAt)? = apiError {
                 let wait = max(5, resetAt?.timeIntervalSinceNow ?? 15) + Double.random(in: 0...2)
                 scheduleReconnect(minDelay: wait)
@@ -259,7 +259,7 @@ actor EventSubChatSource: ChatSource {
 
     private func handleWatchdogTimeout() {
         guard !stopped else { return }
-        logger.warn("EventSub keepalive watchdog fired, reconnecting", category: .eventsub)
+        MidgarLog.notice("EventSub keepalive watchdog fired, reconnecting", category: .eventsub)
         scheduleReconnect()
     }
 
@@ -268,7 +268,7 @@ actor EventSubChatSource: ChatSource {
         teardownSockets()
         attempt += 1
         guard attempt <= Self.maxAttempts else {
-            logger.warn("EventSub gave up after \(attempt - 1) attempts", category: .eventsub)
+            MidgarLog.notice("EventSub gave up after \(attempt - 1) attempts", category: .eventsub)
             continuation?.yield(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
             return
         }

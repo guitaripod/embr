@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 final class EventSubSubscriber: Sendable {
     static let shared = EventSubSubscriber()
@@ -7,7 +8,6 @@ final class EventSubSubscriber: Sendable {
     private let transport: HTTPTransport
     private let clientID: String
     private let endpoint: URL
-    private let logger = AppLogger.shared
 
     init(
         transport: HTTPTransport = URLSessionTransport.shared,
@@ -35,7 +35,7 @@ final class EventSubSubscriber: Sendable {
                     do {
                         try await self.create(request, token: token)
                     } catch {
-                        self.logger.warn("EventSub optional subscribe \(request.type) failed: \(error)", category: .eventsub)
+                        MidgarLog.notice("EventSub optional subscribe \(request.type) failed: \(error)", category: .eventsub)
                     }
                 }
             }
@@ -57,7 +57,7 @@ final class EventSubSubscriber: Sendable {
         let response = try await transport.send(request)
         guard response.isSuccess else {
             let error = APIError.from(status: response.status, rateLimitReset: response.rateLimit?.resetAt)
-            logger.error("EventSub subscribe \(subscription.type) \(response.status): \(error)", category: .eventsub)
+            MidgarLog.error("EventSub subscribe \(subscription.type) \(response.status): \(error)", category: .eventsub)
             throw error
         }
     }

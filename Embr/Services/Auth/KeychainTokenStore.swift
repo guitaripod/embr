@@ -1,6 +1,7 @@
 import Foundation
 import Security
 import EmbrCore
+import MidgarCore
 
 final class KeychainTokenStore: TokenStoring {
     static let shared = KeychainTokenStore()
@@ -50,21 +51,21 @@ final class KeychainTokenStore: TokenStoring {
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         guard status == errSecSuccess, let data = item as? Data else {
             if status != errSecItemNotFound {
-                AppLogger.shared.warn("keychain read failed: \(status)", category: .auth)
+                MidgarLog.notice("keychain read failed: \(status)", category: .auth)
             }
             return nil
         }
         do {
             return try TwitchJSON.decoder.decode(StoredCredentials.self, from: data)
         } catch {
-            AppLogger.shared.error("keychain decode failed: \(error)", category: .auth)
+            MidgarLog.error("keychain decode failed: \(error)", category: .auth)
             return nil
         }
     }
 
     private func writeSync(_ credentials: StoredCredentials) {
         guard let data = try? TwitchJSON.encoder.encode(credentials) else {
-            AppLogger.shared.error("keychain encode failed", category: .auth)
+            MidgarLog.error("keychain encode failed", category: .auth)
             return
         }
         let attributes: [String: Any] = [
@@ -77,17 +78,17 @@ final class KeychainTokenStore: TokenStoring {
             insert.merge(attributes) { _, new in new }
             let addStatus = SecItemAdd(insert as CFDictionary, nil)
             if addStatus != errSecSuccess {
-                AppLogger.shared.error("keychain add failed: \(addStatus)", category: .auth)
+                MidgarLog.error("keychain add failed: \(addStatus)", category: .auth)
             }
         } else if updateStatus != errSecSuccess {
-            AppLogger.shared.error("keychain update failed: \(updateStatus)", category: .auth)
+            MidgarLog.error("keychain update failed: \(updateStatus)", category: .auth)
         }
     }
 
     private func deleteSync() {
         let status = SecItemDelete(baseQuery() as CFDictionary)
         if status != errSecSuccess && status != errSecItemNotFound {
-            AppLogger.shared.warn("keychain delete failed: \(status)", category: .auth)
+            MidgarLog.notice("keychain delete failed: \(status)", category: .auth)
         }
     }
 

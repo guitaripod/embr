@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import AuthenticationServices
 import EmbrCore
+import MidgarCore
 
 actor AuthService: AuthControlling {
     static let shared = AuthService()
@@ -59,7 +60,7 @@ actor AuthService: AuthControlling {
         }
         await wipePersonalData()
         publish(.anonymous)
-        AppLogger.shared.info("logged out", category: .auth)
+        MidgarLog.info("logged out", category: .auth)
     }
 
     /// Revokes the Twitch token, deletes the Keychain credentials and erases all on-device data.
@@ -79,7 +80,7 @@ actor AuthService: AuthControlling {
         validateTask?.cancel()
         validateTask = nil
         publish(.anonymous)
-        AppLogger.shared.info("account deleted", category: .auth)
+        MidgarLog.info("account deleted", category: .auth)
     }
 
     /// An expired access token cannot be revoked, so refresh first when the stored one is
@@ -160,7 +161,7 @@ actor AuthService: AuthControlling {
         credentials = refreshed
         await store.save(refreshed)
         publish(.authenticated(Self.user(from: refreshed)))
-        AppLogger.shared.info("refreshed access token", category: .auth)
+        MidgarLog.info("refreshed access token", category: .auth)
         return refreshed.accessToken
     }
 
@@ -231,7 +232,7 @@ actor AuthService: AuthControlling {
         let user = Self.user(from: stored)
         publish(.authenticated(user))
         startPeriodicValidation()
-        AppLogger.shared.info("logged in as \(user.login)", category: .auth)
+        MidgarLog.info("logged in as \(user.login)", category: .auth)
         return user
     }
 
@@ -277,18 +278,18 @@ actor AuthService: AuthControlling {
                 await store.save(updated)
             }
         } catch APIError.unauthorized {
-            AppLogger.shared.warn("hourly validate rejected token, attempting refresh", category: .auth)
+            MidgarLog.notice("hourly validate rejected token, attempting refresh", category: .auth)
             do {
                 _ = try await validAccessToken()
             } catch {
                 if Self.isDefinitiveAuthFailure(error) {
                     await signOutInvalid()
                 } else {
-                    AppLogger.shared.warn("token refresh failed transiently, keeping credentials: \(error)", category: .auth)
+                    MidgarLog.notice("token refresh failed transiently, keeping credentials: \(error)", category: .auth)
                 }
             }
         } catch {
-            AppLogger.shared.warn("hourly validate failed: \(error)", category: .auth)
+            MidgarLog.notice("hourly validate failed: \(error)", category: .auth)
         }
     }
 
@@ -301,7 +302,7 @@ actor AuthService: AuthControlling {
         validateTask = nil
         await store.clear()
         publish(.anonymous)
-        AppLogger.shared.warn("stored credentials are invalid, signed out", category: .auth)
+        MidgarLog.notice("stored credentials are invalid, signed out", category: .auth)
     }
 
     private func cancelTokenTasks() {
@@ -365,6 +366,8 @@ actor AuthService: AuthControlling {
     }
 }
 
+/// `CurrentValueSubject` is the only mutable state and it is thread-safe; `send` still hops to the main thread so
+/// subscribers always run there. The class is not `Sendable` by inference only because the subject is not.
 private final class StateSubjectBox: @unchecked Sendable {
     private let subject = CurrentValueSubject<AuthState, Never>(.anonymous)
 

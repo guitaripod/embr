@@ -49,6 +49,7 @@ struct DemoRandom {
 /// Procedural pictures standing in for stream frames, thumbnails, box art, avatars and emotes, drawn
 /// from a seed so nothing is downloaded and nothing is a real person's or a real game's artwork.
 enum DemoArt {
+    /// `NSCache` is documented thread-safe, so concurrent reads and writes from any queue are fine.
     nonisolated(unsafe) private static let cache = NSCache<NSString, UIImage>()
 
     static func image(for url: URL) -> UIImage? {

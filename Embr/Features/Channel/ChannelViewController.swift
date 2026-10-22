@@ -3,6 +3,7 @@ import AuthenticationServices
 import Combine
 import EmbrCore
 import SafariServices
+import MidgarCore
 
 @MainActor
 final class ChannelViewController: UIViewController {
@@ -926,7 +927,7 @@ extension ChannelViewController: ChatViewControllerDelegate {
     }
 
     func chatViewController(_ controller: ChatViewController, didTapEmote emote: Emote) {
-        AppLogger.shared.debug("Tapped emote \(emote.name)", category: .ui)
+        MidgarLog.debug("Tapped emote \(emote.name)", category: .ui)
     }
 
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL) {
@@ -948,200 +949,8 @@ extension ChannelViewController: ChatViewControllerDelegate {
                 _ = try await self.auth.login(presentationAnchor: anchor)
                 LiveAlertsPrompt.offerAfterSignIn(from: self)
             } catch {
-                AppLogger.shared.warn("channel chat login failed: \(error)", category: .auth)
+                MidgarLog.notice("channel chat login failed: \(error)", category: .auth)
             }
         }
-    }
-}
-
-@MainActor
-private final class AudioOnlyBarView: UIView {
-    var onPlayPause: (() -> Void)?
-    var onRestoreVideo: (() -> Void)?
-
-    private let avatarView = UIImageView()
-    private let nameLabel = UILabel()
-    private let titleLabel = UILabel()
-    private let liveBadge = UIImageView()
-    private let playPauseButton = UIButton(type: .system)
-    private let restoreButton = UIButton(type: .system)
-
-    init() {
-        super.init(frame: .zero)
-        isHidden = true
-        backgroundColor = Theme.surface
-
-        avatarView.contentMode = .scaleAspectFill
-        avatarView.clipsToBounds = true
-        avatarView.layer.cornerRadius = 20
-        avatarView.backgroundColor = Theme.surfaceElevated
-        avatarView.image = UIImage(systemName: "person.crop.circle.fill")
-        avatarView.tintColor = Theme.secondaryText
-
-        nameLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        nameLabel.textColor = Theme.primaryText
-
-        titleLabel.font = .systemFont(ofSize: 12, weight: .regular)
-        titleLabel.textColor = Theme.secondaryText
-        titleLabel.numberOfLines = 1
-        titleLabel.lineBreakMode = .byTruncatingTail
-
-        let badgeConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .bold)
-        liveBadge.image = UIImage(systemName: "dot.radiowaves.left.and.right", withConfiguration: badgeConfig)
-        liveBadge.tintColor = Theme.liveDot
-        liveBadge.contentMode = .scaleAspectFit
-        liveBadge.setContentHuggingPriority(.required, for: .horizontal)
-        liveBadge.isAccessibilityElement = true
-        liveBadge.accessibilityLabel = String(localized: "Live")
-
-        let nameRow = UIStackView(arrangedSubviews: [nameLabel, liveBadge, UIView()])
-        nameRow.axis = .horizontal
-        nameRow.spacing = 6
-        nameRow.alignment = .center
-
-        let textStack = UIStackView(arrangedSubviews: [nameRow, titleLabel])
-        textStack.axis = .vertical
-        textStack.spacing = 2
-        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        nameLabel.lineBreakMode = .byTruncatingTail
-
-        configureButton(playPauseButton, symbol: "pause.fill", label: String(localized: "Pause"))
-        playPauseButton.addAction(UIAction { [weak self] _ in self?.onPlayPause?() }, for: .touchUpInside)
-        configureButton(restoreButton, symbol: "play.rectangle.fill", label: String(localized: "Show Video"))
-        restoreButton.addAction(UIAction { [weak self] _ in self?.onRestoreVideo?() }, for: .touchUpInside)
-
-        let row = UIStackView(arrangedSubviews: [avatarView, textStack, playPauseButton, restoreButton])
-        row.axis = .horizontal
-        row.spacing = 12
-        row.alignment = .center
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.isLayoutMarginsRelativeArrangement = true
-        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 8)
-        addSubview(row)
-
-        let separator = UIView()
-        separator.backgroundColor = Theme.surfaceElevated
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(separator)
-        let separatorHeight = separator.heightAnchor.constraint(equalToConstant: 1.0 / max(traitCollection.displayScale, 1))
-        registerForTraitChanges([UITraitDisplayScale.self]) { (bar: AudioOnlyBarView, _) in
-            separatorHeight.constant = 1.0 / max(bar.traitCollection.displayScale, 1)
-        }
-
-        NSLayoutConstraint.activate([
-            row.topAnchor.constraint(equalTo: topAnchor),
-            row.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            row.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
-            row.bottomAnchor.constraint(equalTo: bottomAnchor),
-            avatarView.widthAnchor.constraint(equalToConstant: 40),
-            avatarView.heightAnchor.constraint(equalToConstant: 40),
-            separator.leadingAnchor.constraint(equalTo: leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: trailingAnchor),
-            separator.bottomAnchor.constraint(equalTo: bottomAnchor),
-            separatorHeight
-        ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    private func configureButton(_ button: UIButton, symbol: String, label: String) {
-        var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold))
-        config.baseForegroundColor = Theme.accent
-        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-        button.configuration = config
-        button.accessibilityLabel = label
-        button.setContentHuggingPriority(.required, for: .horizontal)
-    }
-
-    func configure(name: String, title: String) {
-        nameLabel.text = name
-        titleLabel.text = title
-    }
-
-    func setAvatar(_ image: UIImage?) {
-        guard let image else { return }
-        avatarView.image = image
-    }
-
-    func setPlaying(_ playing: Bool) {
-        var config = playPauseButton.configuration ?? .plain()
-        config.image = UIImage(
-            systemName: playing ? "pause.fill" : "play.fill",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
-        )
-        playPauseButton.configuration = config
-        playPauseButton.accessibilityLabel = playing ? String(localized: "Pause") : String(localized: "Play")
-        if playing, !Motion.reduced {
-            liveBadge.addSymbolEffect(.variableColor.iterative, options: .repeating)
-        } else {
-            liveBadge.removeAllSymbolEffects()
-        }
-    }
-}
-
-/// The seam between video and the chat column on iPad: a hairline with a grip, wide enough to
-/// catch a finger, highlighted under the pointer, and adjustable with VoiceOver.
-@MainActor
-final class ColumnDividerView: UIView {
-    static let hitWidth: CGFloat = 16
-
-    var onAccessibilityAdjust: ((CGFloat) -> Void)?
-
-    private let line = UIView()
-    private let grip = UIView()
-
-    init() {
-        super.init(frame: .zero)
-        backgroundColor = .clear
-        line.backgroundColor = Theme.surfaceElevated
-        line.translatesAutoresizingMaskIntoConstraints = false
-        grip.backgroundColor = Theme.secondaryText.withAlphaComponent(0.45)
-        grip.layer.cornerRadius = 2.5
-        grip.layer.cornerCurve = .continuous
-        grip.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(line)
-        addSubview(grip)
-        NSLayoutConstraint.activate([
-            line.topAnchor.constraint(equalTo: topAnchor),
-            line.bottomAnchor.constraint(equalTo: bottomAnchor),
-            line.centerXAnchor.constraint(equalTo: centerXAnchor),
-            line.widthAnchor.constraint(equalToConstant: 1),
-            grip.centerXAnchor.constraint(equalTo: centerXAnchor),
-            grip.centerYAnchor.constraint(equalTo: centerYAnchor),
-            grip.widthAnchor.constraint(equalToConstant: 5),
-            grip.heightAnchor.constraint(equalToConstant: 44)
-        ])
-        addInteraction(UIPointerInteraction(delegate: self))
-        isAccessibilityElement = true
-        accessibilityLabel = String(localized: "Chat width")
-        accessibilityTraits = .adjustable
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    func setDragging(_ dragging: Bool) {
-        UIView.animate(withDuration: 0.15) {
-            self.grip.backgroundColor = dragging ? Theme.accent : Theme.secondaryText.withAlphaComponent(0.45)
-            self.grip.transform = dragging ? CGAffineTransform(scaleX: 1.4, y: 1.2) : .identity
-        }
-    }
-
-    override func accessibilityIncrement() {
-        onAccessibilityAdjust?(40)
-    }
-
-    override func accessibilityDecrement() {
-        onAccessibilityAdjust?(-40)
-    }
-}
-
-extension ColumnDividerView: UIPointerInteractionDelegate {
-    func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-        UIPointerStyle(effect: .highlight(UITargetedPreview(view: grip)))
     }
 }

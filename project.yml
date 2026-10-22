@@ -20,7 +20,11 @@ packages:
     from: "0.14.0"
   MidgarKit:
     url: https://github.com/guitaripod/MidgarKit
-    from: "3.0.0"
+    exactVersion: 4.2.0
+
+x-midgar-keychain-groups: &midgarKeychainGroups
+  - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
+  - $(AppIdentifierPrefix)cc.midgarcorp.shared
 
 targets:
   Embr:
@@ -41,6 +45,10 @@ targets:
       - package: SDWebImageWebPCoder
         product: SDWebImageWebPCoder
       - package: MidgarKit
+    entitlements:
+      path: Embr/Embr.entitlements
+      properties:
+        keychain-access-groups: *midgarKeychainGroups
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${EMBR_BUNDLE_ID}

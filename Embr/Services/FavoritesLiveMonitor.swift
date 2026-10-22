@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 /// Which favorites are live right now, plus their avatars. Owned outside the Favorites screen
 /// so the tab's live-count badge is current before that tab has ever been opened.
@@ -88,7 +89,7 @@ final class FavoritesLiveMonitor {
                 self.status = .loaded
             } catch {
                 guard !Task.isCancelled else { return }
-                AppLogger.shared.warn("favorites live refresh failed: \(error)", category: .api)
+                MidgarLog.notice("favorites live refresh failed: \(error)", category: .api)
                 if self.status != .loaded {
                     self.status = .failed(String(localized: "Couldn't check which favorites are live."))
                 }

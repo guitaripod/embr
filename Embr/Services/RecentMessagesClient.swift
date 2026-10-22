@@ -1,12 +1,12 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 final class RecentMessagesClient: RecentMessagesProviding {
     static let shared = RecentMessagesClient()
 
     private let transport: HTTPTransport
     private let baseURL: URL
-    private let logger = AppLogger.shared
 
     init(
         transport: HTTPTransport = URLSessionTransport.shared,
@@ -26,7 +26,7 @@ final class RecentMessagesClient: RecentMessagesProviding {
             guard response.isSuccess else { return [] }
             return RecentMessagesParser.messages(fromJSON: response.body, channelID: channelLogin)
         } catch {
-            logger.warn("Recent messages fetch failed for \(channelLogin): \(error)", category: .chat)
+            MidgarLog.notice("Recent messages fetch failed for \(channelLogin): \(error)", category: .chat)
             return []
         }
     }

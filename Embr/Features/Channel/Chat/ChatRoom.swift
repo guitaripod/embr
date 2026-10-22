@@ -1,5 +1,6 @@
 import Foundation
 import EmbrCore
+import MidgarCore
 
 enum ChatRoomEvent: Sendable {
     case catalog(EmoteCatalog, BadgeCatalog)
@@ -20,7 +21,6 @@ actor ChatRoom {
     private let auth: AuthControlling
     private let emotes: EmoteCataloging
     private let recentMessages: RecentMessagesProviding
-    private let logger = AppLogger.shared
 
     private let flushInterval: UInt64 = 200_000_000
 
@@ -153,7 +153,7 @@ actor ChatRoom {
         case .initial:
             continuation?.yield(.messages(rewritten))
         case .gap:
-            logger.info("chat gap backfill: \(rewritten.count) candidates", category: .chat)
+            MidgarLog.info("chat gap backfill: \(rewritten.count) candidates", category: .chat)
             continuation?.yield(.backfill(rewritten))
         }
     }
@@ -213,7 +213,7 @@ actor ChatRoom {
             trackConnection(status)
             continuation?.yield(.connection(status))
         case .notice(let notice):
-            logger.info("chat notice: \(notice.text)", category: .chat)
+            MidgarLog.info("chat notice: \(notice.text)", category: .chat)
             continuation?.yield(.notice(notice))
         }
     }
