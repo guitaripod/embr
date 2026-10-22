@@ -15,7 +15,7 @@ struct MidgarGatewayTransportTests {
     @Test func configurationPointsTheWorkerAtTheGatewayRoute() {
         let configuration = Configuration.current
         #expect(configuration.workerBaseURL.absoluteString == "https://api.midgarcorp.cc/v1/embr")
-        #expect(configuration.twitchRedirectURI == "https://api.midgarcorp.cc/v1/embr/auth/callback")
+        #expect(configuration.twitchRedirectURI == "https://embr.guitaripod.workers.dev/auth/callback")
     }
 
     @Test func workerRequestsGoToTheEmbrRouteWithTheAppID() async throws {
@@ -43,12 +43,12 @@ struct MidgarGatewayTransportTests {
             return (200, [:], Data(#"{"url":"https://x"}"#.utf8))
         })
 
-        _ = try await transport.send(endpoints.loginURL(redirectURI: "https://api.midgarcorp.cc/v1/embr/auth/callback", state: "s 1"))
+        _ = try await transport.send(endpoints.loginURL(redirectURI: Configuration.current.twitchRedirectURI, state: "s 1"))
 
         let components = try #require(seen.value?.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) })
         #expect(components.path == "/v1/embr/auth/login-url")
         #expect(components.queryItems?.first { $0.name == "state" }?.value == "s 1")
-        #expect(components.queryItems?.first { $0.name == "redirectURI" }?.value == "https://api.midgarcorp.cc/v1/embr/auth/callback")
+        #expect(components.queryItems?.first { $0.name == "redirectURI" }?.value == Configuration.current.twitchRedirectURI)
     }
 
     @Test func aJSONBodyReachesTheWorkerIntact() async throws {
@@ -58,7 +58,7 @@ struct MidgarGatewayTransportTests {
             return (200, [:], Data(#"{"accessToken":"a","expiresIn":3600}"#.utf8))
         })
 
-        _ = try await transport.send(endpoints.exchange(code: "the-code", redirectURI: "https://api.midgarcorp.cc/v1/embr/auth/callback"))
+        _ = try await transport.send(endpoints.exchange(code: "the-code", redirectURI: Configuration.current.twitchRedirectURI))
 
         let request = try #require(seen.value)
         #expect(request.httpMethod == "POST")
@@ -66,7 +66,7 @@ struct MidgarGatewayTransportTests {
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
         let body = try #require(request.httpBody)
         let object = try #require(try JSONSerialization.jsonObject(with: body) as? [String: String])
-        #expect(object == ["code": "the-code", "redirectURI": "https://api.midgarcorp.cc/v1/embr/auth/callback"])
+        #expect(object == ["code": "the-code", "redirectURI": Configuration.current.twitchRedirectURI])
     }
 
     @Test func statusesTheServiceAnswersWithComeBackAsResponses() async throws {

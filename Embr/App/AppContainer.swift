@@ -8,8 +8,11 @@ struct Configuration: Sendable {
     let redirectURI: String
     let recentMessagesBaseURL: URL
 
+    /// The redirect URI registered in the Twitch console for the shipped app. Twitch sends the browser there inside
+    /// `ASWebAuthenticationSession`, which is a navigation and not an app network call, so it stays on the worker's own
+    /// host and the worker bounces it to `embr://auth/callback`. Changing it needs a console change first.
     var twitchRedirectURI: String {
-        workerBaseURL.appendingPathComponent("auth/callback").absoluteString
+        "https://embr.guitaripod.workers.dev/auth/callback"
     }
 
     static let current = Configuration(
