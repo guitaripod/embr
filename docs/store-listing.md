@@ -86,10 +86,11 @@ Driven mainly by unrestricted user-generated content (live streams + chat Embr d
 
 ## App Privacy (nutrition label)
 - **Data used to track you:** None.
-- **Data linked to you:** None (OAuth token is on-device, not collected).
-- **Data not linked to you:** "User Content" — only when a user submits a report (App Functionality, not tracking). Otherwise none.
+- **Data linked to you:** User ID (the Midgar ID) and Purchase History (tips), both App Functionality. The OAuth token is on-device, not collected.
+- **Data not linked to you:** Other User Content when a user submits a report (App Functionality), and Product Interaction from the More Apps card (Analytics).
+- Full answers: `store/privacy-label.md`.
 
-Summary: Embr collects the minimum to work and does not track you — no analytics SDK, no ads, no third-party tracking. Sign-in uses Twitch's official OAuth (Embr never sees your password; token stored only in the device Keychain; sign-out deletes it). Settings and blocked-users list are stored locally. A submitted report (message + channel context) is sent to the developer for moderation handling; not sold or shared.
+Summary: Embr collects the minimum to work and does not track you: no analytics SDK, no ads, no third-party tracking. It keeps an anonymous Midgar ID and reports tips to Midgar's ledger. Sign-in uses Twitch's official OAuth (Embr never sees your password; token stored only in the device Keychain; sign-out deletes it). Settings and blocked-users list are stored locally. A submitted report (message + channel context) is sent to the developer for moderation handling; not sold or shared.
 
 ## Screenshot captions (≤~40 chars)
 1. Browse — `Every live channel, at a glance`
@@ -101,5 +102,5 @@ Summary: Embr collects the minimum to work and does not track you — no analyti
 
 ## Support / URLs
 - Support email: guitaripod@gmail.com
-- Privacy Policy URL: https://embr.guitaripod.workers.dev/legal/privacy
-- Terms of Use URL: https://embr.guitaripod.workers.dev/legal/terms
+- Privacy Policy URL: https://midgarcorp.cc/legal/embr/privacy
+- Terms of Use URL: https://midgarcorp.cc/legal/embr/terms

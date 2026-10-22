@@ -2,15 +2,11 @@ import Foundation
 
 enum LegalText {
     static let supportEmail = "guitaripod@gmail.com"
-    static let lastUpdated = String(localized: "2 July 2026")
+    static let lastUpdated = String(localized: "23 October 2026")
 
-    static var termsURL: URL {
-        Configuration.current.workerBaseURL.appendingPathComponent("legal/terms")
-    }
+    static let termsURL = URL(string: "https://midgarcorp.cc/legal/embr/terms")!
 
-    static var privacyURL: URL {
-        Configuration.current.workerBaseURL.appendingPathComponent("legal/privacy")
-    }
+    static let privacyURL = URL(string: "https://midgarcorp.cc/legal/embr/privacy")!
 
     static let termsTitle = String(localized: "Terms of Use")
     static let privacyTitle = String(localized: "Privacy Policy")
@@ -39,13 +35,27 @@ enum LegalText {
     """)
 
     static let privacy = String(localized: """
-    Embr is designed to collect as little data as possible. The developer does not operate any \
-    advertising or analytics tracking, and does not sell or share your data.
+    Embr has no advertising and no tracking, and the developer does not sell or share your data. The \
+    only usage counts it sends are anonymous and described under More Apps.
 
     What stays on your device
     Your settings, watch history, list of channels, and blocked or hidden users are stored only on \
     your device. Diagnostic logs are written to the app's private storage and never leave your device \
     unless you explicitly choose to share them.
+
+    The Midgar ID
+    Embr keeps an anonymous Midgar ID, a random identifier with no name, email address or other detail \
+    about you, in your iCloud Keychain. It is created the first time the app starts and is shared with \
+    Midgar's other apps on your devices, so a purchase is recognised everywhere.
+
+    Tips
+    Tips are optional, unlock nothing and are bought through Apple. When you leave a tip, the purchase \
+    record from Apple (which tip, the price, the dates and your App Store country) is sent to Midgar's \
+    own server together with your Midgar ID. Midgar never receives your payment details.
+
+    More Apps
+    The More Apps card in Settings sends anonymous counts of how often it is opened, shown and tapped. \
+    They carry no identifier and are not linked to you.
 
     Sign in with Twitch
     If you choose to sign in, authentication happens through Twitch's official OAuth flow. Your Twitch \
@@ -58,9 +68,12 @@ enum LegalText {
     are sent to the developer so the report can be reviewed and acted on. These reports do not include \
     your identity.
 
-    Twitch
-    Video and chat come from Twitch. Twitch's own privacy policy governs the data Twitch collects when \
-    its embedded player and services are used.
+    Twitch and other services
+    Video and chat come from Twitch, whose privacy policy governs the data Twitch collects when its \
+    embedded player and services are used. Emotes come from 7TV, BetterTTV and FrankerFaceZ and recent \
+    chat from recent-messages.robotty.de; they receive the channel name and your IP address.
+
+    The full policy, including how to have your Midgar ID deleted, is at midgarcorp.cc/legal/embr/privacy.
 
     Contact
     Questions about privacy: \(supportEmail)
