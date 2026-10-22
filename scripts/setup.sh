@@ -18,7 +18,7 @@ fi
 if [ ! -f Embr/Secrets.swift ]; then
   echo "==> Creating Embr/Secrets.swift from example"
   cp Embr/Secrets.example.swift Embr/Secrets.swift
-  echo "    Edit Embr/Secrets.swift: twitchClientID + workerBaseURL"
+  echo "    Edit Embr/Secrets.swift: twitchClientID"
 fi
 
 if command -v xcodegen >/dev/null 2>&1; then

@@ -9,6 +9,16 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 - **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
 - **Embr** (`Embr/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
 - **workers/**: Cloudflare Workers (Hono, jose, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
+- **MidgarKit 4.2.0** (`exactVersion`, by URL): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`Embr/App/EmbrMidgar.swift`) is the composition root for all of it.
+
+## The Midgar platform (invariants)
+
+- **Worker behind the gateway.** Every request to Embr's worker goes to `https://api.midgarcorp.cc/v1/embr/...` through `MidgarGatewayTransport` (MidgarCore.HTTP, `X-App-ID: embr`). `embr.guitaripod.workers.dev` appears nowhere in the app. The client for it carries no Midgar ID and no `Authorization`: the worker reads no credential. The gateway sends `X-Forwarded-Prefix: /v1/embr`, and the worker builds its HLS proxy links from it. `/hls/proxy`, `/embed` and `/auth/callback` are public gateway calls (AVPlayer, the web view and Twitch cannot send `X-App-ID`).
+- **Twitch redirect URI** is `https://api.midgarcorp.cc/v1/embr/auth/callback` (`Configuration.twitchRedirectURI`). It must be listed in the Twitch developer console beside the old `workers.dev` one, which stays for builds in the field.
+- **Tips** are consumables bought through `MidgarStore` in `Mode.purchases` (`TipJarStore`): bought, finished and reported to the ledger with the Midgar ID. They unlock nothing, so `entitlementsByProduct` is empty.
+- **Midgar ID** starts at launch (`EmbrMidgar.start()`), in the team keychain group `cc.midgarcorp.shared`. The app's own group stays first in the entitlements so the Twitch tokens already in the Keychain keep resolving. A test host and a DEBUG demo capture start nothing and reach no Midgar service.
+- **Privacy** is declared in `Embr/PrivacyInfo.xcprivacy`, `store/privacy-label.md` and `web/midgarcorp/src/content/legal/embr/`: Midgar ID (User ID, linked), tips (Purchase History, linked), reports (Other User Content, not linked), More Apps (Product Interaction, not linked). Change one and change all three plus `LegalText.privacy`.
+- **Review prompt** is `MidgarReviewPolicy` (`ReviewPrompt`); the success is 3 minutes of a confirmed live stream.
 
 ## Code style (non-negotiable)
 
@@ -43,6 +53,14 @@ scripts/ios-deploy.sh    # build + install + relaunch on EMBR_DEVICE_UDID
 
 `ios-build.sh` runs `xcodegen generate` first, captures the real xcodebuild exit code via `pipefail`, surfaces Swift 6 concurrency errors, and asserts no `.swift` is newer than the built binary (catches no-op rebuilds). Adding/removing any file → just run `ios-build.sh` (it regenerates the project). Never call `xcodebuild` raw.
 
+App tests (Swift Testing, `Tests/EmbrTests`, the gateway transport, the tip jar, the review migration):
+
+```bash
+export EMBR_BUNDLE_ID=com.guitaripod.embr EMBR_TEAM_ID=P4DQK6SRKR
+xcodegen generate
+xcodebuild test -project Embr.xcodeproj -scheme Embr -destination 'platform=iOS Simulator,id=<udid>' CODE_SIGNING_ALLOWED=NO
+```
+
 ### Worker
 
 ```bash
@@ -58,11 +76,11 @@ Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` 
 
 ## Logging — agents read this
 
-`AppLogger` mirrors os_log AND `Library/Logs/embr.log` (rotates at 2 MB). Categories: `app, auth, api, eventsub, chat, emote, playback, persistence, ui`. To pull from a device, use the `ios-device-logs` skill / `devicectl ... copy from --source Library/Logs/embr.log`.
+`MidgarLog` (MidgarCore) mirrors os_log AND `Library/Logs/embr.log` (rotates at 2 MB, three archives kept). Categories: `app, auth, api, eventsub, chat, emote, playback, persistence, tips` (Embr's, in `LogCategories.swift`) plus MidgarCore's `account, commerce, network, portal, ui`. To pull from a device, use the `ios-device-logs` skill / `devicectl ... copy from --source Library/Logs/embr.log`.
 
 ## Secrets / config
 
-`.env.local` (gitignored, made by `setup.sh`): `EMBR_BUNDLE_ID`, `EMBR_TEAM_ID`, `EMBR_DEVICE_UDID`, `EMBR_DEVICE_NAME`. `Embr/Secrets.swift` (gitignored, copied from `Secrets.example.swift`): `twitchClientID`, `workerBaseURL`, `redirectURI`. Never commit either.
+`.env.local` (gitignored, made by `setup.sh`): `EMBR_BUNDLE_ID`, `EMBR_TEAM_ID`, `EMBR_DEVICE_UDID`, `EMBR_DEVICE_NAME`. `Embr/Secrets.swift` (gitignored, copied from `Secrets.example.swift`): `twitchClientID`, `redirectURI`. The worker address is not a secret: it is `Configuration.workerBaseURL`, the gateway route. Never commit either.
 
 ## Reality
 

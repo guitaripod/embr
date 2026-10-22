@@ -23,7 +23,8 @@ deliberate experiment.
 - **Legal / agreement:** first-launch onboarding shows a Terms/Privacy acceptance notice
   with tappable in-app docs; Settings → About has **Terms of Use**, **Privacy Policy**,
   **Contact Support**. Same docs served at `embr.guitaripod.workers.dev/legal/{terms,privacy}`
-  (the Privacy Policy URL for App Store Connect).
+  for the builds in the field; from the Midgar release the published pages are
+  `midgarcorp.cc/legal/embr/{terms,privacy}` (the Privacy Policy URL for App Store Connect).
 - **Privacy:** `Embr/PrivacyInfo.xcprivacy` (no tracking; `UserDefaults` CA92.1,
   `FileTimestamp` C617.1) and `ITSAppUsesNonExemptEncryption=false`.
 - **Cleanup / fixes:** removed dead Settings toggles; fixed the chat-composer keyboard

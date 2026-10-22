@@ -32,7 +32,7 @@ See `CONTRACTS.md` for the full type map and `CLAUDE.md` for build instructions.
 ```bash
 brew install xcodegen
 scripts/setup.sh            # writes .env.local + Secrets.swift, runs xcodegen
-# edit Embr/Secrets.swift (twitchClientID, workerBaseURL) and .env.local (team id, device udid)
+# edit Embr/Secrets.swift (twitchClientID) and .env.local (team id, device udid)
 scripts/ios-deploy.sh       # build + install on your iPhone
 ```
 
