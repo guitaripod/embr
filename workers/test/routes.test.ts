@@ -470,6 +470,90 @@ describe('GET /playback/:login', () => {
   });
 });
 
+describe('links built behind the gateway', () => {
+  const PREFIX = { 'X-Forwarded-Prefix': '/v1/embr' };
+
+  function stubUsher(): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('gql.twitch.tv/gql')) {
+          const token = { value: '{"token":1}', signature: 'sig123' };
+          return jsonResponse({ data: { streamPlaybackAccessToken: token, videoPlaybackAccessToken: token } });
+        }
+        return textResponse('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchunked.m3u8');
+      }),
+    );
+  }
+
+  it('puts the prefix in the playback url the app plays', async () => {
+    stubUsher();
+    const res = await app.request('https://api.midgarcorp.cc/playback/somechannel', { headers: PREFIX }, makeEnv());
+    const body = (await res.json()) as { url: string };
+    expect(body.url.startsWith('https://api.midgarcorp.cc/v1/embr/hls/proxy?src=')).toBe(true);
+  });
+
+  it('puts the prefix in the vod playback url too', async () => {
+    stubUsher();
+    const res = await app.request('https://api.midgarcorp.cc/playback/vod/12345', { headers: PREFIX }, makeEnv());
+    const body = (await res.json()) as { url: string };
+    expect(body.url.startsWith('https://api.midgarcorp.cc/v1/embr/hls/proxy?src=')).toBe(true);
+  });
+
+  it('puts the prefix in the variant links of a proxied master playlist', async () => {
+    const master = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000\nhttps://video-weaver.example/720.m3u8';
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(master)));
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+    const res = await app.request(
+      `https://api.midgarcorp.cc/hls/proxy?src=${encodeURIComponent(src)}`,
+      { headers: PREFIX },
+      makeEnv(),
+    );
+    const variant = encodeURIComponent('https://video-weaver.example/720.m3u8');
+    expect(await res.text()).toContain(`https://api.midgarcorp.cc/v1/embr/hls/proxy?src=${variant}`);
+  });
+
+  it('signs the prefixed links the same way, so the signature check still passes behind the gateway', async () => {
+    const env = { ...makeEnv(), HLS_SIGNING_KEY: 'k'.repeat(32) };
+    const master = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nhttps://video-weaver.example/720.m3u8';
+    vi.stubGlobal('fetch', vi.fn(async () => textResponse(master)));
+    const src = 'https://usher.ttvnw.net/api/channel/hls/foo.m3u8';
+    const { exp, sig } = await signProxySrc(env.HLS_SIGNING_KEY, src, nowSeconds());
+    const res = await app.request(
+      `https://api.midgarcorp.cc/hls/proxy?src=${encodeURIComponent(src)}&exp=${exp}&sig=${sig}`,
+      { headers: PREFIX },
+      env,
+    );
+    expect(res.status).toBe(200);
+    const link = (await res.text()).split('\n').find((line) => line.startsWith('https://')) ?? '';
+    expect(link.startsWith('https://api.midgarcorp.cc/v1/embr/hls/proxy?src=')).toBe(true);
+    expect(link).toContain('&exp=');
+    expect(link).toContain('&sig=');
+  });
+
+  it('ignores a prefix that is not a plain path, falling back to the request origin', async () => {
+    stubUsher();
+    for (const bad of ['', '/', 'v1/embr', '/v1/../embr', '//evil.example', '/v1/embr?x=1', 'https://evil.example/v1']) {
+      const res = await app.request('https://embr.test/playback/somechannel', { headers: { 'X-Forwarded-Prefix': bad } }, makeEnv());
+      const body = (await res.json()) as { url: string };
+      expect(body.url.startsWith('https://embr.test/hls/proxy?src='), bad).toBe(true);
+    }
+  });
+
+  it('keeps the request host as the Twitch parent of the embed page, which is the gateway host behind it', async () => {
+    const res = await app.request('https://api.midgarcorp.cc/embed?channel=somechannel', { headers: PREFIX }, makeEnv());
+    expect(await res.text()).toContain('"parent":["api.midgarcorp.cc"]');
+  });
+
+  it('is unchanged without the header', async () => {
+    stubUsher();
+    const res = await app.request('https://embr.guitaripod.workers.dev/playback/somechannel', {}, makeEnv());
+    const body = (await res.json()) as { url: string };
+    expect(body.url.startsWith('https://embr.guitaripod.workers.dev/hls/proxy?src=')).toBe(true);
+  });
+});
+
 describe('GET /playback/clip/:slug', () => {
   const clipToken = { signature: 'clipsig', value: '{"clip_uri":"","expires":9999}' };
   const qualities = [
@@ -851,7 +935,8 @@ describe('GET /hls/proxy with HLS_SIGNING_KEY', () => {
       vi.fn(async (input: RequestInfo | URL) => {
         const url = typeof input === 'string' ? input : input.toString();
         if (url.includes('gql.twitch.tv/gql')) {
-          return jsonResponse({ data: { streamPlaybackAccessToken: { value: '{"token":1}', signature: 'sig123' } } });
+          const token = { value: '{"token":1}', signature: 'sig123' };
+          return jsonResponse({ data: { streamPlaybackAccessToken: token, videoPlaybackAccessToken: token } });
         }
         if (url.includes('usher.ttvnw.net')) return textResponse(MASTER);
         throw new Error(`unexpected fetch ${url}`);

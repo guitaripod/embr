@@ -32,6 +32,7 @@ import {
 import { isMediaPlaylist, rewriteUris, stripAds } from './hls';
 import { isValidProxySignature, nowSeconds, signProxySrc } from './proxy-signing';
 import { embedPage } from './embed';
+import { FORWARDED_PREFIX_HEADER, publicBase } from './public-url';
 import { privacyPage, termsPage } from './legal';
 
 const APP_TOKEN_KEY = 'app_token';
@@ -194,9 +195,12 @@ app.get('/auth/callback', (c) => {
   return new Response(null, { status: 302, headers: { Location: target.toString() } });
 });
 
-function proxyURLFor(c: { req: { url: string } }): { proxyBase: string } {
-  const here = new URL(c.req.url);
-  return { proxyBase: `${here.origin}/hls/proxy` };
+/**
+ * The public URL of `/hls/proxy`. Behind the gateway the request URL has lost its `/v1/embr`
+ * mount, so the link is built from the origin plus the `X-Forwarded-Prefix` the gateway sends.
+ */
+function proxyURLFor(c: { req: { url: string; header: (name: string) => string | undefined } }): { proxyBase: string } {
+  return { proxyBase: `${publicBase(c.req.url, c.req.header(FORWARDED_PREFIX_HEADER))}/hls/proxy` };
 }
 
 /// Confirms the usher master is reachable before handing the app a URL.
@@ -240,7 +244,10 @@ async function proxySrcAuthorized(env: Bindings, src: string, exp: string | unde
   return isValidProxySignature(env.HLS_SIGNING_KEY, src, exp ?? null, sig ?? null, nowSeconds());
 }
 
-async function playbackResponse(c: { req: { url: string }; env: Bindings }, usher: string): Promise<Response> {
+async function playbackResponse(
+  c: { req: { url: string; header: (name: string) => string | undefined }; env: Bindings },
+  usher: string,
+): Promise<Response> {
   const check = await fetchUpstream(usher, 5000, 'usher preflight');
   await check.body?.cancel();
   if (!check.ok) {
