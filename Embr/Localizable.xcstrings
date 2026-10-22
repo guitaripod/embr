@@ -1439,66 +1439,66 @@
         }
       }
     },
-    "2 July 2026": {
+    "23 October 2026": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "2. Juli 2026"
+            "value": "23. Oktober 2026"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 de julio de 2026"
+            "value": "23 de octubre de 2026"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 juillet 2026"
+            "value": "23 octobre 2026"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 luglio 2026"
+            "value": "23 ottobre 2026"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "2026年7月2日"
+            "value": "2026年10月23日"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "2026년 7월 2일"
+            "value": "2026년 10월 23일"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 de julho de 2026"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026年7月2日"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026年7月2日"
+            "value": "23 de outubro de 2026"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 lipca 2026"
+            "value": "23 października 2026"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年10月23日"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年10月23日"
           }
         }
       }
@@ -6757,6 +6757,70 @@
         }
       }
     },
+    "Embr has no advertising and no tracking, and the developer does not sell or share your data. The only usage counts it sends are anonymous and described under More Apps.\n\nWhat stays on your device\nYour settings, watch history, list of channels, and blocked or hidden users are stored only on your device. Diagnostic logs are written to the app's private storage and never leave your device unless you explicitly choose to share them.\n\nThe Midgar ID\nEmbr keeps an anonymous Midgar ID, a random identifier with no name, email address or other detail about you, in your iCloud Keychain. It is created the first time the app starts and is shared with Midgar's other apps on your devices, so a purchase is recognised everywhere.\n\nTips\nTips are optional, unlock nothing and are bought through Apple. When you leave a tip, the purchase record from Apple (which tip, the price, the dates and your App Store country) is sent to Midgar's own server together with your Midgar ID. Midgar never receives your payment details.\n\nMore Apps\nThe More Apps card in Settings sends anonymous counts of how often it is opened, shown and tapped. They carry no identifier and are not linked to you.\n\nSign in with Twitch\nIf you choose to sign in, authentication happens through Twitch's official OAuth flow. Your Twitch access token is stored in the device Keychain and is sent only to Twitch's own APIs (via a thin proxy that keeps no copy of it) to load chat and your follows. You can log out at any time, which removes the token from your device.\n\nReports\nWhen you report or block a chat message or user, the message, its author, and your selected reason are sent to the developer so the report can be reviewed and acted on. These reports do not include your identity.\n\nTwitch and other services\nVideo and chat come from Twitch, whose privacy policy governs the data Twitch collects when its embedded player and services are used. Emotes come from 7TV, BetterTTV and FrankerFaceZ and recent chat from recent-messages.robotty.de; they receive the channel name and your IP address.\n\nThe full policy, including how to have your Midgar ID deleted, is at midgarcorp.cc/legal/embr/privacy.\n\nContact\nQuestions about privacy: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr hat keine Werbung und kein Tracking, und der Entwickler verkauft oder teilt deine Daten nicht. Die einzigen Nutzungszahlen, die gesendet werden, sind anonym und unter More Apps beschrieben.\n\nWas auf deinem Gerät bleibt\nDeine Einstellungen, dein Wiedergabeverlauf, deine Kanalliste sowie blockierte oder ausgeblendete Nutzer werden nur auf deinem Gerät gespeichert. Diagnoseprotokolle werden im privaten Speicher der App geschrieben und verlassen dein Gerät nur, wenn du dich ausdrücklich für das Teilen entscheidest.\n\nDie Midgar ID\nEmbr speichert in deinem iCloud-Schlüsselbund eine anonyme Midgar ID, eine zufällige Kennung ohne Namen, E-Mail-Adresse oder andere Angaben zu dir. Sie wird beim ersten Start der App erstellt und mit den anderen Apps von Midgar auf deinen Geräten geteilt, damit ein Kauf überall erkannt wird.\n\nTrinkgeld\nTrinkgeld ist optional, schaltet nichts frei und wird über Apple gekauft. Wenn du Trinkgeld gibst, werden der Kaufbeleg von Apple (welches Trinkgeld, der Preis, das Datum und dein App-Store-Land) zusammen mit deiner Midgar ID an den eigenen Server von Midgar gesendet. Midgar erhält niemals deine Zahlungsdaten.\n\nMore Apps\nDie Karte More Apps in den Einstellungen sendet anonyme Zählungen, wie oft sie geöffnet, angezeigt und angetippt wird. Diese enthalten keine Kennung und sind nicht mit dir verknüpft.\n\nMit Twitch anmelden\nWenn du dich anmeldest, erfolgt die Authentifizierung über den offiziellen OAuth-Ablauf von Twitch. Dein Twitch-Zugriffstoken wird im Schlüsselbund des Geräts gespeichert und nur an die APIs von Twitch selbst gesendet (über einen schlanken Proxy, der keine Kopie behält), um Chat und deine Follows zu laden. Du kannst dich jederzeit abmelden, wodurch das Token von deinem Gerät entfernt wird.\n\nMeldungen\nWenn du eine Chatnachricht oder einen Nutzer meldest oder blockierst, werden die Nachricht, ihr Autor und der von dir gewählte Grund an den Entwickler gesendet, damit die Meldung geprüft werden kann. Diese Meldungen enthalten nicht deine Identität.\n\nTwitch und andere Dienste\nVideo und Chat stammen von Twitch, dessen Datenschutzerklärung die Daten regelt, die Twitch bei der Nutzung des eingebetteten Players und der Dienste erhebt. Emotes stammen von 7TV, BetterTTV und FrankerFaceZ, der aktuelle Chatverlauf von recent-messages.robotty.de. Diese Dienste erhalten den Kanalnamen und deine IP-Adresse.\n\nDie vollständige Richtlinie, einschließlich der Löschung deiner Midgar ID, findest du unter midgarcorp.cc/legal/embr/privacy.\n\nKontakt\nFragen zum Datenschutz: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr no tiene publicidad ni seguimiento, y el desarrollador no vende ni comparte tus datos. Los únicos recuentos de uso que se envían son anónimos y se describen en More Apps.\n\nLo que se queda en tu dispositivo\nTus ajustes, el historial de reproducción, la lista de canales y los usuarios bloqueados u ocultos se guardan solo en tu dispositivo. Los registros de diagnóstico se escriben en el almacenamiento privado de la app y nunca salen de tu dispositivo a menos que decidas compartirlos.\n\nEl ID de Midgar\nEmbr guarda en tu llavero de iCloud un ID de Midgar anónimo, un identificador aleatorio sin nombre, correo electrónico ni otros datos sobre ti. Se crea la primera vez que se abre la app y se comparte con las otras apps de Midgar en tus dispositivos, para que una compra se reconozca en todas partes.\n\nPropinas\nLas propinas son opcionales, no desbloquean nada y se compran a través de Apple. Cuando dejas una propina, el registro de compra de Apple (qué propina, el precio, las fechas y tu país de la App Store) se envía al propio servidor de Midgar junto con tu ID de Midgar. Midgar nunca recibe tus datos de pago.\n\nMore Apps\nLa tarjeta More Apps de los ajustes envía recuentos anónimos de cuántas veces se abre, se muestra y se toca. No llevan ningún identificador y no están vinculados a ti.\n\nInicia sesión con Twitch\nSi decides iniciar sesión, la autenticación se realiza mediante el flujo OAuth oficial de Twitch. Tu token de acceso de Twitch se guarda en el llavero del dispositivo y solo se envía a las API de Twitch (a través de un proxy ligero que no guarda ninguna copia) para cargar el chat y tus seguidos. Puedes cerrar sesión en cualquier momento, lo que elimina el token de tu dispositivo.\n\nReportes\nCuando reportas o bloqueas un mensaje o un usuario del chat, el mensaje, su autor y el motivo que elegiste se envían al desarrollador para que el reporte pueda revisarse y gestionarse. Estos reportes no incluyen tu identidad.\n\nTwitch y otros servicios\nEl video y el chat provienen de Twitch, cuya política de privacidad rige los datos que Twitch recopila cuando se usan su reproductor y sus servicios integrados. Los emotes provienen de 7TV, BetterTTV y FrankerFaceZ, y el chat reciente de recent-messages.robotty.de; estos servicios reciben el nombre del canal y tu dirección IP.\n\nLa política completa, incluido cómo solicitar la eliminación de tu ID de Midgar, está en midgarcorp.cc/legal/embr/privacy.\n\nContacto\nPreguntas sobre privacidad: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr ne contient aucune publicité ni aucun suivi, et le développeur ne vend ni ne partage vos données. Les seuls compteurs d'utilisation envoyés sont anonymes et décrits sous More Apps.\n\nCe qui reste sur votre appareil\nVos réglages, l'historique de visionnage, la liste des chaînes et les utilisateurs bloqués ou masqués sont stockés uniquement sur votre appareil. Les journaux de diagnostic sont écrits dans le stockage privé de l'app et ne quittent jamais votre appareil, sauf si vous choisissez explicitement de les partager.\n\nL'identifiant Midgar\nEmbr conserve dans votre trousseau iCloud un identifiant Midgar anonyme, un identifiant aléatoire sans nom, adresse e-mail ni autre information vous concernant. Il est créé au premier lancement de l'app et partagé avec les autres apps de Midgar sur vos appareils, afin qu'un achat soit reconnu partout.\n\nPourboires\nLes pourboires sont facultatifs, ne débloquent rien et s'achètent via Apple. Lorsque vous laissez un pourboire, l'enregistrement d'achat d'Apple (quel pourboire, le prix, les dates et votre pays de l'App Store) est envoyé au serveur de Midgar avec votre identifiant Midgar. Midgar ne reçoit jamais vos informations de paiement.\n\nMore Apps\nLa carte More Apps dans les réglages envoie des compteurs anonymes du nombre de fois où elle est ouverte, affichée et touchée. Ils ne comportent aucun identifiant et ne sont pas liés à vous.\n\nConnexion avec Twitch\nSi vous choisissez de vous connecter, l'authentification passe par le flux OAuth officiel de Twitch. Votre jeton d'accès Twitch est stocké dans le trousseau de l'appareil et n'est envoyé qu'aux API de Twitch elles-mêmes (via un proxy léger qui n'en conserve aucune copie) pour charger le chat et vos abonnements. Vous pouvez vous déconnecter à tout moment, ce qui supprime le jeton de votre appareil.\n\nSignalements\nLorsque vous signalez ou bloquez un message ou un utilisateur du chat, le message, son auteur et le motif que vous avez choisi sont envoyés au développeur afin que le signalement puisse être examiné et traité. Ces signalements ne contiennent pas votre identité.\n\nTwitch et autres services\nLa vidéo et le chat proviennent de Twitch, dont la politique de confidentialité régit les données collectées lorsque son lecteur intégré et ses services sont utilisés. Les émotes proviennent de 7TV, BetterTTV et FrankerFaceZ, et le chat récent de recent-messages.robotty.de ; ces services reçoivent le nom de la chaîne et votre adresse IP.\n\nLa politique complète, y compris la manière de faire supprimer votre identifiant Midgar, se trouve à midgarcorp.cc/legal/embr/privacy.\n\nContact\nQuestions sur la confidentialité : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr non contiene pubblicità né tracciamento, e lo sviluppatore non vende né condivide i tuoi dati. Gli unici conteggi di utilizzo inviati sono anonimi e descritti in More Apps.\n\nCosa resta sul tuo dispositivo\nLe impostazioni, la cronologia di visione, l'elenco dei canali e gli utenti bloccati o nascosti sono memorizzati solo sul tuo dispositivo. I log diagnostici vengono scritti nello spazio di archiviazione privato dell'app e non lasciano mai il dispositivo, a meno che tu non scelga esplicitamente di condividerli.\n\nL'ID Midgar\nEmbr conserva nel Portachiavi iCloud un ID Midgar anonimo, un identificatore casuale senza nome, indirizzo e-mail o altri dati su di te. Viene creato al primo avvio dell'app e condiviso con le altre app di Midgar sui tuoi dispositivi, così un acquisto viene riconosciuto ovunque.\n\nMance\nLe mance sono facoltative, non sbloccano nulla e si acquistano tramite Apple. Quando lasci una mancia, il record di acquisto di Apple (quale mancia, il prezzo, le date e il tuo Paese dell'App Store) viene inviato al server di Midgar insieme al tuo ID Midgar. Midgar non riceve mai i tuoi dati di pagamento.\n\nMore Apps\nLa scheda More Apps nelle Impostazioni invia conteggi anonimi di quante volte viene aperta, mostrata e toccata. Non contengono alcun identificatore e non sono collegati a te.\n\nAccedi con Twitch\nSe scegli di accedere, l'autenticazione avviene tramite il flusso OAuth ufficiale di Twitch. Il tuo token di accesso Twitch è memorizzato nel Portachiavi del dispositivo e viene inviato solo alle API di Twitch (tramite un proxy leggero che non ne conserva alcuna copia) per caricare la chat e i tuoi follow. Puoi disconnetterti in qualsiasi momento, il che rimuove il token dal dispositivo.\n\nSegnalazioni\nQuando segnali o blocchi un messaggio o un utente della chat, il messaggio, il suo autore e il motivo selezionato vengono inviati allo sviluppatore affinché la segnalazione possa essere esaminata e gestita. Queste segnalazioni non includono la tua identità.\n\nTwitch e altri servizi\nVideo e chat provengono da Twitch, la cui informativa sulla privacy regola i dati raccolti da Twitch quando si usano il suo player integrato e i suoi servizi. Le emote provengono da 7TV, BetterTTV e FrankerFaceZ, e la chat recente da recent-messages.robotty.de; questi servizi ricevono il nome del canale e il tuo indirizzo IP.\n\nL'informativa completa, inclusa la procedura per richiedere la cancellazione del tuo ID Midgar, è disponibile su midgarcorp.cc/legal/embr/privacy.\n\nContatti\nDomande sulla privacy: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrには広告もトラッキングもなく、開発者があなたのデータを販売または共有することはありません。送信される利用回数は匿名で、More Appsで説明しています。\n\nお使いのデバイスに残るもの\n設定、視聴履歴、チャンネル一覧、ブロックまたは非表示にしたユーザーは、お使いのデバイスにのみ保存されます。診断ログはアプリのプライベートストレージに書き込まれ、ご自身で共有を選択しない限りデバイスの外に出ることはありません。\n\nMidgar ID\nEmbrは、匿名のMidgar IDをiCloudキーチェーンに保存します。これは名前、メールアドレスなどあなたに関する情報を含まないランダムな識別子です。アプリを初めて起動したときに作成され、お使いのデバイス上のMidgarの他のアプリと共有されるため、購入がどこでも認識されます。\n\nチップ\nチップは任意で、何かを解除するものではなく、Appleを通じて購入します。チップを贈ると、Appleの購入記録（どのチップか、価格、日付、App Storeの国）がMidgar IDとともにMidgar独自のサーバーに送信されます。Midgarがお支払い情報を受け取ることはありません。\n\nMore Apps\n設定内のMore Appsカードは、開かれた回数、表示された回数、タップされた回数の匿名の集計を送信します。識別子は含まれず、あなたに紐づくこともありません。\n\nTwitchでサインイン\nサインインを選択すると、認証はTwitchの公式OAuthフローを通じて行われます。Twitchのアクセストークンはデバイスのキーチェーンに保存され、チャットとフォロー情報を読み込むためにTwitch自身のAPIにのみ送信されます（コピーを保持しない軽量のプロキシ経由）。いつでもログアウトでき、その場合はデバイスからトークンが削除されます。\n\n報告\nチャットのメッセージやユーザーを報告またはブロックすると、そのメッセージ、投稿者、選択した理由が開発者に送信され、報告を確認して対応できるようになります。これらの報告にはあなたの身元は含まれません。\n\nTwitchおよびその他のサービス\n映像とチャットはTwitchから提供され、埋め込みプレーヤーやサービスを利用した際にTwitchが収集するデータは、Twitchのプライバシーポリシーに従います。エモートは7TV、BetterTTV、FrankerFaceZから、最近のチャットはrecent-messages.robotty.deから提供され、これらのサービスはチャンネル名とあなたのIPアドレスを受け取ります。\n\nMidgar IDの削除方法を含む完全なポリシーは、midgarcorp.cc/legal/embr/privacy にあります。\n\n連絡先\nプライバシーに関するご質問: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr에는 광고와 추적이 없으며, 개발자는 여러분의 데이터를 판매하거나 공유하지 않습니다. 전송되는 사용 횟수는 익명이며 More Apps에서 설명합니다.\n\n기기에 남는 정보\n설정, 시청 기록, 채널 목록, 차단하거나 숨긴 사용자 정보는 기기에만 저장됩니다. 진단 로그는 앱의 비공개 저장소에 기록되며, 여러분이 공유를 명시적으로 선택하지 않는 한 기기 밖으로 나가지 않습니다.\n\nMidgar ID\nEmbr은 iCloud 키체인에 익명의 Midgar ID를 보관합니다. 이름, 이메일 주소 또는 여러분에 대한 다른 정보가 없는 무작위 식별자입니다. 앱을 처음 실행할 때 생성되며, 기기에 있는 Midgar의 다른 앱과 공유되어 어디에서든 구매가 인식됩니다.\n\n팁\n팁은 선택 사항이며 아무것도 잠금 해제하지 않고, Apple을 통해 구매합니다. 팁을 남기면 Apple의 구매 기록(어떤 팁인지, 가격, 날짜, App Store 국가)이 Midgar ID와 함께 Midgar 자체 서버로 전송됩니다. Midgar는 결제 정보를 절대 받지 않습니다.\n\nMore Apps\n설정의 More Apps 카드는 열림, 표시, 탭 횟수에 대한 익명 집계를 보냅니다. 식별자가 없으며 여러분과 연결되지 않습니다.\n\nTwitch로 로그인\n로그인을 선택하면 인증은 Twitch의 공식 OAuth 절차를 통해 이루어집니다. Twitch 액세스 토큰은 기기 키체인에 저장되며, 채팅과 팔로우 목록을 불러오기 위해 Twitch 자체 API로만 전송됩니다(사본을 보관하지 않는 경량 프록시를 거칩니다). 언제든지 로그아웃할 수 있으며, 이 경우 기기에서 토큰이 삭제됩니다.\n\n신고\n채팅 메시지나 사용자를 신고하거나 차단하면 해당 메시지, 작성자, 선택한 사유가 개발자에게 전송되어 검토하고 조치할 수 있습니다. 이 신고에는 여러분의 신원 정보가 포함되지 않습니다.\n\nTwitch 및 기타 서비스\n영상과 채팅은 Twitch에서 제공되며, 내장 플레이어와 서비스를 사용할 때 Twitch가 수집하는 데이터는 Twitch 개인정보 처리방침의 적용을 받습니다. 이모트는 7TV, BetterTTV, FrankerFaceZ에서, 최근 채팅은 recent-messages.robotty.de에서 제공되며, 이들 서비스는 채널 이름과 여러분의 IP 주소를 받습니다.\n\nMidgar ID 삭제 방법을 포함한 전체 정책은 midgarcorp.cc/legal/embr/privacy에서 확인할 수 있습니다.\n\n연락처\n개인정보 관련 문의: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Embr não tem publicidade nem rastreamento, e o desenvolvedor não vende nem compartilha seus dados. As únicas contagens de uso enviadas são anônimas e descritas em More Apps.\n\nO que fica no seu dispositivo\nSuas configurações, histórico de exibição, lista de canais e usuários bloqueados ou ocultos são armazenados somente no seu dispositivo. Os registros de diagnóstico são gravados no armazenamento privado do app e nunca saem do seu dispositivo, a menos que você escolha explicitamente compartilhá-los.\n\nO ID Midgar\nO Embr mantém no Chaveiro do iCloud um ID Midgar anônimo, um identificador aleatório sem nome, endereço de e-mail ou outro dado sobre você. Ele é criado na primeira vez que o app é aberto e compartilhado com os outros apps da Midgar nos seus dispositivos, para que uma compra seja reconhecida em todos eles.\n\nGorjetas\nAs gorjetas são opcionais, não desbloqueiam nada e são compradas pela Apple. Quando você dá uma gorjeta, o registro de compra da Apple (qual gorjeta, o preço, as datas e o seu país da App Store) é enviado ao próprio servidor da Midgar junto com o seu ID Midgar. A Midgar nunca recebe seus dados de pagamento.\n\nMore Apps\nO cartão More Apps nos Ajustes envia contagens anônimas de quantas vezes ele é aberto, exibido e tocado. Elas não carregam nenhum identificador e não são vinculadas a você.\n\nEntrar com a Twitch\nSe você optar por entrar, a autenticação acontece pelo fluxo OAuth oficial da Twitch. Seu token de acesso da Twitch fica armazenado no Chaveiro do dispositivo e é enviado somente às APIs da própria Twitch (por meio de um proxy simples que não guarda nenhuma cópia) para carregar o chat e as contas que você segue. Você pode sair a qualquer momento, o que remove o token do seu dispositivo.\n\nDenúncias\nQuando você denuncia ou bloqueia uma mensagem ou um usuário do chat, a mensagem, o autor e o motivo selecionado são enviados ao desenvolvedor para que a denúncia possa ser analisada e tratada. Essas denúncias não incluem a sua identidade.\n\nTwitch e outros serviços\nO vídeo e o chat vêm da Twitch, cuja política de privacidade rege os dados que a Twitch coleta quando o player incorporado e os serviços dela são usados. Os emotes vêm da 7TV, BetterTTV e FrankerFaceZ, e o chat recente de recent-messages.robotty.de; esses serviços recebem o nome do canal e o seu endereço IP.\n\nA política completa, incluindo como solicitar a exclusão do seu ID Midgar, está em midgarcorp.cc/legal/embr/privacy.\n\nContato\nDúvidas sobre privacidade: %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr nie zawiera reklam ani śledzenia, a deweloper nie sprzedaje ani nie udostępnia Twoich danych. Jedyne wysyłane liczniki użycia są anonimowe i opisane w sekcji More Apps.\n\nCo pozostaje na Twoim urządzeniu\nTwoje ustawienia, historia oglądania, lista kanałów oraz zablokowani lub ukryci użytkownicy są przechowywane wyłącznie na Twoim urządzeniu. Logi diagnostyczne zapisywane są w prywatnej pamięci aplikacji i nigdy nie opuszczają urządzenia, chyba że wyraźnie zdecydujesz się je udostępnić.\n\nIdentyfikator Midgar\nEmbr przechowuje w Pęku kluczy iCloud anonimowy identyfikator Midgar, losowy ciąg bez nazwiska, adresu e-mail ani innych danych o Tobie. Jest tworzony przy pierwszym uruchomieniu aplikacji i udostępniany innym aplikacjom Midgar na Twoich urządzeniach, dzięki czemu zakup jest rozpoznawany wszędzie.\n\nNapiwki\nNapiwki są opcjonalne, niczego nie odblokowują i kupuje się je przez Apple. Gdy zostawisz napiwek, zapis zakupu z Apple (który napiwek, cena, daty i kraj App Store) zostaje wysłany na własny serwer Midgar razem z Twoim identyfikatorem Midgar. Midgar nigdy nie otrzymuje Twoich danych płatniczych.\n\nMore Apps\nKarta More Apps w Ustawieniach wysyła anonimowe liczniki tego, jak często jest otwierana, wyświetlana i dotykana. Nie zawierają one żadnego identyfikatora i nie są powiązane z Tobą.\n\nZaloguj się przez Twitch\nJeśli zdecydujesz się zalogować, uwierzytelnianie odbywa się oficjalnym przepływem OAuth Twitcha. Twój token dostępu do Twitcha jest przechowywany w Pęku kluczy urządzenia i wysyłany wyłącznie do interfejsów API samego Twitcha (przez lekki serwer pośredniczący, który nie zachowuje żadnej kopii), aby wczytać czat i Twoje obserwowane kanały. Możesz wylogować się w dowolnym momencie, co usuwa token z urządzenia.\n\nZgłoszenia\nGdy zgłaszasz lub blokujesz wiadomość czatu albo użytkownika, wiadomość, jej autor i wybrany powód są wysyłane do dewelopera, aby zgłoszenie mogło zostać sprawdzone i rozpatrzone. Zgłoszenia nie zawierają Twojej tożsamości.\n\nTwitch i inne usługi\nWideo i czat pochodzą z Twitcha, którego polityka prywatności określa dane zbierane przez Twitch podczas korzystania z jego osadzonego odtwarzacza i usług. Emotki pochodzą z 7TV, BetterTTV i FrankerFaceZ, a ostatnie wiadomości z recent-messages.robotty.de; otrzymują one nazwę kanału oraz Twój adres IP.\n\nPełna polityka, w tym sposób żądania usunięcia Twojego identyfikatora Midgar, znajduje się pod adresem midgarcorp.cc/legal/embr/privacy.\n\nKontakt\nPytania dotyczące prywatności: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 没有广告，也没有追踪，开发者不会出售或共享您的数据。发送的使用次数统计仅为匿名数据，详见 More Apps。\n\n保留在您设备上的内容\n您的设置、观看记录、频道列表，以及被屏蔽或隐藏的用户仅存储在您的设备上。诊断日志写入应用的私有存储中，除非您明确选择分享，否则绝不会离开您的设备。\n\nMidgar ID\nEmbr 会在您的 iCloud 钥匙串中保存一个匿名的 Midgar ID，这是一个随机标识符，不包含您的姓名、电子邮件地址或其他个人信息。它在应用首次启动时创建，并与您设备上 Midgar 的其他应用共享，以便在各处都能识别购买记录。\n\n打赏\n打赏是可选的，不会解锁任何内容，并通过 Apple 购买。当您打赏时，Apple 的购买记录（打赏项目、价格、日期以及您的 App Store 地区）会连同您的 Midgar ID 一起发送到 Midgar 自己的服务器。Midgar 永远不会接收您的支付信息。\n\nMore Apps\n设置中的 More Apps 卡片会发送匿名统计，记录其被打开、显示和点击的次数。这些统计不含任何标识符，也不与您关联。\n\n使用 Twitch 登录\n如果您选择登录，身份验证将通过 Twitch 官方的 OAuth 流程完成。您的 Twitch 访问令牌存储在设备钥匙串中，仅发送至 Twitch 自身的 API（通过不保留任何副本的轻量代理），以加载聊天和您的关注列表。您可以随时退出登录，这会从您的设备中移除该令牌。\n\n举报\n当您举报或屏蔽某条聊天消息或某位用户时，该消息、其作者以及您选择的原因会发送给开发者，以便审核并处理举报。这些举报不包含您的身份信息。\n\nTwitch 及其他服务\n视频和聊天内容来自 Twitch，其隐私政策适用于您使用其嵌入式播放器和服务时 Twitch 收集的数据。表情来自 7TV、BetterTTV 和 FrankerFaceZ，近期聊天记录来自 recent-messages.robotty.de；这些服务会接收频道名称和您的 IP 地址。\n\n完整政策（包括如何删除您的 Midgar ID）位于 midgarcorp.cc/legal/embr/privacy。\n\n联系方式\n隐私相关问题：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 沒有廣告，也沒有追蹤，開發者不會出售或分享您的資料。傳送的使用次數統計僅為匿名資料，詳見 More Apps。\n\n留在您裝置上的內容\n您的設定、觀看紀錄、頻道清單，以及被封鎖或隱藏的使用者僅儲存在您的裝置上。診斷日誌寫入應用程式的私有儲存空間，除非您明確選擇分享，否則絕不會離開您的裝置。\n\nMidgar ID\nEmbr 會在您的 iCloud 鑰匙圈中保存一組匿名的 Midgar ID，這是一個隨機識別碼，不含您的姓名、電子郵件地址或其他個人資訊。它會在應用程式首次啟動時建立，並與您裝置上 Midgar 的其他應用程式共用，讓購買紀錄在各處都能被識別。\n\n打賞\n打賞是選用的，不會解鎖任何內容，並透過 Apple 購買。當您打賞時，Apple 的購買紀錄（打賞項目、價格、日期以及您的 App Store 地區）會連同您的 Midgar ID 一併傳送至 Midgar 自己的伺服器。Midgar 絕不會接收您的付款資訊。\n\nMore Apps\n設定中的 More Apps 卡片會傳送匿名統計，記錄其被開啟、顯示和點擊的次數。這些統計不含任何識別碼，也不與您關聯。\n\n使用 Twitch 登入\n若您選擇登入，驗證會透過 Twitch 官方的 OAuth 流程完成。您的 Twitch 存取權杖儲存在裝置的鑰匙圈中，且僅傳送至 Twitch 自身的 API（透過不保留任何副本的輕量代理），以載入聊天和您的追蹤清單。您可以隨時登出，這會從您的裝置中移除該權杖。\n\n檢舉\n當您檢舉或封鎖某則聊天訊息或使用者時，該訊息、其作者以及您選擇的原因會傳送給開發者，以便審核並處理檢舉。這些檢舉不包含您的身分資訊。\n\nTwitch 及其他服務\n影片和聊天內容來自 Twitch，其隱私權政策適用於您使用其嵌入式播放器和服務時 Twitch 所收集的資料。表情符號來自 7TV、BetterTTV 和 FrankerFaceZ，近期聊天紀錄來自 recent-messages.robotty.de；這些服務會接收頻道名稱和您的 IP 位址。\n\n完整政策（包括如何刪除您的 Midgar ID）位於 midgarcorp.cc/legal/embr/privacy。\n\n聯絡方式\n隱私相關問題：%@"
+          }
+        }
+      }
+    },
     "Embr is an independent, open-source Twitch client. Not affiliated with Twitch.": {
       "localizations": {
         "de": {
@@ -6945,70 +7009,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr to niezależny, otwartoźródłowy klient do oglądania streamów i czatu na Twitchu. Nie jest powiązany z Twitch Interactive, Inc. ani przez tę firmę wspierany czy sponsorowany. Korzystając z Embr, akceptujesz niniejsze warunki oraz własne Warunki korzystania z usługi i Zasady społeczności Twitcha.\n\nTreści tworzone przez użytkowników\nEmbr wyświetla czat na żywo i inne treści tworzone przez użytkowników Twitcha. Embr nie tworzy tych treści, nie popiera ich ani ich nie kontroluje. Nie ma tu tolerancji dla treści obraźliwych ani nadużyć. Embr automatycznie filtruje obraźliwe treści i pozwala wyciszać słowa kluczowe, zgłaszać każdą wiadomość oraz blokować każdego użytkownika — zablokowani i zgłoszeni użytkownicy są natychmiast ukrywani w czacie i oznaczani do sprawdzenia przez dewelopera. Zgłoszenia są sprawdzane i rozpatrywane w ciągu 24 godzin: treści naruszające zasady są usuwane, a naruszający je użytkownicy — wyrzucani. Zastosowanie mają również własne narzędzia moderacji i zgłaszania Twitcha.\n\nDozwolone korzystanie\nNie używaj Embr do nękania, grożenia ani znęcania się nad innymi, publikowania treści niezgodnych z prawem ani obchodzenia warunków Twitcha. Streamy są odtwarzane przez oficjalny, wbudowany odtwarzacz Twitcha, wraz z wszelkimi reklamami serwowanymi przez Twitcha.\n\nBrak gwarancji\nEmbr jest udostępniany „tak jak jest”, bez jakiejkolwiek gwarancji. Dostępność zależy od usług Twitcha i może się zmienić w dowolnym momencie."
-          }
-        }
-      }
-    },
-    "Embr is designed to collect as little data as possible. The developer does not operate any advertising or analytics tracking, and does not sell or share your data.\n\nWhat stays on your device\nYour settings, watch history, list of channels, and blocked or hidden users are stored only on your device. Diagnostic logs are written to the app's private storage and never leave your device unless you explicitly choose to share them.\n\nSign in with Twitch\nIf you choose to sign in, authentication happens through Twitch's official OAuth flow. Your Twitch access token is stored in the device Keychain and is sent only to Twitch's own APIs (via a thin proxy that keeps no copy of it) to load chat and your follows. You can log out at any time, which removes the token from your device.\n\nReports\nWhen you report or block a chat message or user, the message, its author, and your selected reason are sent to the developer so the report can be reviewed and acted on. These reports do not include your identity.\n\nTwitch\nVideo and chat come from Twitch. Twitch's own privacy policy governs the data Twitch collects when its embedded player and services are used.\n\nContact\nQuestions about privacy: %@": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr ist so gebaut, dass so wenig Daten wie möglich erfasst werden. Der Entwickler betreibt kein Werbe- oder Analyse-Tracking und verkauft oder teilt deine Daten nicht.\n\nWas auf deinem Gerät bleibt\nDeine Einstellungen, dein Wiedergabeverlauf, deine Kanalliste und blockierte oder ausgeblendete Nutzer werden ausschließlich auf deinem Gerät gespeichert. Diagnoseprotokolle werden in den privaten Speicher der App geschrieben und verlassen dein Gerät nur, wenn du sie ausdrücklich teilst.\n\nAnmeldung mit Twitch\nWenn du dich anmeldest, erfolgt die Authentifizierung über den offiziellen OAuth-Ablauf von Twitch. Dein Twitch-Zugriffstoken wird im Schlüsselbund des Geräts gespeichert und ausschließlich an die APIs von Twitch gesendet (über einen schlanken Proxy, der keine Kopie davon behält), um den Chat und deine Follows zu laden. Du kannst dich jederzeit abmelden; dabei wird das Token von deinem Gerät entfernt.\n\nMeldungen\nWenn du eine Chat-Nachricht oder einen Nutzer meldest oder blockierst, werden die Nachricht, ihr Autor und der von dir gewählte Grund an den Entwickler gesendet, damit die Meldung geprüft und bearbeitet werden kann. Diese Meldungen enthalten nicht deine Identität.\n\nTwitch\nVideo und Chat stammen von Twitch. Für die Daten, die Twitch beim Einsatz seines eingebetteten Players und seiner Dienste erhebt, gilt die Datenschutzrichtlinie von Twitch.\n\nKontakt\nFragen zum Datenschutz: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr est conçu pour collecter le moins de données possible. Le développeur n'exploite aucun traçage publicitaire ou analytique et ne vend ni ne partage vos données.\n\nCe qui reste sur votre appareil\nVos réglages, votre historique de visionnage, votre liste de chaînes et les utilisateurs bloqués ou masqués sont stockés uniquement sur votre appareil. Les journaux de diagnostic sont écrits dans l'espace privé de l'app et ne quittent jamais votre appareil, sauf si vous choisissez explicitement de les partager.\n\nConnexion avec Twitch\nSi vous choisissez de vous connecter, l'authentification passe par le flux OAuth officiel de Twitch. Votre jeton d'accès Twitch est conservé dans le trousseau de l'appareil et n'est transmis qu'aux API de Twitch (via un proxy léger qui n'en garde aucune copie) afin de charger le chat et les chaînes que vous suivez. Vous pouvez vous déconnecter à tout moment, ce qui supprime le jeton de votre appareil.\n\nSignalements\nLorsque vous signalez ou bloquez un message ou un utilisateur, le message, son auteur et le motif que vous avez choisi sont envoyés au développeur afin que le signalement puisse être examiné et traité. Ces signalements ne contiennent pas votre identité.\n\nTwitch\nLa vidéo et le chat proviennent de Twitch. La politique de confidentialité de Twitch régit les données que Twitch collecte lors de l'utilisation de son lecteur intégré et de ses services.\n\nContact\nQuestions relatives à la confidentialité : %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr está diseñado para recopilar la menor cantidad de datos posible. El desarrollador no utiliza ningún seguimiento publicitario ni analítico, y no vende ni comparte tus datos.\n\nLo que se queda en tu dispositivo\nTus ajustes, tu historial de visionado, tu lista de canales y los usuarios bloqueados u ocultos se guardan únicamente en tu dispositivo. Los registros de diagnóstico se escriben en el almacenamiento privado de la app y nunca salen de tu dispositivo a menos que decidas compartirlos expresamente.\n\nIniciar sesión con Twitch\nSi decides iniciar sesión, la autenticación se realiza mediante el flujo OAuth oficial de Twitch. Tu token de acceso de Twitch se guarda en el llavero del dispositivo y solo se envía a las API de Twitch (a través de un proxy ligero que no conserva ninguna copia) para cargar el chat y los canales que sigues. Puedes cerrar sesión cuando quieras, lo que elimina el token de tu dispositivo.\n\nReportes\nCuando reportas o bloqueas un mensaje del chat o a un usuario, el mensaje, su autor y el motivo que has elegido se envían al desarrollador para que el reporte pueda revisarse y resolverse. Estos reportes no incluyen tu identidad.\n\nTwitch\nEl vídeo y el chat proceden de Twitch. La política de privacidad de Twitch rige los datos que Twitch recopila cuando se usan su reproductor integrado y sus servicios.\n\nContacto\nDudas sobre privacidad: %@"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr è progettato per raccogliere il minor numero possibile di dati. Lo sviluppatore non utilizza alcun tracciamento pubblicitario o analitico e non vende né condivide i tuoi dati.\n\nCosa resta sul tuo dispositivo\nLe tue impostazioni, la cronologia di visione, l'elenco dei canali e gli utenti bloccati o nascosti sono salvati soltanto sul tuo dispositivo. I log diagnostici vengono scritti nell'archivio privato dell'app e non lasciano mai il dispositivo, a meno che tu non scelga esplicitamente di condividerli.\n\nAccesso con Twitch\nSe scegli di accedere, l'autenticazione avviene tramite il flusso OAuth ufficiale di Twitch. Il tuo token di accesso Twitch è conservato nel portachiavi del dispositivo e viene inviato solo alle API di Twitch (attraverso un proxy leggero che non ne conserva copia) per caricare la chat e i canali che segui. Puoi disconnetterti in qualsiasi momento: il token viene così rimosso dal dispositivo.\n\nSegnalazioni\nQuando segnali o blocchi un messaggio o un utente, il messaggio, il suo autore e il motivo che hai scelto vengono inviati allo sviluppatore affinché la segnalazione possa essere esaminata e gestita. Queste segnalazioni non contengono la tua identità.\n\nTwitch\nVideo e chat provengono da Twitch. L'informativa sulla privacy di Twitch regola i dati che Twitch raccoglie quando vengono utilizzati il suo player integrato e i suoi servizi.\n\nContatti\nDomande sulla privacy: %@"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr は収集するデータを可能な限り少なくする設計です。開発者は広告や解析のトラッキングを一切行わず、あなたのデータを販売・共有することもありません。\n\n端末内にとどまる情報\n設定、視聴履歴、チャンネル一覧、ブロックまたは非表示にしたユーザーは、あなたの端末内にのみ保存されます。診断ログはアプリの非公開領域に書き込まれ、あなたが明示的に共有を選ばない限り端末の外へ出ることはありません。\n\nTwitch でのログイン\nログインを選んだ場合、認証は Twitch 公式の OAuth フローで行われます。Twitch のアクセストークンは端末のキーチェーンに保存され、チャットとフォロー情報を読み込むために Twitch の API にのみ送信されます（コピーを保持しない軽量なプロキシを経由します）。いつでもログアウトでき、その際にトークンは端末から削除されます。\n\n報告\nチャットのメッセージやユーザーを報告・ブロックすると、そのメッセージ、投稿者、選択した理由が開発者に送信され、確認と対応に使われます。これらの報告にあなたの身元は含まれません。\n\nTwitch\n映像とチャットは Twitch から提供されます。Twitch の埋め込みプレイヤーやサービスの利用時に Twitch が収集するデータについては、Twitch のプライバシーポリシーが適用されます。\n\nお問い合わせ\nプライバシーに関するご質問: %@"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr는 가능한 한 적은 데이터만 수집하도록 설계되었습니다. 개발자는 어떠한 광고나 분석 트래킹도 운영하지 않으며, 회원님의 데이터를 판매하거나 공유하지 않습니다.\n\n기기에만 남는 정보\n설정, 시청 기록, 채널 목록, 차단하거나 숨긴 사용자는 기기에만 저장됩니다. 진단 로그는 앱의 비공개 저장 공간에 기록되며, 직접 공유를 선택하지 않는 한 기기 밖으로 나가지 않습니다.\n\nTwitch로 로그인\n로그인을 선택하면 Twitch의 공식 OAuth 절차로 인증이 이루어집니다. Twitch 액세스 토큰은 기기의 키체인에 저장되며, 채팅과 팔로우 목록을 불러오기 위해 Twitch의 API로만 전송됩니다(토큰 사본을 남기지 않는 얇은 프록시를 경유합니다). 언제든지 로그아웃할 수 있으며, 그러면 토큰이 기기에서 삭제됩니다.\n\n신고\n채팅 메시지나 사용자를 신고 또는 차단하면 해당 메시지, 작성자, 회원님이 선택한 사유가 개발자에게 전송되어 검토와 조치에 사용됩니다. 이 신고에는 회원님의 신원이 포함되지 않습니다.\n\nTwitch\n영상과 채팅은 Twitch에서 제공됩니다. Twitch의 임베드 플레이어와 서비스를 이용할 때 Twitch가 수집하는 데이터에는 Twitch의 개인정보 처리방침이 적용됩니다.\n\n문의\n개인정보 관련 문의: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr 的设计目标是尽可能少地收集数据。开发者不运行任何广告或分析追踪，也不会出售或共享你的数据。\n\n留在你设备上的内容\n你的设置、观看记录、频道列表，以及被屏蔽或隐藏的用户，仅保存在你的设备上。诊断日志写入应用的私有存储，除非你明确选择分享，否则绝不会离开你的设备。\n\n使用 Twitch 登录\n如果你选择登录，认证将通过 Twitch 官方的 OAuth 流程完成。你的 Twitch 访问令牌保存在设备的钥匙串中，并且只会发送给 Twitch 自己的 API（经由一个不保留任何副本的轻量代理），用于加载聊天和你的关注列表。你可以随时退出登录，届时令牌会从你的设备上删除。\n\n举报\n当你举报或屏蔽某条聊天消息或某位用户时，该消息、其作者以及你所选的理由会发送给开发者，以便审核和处理。这些举报不包含你的身份信息。\n\nTwitch\n视频和聊天来自 Twitch。使用 Twitch 的嵌入式播放器和服务时，Twitch 所收集的数据受 Twitch 自身的隐私政策约束。\n\n联系方式\n隐私相关问题：%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr 的設計目標是盡可能少收集資料。開發者不執行任何廣告或分析追蹤，也不會出售或分享你的資料。\n\n留在你裝置上的內容\n你的設定、觀看紀錄、頻道清單，以及被封鎖或隱藏的使用者，都只儲存在你的裝置上。診斷記錄會寫入 App 的私人儲存空間，除非你明確選擇分享，否則絕不會離開你的裝置。\n\n使用 Twitch 登入\n如果你選擇登入，驗證會透過 Twitch 官方的 OAuth 流程進行。你的 Twitch 存取權杖儲存在裝置的鑰匙圈中，而且只會傳送給 Twitch 自己的 API（經由一個不保留任何副本的輕量代理伺服器），用來載入聊天與你的追蹤清單。你可以隨時登出，屆時權杖會從你的裝置上移除。\n\n檢舉\n當你檢舉或封鎖某則聊天訊息或某位使用者時，該訊息、其作者以及你所選的理由會傳送給開發者，以便審核與處理。這些檢舉不會包含你的身分資訊。\n\nTwitch\n影片與聊天來自 Twitch。使用 Twitch 的嵌入式播放器與服務時，Twitch 所收集的資料受 Twitch 自身的隱私權政策規範。\n\n聯絡方式\n隱私權相關問題：%@"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Embr foi feito para coletar o mínimo de dados possível. O desenvolvedor não opera nenhum rastreamento de publicidade ou analytics e não vende nem compartilha seus dados.\n\nO que fica no seu dispositivo\nSeus ajustes, o histórico do que você assistiu, a lista de canais e os usuários bloqueados ou ocultos ficam guardados somente no seu dispositivo. Os registros de diagnóstico são gravados no armazenamento privado do app e nunca saem do seu dispositivo, a não ser que você escolha compartilhá-los.\n\nEntrar com a Twitch\nSe você optar por entrar, a autenticação acontece pelo fluxo OAuth oficial da Twitch. Seu token de acesso da Twitch fica guardado no Chaveiro do dispositivo e é enviado apenas para as APIs da própria Twitch (por um proxy enxuto que não guarda cópia dele) para carregar o chat e quem você segue. Você pode sair a qualquer momento, o que remove o token do seu dispositivo.\n\nDenúncias\nQuando você denuncia ou bloqueia uma mensagem do chat ou um usuário, a mensagem, o autor dela e o motivo escolhido são enviados ao desenvolvedor para que a denúncia possa ser analisada e tratada. Essas denúncias não incluem a sua identidade.\n\nTwitch\nO vídeo e o chat vêm da Twitch. A política de privacidade da própria Twitch rege os dados que a Twitch coleta quando seu player incorporado e seus serviços são usados.\n\nContato\nDúvidas sobre privacidade: %@"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr został zaprojektowany tak, aby zbierać jak najmniej danych. Deweloper nie prowadzi żadnego śledzenia reklamowego ani analitycznego i nie sprzedaje ani nie udostępnia twoich danych.\n\nCo zostaje na twoim urządzeniu\nTwoje ustawienia, historia oglądania, lista kanałów oraz zablokowani lub ukryci użytkownicy są przechowywane wyłącznie na twoim urządzeniu. Dzienniki diagnostyczne zapisywane są w prywatnej pamięci aplikacji i nigdy nie opuszczają urządzenia, chyba że wyraźnie zdecydujesz się je udostępnić.\n\nLogowanie przez Twitch\nJeśli zdecydujesz się zalogować, uwierzytelnianie odbywa się przez oficjalny mechanizm OAuth Twitcha. Twój token dostępu Twitcha jest przechowywany w Pęku kluczy urządzenia i wysyłany wyłącznie do własnych API Twitcha (przez wąski serwer pośredniczący, który nie zachowuje jego kopii), aby wczytać czat i obserwowane kanały. W każdej chwili możesz się wylogować, co usunie token z urządzenia.\n\nZgłoszenia\nGdy zgłaszasz lub blokujesz wiadomość czy użytkownika w czacie, wiadomość, jej autor oraz wybrany przez ciebie powód są wysyłane do dewelopera, aby zgłoszenie mogło zostać sprawdzone i rozpatrzone. Te zgłoszenia nie zawierają twojej tożsamości.\n\nTwitch\nWideo i czat pochodzą z Twitcha. Dane, które Twitch zbiera podczas korzystania z jego wbudowanego odtwarzacza i usług, podlegają własnej polityce prywatności Twitcha.\n\nKontakt\nPytania dotyczące prywatności: %@"
           }
         }
       }
@@ -17774,6 +17774,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Napiwki niedostępne"
+          }
+        }
+      }
+    },
+    "Tips are not available right now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trinkgeld ist im Moment nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las propinas no están disponibles en este momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pourboires ne sont pas disponibles pour le moment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le mance non sono disponibili al momento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在チップは利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금은 팁을 사용할 수 없습니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As gorjetas não estão disponíveis no momento."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napiwki są obecnie niedostępne."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打赏功能目前不可用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打賞功能目前無法使用。"
           }
         }
       }

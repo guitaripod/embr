@@ -124,12 +124,33 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
 
+  EmbrTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests/EmbrTests
+    dependencies:
+      - target: Embr
+      - package: MidgarKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${EMBR_BUNDLE_ID}.tests
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        GENERATE_INFOPLIST_FILE: YES
+        DEVELOPMENT_TEAM: ${EMBR_TEAM_ID}
+        CODE_SIGN_STYLE: Automatic
+
 schemes:
   Embr:
     build:
       targets:
         Embr: all
+        EmbrTests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - EmbrTests
