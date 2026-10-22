@@ -112,6 +112,7 @@ struct MidgarGatewayTransportTests {
     }
 }
 
+/// Every read and write of the stored value happens under one lock.
 final class LockedBox<Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var stored: Value

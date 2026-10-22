@@ -5,6 +5,7 @@ import UIKit
 
 @testable import Embr
 
+/// Only used from the main actor in these tests, and the event stream continuation is itself thread-safe.
 private final class FakeTipPurchasing: TipPurchasing, @unchecked Sendable {
     var catalog: [StoreProduct] = []
     var result: Result<MidgarPurchaseResult, Error> = .success(.purchased)

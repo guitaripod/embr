@@ -4,6 +4,7 @@ import Testing
 
 @testable import Embr
 
+/// Every read and write of the state happens under one lock.
 private final class MemoryReviewStorage: MidgarReviewStorage, @unchecked Sendable {
     private let lock = NSLock()
     private var state: MidgarReviewState
