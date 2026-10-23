@@ -45,8 +45,7 @@ deliberate experiment.
 
 - **App ID** `com.guitaripod.embr` (ASC id `XQ5LJ7TX5Y`) + **App Store distribution
   profile** "Embr App Store" — minted via the ASC API.
-- **TestFlight CI** (`.github/workflows/testflight.yml`): stable-macOS runner, beta-host
-  guard, xcodegen, manual signing, archive → export → altool. Repo secrets set.
+- **Release**: `midgar ship embr` (see `ops/runbooks/ship-parity.md`). It archives locally on a stable or point-beta macOS host and in the buildvm guest (stable macOS 27, Xcode 27.1) during a major macOS beta; the GitHub Actions release workflows were removed on 2026-10-23.
 - **Build 1 uploaded and `VALID` in App Store Connect, attached to the 1.0 version.**
 - **Listing metadata pushed via API** to the en-US localizations: name
   `Embr — Live Streams`, subtitle, description (2085 chars), keywords, promotional text,
