@@ -20,7 +20,7 @@ packages:
     from: "0.14.0"
   MidgarKit:
     url: https://github.com/guitaripod/MidgarKit
-    exactVersion: 4.2.0
+    exactVersion: 4.3.1
 
 x-midgar-keychain-groups: &midgarKeychainGroups
   - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
