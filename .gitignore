@@ -21,12 +21,6 @@ buildServer.json
 Embr/Secrets.swift
 .env.local
 
-# Worker
-workers/node_modules/
-workers/.dev.vars
-workers/.wrangler/
-workers/dist/
-
 # macOS
 .DS_Store
 

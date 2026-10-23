@@ -8,7 +8,7 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 
 - **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
 - **Embr** (`Embr/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
-- **workers/**: Cloudflare Workers (Hono, jose, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
+- **services/embr** (Worker `embr`; `services/embr-demo-mail` is the App Review mail helper): Cloudflare Workers (Hono, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
 - **MidgarKit** (from the monorepo's `packages/MidgarKit` by path, `project.yml`, decision D15): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`Embr/App/EmbrMidgar.swift`) is the composition root for all of it.
 
 ## The Midgar platform (invariants)
@@ -72,7 +72,7 @@ CLOUDFLARE_API_TOKEN=$(cat ~/.cloudflare-api-token) npx wrangler dev     # local
 CLOUDFLARE_API_TOKEN=$(cat ~/.cloudflare-api-token) npx wrangler deploy  # prod
 ```
 
-Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` (prod) and `workers/.dev.vars` (local). KV namespace `TOKENS`.
+Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` (prod) and `services/embr/.dev.vars` (local). KV namespace `TOKENS`.
 
 ## Logging — agents read this
 

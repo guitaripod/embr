@@ -12,7 +12,7 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 |---|---|---|
 | `EmbrCore` | Swift 6 (SwiftPM) | ✅ `swift build` + `swift test` on Linux/macOS |
 | `Embr` (app) | Swift 6 / UIKit | ✅ Xcode on macOS (`scripts/ios-build.sh`) |
-| `workers/` | TypeScript (Hono) | ✅ `tsc` + `vitest` |
+| `services/embr` (repo root) | TypeScript (Hono) | ✅ `tsc` + `vitest` |
 
 `EmbrCore` holds the platform-agnostic logic (parsing, emote merge, HLS handling, Helix request specs) and compiles/tests on Linux and macOS. The `Embr` app layer is Darwin-only. The Worker handles OAuth and stream resolution.
 

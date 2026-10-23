@@ -11,7 +11,7 @@ EmbrCore/  (SwiftPM library — Sources/EmbrCore, Tests/EmbrCoreTests)
            NO import UIKit / AVFoundation / Combine / Security here.
 Embr/      (xcodegen app target — UIKit, iOS 18+, iPhone-only)
            Imports EmbrCore. Darwin-only. Not compiled in CI on Linux.
-workers/   (Cloudflare Worker — Hono + TypeScript. Compiled + vitest on Linux.)
+../../services/embr/   (Cloudflare Worker — Hono + TypeScript. Compiled + vitest on Linux. Lives in the services folder, not in this app.)
 ```
 
 `EmbrCore/` files under `Sources/EmbrCore/**` authored by the foundation pass are **FROZEN**: read them, depend on them, never edit them. New EmbrCore subsystems add NEW files only.
