@@ -9,7 +9,7 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 - **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
 - **Embr** (`Embr/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
 - **workers/**: Cloudflare Workers (Hono, jose, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
-- **MidgarKit 4.2.0** (`exactVersion`, by URL): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`Embr/App/EmbrMidgar.swift`) is the composition root for all of it.
+- **MidgarKit** (from the monorepo's `packages/MidgarKit` by path, `project.yml`, decision D15): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`Embr/App/EmbrMidgar.swift`) is the composition root for all of it.
 
 ## The Midgar platform (invariants)
 
