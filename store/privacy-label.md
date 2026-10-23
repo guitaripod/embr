@@ -15,6 +15,7 @@ This replaces the earlier label, "Data Not Linked to You: User Content only", wh
 | Data type (Apple) | Linked to the user | Used to track | Purpose | What it is in Embr |
 | --- | --- | --- | --- | --- |
 | Identifiers, User ID | Yes | No | App Functionality | The random Midgar ID: sent as the sign-in token to `api.midgarcorp.cc` for the purchase ledger and for "Your Midgar" in the More Apps screen; carried by tips as Apple's app account token. It is never sent with playback, report, sign-in or config requests to Embr's own worker. |
+| Identifiers, Device ID | Yes | No | App Functionality | The app reads no advertising identifier and no vendor identifier. MidgarKit's App Attest key id, per app and per device, stored with the Midgar ID when the ID is created or joined. App Store and TestFlight builds use App Attest's production environment whether or not the app has the App Attest entitlement (Apple, App Attest Environment entitlement), so released builds create it. |
 | Purchases, Purchase History | Yes | No | App Functionality | The App Store transactions of the three tips (consumables, unlock nothing), sent to the Midgar ledger with the Midgar ID. RevenueCat has no SDK in the app (registry `rc_mode` is notifications-only). |
 | Usage Data, Product Interaction | No | No | Analytics | The anonymous More Apps events (opened, shown, tapped) sent by MidgarKit with no identifier. |
 | User Content, Other User Content | No | No | App Functionality | The chat message, its author, the channel and the reason of a chat report the person submits (App Store Guideline 1.2), and the same for a block. Sent to Embr's worker without the Midgar ID or any Twitch token. This is unchanged from the earlier label. |
@@ -30,7 +31,6 @@ Everything else is "Data Not Collected".
 ## Data types answered "not collected", and why
 
 - Contact Info, Contacts, Browsing History, Search History, Sensitive Info, Financial Info, Health & Fitness, Location: none.
-- Identifiers, Device ID: the app reads no advertising identifier and no vendor identifier. MidgarKit's App Attest key id, if the device creates one, is per app and per device and proves the app is genuine when the Midgar ID is created or joined. If App Review reads it as a Device ID, the fallback is Device ID, App Functionality, linked.
 - Diagnostics: the session log stays on the device and is shared only when the person exports it. MetricKit is not collected.
 - User Content, Customer Support: nothing beyond the report row above.
 
