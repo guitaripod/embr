@@ -25,7 +25,7 @@ deliberate experiment.
   **Contact Support**. Same docs served at `embr.guitaripod.workers.dev/legal/{terms,privacy}`
   for the builds in the field; from the Midgar release the published pages are
   `midgarcorp.cc/legal/embr/{terms,privacy}` (the Privacy Policy URL for App Store Connect).
-- **Privacy:** `Embr/PrivacyInfo.xcprivacy` (no tracking; `UserDefaults` CA92.1,
+- **Privacy:** `Resources/PrivacyInfo.xcprivacy` (no tracking; `UserDefaults` CA92.1,
   `FileTimestamp` C617.1) and `ITSAppUsesNonExemptEncryption=false`.
 - **Cleanup / fixes:** removed dead Settings toggles; fixed the chat-composer keyboard
   inset ballooning on foreground; EventSub now backs off on Twitch 429s instead of

@@ -14,8 +14,8 @@ if ! command -v xcodegen >/dev/null 2>&1; then
   echo "error: xcodegen not installed (brew install xcodegen)." >&2
   exit 1
 fi
-if [ ! -f Embr/Secrets.swift ]; then
-  echo "error: Embr/Secrets.swift missing. Run scripts/setup.sh." >&2
+if [ ! -f App/Secrets.swift ]; then
+  echo "error: App/Secrets.swift missing. Run scripts/setup.sh." >&2
   exit 1
 fi
 
@@ -52,7 +52,7 @@ if [ ! -f "$BIN" ]; then
   exit 1
 fi
 
-NEWER="$(find Embr -name '*.swift' -newer "$BIN" 2>/dev/null || true)"
+NEWER="$(find App Features -name '*.swift' -newer "$BIN" 2>/dev/null || true)"
 if [ -n "$NEWER" ]; then
   echo "error: source files are newer than the built binary — build was a no-op:" >&2
   echo "$NEWER" >&2

@@ -22,7 +22,7 @@ panel of the same geometry.
 
 ## Capture
 
-A DEBUG-only harness (`Embr/App/ScreenshotHarness.swift`, driven by
+A DEBUG-only harness (`App/ScreenshotHarness.swift`, driven by
 `SceneDelegate.handleScreenshotRoute`) poses each screen from launch arguments, so nothing is
 tapped. Build the Debug app for the simulator, then:
 

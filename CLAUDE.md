@@ -6,10 +6,10 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 
 ## Stack
 
-- **EmbrCore** (`Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
-- **Embr** (`Embr/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
+- **EmbrCore** (`Core/EmbrCore/Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
+- **Embr** (`App/`, `Features/`, `Resources/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
 - **services/embr** (Worker `embr`; `services/embr-demo-mail` is the App Review mail helper): Cloudflare Workers (Hono, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
-- **MidgarKit** (from the monorepo's `packages/MidgarKit` by path, `project.yml`, decision D15): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`Embr/App/EmbrMidgar.swift`) is the composition root for all of it.
+- **MidgarKit** (from the monorepo's `packages/MidgarKit` by path, `project.yml`, decision D15): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`App/EmbrMidgar.swift`) is the composition root for all of it.
 
 ## The Midgar platform (invariants)
 
@@ -17,7 +17,7 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 - **Twitch redirect URI** stays `https://embr.guitaripod.workers.dev/auth/callback` (`Configuration.twitchRedirectURI`), the one registered in the Twitch console. It is a browser navigation inside `ASWebAuthenticationSession`, not an app network call, so it needs neither the gateway nor an ATS exception. It is the only place that host appears in the app; changing it needs a console change first.
 - **Tips** are consumables bought through `MidgarStore` in `Mode.purchases` (`TipJarStore`): bought, finished and reported to the ledger with the Midgar ID. They unlock nothing, so `entitlementsByProduct` is empty.
 - **Midgar ID** starts at launch (`EmbrMidgar.start()`), in the team keychain group `cc.midgarcorp.shared`. The app's own group stays first in the entitlements so the Twitch tokens already in the Keychain keep resolving. A test host and a DEBUG demo capture start nothing and reach no Midgar service.
-- **Privacy** is declared in `Embr/PrivacyInfo.xcprivacy`, `store/privacy-label.md` and `web/midgarcorp/src/content/legal/embr/`: Midgar ID (User ID, linked), tips (Purchase History, linked), reports (Other User Content, not linked), More Apps (Product Interaction, not linked). Change one and change all three plus `LegalText.privacy`.
+- **Privacy** is declared in `Resources/PrivacyInfo.xcprivacy`, `store/privacy-label.md` and `web/midgarcorp/src/content/legal/embr/`: Midgar ID (User ID, linked), tips (Purchase History, linked), reports (Other User Content, not linked), More Apps (Product Interaction, not linked). Change one and change all three plus `LegalText.privacy`.
 - **Review prompt** is `MidgarReviewPolicy` (`ReviewPrompt`); the success is 3 minutes of a confirmed live stream.
 
 ## Code style (non-negotiable)
@@ -80,7 +80,7 @@ Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` 
 
 ## Secrets / config
 
-`.env.local` (gitignored, made by `setup.sh`): `EMBR_BUNDLE_ID`, `EMBR_TEAM_ID`, `EMBR_DEVICE_UDID`, `EMBR_DEVICE_NAME`. `Embr/Secrets.swift` (gitignored, copied from `Secrets.example.swift`): `twitchClientID`, `redirectURI`. The worker address is not a secret: it is `Configuration.workerBaseURL`, the gateway route. Never commit either.
+`.env.local` (gitignored, made by `setup.sh`): `EMBR_BUNDLE_ID`, `EMBR_TEAM_ID`, `EMBR_DEVICE_UDID`, `EMBR_DEVICE_NAME`. `App/Secrets.swift` (gitignored, copied from `Secrets.example.swift`): `twitchClientID`, `redirectURI`. The worker address is not a secret: it is `Configuration.workerBaseURL`, the gateway route. Never commit either.
 
 ## Reality
 

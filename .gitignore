@@ -18,7 +18,7 @@ buildServer.json
 .compile
 
 # Secrets / local config
-Embr/Secrets.swift
+App/Secrets.swift
 .env.local
 
 # macOS

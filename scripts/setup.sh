@@ -15,10 +15,10 @@ EMBR_DEVICE_UDID=
 EOF
 fi
 
-if [ ! -f Embr/Secrets.swift ]; then
-  echo "==> Creating Embr/Secrets.swift from example"
-  cp Embr/Secrets.example.swift Embr/Secrets.swift
-  echo "    Edit Embr/Secrets.swift: twitchClientID"
+if [ ! -f App/Secrets.swift ]; then
+  echo "==> Creating App/Secrets.swift from example"
+  cp App/Secrets.example.swift App/Secrets.swift
+  echo "    Edit App/Secrets.swift: twitchClientID"
 fi
 
 if command -v xcodegen >/dev/null 2>&1; then
@@ -29,6 +29,6 @@ else
 fi
 
 echo "==> EmbrCore sanity build"
-swift build >/dev/null && echo "    EmbrCore builds."
+swift build --package-path Core/EmbrCore >/dev/null && echo "    EmbrCore builds."
 
-echo "==> Done. Next: edit .env.local + Embr/Secrets.swift, then scripts/ios-deploy.sh"
+echo "==> Done. Next: edit .env.local + App/Secrets.swift, then scripts/ios-deploy.sh"

@@ -6,15 +6,15 @@ A native UIKit iOS Twitch client. This file is the single source of truth for ev
 ## Repo shape
 
 ```
-EmbrCore/  (SwiftPM library — Sources/EmbrCore, Tests/EmbrCoreTests)
+Core/EmbrCore/  (SwiftPM library — Sources/EmbrCore, Tests/EmbrCoreTests)
            Platform-agnostic pure logic. MUST compile + test on Linux.
            NO import UIKit / AVFoundation / Combine / Security here.
-Embr/      (xcodegen app target — UIKit, iOS 18+, iPhone-only)
+App/, Features/, Resources/  (xcodegen app target — UIKit, iOS 18+, iPhone-only)
            Imports EmbrCore. Darwin-only. Not compiled in CI on Linux.
 ../../services/embr/   (Cloudflare Worker — Hono + TypeScript. Compiled + vitest on Linux. Lives in the services folder, not in this app.)
 ```
 
-`EmbrCore/` files under `Sources/EmbrCore/**` authored by the foundation pass are **FROZEN**: read them, depend on them, never edit them. New EmbrCore subsystems add NEW files only.
+`Core/EmbrCore/` files under `Sources/EmbrCore/**` authored by the foundation pass are **FROZEN**: read them, depend on them, never edit them. New EmbrCore subsystems add NEW files only.
 
 ## Locked architecture decisions
 
@@ -50,25 +50,25 @@ Protocols: `TwitchAPIProviding`, `ChatSource`, `ThirdPartyEmoteSource`, `EmoteEv
 - `UIBackgroundConfiguration.listCell()` on list cells.
 - SF Symbol effects: `.pulse` on the live "reconnecting" row, `.bounce`/`.replace` on send-confirm.
 - **No comments, no MARK, no file headers.** `///` doc comments allowed sparingly on public API. SPM only for deps.
-- Tests: Swift Testing (`@Test`, `#expect`) only. EmbrCore tests live in `Tests/EmbrCoreTests/**` and MUST pass via `swift test`.
+- Tests: Swift Testing (`@Test`, `#expect`) only. EmbrCore tests live in `Core/EmbrCore/Tests/EmbrCoreTests/**` and MUST pass via `swift test`.
 - AppLogger mirrors os_log + a rotating file in `Library/Logs/embr.log`. Categories: `app, auth, api, eventsub, chat, emote, playback, persistence, ui`.
 
 ## App-layer cross-cutting contracts (authored in the foundation pass — match these names)
 
-- `AppLogger` (`Embr/App/AppLogger.swift`) — `AppLogger.log(_:_:category:)`, plus `.debug/.info/.warn/.error(_:category:)`.
+- `AppLogger` (`App/AppLogger.swift`) — `AppLogger.log(_:_:category:)`, plus `.debug/.info/.warn/.error(_:category:)`.
 - `LogCategory` enum: `app, auth, api, eventsub, chat, emote, playback, persistence, ui`.
-- `AppContainer` (`Embr/App/AppContainer.swift`) — the DI graph. Lazily exposes: `logger`, `transport: HTTPTransport`, `auth: AuthService`, `api: TwitchAPIClient`, `emotes: EmoteService`, `images: ImageLoading`, `playback: PlaybackResolver`, `database: DatabaseManager`, `settings: SettingsStore`. A module's concrete service MUST be named exactly as referenced here.
-- `ImageLoading` protocol (`Embr/Services/ImageLoading.swift`) — `func image(for: URL, targetScale: CGFloat) async -> UIImage?`, `func emoteImage(for: Emote, scale: EmoteScale) async -> UIImage?`, `func badgeImage(for: Badge, scale: EmoteScale) async -> UIImage?`, `func prefetch(_ urls: [URL])`, `func cachedImage(for: URL) -> UIImage?`. (Animated content returns an `SDAnimatedImage` subclass of `UIImage`.)
-- `VideoPlaying` protocol (`Embr/Features/Channel/Video/VideoPlaying.swift`) — `var view: UIView { get }`, `func load(_ resolution: PlaybackResolution)`, `func play()/pause()`, `func setQuality(_ quality: StreamQuality)`, `var statePublisher: AnyPublisher<VideoState, Never> { get }`.
-- `Theme` (`Embr/App/Theme.swift`) — semantic `UIColor`s.
+- `AppContainer` (`App/AppContainer.swift`) — the DI graph. Lazily exposes: `logger`, `transport: HTTPTransport`, `auth: AuthService`, `api: TwitchAPIClient`, `emotes: EmoteService`, `images: ImageLoading`, `playback: PlaybackResolver`, `database: DatabaseManager`, `settings: SettingsStore`. A module's concrete service MUST be named exactly as referenced here.
+- `ImageLoading` protocol (`App/Services/ImageLoading.swift`) — `func image(for: URL, targetScale: CGFloat) async -> UIImage?`, `func emoteImage(for: Emote, scale: EmoteScale) async -> UIImage?`, `func badgeImage(for: Badge, scale: EmoteScale) async -> UIImage?`, `func prefetch(_ urls: [URL])`, `func cachedImage(for: URL) -> UIImage?`. (Animated content returns an `SDAnimatedImage` subclass of `UIImage`.)
+- `VideoPlaying` protocol (`Features/Channel/Video/VideoPlaying.swift`) — `var view: UIView { get }`, `func load(_ resolution: PlaybackResolution)`, `func play()/pause()`, `func setQuality(_ quality: StreamQuality)`, `var statePublisher: AnyPublisher<VideoState, Never> { get }`.
+- `Theme` (`App/Theme.swift`) — semantic `UIColor`s.
 
 ## Concrete type names per module (create with EXACTLY these names)
 
-- Transport: `URLSessionTransport: HTTPTransport` (`Embr/Services/URLSessionTransport.swift`).
-- Twitch API: `final class TwitchAPIClient: TwitchAPIProviding` (`Embr/Services/TwitchAPIClient.swift`) — `static let shared`. Uses `HelixEndpoints` (EmbrCore) for request specs + `HelixDTO` decoding.
-- Auth: `actor AuthService: AuthControlling` (`Embr/Services/Auth/AuthService.swift`), `final class KeychainTokenStore: TokenStoring`, `final class WorkerAuthClient`, `final class TwitchLoginCoordinator` (ASWebAuthenticationSession).
-- Chat: `actor EventSubChatSource: ChatSource`, `actor IRCChatSource: ChatSource`, `actor ChatRoom` (`Embr/Features/Channel/Chat/`). `ChatRoom` batches at 200ms, merges recent-message backfill, exposes events.
-- Emotes: `actor EmoteService: EmoteCataloging` (`Embr/Services/Emotes/EmoteService.swift`), `final class SevenTVSource/BetterTTVSource/FrankerFaceZSource: ThirdPartyEmoteSource`, `actor SevenTVEventClient: EmoteEventStreaming`.
+- Transport: `URLSessionTransport: HTTPTransport` (`App/Services/URLSessionTransport.swift`).
+- Twitch API: `final class TwitchAPIClient: TwitchAPIProviding` (`App/Services/TwitchAPIClient.swift`) — `static let shared`. Uses `HelixEndpoints` (EmbrCore) for request specs + `HelixDTO` decoding.
+- Auth: `actor AuthService: AuthControlling` (`App/Services/Auth/AuthService.swift`), `final class KeychainTokenStore: TokenStoring`, `final class WorkerAuthClient`, `final class TwitchLoginCoordinator` (ASWebAuthenticationSession).
+- Chat: `actor EventSubChatSource: ChatSource`, `actor IRCChatSource: ChatSource`, `actor ChatRoom` (`Features/Channel/Chat/`). `ChatRoom` batches at 200ms, merges recent-message backfill, exposes events.
+- Emotes: `actor EmoteService: EmoteCataloging` (`App/Services/Emotes/EmoteService.swift`), `final class SevenTVSource/BetterTTVSource/FrankerFaceZSource: ThirdPartyEmoteSource`, `actor SevenTVEventClient: EmoteEventStreaming`.
 - Images: `final class ImageLoader: ImageLoading` (SDWebImage-backed).
 - Playback: `actor PlaybackResolver: PlaybackResolving`.
 - Video: `final class HLSVideoPlayer: VideoPlaying`, `final class WebViewPlayer: VideoPlaying`, `VideoState` enum, `VideoViewController`, `VideoOverlayView`.

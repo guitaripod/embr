@@ -8,7 +8,7 @@ options:
 
 packages:
   EmbrCore:
-    path: .
+    path: Core/EmbrCore
   GRDB:
     url: https://github.com/groue/GRDB.swift
     from: "7.0.0"
@@ -31,9 +31,11 @@ targets:
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: Embr
+      - path: App
         excludes:
           - "Secrets.example.swift"
+      - path: Features
+      - path: Resources
     dependencies:
       - package: EmbrCore
         product: EmbrCore
@@ -45,7 +47,7 @@ targets:
         product: SDWebImageWebPCoder
       - package: MidgarKit
     entitlements:
-      path: Embr/Embr.entitlements
+      path: App/Embr.entitlements
       properties:
         keychain-access-groups: *midgarKeychainGroups
     settings:
@@ -72,7 +74,7 @@ targets:
           PROVISIONING_PROFILE_SPECIFIER: "Embr App Store"
           DEVELOPMENT_TEAM: P4DQK6SRKR
     info:
-      path: Embr/Info.plist
+      path: App/Info.plist
       properties:
         CFBundleDisplayName: Embr
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
