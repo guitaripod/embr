@@ -1,6 +1,6 @@
 # Embr App Privacy label
 
-Answers for App Store Connect, App Privacy section. Apple does not expose this section through the API, so the founder enters it by hand. It matches `Embr/PrivacyInfo.xcprivacy` and the policy at https://midgarcorp.cc/legal/embr/privacy (source: `web/midgarcorp/src/content/legal/embr/privacy.html`, last updated 23 October 2026). The Privacy Policy URL on the app info (`store/metadata/ios/app-info/*.json`) moves from the worker page to that address with this release; `midgar listing` pushes it and, under the `metadata_edit` policy, only with the founder at a terminal.
+Answers for App Store Connect, App Privacy section. Apple does not expose this section through the API; `store/app-privacy.json` holds the same rows and is applied with `asc web privacy plan`, `apply` and `publish` (ops/runbooks/submissions-and-review.md). It matches `Embr/PrivacyInfo.xcprivacy` and the policy at https://midgarcorp.cc/legal/embr/privacy (source: `web/midgarcorp/src/content/legal/embr/privacy.html`, last updated 23 October 2026). The Privacy Policy URL on the app info (`store/metadata/ios/app-info/*.json`) moves from the worker page to that address with this release; `midgar listing` pushes it and, under the `metadata_edit` policy, only with the founder at a terminal.
 
 This replaces the earlier label, "Data Not Linked to You: User Content only", which no longer holds once the app keeps a Midgar ID and tips are reported to the Midgar ledger.
 
