@@ -122,6 +122,15 @@ targets:
           - com.marcusziade.solarbeam
           - com.midgarcorp.flaccy
           - com.midgarcorp.flaccy.mac
+          - midgar-01
+          - midgar-02
+          - midgar-03
+          - midgar-04
+          - midgar-05
+          - midgar-06
+          - midgar-07
+          - midgar-08
+          - midgar-09
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
 
