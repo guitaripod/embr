@@ -434,8 +434,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         guard let url = resolution?.masterPlaylistURL else { return }
         let generation = loadGeneration
         Task { [weak self] in
-            guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let text = String(data: data, encoding: .utf8) else { return }
+            guard let text = await HLSPlaylistClient().playlist(at: url) else { return }
             let parsed = HLSPlaylistParser.qualities(text)
             guard !parsed.isEmpty, let self, self.loadGeneration == generation else { return }
             self.availableQualities = parsed

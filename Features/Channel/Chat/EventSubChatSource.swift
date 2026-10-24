@@ -11,8 +11,8 @@ actor EventSubChatSource: ChatSource {
     private let endpoint = URL(string: "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30")!
     private let defaultKeepalive = 30
 
-    private var session: URLSession?
-    private var sockets: [Int: URLSessionWebSocketTask] = [:]
+    private let socketClient = ChatSocketClient()
+    private var sockets: [Int: ChatSocket] = [:]
     private var liveGeneration = 0
     private var nextGeneration = 0
     private var watchdogTask: Task<Void, Never>?
@@ -73,11 +73,9 @@ actor EventSubChatSource: ChatSource {
 
     @discardableResult
     private func openSocket(at url: URL) -> Int {
-        let session = self.session ?? URLSession(configuration: .default)
-        self.session = session
         let generation = nextGeneration
         nextGeneration += 1
-        let task = session.webSocketTask(with: url)
+        let task = socketClient.open(url)
         sockets[generation] = task
         task.resume()
         Task { [weak self] in
@@ -90,12 +88,11 @@ actor EventSubChatSource: ChatSource {
         while !stopped {
             guard let task = sockets[generation] else { return }
             do {
-                let message = try await task.receive()
+                guard let frame = try await task.receive() else { continue }
                 let data: Data
-                switch message {
-                case .data(let value): data = value
-                case .string(let value): data = Data(value.utf8)
-                @unknown default: continue
+                switch frame {
+                case .binary(let value): data = value
+                case .text(let value): data = Data(value.utf8)
                 }
                 await handle(data, generation: generation)
             } catch {
@@ -190,7 +187,7 @@ actor EventSubChatSource: ChatSource {
     private func promote(generation: Int) {
         guard sockets[generation] != nil else { return }
         if let old = sockets[liveGeneration], liveGeneration != generation {
-            old.cancel(with: .goingAway, reason: nil)
+            old.close()
             sockets[liveGeneration] = nil
         }
         liveGeneration = generation
@@ -291,15 +288,14 @@ actor EventSubChatSource: ChatSource {
         subscribeTask?.cancel()
         subscribeTask = nil
         for task in sockets.values {
-            task.cancel(with: .goingAway, reason: nil)
+            task.close()
         }
         sockets.removeAll()
     }
 
     private func teardown() {
         teardownSockets()
-        session?.invalidateAndCancel()
-        session = nil
+        socketClient.invalidate()
     }
 
     private static func backoffSeconds(attempt: Int) -> Double {

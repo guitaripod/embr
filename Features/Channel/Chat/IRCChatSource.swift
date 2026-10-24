@@ -7,8 +7,8 @@ actor IRCChatSource: ChatSource {
 
     private let endpoint = URL(string: "wss://irc-ws.chat.twitch.tv:443")!
 
-    private var session: URLSession?
-    private var socket: URLSessionWebSocketTask?
+    private let socketClient = ChatSocketClient()
+    private var socket: ChatSocket?
     private var reconnectTask: Task<Void, Never>?
     private var generation = 0
     private var continuation: AsyncStream<ChatEvent>.Continuation?
@@ -54,11 +54,9 @@ actor IRCChatSource: ChatSource {
         roomState = RoomState()
         continuation?.yield(.connection(attempt == 0 ? .connecting : .reconnecting(attempt: attempt)))
 
-        let session = self.session ?? URLSession(configuration: .default)
-        self.session = session
         generation += 1
         let current = generation
-        let task = session.webSocketTask(with: endpoint)
+        let task = socketClient.open(endpoint)
         socket = task
         task.resume()
         handshake()
@@ -75,7 +73,7 @@ actor IRCChatSource: ChatSource {
     }
 
     private func sendLine(_ line: String) {
-        socket?.send(.string(line + "\r\n")) { [weak self] error in
+        socket?.send(text: line + "\r\n") { [weak self] error in
             guard let error else { return }
             Task { await self?.handleSendFailure(error) }
         }
@@ -91,12 +89,11 @@ actor IRCChatSource: ChatSource {
         while !stopped {
             guard generation == self.generation, let task = socket else { return }
             do {
-                let message = try await task.receive()
+                guard let frame = try await task.receive() else { continue }
                 let text: String
-                switch message {
-                case .string(let value): text = value
-                case .data(let value): text = String(decoding: value, as: UTF8.self)
-                @unknown default: continue
+                switch frame {
+                case .text(let value): text = value
+                case .binary(let value): text = String(decoding: value, as: UTF8.self)
                 }
                 ingest(text, generation: generation)
             } catch {
@@ -216,14 +213,13 @@ actor IRCChatSource: ChatSource {
     private func teardownSocket() {
         reconnectTask?.cancel()
         reconnectTask = nil
-        socket?.cancel(with: .goingAway, reason: nil)
+        socket?.close()
         socket = nil
     }
 
     private func teardown() {
         teardownSocket()
-        session?.invalidateAndCancel()
-        session = nil
+        socketClient.invalidate()
     }
 
     private static func backoffSeconds(attempt: Int) -> Double {
