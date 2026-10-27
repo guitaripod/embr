@@ -17,6 +17,7 @@ final class VideoViewController: UIViewController {
     var onDoubleTapToggleChat: (() -> Void)?
     var onAudioOnlyChanged: ((Bool) -> Void)?
     var onPlaybackStateChanged: ((Bool) -> Void)?
+    var onProgress: ((PlaybackProgress) -> Void)?
     /// Set by a hosting channel page: on iPad the fullscreen button changes that page's layout
     /// instead of rotating the device.
     var onToggleFullscreen: (() -> Void)?
@@ -462,6 +463,7 @@ final class VideoViewController: UIViewController {
                 guard let self else { return }
                 self.lastProgress = progress
                 self.overlay.setProgress(progress)
+                self.onProgress?(progress)
             }
             .store(in: &playerCancellables)
     }

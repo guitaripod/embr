@@ -5,9 +5,12 @@ import EmbrCore
 @MainActor
 final class RootTabBarController: UITabBarController {
     private let auth: AuthService
+    private let settings: SettingsStore
     private var cancellables = Set<AnyCancellable>()
     private var isLoggedIn = false
     private var hasBuiltTabs = false
+    private var hasChosenInitialTab = false
+    private var hasUserSelectedTab = false
 
     enum Tab: String, CaseIterable {
         case following
@@ -60,8 +63,9 @@ final class RootTabBarController: UITabBarController {
     }
     #endif
 
-    init(auth: AuthService = AuthService.shared) {
+    init(auth: AuthService = AuthService.shared, settings: SettingsStore = .shared) {
         self.auth = auth
+        self.settings = settings
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -225,10 +229,24 @@ final class RootTabBarController: UITabBarController {
         let previous = selectedTab
         setTabs(tabs, animated: false)
         UIMenuSystem.main.setNeedsRebuild()
-        if isLoggedIn, let followingTab {
-            selectedTab = followingTab
+        if !hasChosenInitialTab {
+            hasChosenInitialTab = true
+            selectedTab = preferredStartTab ?? previous ?? tabs.first
+        } else if !hasUserSelectedTab, let preferred = preferredStartTab {
+            selectedTab = preferred
         } else if let previous, tabs.contains(where: { $0 === previous }) {
             selectedTab = previous
+        }
+    }
+
+    private var preferredStartTab: UITab? {
+        switch settings.current.startTabPreference {
+        case .following:
+            return isLoggedIn ? (followingTab ?? favoritesTab) : topTab
+        case .favorites:
+            return favoritesTab
+        case .top:
+            return topTab
         }
     }
 
@@ -320,6 +338,7 @@ extension RootTabBarController: UITabBarControllerDelegate {
             openLiveChannel(entry)
             return false
         }
+        hasUserSelectedTab = true
         if tab === selectedTab {
             scrollActiveToTop(tab.viewController)
         } else {

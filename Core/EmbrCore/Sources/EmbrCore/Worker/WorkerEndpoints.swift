@@ -39,6 +39,14 @@ public struct WorkerEndpoints: Sendable {
         HTTPRequest(method: .get, url: url(for: "/playback/vod/\(escape(id))"))
     }
 
+    public func vodComments(id: String, offset: Int) -> HTTPRequest {
+        let url = QueryEncoder.url(
+            path("/vod/\(escape(id))/comments"),
+            items: [("offset", String(max(0, offset)))]
+        ) ?? self.url(for: "/vod/\(escape(id))/comments")
+        return HTTPRequest(method: .get, url: url)
+    }
+
     public func playbackClip(slug: String) -> HTTPRequest {
         HTTPRequest(method: .get, url: url(for: "/playback/clip/\(escape(slug))"))
     }
@@ -65,6 +73,10 @@ public struct WorkerEndpoints: Sendable {
 
     public static func decodePlayback(_ data: Data) throws -> WorkerAPI.PlaybackResponse {
         try TwitchJSON.decode(WorkerAPI.PlaybackResponse.self, from: data)
+    }
+
+    public static func decodeVodComments(_ data: Data) throws -> VodCommentsPage {
+        try TwitchJSON.decode(VodCommentsPage.self, from: data)
     }
 
     private func jsonPost(_ relativePath: String, body: some Encodable) -> HTTPRequest {

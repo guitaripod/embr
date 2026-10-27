@@ -239,6 +239,10 @@ final class ChatViewModel {
         Task { await room.wake() }
     }
 
+    func setPlayback(seconds: TimeInterval) {
+        Task { await room.setPlayback(seconds: seconds) }
+    }
+
     func updateWidth(_ width: CGFloat) {
         Task {
             if let snapshot = await store.updateWidth(width) {

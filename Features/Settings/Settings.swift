@@ -8,6 +8,12 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         case dark
     }
 
+    enum StartTab: String, Codable, Sendable, Equatable, CaseIterable {
+        case following
+        case favorites
+        case top
+    }
+
     var theme: ThemePreference
 
     var showTimestamps: Bool
@@ -30,6 +36,9 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var chatOnly: Bool?
     var backgroundAudio: Bool?
+    var showsRecentlyWatched: Bool?
+    var favoritesOnlyTop: Bool?
+    var startTab: StartTab?
 
     var filterObjectionableContent: Bool?
     var mutedKeywords: [String]?
@@ -56,12 +65,27 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         hapticsEnabled: true,
         chatOnly: false,
         backgroundAudio: true,
+        showsRecentlyWatched: true,
+        favoritesOnlyTop: false,
+        startTab: .following,
         filterObjectionableContent: true,
         mutedKeywords: []
     )
 
     func thirdPartyEmotesEnabled(_ provider: EmoteProvider) -> Bool {
         showThirdPartyEmotes[provider] ?? true
+    }
+
+    var showsRecentlyWatchedEnabled: Bool {
+        showsRecentlyWatched ?? true
+    }
+
+    var favoritesOnlyTopEnabled: Bool {
+        favoritesOnlyTop ?? false
+    }
+
+    var startTabPreference: StartTab {
+        startTab ?? .following
     }
 
     var objectionableFilterEnabled: Bool {

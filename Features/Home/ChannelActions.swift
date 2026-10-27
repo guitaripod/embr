@@ -2,7 +2,7 @@ import UIKit
 
 @MainActor
 enum ChannelActions {
-    static func menu(login: String, broadcasterID: String, name: String, from vc: UIViewController) -> UIMenu {
+    static func menu(login: String, broadcasterID: String, name: String, from vc: UIViewController, extraActions: [UIAction] = []) -> UIMenu {
         UIMenu(children: [
             favoriteAction(login: login, broadcasterID: broadcasterID, name: name),
             UIAction(title: String(localized: "View Profile"), image: UIImage(systemName: "person.crop.circle")) { [weak vc] _ in
@@ -15,13 +15,19 @@ enum ChannelActions {
                     animated: true
                 )
             }
-        ])
+        ] + extraActions)
     }
 
-    static func configuration(login: String, broadcasterID: String, name: String, from vc: UIViewController) -> UIContextMenuConfiguration {
+    static func configuration(
+        login: String,
+        broadcasterID: String,
+        name: String,
+        from vc: UIViewController,
+        extraActions: [UIAction] = []
+    ) -> UIContextMenuConfiguration {
         UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak vc] _ in
             guard let vc else { return nil }
-            return menu(login: login, broadcasterID: broadcasterID, name: name, from: vc)
+            return menu(login: login, broadcasterID: broadcasterID, name: name, from: vc, extraActions: extraActions)
         }
     }
 

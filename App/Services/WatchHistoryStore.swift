@@ -47,6 +47,14 @@ final class WatchHistoryStore {
         persist(next)
     }
 
+    func remove(id: String) {
+        guard recent.contains(where: { $0.id == id }) else { return }
+        let next = recent.filter { $0.id != id }
+        recent = next
+        changes.send(next)
+        persist(next)
+    }
+
     func clear() {
         guard !recent.isEmpty else { return }
         recent = []

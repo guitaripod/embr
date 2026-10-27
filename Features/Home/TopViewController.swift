@@ -20,12 +20,26 @@ final class TopViewController: UIViewController {
     private let mode: Mode
     private let api: TwitchAPIProviding
     private let history: WatchHistoryStore
+    private let settings: SettingsStore
+    private let favorites: FavoritesLiveMonitor
 
     private var recentChannels: [WatchedChannel] = []
     private var avatars: [String: URL] = [:]
-    private var showsRecentRail: Bool { mode == .top }
+    private var showsRecentRail: Bool {
+        mode == .top && settings.current.showsRecentlyWatchedEnabled && !favoritesOnly
+    }
+
+    private var favoritesOnly: Bool {
+        mode == .top && settings.current.favoritesOnlyTopEnabled
+    }
 
     private let segmented = UISegmentedControl(items: [String(localized: "Streams"), String(localized: "Categories")])
+    private lazy var favoritesItem = UIBarButtonItem(
+        image: UIImage(systemName: "star"),
+        style: .plain,
+        target: self,
+        action: #selector(toggleFavoritesOnly)
+    )
     private var collectionView: UICollectionView!
     private var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     private let refreshControl = UIRefreshControl()
@@ -51,10 +65,18 @@ final class TopViewController: UIViewController {
 
     private var showingCategories = false
 
-    init(mode: Mode = .top, api: TwitchAPIProviding = TwitchAPIClient.shared, history: WatchHistoryStore = .shared) {
+    init(
+        mode: Mode = .top,
+        api: TwitchAPIProviding = TwitchAPIClient.shared,
+        history: WatchHistoryStore = .shared,
+        settings: SettingsStore = .shared,
+        favorites: FavoritesLiveMonitor = .shared
+    ) {
         self.mode = mode
         self.api = api
         self.history = history
+        self.settings = settings
+        self.favorites = favorites
         super.init(nibName: nil, bundle: nil)
         switch mode {
         case .top:
@@ -79,6 +101,8 @@ final class TopViewController: UIViewController {
         setUpEmptyState()
         bindStreams()
         bindHistory()
+        bindSettings()
+        bindFavorites()
         streamsViewModel.load()
         registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: TopViewController, _) in
             controller.reloadForWidthClass()
@@ -105,7 +129,7 @@ final class TopViewController: UIViewController {
     #endif
 
     private func bindHistory() {
-        guard showsRecentRail else { return }
+        guard mode == .top else { return }
         recentChannels = history.recent
         loadRecentAvatars()
         history.changes
@@ -116,6 +140,34 @@ final class TopViewController: UIViewController {
                     self.recentChannels = channels
                     self.loadRecentAvatars()
                     if !self.showingCategories { self.applyStreams(self.streamsViewModel.currentStreams) }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func bindSettings() {
+        guard mode == .top else { return }
+        settings.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.updateFavoritesItem()
+                    if !self.showingCategories { self.applyStreams(self.streamsViewModel.currentStreams) }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func bindFavorites() {
+        guard mode == .top else { return }
+        favorites.start()
+        favorites.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self, self.favoritesOnly, !self.showingCategories else { return }
+                    self.applyStreams(self.streamsViewModel.currentStreams)
                 }
             }
             .store(in: &cancellables)
@@ -152,6 +204,27 @@ final class TopViewController: UIViewController {
         segmented.selectedSegmentIndex = 0
         segmented.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
         navigationItem.titleView = segmented
+        navigationItem.rightBarButtonItem = favoritesItem
+        updateFavoritesItem()
+    }
+
+    private func updateFavoritesItem() {
+        let isOn = favoritesOnly
+        favoritesItem.image = UIImage(systemName: isOn ? "star.fill" : "star")
+        favoritesItem.accessibilityLabel = isOn
+            ? String(localized: "Show All Streams")
+            : String(localized: "Show Only Favorites")
+    }
+
+    @objc private func toggleFavoritesOnly() {
+        Haptics.selection()
+        settings.update { $0.favoritesOnlyTop = !favoritesOnly }
+        if favoritesOnly {
+            favorites.refresh(force: false)
+        }
+        updateFavoritesItem()
+        applyStreams(streamsViewModel.currentStreams)
+        collectionView.setContentOffset(CGPoint(x: 0, y: -collectionView.adjustedContentInset.top), animated: true)
     }
 
     private func makeStreamsLayout() -> UICollectionViewCompositionalLayout {
@@ -212,10 +285,16 @@ final class TopViewController: UIViewController {
 
     private func setUpDataSource() {
         let streamRegistration = UICollectionView.CellRegistration<StreamCell, LiveStream> { [weak self] cell, _, stream in
-            cell.configure(with: stream, avatarURL: self?.streamsViewModel.avatarURL(for: stream.userID))
+            let avatar = self?.favoritesOnly == true
+                ? self?.favorites.avatars[stream.userID]
+                : self?.streamsViewModel.avatarURL(for: stream.userID)
+            cell.configure(with: stream, avatarURL: avatar)
         }
         let cardRegistration = UICollectionView.CellRegistration<StreamCardCell, LiveStream> { [weak self] cell, _, stream in
-            cell.configure(with: stream, avatarURL: self?.streamsViewModel.avatarURL(for: stream.userID))
+            let avatar = self?.favoritesOnly == true
+                ? self?.favorites.avatars[stream.userID]
+                : self?.streamsViewModel.avatarURL(for: stream.userID)
+            cell.configure(with: stream, avatarURL: avatar)
         }
         let categoryRegistration = UICollectionView.CellRegistration<CategoryCell, GameCategory> { cell, _, category in
             cell.configure(with: category)
@@ -331,6 +410,7 @@ final class TopViewController: UIViewController {
         #if DEBUG
         let streams = ScreenshotHarness.isPosing ? streams.filter(ScreenshotHarness.suitsStoreShot) : streams
         #endif
+        let displayed = favoritesOnly ? favorites.liveStreams : streams
         loadingIndicator.stopAnimating()
         var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
         if showsRecentRail, !recentChannels.isEmpty {
@@ -338,11 +418,13 @@ final class TopViewController: UIViewController {
             snapshot.appendItems(recentChannels.map(Item.recentChannel), toSection: .recent)
         }
         snapshot.appendSections([.main])
-        snapshot.appendItems(streams.map(Item.stream), toSection: .main)
+        snapshot.appendItems(displayed.map(Item.stream), toSection: .main)
         dataSource.apply(snapshot, animatingDifferences: true)
-        emptyView.setMessage(Self.emptyStreamsMessage)
+        emptyView.setMessage(favoritesOnly
+            ? String(localized: "No favorites are live right now. Tap the star on a channel to add it here.")
+            : Self.emptyStreamsMessage)
         emptyView.onRetry = nil
-        emptyView.isHidden = !streams.isEmpty
+        emptyView.isHidden = !displayed.isEmpty
     }
 
     private func applyCategories() {
@@ -443,7 +525,20 @@ extension TopViewController: UICollectionViewDelegate {
         case .stream(let stream):
             return ChannelActions.configuration(login: stream.userLogin, broadcasterID: stream.userID, name: stream.userName, from: self)
         case .recentChannel(let channel):
-            return ChannelActions.configuration(login: channel.login, broadcasterID: channel.id, name: channel.displayName, from: self)
+            let remove = UIAction(
+                title: String(localized: "Remove from Recently Watched"),
+                image: UIImage(systemName: "clock.badge.xmark"),
+                attributes: .destructive
+            ) { _ in
+                WatchHistoryStore.shared.remove(id: channel.id)
+            }
+            return ChannelActions.configuration(
+                login: channel.login,
+                broadcasterID: channel.id,
+                name: channel.displayName,
+                from: self,
+                extraActions: [remove]
+            )
         default:
             return nil
         }

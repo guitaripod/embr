@@ -114,8 +114,23 @@ enum ScreenshotRouter {
             }
         case "vod":
             guard let channel else { return }
+            let info = DemoWorld.channel(login: channel)
+            let index = option("Index") ?? "0"
+            let vod = VideoOnDemand(
+                id: "vod-\(channel)-\(index)",
+                userID: info?.id ?? channel,
+                userLogin: channel,
+                userName: info?.name ?? channel,
+                title: info?.title ?? String(localized: "Past Broadcast"),
+                createdAt: Date(),
+                publishedAt: Date(),
+                thumbnailURLTemplate: "https://\(DemoWorld.host)/vod/\(channel)\(index)/%{width}x%{height}",
+                viewCount: 0,
+                durationSeconds: 7200,
+                type: "archive"
+            )
             tabBar.selectedNavigationController?.pushViewController(
-                VideoViewController(source: .vod(id: "vod-\(channel)-\(option("Index") ?? "0")")), animated: false)
+                VODViewController(vod: vod), animated: false)
         case "open":
             if let target = option("URL"), let url = URL(string: target) {
                 Task { await deepLinks.handle(url, from: tabBar) }

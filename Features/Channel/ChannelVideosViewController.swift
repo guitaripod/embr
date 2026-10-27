@@ -293,7 +293,7 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
         Haptics.selection()
         switch item {
         case .vod(let vod):
-            navigationController?.pushViewController(VideoViewController(source: .vod(id: vod.id)), animated: true)
+            navigationController?.pushViewController(VODViewController(vod: vod), animated: true)
         case .clip(let clip):
             playClip(clip)
         case .schedule:

@@ -76,6 +76,10 @@ enum DemoTransport {
         if path == "/config" {
             return json(["livePlayback": "native"])
         }
+        if path.hasPrefix("/vod/"), path.hasSuffix("/comments") {
+            let id = path.dropFirst("/vod/".count).dropLast("/comments".count)
+            return json(demoVodComments(videoID: String(id), offset: 0))
+        }
         if path.hasPrefix("/playback/vod/") {
             let id = String(path.dropFirst("/playback/vod/".count))
             return json(["url": "https://\(DemoWorld.host)/hls/vod/\(id)/master.m3u8"])
@@ -369,6 +373,32 @@ enum DemoTransport {
             ]
         }
         return json(["data": items])
+    }
+
+    private static func demoVodComments(videoID: String, offset: Int) -> [String: Any] {
+        let now = Date()
+        let rows: [(Int, String, String, String, String?)] = [
+            (5, "kitsunetea", "Kitsune Tea", "This VOD chat replay is synced with the video.", nil),
+            (14, "northerncrane", "Northern Crane", "detuneBongo", "emotesv2_c1df9170e03d4b5bb2050444e9409b4a;0;10"),
+            (26, "lumenfox", "Lumen Fox", "Wait, the chat follows when I seek?", nil),
+            (38, "pixelpilot", "Pixel Pilot", "Kappa", "25;0;5"),
+            (52, "kitsunetea", "Kitsune Tea", "It does. Try scrubbing back.", nil)
+        ]
+        let comments = rows.map { seconds, login, name, text, emote -> [String: Any] in
+            var fragment: [String: Any] = ["text": text]
+            if let emote { fragment["emoteID"] = emote }
+            return [
+                "id": "\(videoID)-\(seconds)",
+                "offsetSeconds": seconds,
+                "createdAt": iso(now.addingTimeInterval(TimeInterval(seconds))),
+                "authorID": login,
+                "authorLogin": login,
+                "authorName": name,
+                "color": "#9147FF",
+                "fragments": [fragment]
+            ]
+        }
+        return ["comments": comments, "nextOffset": 100, "hasMore": false]
     }
 
     private static func events(login: String) -> [String: Any] {

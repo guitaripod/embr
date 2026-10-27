@@ -10,6 +10,7 @@ final class SettingsViewController: UIViewController {
     private enum Section: Int, CaseIterable {
         case midgar
         case general
+        case home
         case chat
         case safety
         case video
@@ -21,6 +22,7 @@ final class SettingsViewController: UIViewController {
             switch self {
             case .midgar: return ""
             case .general: return String(localized: "General")
+            case .home: return String(localized: "Home")
             case .chat: return String(localized: "Chat")
             case .safety: return String(localized: "Safety & Moderation")
             case .video: return String(localized: "Video")
@@ -37,6 +39,11 @@ final class SettingsViewController: UIViewController {
         case theme
         case openLinksInApp
         case haptics
+
+        case showRecentlyWatched
+        case favoritesOnlyTop
+        case startTab
+        case clearWatchHistory
 
         case showTimestamps
         case compactChat
@@ -181,6 +188,7 @@ final class SettingsViewController: UIViewController {
         switch section {
         case .midgar: return nil
         case .general: return String(localized: "Appearance, link handling, and haptic feedback across the app.")
+        case .home: return String(localized: "Choose where Embr opens, what the Top tab shows, and what it remembers.")
         case .chat: return String(localized: "Readability, message size, and which emote sets load in chat.")
         case .safety: return String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review.")
         case .video: return String(localized: "Stream quality, autoplay, and how chat stays in sync with the video.")
@@ -223,6 +231,7 @@ final class SettingsViewController: UIViewController {
         snapshot.appendSections(Section.allCases)
         snapshot.appendItems([.midgarEntry], toSection: .midgar)
         snapshot.appendItems([.theme, .openLinksInApp, .haptics], toSection: .general)
+        snapshot.appendItems([.showRecentlyWatched, .favoritesOnlyTop, .startTab, .clearWatchHistory], toSection: .home)
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
              .highlightMentions, .recentMessagesBackfill, .animateEmotes]
@@ -315,6 +324,24 @@ final class SettingsViewController: UIViewController {
             switchRow(cell, &content, title: String(localized: "Haptics"), isOn: settings.hapticsEnabled) { store, on in
                 store.update { $0.hapticsEnabled = on }
             }
+
+        case .showRecentlyWatched:
+            switchRow(cell, &content, title: String(localized: "Show Recently Watched"), isOn: settings.showsRecentlyWatchedEnabled) { store, on in
+                store.update { $0.showsRecentlyWatched = on }
+            }
+        case .favoritesOnlyTop:
+            switchRow(cell, &content, title: String(localized: "Only Favorites in Top"), isOn: settings.favoritesOnlyTopEnabled) { store, on in
+                store.update { $0.favoritesOnlyTop = on }
+            }
+        case .startTab:
+            content.text = String(localized: "Open Embr On")
+            cell.contentConfiguration = content
+            cell.accessories = [.customView(configuration: .init(customView: startTabButton(selected: settings.startTabPreference), placement: .trailing()))]
+        case .clearWatchHistory:
+            content.text = String(localized: "Clear Recently Watched")
+            content.textProperties.color = .systemRed
+            cell.contentConfiguration = content
+            cell.accessories = []
 
         case .showTimestamps:
             switchRow(cell, &content, title: String(localized: "Show Timestamps"), isOn: settings.showTimestamps) { store, on in
@@ -574,6 +601,33 @@ final class SettingsViewController: UIViewController {
         return button
     }
 
+    private static func title(for tab: Settings.StartTab) -> String {
+        switch tab {
+        case .following: return String(localized: "Following")
+        case .favorites: return String(localized: "Favorites")
+        case .top: return String(localized: "Top")
+        }
+    }
+
+    private func startTabButton(selected: Settings.StartTab) -> UIButton {
+        let options: [(String, Settings.StartTab)] = Settings.StartTab.allCases.map { (Self.title(for: $0), $0) }
+        var configuration = UIButton.Configuration.plain()
+        configuration.baseForegroundColor = Theme.secondaryText
+        configuration.title = Self.title(for: selected)
+        configuration.image = UIImage(systemName: "chevron.up.chevron.down")
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 6
+        let button = UIButton(configuration: configuration)
+        button.menu = UIMenu(children: options.map { title, tab in
+            UIAction(title: title, state: tab == selected ? .on : .off) { [weak self] _ in
+                self?.store.update { $0.startTab = tab }
+            }
+        })
+        button.showsMenuAsPrimaryAction = true
+        button.changesSelectionAsPrimaryAction = true
+        return button
+    }
+
     private static func iconImage(for row: Row) -> UIImage {
         let spec: (String, UIColor)
         switch row {
@@ -581,6 +635,10 @@ final class SettingsViewController: UIViewController {
         case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
         case .openLinksInApp: spec = ("safari.fill", .systemBlue)
         case .haptics: spec = ("hand.tap.fill", .systemPink)
+        case .showRecentlyWatched: spec = ("clock.arrow.circlepath", .systemTeal)
+        case .favoritesOnlyTop: spec = ("star.fill", .systemYellow)
+        case .startTab: spec = ("rectangle.on.rectangle", .systemIndigo)
+        case .clearWatchHistory: spec = ("clock.badge.xmark", .systemRed)
         case .showTimestamps: spec = ("clock.fill", .systemGray)
         case .compactChat: spec = ("rectangle.compress.vertical", .systemTeal)
         case .messageScale: spec = ("textformat.size", .systemIndigo)
@@ -696,6 +754,19 @@ final class SettingsViewController: UIViewController {
         }
     }
 
+    private func confirmClearWatchHistory() {
+        let alert = UIAlertController(
+            title: String(localized: "Clear Recently Watched?"),
+            message: String(localized: "This removes every channel from Recently Watched. Your favorites are not affected."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Clear"), style: .destructive) { _ in
+            WatchHistoryStore.shared.clear()
+        })
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        present(alert, animated: true)
+    }
+
     private func confirmLogout() {
         let alert = UIAlertController(title: String(localized: "Log Out?"), message: String(localized: "You'll return to browsing as a guest."), preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: String(localized: "Log Out"), style: .destructive) { [weak self] _ in
@@ -774,7 +845,7 @@ extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
         case .github, .accountAction, .deleteAccount, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
-             .rateApp, .shareApp, .tip:
+             .rateApp, .shareApp, .tip, .clearWatchHistory:
             return true
         case .tipsStatus:
             return TipJarStore.shared.state == .unavailable
@@ -793,6 +864,8 @@ extension SettingsViewController: UICollectionViewDelegate {
             performAccountAction()
         case .deleteAccount:
             confirmDeleteAccount()
+        case .clearWatchHistory:
+            confirmClearWatchHistory()
         case .mutedKeywords:
             navigationController?.pushViewController(MutedKeywordsViewController(), animated: true)
         case .blockedUsers:

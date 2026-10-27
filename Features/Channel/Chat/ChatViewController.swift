@@ -19,6 +19,7 @@ final class ChatViewController: UIViewController {
     private let viewModel: ChatViewModel
     private let images: ImageLoading
     private let isAnonymous: Bool
+    private let isReadOnly: Bool
     private let currentUserLogin: String?
     private let broadcasterLogin: String?
     private var canModerate = false
@@ -43,14 +44,22 @@ final class ChatViewController: UIViewController {
     private static let chatterIndexCap = 2000
     private var lastLayoutWidth: CGFloat = 0
 
-    init(viewModel: ChatViewModel, images: ImageLoading = AppContainer.shared.images, isAnonymous: Bool, currentUserLogin: String? = nil, broadcasterLogin: String? = nil) {
+    init(
+        viewModel: ChatViewModel,
+        images: ImageLoading = AppContainer.shared.images,
+        isAnonymous: Bool,
+        currentUserLogin: String? = nil,
+        broadcasterLogin: String? = nil,
+        readOnly: Bool = false
+    ) {
         self.viewModel = viewModel
         self.images = images
         self.isAnonymous = isAnonymous
+        self.isReadOnly = readOnly
         self.currentUserLogin = currentUserLogin
         self.broadcasterLogin = broadcasterLogin
         super.init(nibName: nil, bundle: nil)
-        if !isAnonymous, let me = currentUserLogin?.lowercased(), me == broadcasterLogin?.lowercased() {
+        if !readOnly, !isAnonymous, let me = currentUserLogin?.lowercased(), me == broadcasterLogin?.lowercased() {
             canModerate = true
         }
     }
@@ -91,7 +100,7 @@ final class ChatViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if !isAnonymous { composer.setEmoteKeyboardPageLeading(foldPageLeading) }
+        if !isAnonymous && !isReadOnly { composer.setEmoteKeyboardPageLeading(foldPageLeading) }
         let width = collectionView.bounds.width
         guard width > 0, width != lastLayoutWidth else { return }
         lastLayoutWidth = width
@@ -124,7 +133,7 @@ final class ChatViewController: UIViewController {
     #endif
 
     var isComposing: Bool {
-        !isAnonymous && composer.isEditing
+        !isAnonymous && !isReadOnly && composer.isEditing
     }
 
     func routeUsernameTap(_ user: ChatUser) {
@@ -207,7 +216,9 @@ final class ChatViewController: UIViewController {
 
     private func setUpOverlays() {
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false
-        emptyLabel.text = String(localized: "Waiting for messages…")
+        emptyLabel.text = isReadOnly
+            ? String(localized: "Loading chat replay…")
+            : String(localized: "Waiting for messages…")
         emptyLabel.font = .systemFont(ofSize: 14, weight: .regular)
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
@@ -250,6 +261,10 @@ final class ChatViewController: UIViewController {
     }
 
     private func setUpInput() {
+        if isReadOnly {
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+            return
+        }
         guard !isAnonymous else {
             setUpGuestBar()
             return
@@ -369,7 +384,7 @@ final class ChatViewController: UIViewController {
     /// moderator/broadcaster badge in this channel — avoids showing mod controls
     /// to regular viewers without needing an extra API scope.
     private func detectModeratorIfNeeded(_ rows: [ChatRow]) {
-        guard !canModerate, !isAnonymous, let me = currentUserLogin?.lowercased() else { return }
+        guard !canModerate, !isAnonymous, !isReadOnly, let me = currentUserLogin?.lowercased() else { return }
         let isMod = rows.contains { row in
             row.message.author.login.lowercased() == me
                 && row.message.badges.contains { $0.setID == "moderator" || $0.setID == "broadcaster" }
@@ -457,7 +472,7 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
     private func presentMessageActions(for message: ChatMessage, sourceRect: CGRect) {
         let isOwn = message.author.login.lowercased() == currentUserLogin?.lowercased()
         let sheet = UIAlertController(title: message.author.displayName, message: nil, preferredStyle: .actionSheet)
-        if !isAnonymous {
+        if !isAnonymous && !isReadOnly {
             sheet.addAction(UIAlertAction(title: String(localized: "Reply"), style: .default) { [weak self] _ in
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didRequestReplyTo: message)

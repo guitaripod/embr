@@ -15,7 +15,13 @@ enum ChatRoomEvent: Sendable {
 }
 
 actor ChatRoom {
+    enum Mode: Sendable, Equatable {
+        case live
+        case vod(videoID: String)
+    }
+
     private let channel: ChannelInfo
+    private let mode: Mode
     private let loggedIn: Bool
     private let api: TwitchAPIProviding
     private let auth: AuthControlling
@@ -30,6 +36,7 @@ actor ChatRoom {
     private var flushTask: Task<Void, Never>?
     private var setupTask: Task<Void, Never>?
     private var pending: [ChatMessage] = []
+    private var pendingPlayback: TimeInterval?
     private var stopped = false
     private var gapBackfillTask: Task<Void, Never>?
     private var connectionPhase: ConnectionPhase = .initial
@@ -47,6 +54,7 @@ actor ChatRoom {
 
     init(
         channel: ChannelInfo,
+        mode: Mode = .live,
         loggedIn: Bool,
         api: TwitchAPIProviding,
         auth: AuthControlling,
@@ -54,6 +62,7 @@ actor ChatRoom {
         recentMessages: RecentMessagesProviding
     ) {
         self.channel = channel
+        self.mode = mode
         self.loggedIn = loggedIn
         self.api = api
         self.auth = auth
@@ -132,10 +141,21 @@ actor ChatRoom {
     private func setup() async {
         await loadCatalog()
         guard !stopped else { return }
-        await backfill(.initial)
-        guard !stopped else { return }
+        if case .live = mode {
+            await backfill(.initial)
+            guard !stopped else { return }
+        }
         startFlushing()
         consumeSource()
+    }
+
+    func setPlayback(seconds: TimeInterval) async {
+        guard case .vod = mode else { return }
+        if let source = source as? VODChatSource {
+            await source.setPlayback(seconds: seconds)
+        } else {
+            pendingPlayback = seconds
+        }
     }
 
     private func loadCatalog() async {
@@ -180,6 +200,10 @@ actor ChatRoom {
     private func consumeSource() {
         let source = makeSource()
         self.source = source
+        if let pendingPlayback, let vod = source as? VODChatSource {
+            self.pendingPlayback = nil
+            Task { await vod.setPlayback(seconds: pendingPlayback) }
+        }
         let stream = source.start()
         consumeTask = Task { [weak self] in
             for await event in stream {
@@ -190,8 +214,11 @@ actor ChatRoom {
 
     private func makeSource() -> ChatSource {
         #if DEBUG
-        if DemoWorld.isActive { return DemoChatSource(channel: channel) }
+        if DemoWorld.isActive, case .live = mode { return DemoChatSource(channel: channel) }
         #endif
+        if case .vod(let videoID) = mode {
+            return VODChatSource(channel: channel, videoID: videoID)
+        }
         return loggedIn
             ? EventSubChatSource(channel: channel, api: api, auth: auth)
             : IRCChatSource(channel: channel)
@@ -206,6 +233,7 @@ actor ChatRoom {
         case .clearUserMessages(let userID, _):
             continuation?.yield(.clearUser(userID: userID))
         case .clearChat:
+            pending.removeAll()
             continuation?.yield(.clearChat)
         case .roomState(let state):
             continuation?.yield(.roomState(state))

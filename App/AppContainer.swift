@@ -39,9 +39,10 @@ final class AppContainer {
 
     private init() {}
 
-    func makeChatRoom(channel: ChannelInfo, loggedIn: Bool) -> ChatRoom {
+    func makeChatRoom(channel: ChannelInfo, loggedIn: Bool, mode: ChatRoom.Mode = .live) -> ChatRoom {
         ChatRoom(
             channel: channel,
+            mode: mode,
             loggedIn: loggedIn,
             api: api,
             auth: auth,
