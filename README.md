@@ -1,10 +1,10 @@
 # Embr
 
-A premium native **UIKit** iOS Twitch client — browse, watch, and chat — built on the modern Twitch API surface: **EventSub** for chat, **Helix** for browsing, native **AVPlayer** for video, with a **Cloudflare Worker** holding all secrets.
+A native UIKit Twitch client for iPhone: browse, watch and chat. It uses the modern Twitch API surface (EventSub for chat, Helix for browsing), plays video with AVPlayer, and keeps every secret in a Cloudflare Worker.
 
-**[Download on the App Store](https://apps.apple.com/us/app/embr-live-streams/id6784940198)** — free. iPhone, iOS 18+.
+**[Download on the App Store](https://apps.apple.com/us/app/embr-live-streams/id6784940198)**: free, with an optional tip jar. iPhone, iOS 18 or later.
 
-Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://github.com/tommyxchow/frosty), but neither is copied: the transport (EventSub, not IRC), the player (native AVPlayer, not a WebView), and the auth (Worker-backed Authorization Code, not embedded implicit) are all deliberate departures.
+Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://github.com/tommyxchow/frosty), with deliberate departures: EventSub instead of IRC, native AVPlayer instead of a WebView, and a Worker-backed Authorization Code flow instead of the embedded implicit one.
 
 ## What's here
 
@@ -12,14 +12,14 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 |---|---|---|
 | `EmbrCore` | Swift 6 (SwiftPM) | ✅ `swift build` + `swift test` on Linux/macOS |
 | `Embr` (app) | Swift 6 / UIKit | ✅ Xcode on macOS (`scripts/ios-build.sh`) |
-| `services/embr` (repo root) | TypeScript (Hono) | ✅ `tsc` + `vitest` |
+| `services/embr` (Midgar monorepo) | TypeScript (Hono) | ✅ `tsc` + `vitest` |
 
 `EmbrCore` holds the platform-agnostic logic (parsing, emote merge, HLS handling, Helix request specs) and compiles/tests on Linux and macOS. The `Embr` app layer is Darwin-only. The Worker handles OAuth and stream resolution.
 
 ## Architecture
 
 - **Chat receive:** EventSub WebSocket, `channel.chat.message` (+ notification/clear/delete). Structured JSON → `ChatMessage`. No IRC tag parsing.
-- **Chat send:** Helix `POST /helix/chat/messages` — surfaces `is_sent` / `drop_reason` (AutoMod feedback).
+- **Chat send:** Helix `POST /helix/chat/messages`, which surfaces `is_sent` / `drop_reason` (AutoMod feedback).
 - **Auth:** `ASWebAuthenticationSession` → Worker `/auth/exchange` (Authorization Code; the Worker holds the client secret because Twitch does not support PKCE). Tokens in Keychain. Anonymous browsing via a Worker-minted app token.
 - **Video:** the Worker resolves the stream's HLS playlist; the app plays it with `AVPlayer` + `AVPictureInPictureController`, behind a `VideoPlaying` protocol with a `WebViewPlayer` fallback.
 - **Emotes:** Twitch + 7TV (with `events.7tv.io` live updates) + BetterTTV + FrankerFaceZ, merged into a layered `EmoteCatalog`. Animated WebP via SDWebImage.
@@ -36,12 +36,7 @@ scripts/setup.sh            # writes .env.local + Secrets.swift, runs xcodegen
 scripts/ios-deploy.sh       # build + install on your iPhone
 ```
 
-Worker:
-
-```bash
-cd workers && npm install && npm test
-npx wrangler deploy
-```
+The Worker is `services/embr` in the Midgar monorepo (`npm install && npm test`, deployed with `npx wrangler deploy`).
 
 ## Verify the core (any platform)
 
