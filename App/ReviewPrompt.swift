@@ -12,10 +12,15 @@ enum ReviewPrompt {
 
     private static let askDelay: TimeInterval = 1.5
 
+    /// From the second launch, on any day. Background audio and picture in picture keep Embr alive for days, so cold
+    /// launches are rare, and the three-minute watch already proves the value; before MidgarReviewPolicy, Embr asked at
+    /// the second watched stream and that is where its ratings came from.
+    static let floors = MidgarReviewFloors(daysSinceFirstLaunch: 0, sessions: 1)
+
     static let policy: MidgarReviewPolicy = {
         let storage = MidgarReviewFileStorage(appID: EmbrMidgar.appID)
         LegacyReviewState.migrate(from: .standard, into: storage)
-        return MidgarReviewPolicy(storage: storage)
+        return MidgarReviewPolicy(storage: storage, floors: floors)
     }()
 
     /// Counts one session. Call it once per launch.

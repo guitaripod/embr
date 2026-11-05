@@ -87,4 +87,20 @@ struct ReviewPromptTests {
 
         #expect(policy.evaluate() == .hold(.promptedRecently))
     }
+
+    @MainActor @Test func aWatchedStreamOnTheSecondLaunchOfInstallDayMayAsk() {
+        let installed = Date(timeIntervalSince1970: 1_800_000_000)
+        let storage = MemoryReviewStorage()
+        let policy = MidgarReviewPolicy(
+            storage: storage, appVersion: "2.0", clock: { installed }, center: NotificationCenter(),
+            floors: ReviewPrompt.floors)
+        policy.beginSession()
+
+        #expect(policy.noteSuccess() == false)
+        #expect(policy.evaluate() == .hold(.tooFewSessions))
+
+        policy.beginSession()
+
+        #expect(policy.noteSuccess())
+    }
 }
