@@ -8,6 +8,11 @@ final class LaidOutTextView: UIView {
         didSet { setNeedsDisplay() }
     }
 
+    /// Space around the text on every side, for the light of a glowing name.
+    var textInset: CGFloat = 0 {
+        didSet { if textInset != oldValue { setNeedsDisplay() } }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         isOpaque = false
@@ -20,16 +25,17 @@ final class LaidOutTextView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     override func draw(_ rect: CGRect) {
-        guard let attributedText, bounds.width > 0 else { return }
+        guard let attributedText, bounds.width > textInset * 2 else { return }
         let storage = NSTextStorage(attributedString: attributedText)
         let manager = NSLayoutManager()
-        let container = NSTextContainer(size: CGSize(width: bounds.width, height: .greatestFiniteMagnitude))
+        let container = NSTextContainer(size: CGSize(width: bounds.width - textInset * 2, height: .greatestFiniteMagnitude))
         container.lineFragmentPadding = 0
         container.lineBreakMode = .byWordWrapping
         manager.addTextContainer(container)
         storage.addLayoutManager(manager)
         let glyphs = manager.glyphRange(for: container)
-        manager.drawBackground(forGlyphRange: glyphs, at: .zero)
-        manager.drawGlyphs(forGlyphRange: glyphs, at: .zero)
+        let origin = CGPoint(x: textInset, y: textInset)
+        manager.drawBackground(forGlyphRange: glyphs, at: origin)
+        manager.drawGlyphs(forGlyphRange: glyphs, at: origin)
     }
 }

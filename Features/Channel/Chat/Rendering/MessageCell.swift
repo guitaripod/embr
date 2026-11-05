@@ -5,7 +5,7 @@ import SDWebImage
 final class MessageCell: UICollectionViewCell {
     static let reuseID = "MessageCell"
 
-    private let textLabel = UILabel()
+    private let textLabel = RoomyLabel()
     #if os(tvOS)
     private let textCanvas = LaidOutTextView()
     #endif
@@ -299,14 +299,19 @@ final class MessageCell: UICollectionViewCell {
             replyPreview.frame = CGRect(x: laidOut.textOrigin.x, y: 2, width: bounds.width - laidOut.textOrigin.x - 8, height: laidOut.replyHeight)
         }
 
+        let room = RoomyLabel.room
         textLabel.frame = CGRect(
             x: laidOut.textOrigin.x,
             y: laidOut.textOrigin.y,
             width: bounds.width - laidOut.textOrigin.x - 8,
             height: laidOut.height - laidOut.textOrigin.y - 4
-        )
+        ).insetBy(dx: -room, dy: -room)
         #if os(tvOS)
-        textCanvas.frame = CGRect(origin: textLabel.frame.origin, size: CGSize(width: laidOut.textWidth, height: textLabel.frame.height))
+        textCanvas.textInset = room
+        textCanvas.frame = CGRect(
+            origin: textLabel.frame.origin,
+            size: CGSize(width: laidOut.textWidth + room * 2, height: textLabel.frame.height)
+        )
         #endif
 
         for (index, placement) in laidOut.emotePlacements.enumerated() where index < emoteViews.count {
@@ -353,5 +358,15 @@ final class MessageCell: UICollectionViewCell {
         onShowActions = nil
         accessibilityLabel = nil
         contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
+    }
+}
+
+/// The message text, drawn inset by `room` inside a slightly larger frame, so a supporter's glowing name has space for
+/// its light instead of being cut flat at the edges of the text.
+private final class RoomyLabel: UILabel {
+    static let room: CGFloat = 8
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.insetBy(dx: Self.room, dy: Self.room))
     }
 }

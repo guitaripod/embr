@@ -46,6 +46,23 @@ final class ChatViewModel {
                 self?.applyContentFilter(settings.makeContentFilter())
             }
             .store(in: &cancellables)
+        settings.changes
+            .map { _ in () }
+            .merge(with: SupporterStore.shared.changes)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.applyLayoutSettings() }
+            .store(in: &cancellables)
+    }
+
+    /// Draws the open chat again when its text size, font or a supporter's look changed.
+    private func applyLayoutSettings() {
+        let current = settings.current
+        Task { [weak self] in
+            guard let self else { return }
+            if let snapshot = await self.store.updateSettings(current) {
+                self.snapshotSubject.send(snapshot)
+            }
+        }
     }
 
     private func applyContentFilter(_ filter: ContentFilter) {
@@ -315,6 +332,7 @@ private actor MessageStore {
     private var catalog = EmoteCatalog()
     private var badges = BadgeCatalog()
     private var settings: Settings
+    private var layoutKey: ChatLayoutKey
     private var width: CGFloat = 0
     private var layout: MessageLayout?
     private let currentUserLogin: String?
@@ -327,8 +345,21 @@ private actor MessageStore {
 
     init(settings: Settings, currentUserLogin: String?, filter: ContentFilter) {
         self.settings = settings
+        self.layoutKey = settings.chatLayoutKey
         self.currentUserLogin = currentUserLogin
         self.filter = filter
+    }
+
+    /// Lays every message out again when something chat layout depends on changed.
+    func updateSettings(_ settings: Settings) -> ChatSnapshot? {
+        let key = settings.chatLayoutKey
+        guard key != layoutKey else { return nil }
+        self.settings = settings
+        layoutKey = key
+        rebuildLayout()
+        guard !rows.isEmpty else { return nil }
+        let current = currentSnapshot()
+        return ChatSnapshot(rows: current.rows, isPaused: current.isPaused, newCount: current.newCount, relayout: true)
     }
 
     /// Applies an updated content filter, dropping any buffered messages that now match so

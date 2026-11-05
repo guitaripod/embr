@@ -16,7 +16,7 @@ final class RecentChannelCell: UICollectionViewCell {
         self.images = AppContainer.shared.images
         super.init(frame: frame)
         setUp()
-        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (cell: RecentChannelCell, _) in
+        registerForTraitChanges([UITraitUserInterfaceStyle.self, SupporterThemeTrait.self]) { (cell: RecentChannelCell, _) in
             cell.avatar.layer.borderColor = Theme.surfaceElevated.resolvedColor(with: cell.traitCollection).cgColor
         }
     }

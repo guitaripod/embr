@@ -5,9 +5,27 @@ enum Theme {
     /// Violet, or the accent a Founding Supporter picked.
     static var accent: UIColor { SupporterAccent.current.color }
 
-    static let background = dynamic(light: lightBackground, dark: UIColor(white: 0.07, alpha: 1.0))
-    static let surface = dynamic(light: lightSurface, dark: UIColor(white: 0.12, alpha: 1.0))
-    static let surfaceElevated = dynamic(light: lightBackground, dark: UIColor(white: 0.16, alpha: 1.0))
+    static let background = themed(\.background)
+    static let surface = themed(\.surface)
+    static let surfaceElevated = themed(\.surfaceElevated)
+
+    /// A row in a grouped list: the system's own color, or the theme's card color when a supporter picked a theme.
+    static let groupedRow = UIColor { traits in
+        let themed = traits.supporterTheme.palette(dark: traits.userInterfaceStyle == .dark).surface.resolvedColor(with: traits)
+        #if os(iOS)
+        if traits.supporterTheme == .standard {
+            return UIColor.secondarySystemGroupedBackground.resolvedColor(with: traits)
+        }
+        #endif
+        return themed
+    }
+
+    /// A grouped list row's background in the theme's colors.
+    static func groupedRowBackground() -> UIBackgroundConfiguration {
+        var background = UIBackgroundConfiguration.listCell()
+        background.backgroundColor = groupedRow
+        return background
+    }
 
     static let primaryText = UIColor.label
     static let secondaryText = UIColor.secondaryLabel
@@ -61,6 +79,11 @@ enum Theme {
         return UIColor { traits in readable(base, dark: traits.userInterfaceStyle == .dark) }
     }
 
+    /// A Founding Supporter's flame color as their name color, kept readable on the page like a Twitch color.
+    static func readableNameColor(_ color: UIColor) -> UIColor {
+        UIColor { traits in readable(color, dark: traits.userInterfaceStyle == .dark) }
+    }
+
     private static func readable(_ color: UIColor, dark: Bool) -> UIColor {
         var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
         guard color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) else { return color }
@@ -72,20 +95,10 @@ enum Theme {
         return UIColor(hue: hue, saturation: saturation, brightness: brightness, alpha: alpha)
     }
 
-    /// The light-mode page color. tvOS has no system background colors, so it gets the gray the system draws behind apps.
-    private static var lightBackground: UIColor {
-        #if os(tvOS)
-        UIColor(white: 0.92, alpha: 1.0)
-        #else
-        .systemBackground
-        #endif
-    }
-
-    private static var lightSurface: UIColor {
-        #if os(tvOS)
-        UIColor(white: 0.86, alpha: 1.0)
-        #else
-        .secondarySystemBackground
-        #endif
+    /// A page color that follows the supporter theme the view hierarchy carries, in light and dark.
+    private static func themed(_ color: KeyPath<SupporterTheme.Palette, UIColor>) -> UIColor {
+        UIColor { traits in
+            traits.supporterTheme.palette(dark: traits.userInterfaceStyle == .dark)[keyPath: color].resolvedColor(with: traits)
+        }
     }
 }

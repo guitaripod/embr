@@ -88,7 +88,7 @@ final class MutedKeywordsViewController: UIViewController {
             content.text = keyword
             content.image = UIImage(systemName: "character.bubble")
             cell.contentConfiguration = content
-            cell.backgroundConfiguration = UIBackgroundConfiguration.listCell()
+            cell.backgroundConfiguration = Theme.groupedRowBackground()
         }
         dataSource = UICollectionViewDiffableDataSource<Int, String>(collectionView: collectionView) { collectionView, indexPath, keyword in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: keyword)

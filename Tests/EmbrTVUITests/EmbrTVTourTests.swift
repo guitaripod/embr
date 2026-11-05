@@ -80,6 +80,14 @@ final class EmbrTVTourTests: XCTestCase {
         remote.press(.select)
         pause(3)
         snap("23-supporter")
+        for _ in 0..<3 { remote.press(.down) }
+        remote.press(.right)
+        remote.press(.select)
+        pause(2)
+        snap("23b-supporter-try-on")
+        for _ in 0..<4 { remote.press(.down) }
+        pause(2)
+        snap("23c-supporter-looks")
         remote.press(.menu)
         pause(2)
         for _ in 0..<6 { remote.press(.down) }

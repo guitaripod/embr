@@ -12,7 +12,7 @@ final class TVSettingsViewController: UITableViewController {
     private enum Row: Hashable {
         case account
         case supporter
-        case accent
+        case supporterNames
         case chatVisible
         case chatPlacement
         case chatTextSize
@@ -88,7 +88,7 @@ final class TVSettingsViewController: UITableViewController {
 
     private func rebuild() {
         let supporter = SupporterStore.shared.isSupporter
-        let chatRows: [Row] = [.chatVisible, .chatPlacement, .chatTextSize, .timestamps, .animatedEmotes]
+        let chatRows: [Row] = [.chatVisible, .chatPlacement, .chatTextSize, .timestamps, .animatedEmotes, .supporterNames]
             + [.emotes(.sevenTV), .emotes(.betterTTV), .emotes(.frankerFaceZ)]
         let tipRows = TipJarStore.shared.products.map { Row.tip($0.id) }
         sections = [
@@ -96,9 +96,9 @@ final class TVSettingsViewController: UITableViewController {
             Section(
                 title: String(localized: "Founding Supporter"),
                 footer: supporter
-                    ? String(localized: "Thank you. Your accent color tints Embr on every device signed in to your Apple Account.")
-                    : String(localized: "A one-time purchase that keeps Embr independent and gives it your colors and a badge in chat. Nothing about watching ever needs it."),
-                rows: supporter ? [.supporter, .accent] : [.supporter]
+                    ? String(localized: "Thank you. Change your theme, colors, chat font and badge any time.")
+                    : String(localized: "A one-time purchase that keeps Embr independent: themes, colors, chat fonts and a flame badge everyone sees. Nothing about watching ever needs it."),
+                rows: [.supporter]
             ),
             Section(title: String(localized: "Chat"), footer: nil, rows: chatRows),
             Section(
@@ -155,17 +155,16 @@ final class TVSettingsViewController: UITableViewController {
             content.image = UIImage(systemName: "flame.fill")
             content.imageProperties.tintColor = Theme.accent
             if store.isSupporter {
-                content.text = String(localized: "You're a Founding Supporter")
+                content.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "You're a Founding Supporter")
                 content.secondaryText = badgeText(store.badge)
+                cell.accessoryType = .disclosureIndicator
             } else {
                 content.text = String(localized: "Become a Founding Supporter")
                 content.secondaryText = store.product?.displayPrice
                 cell.accessoryType = .disclosureIndicator
             }
-        case .accent:
-            content.text = String(localized: "Accent Color")
-            content.secondaryText = SupporterStore.shared.accent.title
-            cell.accessoryType = .disclosureIndicator
+        case .supporterNames:
+            toggle(&content, String(localized: "Supporter Name Colors"), settings.supporterNameEffectsEnabled)
         case .chatVisible:
             toggle(&content, String(localized: "Show Chat Beside Video"), settings.tvChatVisibleEnabled)
         case .chatPlacement:
@@ -243,13 +242,8 @@ final class TVSettingsViewController: UITableViewController {
             }
         case .supporter:
             navigationController?.pushViewController(TVSupporterViewController(), animated: true)
-        case .accent:
-            pickOption(
-                title: String(localized: "Accent Color"),
-                options: SupporterAccent.allCases,
-                selected: SupporterStore.shared.accent,
-                label: \.title
-            ) { SupporterStore.shared.setAccent($0) }
+        case .supporterNames:
+            store.update { $0.supporterNameEffects = !$0.supporterNameEffectsEnabled }
         case .chatVisible:
             store.update { $0.tvChatVisible = !$0.tvChatVisibleEnabled }
         case .chatPlacement:

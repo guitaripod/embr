@@ -12,6 +12,7 @@ final class ProfileSheetViewController: UIViewController {
     private let nameLabel = UILabel()
     private let loginLabel = UILabel()
     private let typeLabel = UILabel()
+    private let supporterTag = SupporterTag()
     private let bioLabel = UILabel()
     private let sinceLabel = UILabel()
     private let spinner = UIActivityIndicatorView(style: .large)
@@ -82,7 +83,7 @@ final class ProfileSheetViewController: UIViewController {
         spinner.hidesWhenStopped = true
         spinner.startAnimating()
 
-        let stack = UIStackView(arrangedSubviews: [avatar, nameLabel, loginLabel, typeLabel, bioLabel, sinceLabel, videosButton])
+        let stack = UIStackView(arrangedSubviews: [avatar, nameLabel, loginLabel, typeLabel, supporterTag, bioLabel, sinceLabel, videosButton])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = 8
@@ -135,6 +136,7 @@ final class ProfileSheetViewController: UIViewController {
         case "affiliate": typeLabel.text = String(localized: "AFFILIATE"); typeLabel.isHidden = false
         default: typeLabel.isHidden = true
         }
+        supporterTag.show(userID: user.id)
         bioLabel.text = user.description
         bioLabel.isHidden = user.description.isEmpty
         if let created = user.createdAt {

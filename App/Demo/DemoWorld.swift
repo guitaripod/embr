@@ -43,6 +43,19 @@ enum DemoWorld {
     static func resetLaunchState() {
         guard isActive, let domain = Bundle.main.bundleIdentifier else { return }
         UserDefaults.standard.removePersistentDomain(forName: domain)
+        seedSupporters()
+    }
+
+    /// Three of the invented chatters are Founding Supporters, so demo chat shows the badges and name styles.
+    private static func seedSupporters() {
+        let supporters: [(id: String, number: Int, color: String, style: SupporterAPI.NameStyle)] = [
+            ("80000", 3, "ember", .glow),
+            ("80004", 8, "violet", .color),
+            ("80010", 21, "ocean", .glow),
+        ]
+        for supporter in supporters {
+            SupporterDirectory.shared.insert(supporter.id, profile: SupporterAPI.Profile(number: supporter.number, color: supporter.color, nameStyle: supporter.style.rawValue))
+        }
     }
 
     static func game(id: String) -> DemoGame? {

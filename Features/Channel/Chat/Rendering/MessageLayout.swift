@@ -6,9 +6,19 @@ protocol MessageLayoutSettings {
     var chatMessageFontSize: CGFloat { get }
     var chatPreferredEmoteScale: EmoteScale { get }
     var chatLineSpacing: CGFloat { get }
+    var chatMessageFont: SupporterChatFont { get }
+    var chatShowsSupporterNameEffects: Bool { get }
 }
 
 struct MessageLayout {
+    /// A supporter look drawn for one author in place of the directory's, with its chat font: what the supporter
+    /// screen shows someone trying the looks on.
+    struct Preview {
+        let authorID: String
+        let look: SupporterDirectory.Look
+        let font: SupporterChatFont
+    }
+
     private let width: CGFloat
     private let catalog: EmoteCatalog
     private let badges: BadgeCatalog
@@ -19,6 +29,8 @@ struct MessageLayout {
     private let emoteScale: EmoteScale
     private let lineSpacing: CGFloat
     private let currentUserLogin: String?
+    private let showsSupporterNameEffects: Bool
+    private let preview: Preview?
 
     private let horizontalInset: CGFloat = 8
     private let verticalInset: CGFloat = 4
@@ -26,7 +38,7 @@ struct MessageLayout {
     private let emoteSidePadding: CGFloat = 1
     private let replyLineHeight: CGFloat = 16
 
-    init(width: CGFloat, settings: Settings, catalog: EmoteCatalog, badges: BadgeCatalog, currentUserLogin: String? = nil) {
+    init(width: CGFloat, settings: Settings, catalog: EmoteCatalog, badges: BadgeCatalog, currentUserLogin: String? = nil, preview: Preview? = nil) {
         let resolved: MessageLayoutSettings = settings
         let fontSize = resolved.chatMessageFontSize
         self.width = width
@@ -36,8 +48,11 @@ struct MessageLayout {
         self.emoteScale = resolved.chatPreferredEmoteScale
         self.lineSpacing = resolved.chatLineSpacing
         self.currentUserLogin = currentUserLogin
-        self.font = .systemFont(ofSize: fontSize)
-        self.usernameFont = .boldSystemFont(ofSize: fontSize)
+        self.showsSupporterNameEffects = preview != nil || resolved.chatShowsSupporterNameEffects
+        self.preview = preview
+        let typeface = preview?.font ?? resolved.chatMessageFont
+        self.font = typeface.font(ofSize: fontSize)
+        self.usernameFont = typeface.font(ofSize: fontSize, weight: .bold)
         self.timestampFont = .monospacedDigitSystemFont(ofSize: fontSize - 2, weight: .regular)
     }
 
@@ -46,8 +61,9 @@ struct MessageLayout {
         let replyHeight = message.reply != nil ? replyLineHeight + 2 : 0
 
         var resolvedBadges = badges.resolve(message: message)
-        if SupporterDirectory.shared.contains(message.author.id) {
-            resolvedBadges.append(SupporterDirectory.badge)
+        let supporter = preview?.authorID == message.author.id ? preview?.look : SupporterDirectory.shared.look(for: message.author.id)
+        if let supporter {
+            resolvedBadges.append(supporter.badge)
         }
         let badgeBox = lineHeight
         let badgePrefixWidth = resolvedBadges.isEmpty
@@ -76,14 +92,19 @@ struct MessageLayout {
         }
 
         let showsAuthorLine = message.notice == nil || !message.fragments.isEmpty
-        let usernameColor = Theme.readableUsernameColor(message.author.color)
+        let nameStyle = showsSupporterNameEffects ? supporter?.nameStyle : nil
+        let usernameColor = Self.usernameColor(message.author.color, supporter: supporter, style: nameStyle)
         if showsAuthorLine {
             let usernameStart = attributed.length
             let separator = message.isAction ? " " : ": "
-            attributed.append(NSAttributedString(string: message.author.displayName, attributes: [
+            var nameAttributes: [NSAttributedString.Key: Any] = [
                 .font: usernameFont,
                 .foregroundColor: usernameColor,
-            ]))
+            ]
+            if nameStyle == .glow, let supporter {
+                nameAttributes[.shadow] = Self.glow(supporter.color.color, fontSize: font.pointSize)
+            }
+            attributed.append(NSAttributedString(string: message.author.displayName, attributes: nameAttributes))
             usernameRange = NSRange(location: usernameStart, length: attributed.length - usernameStart)
             attributed.append(NSAttributedString(string: separator, attributes: [
                 .font: usernameFont,
@@ -185,6 +206,22 @@ struct MessageLayout {
             isAnnouncement: message.notice?.kind == .announcement,
             isCheer: cheerBits > 0
         )
+    }
+
+    /// The author's name color: their Twitch color, or a supporter's flame color when they picked it and this viewer
+    /// shows supporters' name effects.
+    private static func usernameColor(_ twitch: ChatColor?, supporter: SupporterDirectory.Look?, style: SupporterAPI.NameStyle?) -> UIColor {
+        guard let supporter, let style, style != .twitch else { return Theme.readableUsernameColor(twitch) }
+        return Theme.readableNameColor(supporter.color.color)
+    }
+
+    /// The soft light around a glowing supporter name, scaled with the chat text.
+    private static func glow(_ color: UIColor, fontSize: CGFloat) -> NSShadow {
+        let shadow = NSShadow()
+        shadow.shadowColor = color.withAlphaComponent(0.85)
+        shadow.shadowBlurRadius = max(3, fontSize * 0.42)
+        shadow.shadowOffset = .zero
+        return shadow
     }
 
     private static func formatBits(_ bits: Int) -> String {

@@ -12,6 +12,7 @@ final class TVSceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         window.tintColor = Theme.accent
+        window.traitOverrides[SupporterThemeTrait.self] = SupporterStore.shared.theme
         window.backgroundColor = Theme.background
         window.overrideUserInterfaceStyle = Self.style(for: SettingsStore.shared.current.theme)
         let root = TVRootViewController()

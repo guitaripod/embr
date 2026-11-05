@@ -79,7 +79,7 @@ final class BlockedUsersViewController: UIViewController {
             content.text = self?.records[userID]?.login ?? userID
             content.image = UIImage(systemName: "person.slash")
             cell.contentConfiguration = content
-            cell.backgroundConfiguration = UIBackgroundConfiguration.listCell()
+            cell.backgroundConfiguration = Theme.groupedRowBackground()
         }
         dataSource = UICollectionViewDiffableDataSource<Int, String>(collectionView: collectionView) { collectionView, indexPath, userID in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: userID)

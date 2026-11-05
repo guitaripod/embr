@@ -30,6 +30,12 @@ final class SettingsStore {
         schedulePersist(next)
     }
 
+    /// Tells every observer to read the settings again, for a change that lives outside them: a Founding Supporter's
+    /// looks turning on or off.
+    func republish() {
+        changes.send(current)
+    }
+
     func reset() {
         pendingWrite?.cancel()
         pendingWrite = nil

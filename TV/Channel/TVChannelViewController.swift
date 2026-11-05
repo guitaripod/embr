@@ -2,7 +2,8 @@ import UIKit
 import Combine
 import EmbrCore
 
-/// A channel's page: who it is, whether it is live, a star, and its past broadcasts and clips.
+/// A channel's page: who it is, whether they are a Founding Supporter, whether they are live, a star, and their past
+/// broadcasts and clips.
 final class TVChannelViewController: UIViewController {
     private let login: String
     private let api = AppContainer.shared.api
@@ -10,6 +11,7 @@ final class TVChannelViewController: UIViewController {
     private let nameLabel = UILabel()
     private let statusLabel = UILabel()
     private let bioLabel = UILabel()
+    private let supporterTag = SupporterTag()
     private let watchButton = UIButton(configuration: .filled())
     private let favoriteButton = UIButton(configuration: .bordered())
     private let multiviewButton = UIButton(configuration: .bordered())
@@ -84,7 +86,7 @@ final class TVChannelViewController: UIViewController {
         let buttons = UIStackView(arrangedSubviews: [watchButton, favoriteButton, multiviewButton])
         buttons.axis = .horizontal
         buttons.spacing = 32
-        let text = UIStackView(arrangedSubviews: [nameLabel, statusLabel, bioLabel, buttons])
+        let text = UIStackView(arrangedSubviews: [nameLabel, supporterTag, statusLabel, bioLabel, buttons])
         text.axis = .vertical
         text.alignment = .leading
         text.spacing = 10
@@ -117,6 +119,7 @@ final class TVChannelViewController: UIViewController {
             }
             self.user = user
             self.nameLabel.text = user.displayName
+            self.supporterTag.show(userID: user.id)
             self.avatar.setImage(user.profileImageURL)
             self.bioLabel.text = user.description
             self.bioLabel.isHidden = user.description.isEmpty

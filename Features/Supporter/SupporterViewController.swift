@@ -3,50 +3,62 @@ import Combine
 import EmbrCore
 import MidgarCore
 
-/// Founding Supporter on iPhone and iPad: what it gives and the purchase, and for a supporter the app icons, the
-/// accent colors and the state of their chat badge.
+/// Founding Supporter on iPhone and iPad. Before the purchase it is a fitting room: every look can be tried on, shown
+/// on this screen and in a chat preview drawn by the real chat, and the purchase keeps exactly what was tried on. For a
+/// supporter the same controls change the app at once, with their founding number and the state of their badge.
 final class SupporterViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let stack = UIStackView()
-    private let flame = UIImageView(image: UIImage(named: "supporter-flame"))
+    private let flame = UIImageView()
     private let titleLabel = UILabel()
     private let bodyLabel = UILabel()
-    private let perks = UIStackView()
-    private let buyButton = UIButton(configuration: .borderedProminent())
-    private let restoreButton = UIButton(configuration: .plain())
-    private let iconsHeader = UILabel()
-    private let iconsGrid = UIStackView()
-    private let accentHeader = UILabel()
-    private let accentRow = UIStackView()
+    private let preview = SupporterChatPreview()
+    private let controls = SupporterLookControls()
     private let badgeLabel = UILabel()
     private let badgeRetry = UIButton(configuration: .plain())
-    private var iconButtons: [String?: UIButton] = [:]
-    private var accentButtons: [SupporterAccent: UIButton] = [:]
+    private let buyBar = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+    private let buyButton = UIButton(configuration: .borderedProminent())
+    private let buyNote = UILabel()
+    private let restoreButton = UIButton(configuration: .plain())
     private var cancellables = Set<AnyCancellable>()
     private var purchasing = false
+    private var draft = SupporterLookChoice.tryOn
 
-    /// The supporters' iPhone icons: nil is Embr's own violet flame.
-    private static let icons: [(name: String?, preview: String, accent: SupporterAccent)] = [
-        (nil, "IconPreview-Violet", .violet),
-        ("AppIcon-Ember", "IconPreview-Ember", .ember),
-        ("AppIcon-Rose", "IconPreview-Rose", .rose),
-        ("AppIcon-Gold", "IconPreview-Gold", .gold),
-        ("AppIcon-Mint", "IconPreview-Mint", .mint),
-        ("AppIcon-Ocean", "IconPreview-Ocean", .ocean),
-        ("AppIcon-Frost", "IconPreview-Frost", .frost),
-    ]
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
+        navigationItem.largeTitleDisplayMode = .never
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = String(localized: "Founding Supporter")
         view.backgroundColor = Theme.background
+        draft.icon = SupporterStore.currentIcon
         buildLayout()
+        buildBuyBar()
+        controls.onChange = { [weak self] choice in self?.choose(choice) }
         SupporterStore.shared.changes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.render() }
             .store(in: &cancellables)
         SupporterStore.shared.loadProduct()
+        #if DEBUG
+        poseForScreenshots()
+        #endif
         render()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let barHeight = buyBar.isHidden ? 0 : buyBar.bounds.height - view.safeAreaInsets.bottom
+        if scrollView.contentInset.bottom != barHeight {
+            scrollView.contentInset.bottom = barHeight
+            scrollView.verticalScrollIndicatorInsets.bottom = barHeight
+        }
     }
 
     private func buildLayout() {
@@ -56,84 +68,27 @@ final class SupporterViewController: UIViewController {
 
         stack.axis = .vertical
         stack.alignment = .fill
-        stack.spacing = 18
+        stack.spacing = 16
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 24, leading: 24, bottom: 40, trailing: 24)
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 20, leading: 20, bottom: 32, trailing: 20)
         stack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stack)
 
         flame.contentMode = .scaleAspectFit
-        flame.heightAnchor.constraint(equalToConstant: 132).isActive = true
+        flame.heightAnchor.constraint(equalToConstant: 112).isActive = true
         flame.accessibilityIgnoresInvertColors = true
 
         titleLabel.font = .preferredFont(forTextStyle: .title1).bold
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 0
+        titleLabel.accessibilityTraits = .header
 
         bodyLabel.font = .preferredFont(forTextStyle: .body)
         bodyLabel.adjustsFontForContentSizeCategory = true
         bodyLabel.textColor = Theme.secondaryText
         bodyLabel.textAlignment = .center
         bodyLabel.numberOfLines = 0
-        bodyLabel.text = String(localized: "Embr is made by one independent developer. Founding Supporters keep it free for everyone, and get a few things in return. Watching never needs it.")
-
-        perks.axis = .vertical
-        perks.spacing = 14
-        for (symbol, text) in [
-            ("flame.circle.fill", String(localized: "A flame badge beside your name in chat, seen by everyone watching in Embr")),
-            ("paintpalette.fill", String(localized: "Seven accent colors for Embr on iPhone, iPad and Apple TV")),
-            ("app.badge.fill", String(localized: "Seven app icons to match")),
-            ("infinity", String(localized: "Pay once. Yours on every device signed in to your Apple Account.")),
-        ] {
-            perks.addArrangedSubview(Self.perk(symbol: symbol, text: text))
-        }
-
-        buyButton.configuration?.cornerStyle = .large
-        buyButton.configuration?.buttonSize = .large
-        buyButton.addAction(UIAction { [weak self] _ in self?.buy() }, for: .primaryActionTriggered)
-        restoreButton.configuration?.title = String(localized: "Restore Purchase")
-        restoreButton.addAction(UIAction { [weak self] _ in self?.restore() }, for: .primaryActionTriggered)
-
-        iconsHeader.text = String(localized: "App Icon")
-        accentHeader.text = String(localized: "Accent Color")
-        for header in [iconsHeader, accentHeader] {
-            header.font = .preferredFont(forTextStyle: .headline)
-            header.adjustsFontForContentSizeCategory = true
-        }
-
-        iconsGrid.axis = .vertical
-        iconsGrid.spacing = 14
-        var row: UIStackView?
-        for (index, icon) in Self.icons.enumerated() {
-            if index % 4 == 0 {
-                let next = UIStackView()
-                next.axis = .horizontal
-                next.distribution = .fillEqually
-                next.spacing = 14
-                iconsGrid.addArrangedSubview(next)
-                row = next
-            }
-            let button = Self.iconButton(preview: icon.preview, title: icon.accent.title)
-            button.addAction(UIAction { [weak self] _ in self?.setIcon(icon.name) }, for: .primaryActionTriggered)
-            iconButtons[icon.name] = button
-            row?.addArrangedSubview(button)
-        }
-        if let row, row.arrangedSubviews.count < 4 {
-            for _ in row.arrangedSubviews.count..<4 { row.addArrangedSubview(UIView()) }
-        }
-
-        accentRow.axis = .horizontal
-        accentRow.distribution = .equalSpacing
-        for accent in SupporterAccent.allCases {
-            let button = Self.swatch(accent)
-            button.addAction(UIAction { _ in
-                Haptics.selection()
-                SupporterStore.shared.setAccent(accent)
-            }, for: .primaryActionTriggered)
-            accentButtons[accent] = button
-            accentRow.addArrangedSubview(button)
-        }
 
         badgeLabel.font = .preferredFont(forTextStyle: .footnote)
         badgeLabel.adjustsFontForContentSizeCategory = true
@@ -143,14 +98,16 @@ final class SupporterViewController: UIViewController {
         badgeRetry.configuration?.title = String(localized: "Try Again")
         badgeRetry.addAction(UIAction { _ in SupporterStore.shared.retryBadge() }, for: .primaryActionTriggered)
 
-        [flame, titleLabel, bodyLabel, perks, buyButton, restoreButton, iconsHeader, iconsGrid, accentHeader, accentRow, badgeLabel, badgeRetry]
-            .forEach(stack.addArrangedSubview)
-        stack.setCustomSpacing(28, after: perks)
-        stack.setCustomSpacing(4, after: buyButton)
-        stack.setCustomSpacing(10, after: iconsHeader)
-        stack.setCustomSpacing(10, after: accentHeader)
-        stack.setCustomSpacing(28, after: iconsGrid)
-        stack.setCustomSpacing(28, after: accentRow)
+        restoreButton.configuration?.title = String(localized: "Restore Purchase")
+        restoreButton.addAction(UIAction { [weak self] _ in self?.restore() }, for: .primaryActionTriggered)
+
+        [flame, titleLabel, bodyLabel, preview, badgeLabel, badgeRetry, controls, restoreButton].forEach(stack.addArrangedSubview)
+        stack.setCustomSpacing(10, after: flame)
+        stack.setCustomSpacing(8, after: titleLabel)
+        stack.setCustomSpacing(22, after: bodyLabel)
+        stack.setCustomSpacing(6, after: preview)
+        stack.setCustomSpacing(28, after: badgeRetry)
+        stack.setCustomSpacing(28, after: controls)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -166,13 +123,103 @@ final class SupporterViewController: UIViewController {
         ])
     }
 
+    /// The purchase stays in reach while someone scrolls through the looks.
+    private func buildBuyBar() {
+        buyBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(buyBar)
+
+        buyButton.configuration?.cornerStyle = .large
+        buyButton.configuration?.buttonSize = .large
+        buyButton.addAction(UIAction { [weak self] _ in self?.buy() }, for: .primaryActionTriggered)
+
+        buyNote.font = .preferredFont(forTextStyle: .caption1)
+        buyNote.adjustsFontForContentSizeCategory = true
+        buyNote.textColor = Theme.secondaryText
+        buyNote.textAlignment = .center
+        buyNote.numberOfLines = 0
+
+        let content = UIStackView(arrangedSubviews: [buyButton, buyNote])
+        content.axis = .vertical
+        content.spacing = 8
+        content.translatesAutoresizingMaskIntoConstraints = false
+        buyBar.contentView.addSubview(content)
+        let separator = UIView()
+        separator.backgroundColor = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        buyBar.contentView.addSubview(separator)
+
+        NSLayoutConstraint.activate([
+            buyBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            buyBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            buyBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            separator.topAnchor.constraint(equalTo: buyBar.topAnchor),
+            separator.leadingAnchor.constraint(equalTo: buyBar.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: buyBar.trailingAnchor),
+            separator.heightAnchor.constraint(equalToConstant: 1 / max(1, traitCollection.displayScale)),
+            content.topAnchor.constraint(equalTo: buyBar.contentView.topAnchor, constant: 12),
+            content.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
+            content.centerXAnchor.constraint(equalTo: buyBar.contentView.centerXAnchor),
+            content.widthAnchor.constraint(lessThanOrEqualToConstant: 560),
+            content.widthAnchor.constraint(equalTo: buyBar.contentView.widthAnchor, constant: -40).withPriority(.defaultHigh),
+        ])
+    }
+
+    /// The looks on screen: the supporter's own, or what is being tried on.
+    private var shown: SupporterLookChoice {
+        SupporterStore.shared.isSupporter ? SupporterStore.shared.choice : draft
+    }
+
+    private func choose(_ choice: SupporterLookChoice) {
+        let store = SupporterStore.shared
+        guard store.isSupporter else {
+            draft = choice
+            render()
+            return
+        }
+        let current = store.choice
+        if choice.theme != current.theme { store.setTheme(choice.theme) }
+        if choice.accent != current.accent { store.setAccent(choice.accent) }
+        if choice.chatFont != current.chatFont { store.setChatFont(choice.chatFont) }
+        if choice.badgeColor != current.badgeColor || choice.nameStyle != current.nameStyle {
+            store.setBadgeStyle(color: choice.badgeColor, nameStyle: choice.nameStyle)
+        }
+        if choice.icon != current.icon {
+            SupporterStore.setIcon(choice.icon)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.render() }
+        }
+        render()
+    }
+
     private func render() {
         let store = SupporterStore.shared
         let supporter = store.isSupporter
-        titleLabel.text = supporter ? String(localized: "Thank you for keeping Embr going") : String(localized: "Keep Embr independent")
-        buyButton.isHidden = supporter
+        let look = shown
+
+        if supporter {
+            traitOverrides.remove(SupporterThemeTrait.self)
+            view.tintColor = nil
+        } else {
+            traitOverrides[SupporterThemeTrait.self] = look.theme
+            view.tintColor = look.accent.color
+        }
+
+        flame.image = look.badgeColor.flameImage
+        if supporter {
+            titleLabel.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
+            bodyLabel.text = String(localized: "Thank you for keeping Embr going. Everything here is yours to change any time.")
+        } else {
+            titleLabel.text = String(localized: "Become a Founding Supporter")
+            bodyLabel.text = String(localized: "Embr is made by one independent developer. Founding Supporters keep it free for everyone and get looks no one else has. Try them on below; watching never needs any of it.")
+        }
+        preview.show(look, number: supporter ? store.number : nil)
+        controls.show(look)
+
+        badgeLabel.text = badgeText(store)
+        badgeLabel.isHidden = badgeLabel.text == nil
+        badgeRetry.isHidden = store.badge != .failed
+
+        buyBar.isHidden = supporter
         restoreButton.isHidden = supporter
-        [iconsHeader, iconsGrid, accentHeader, accentRow].forEach { $0.isHidden = !supporter }
         if let price = store.product?.displayPrice {
             buyButton.configuration?.title = String(localized: "Become a Supporter · \(price)")
             buyButton.isEnabled = !purchasing
@@ -184,45 +231,31 @@ final class SupporterViewController: UIViewController {
             buyButton.isEnabled = false
         }
         buyButton.configuration?.showsActivityIndicator = purchasing
-        buyButton.tintColor = Theme.accent
-        let currentIcon = UIApplication.shared.alternateIconName
-        for (name, button) in iconButtons {
-            let selected = name == currentIcon
-            button.configuration?.background.strokeColor = selected ? Theme.accent : .clear
-            button.configuration?.background.strokeWidth = selected ? 3 : 0
-            button.accessibilityTraits = selected ? [.button, .selected] : .button
+        buyButton.tintColor = look.accent.color
+        buyButton.configuration?.baseForegroundColor = look.accent.prefersDarkText ? .black : .white
+        buyNote.text = buyNoteText(store)
+        view.setNeedsLayout()
+    }
+
+    private func buyNoteText(_ store: SupporterStore) -> String {
+        if store.productUnavailable && store.product == nil {
+            return String(localized: "Purchases are not available right now.")
         }
-        for (accent, button) in accentButtons {
-            let selected = accent == store.accent
-            button.configuration?.image = UIImage(systemName: selected ? "checkmark.circle.fill" : "circle.fill")
-            button.accessibilityTraits = selected ? [.button, .selected] : .button
+        let count = store.supporterCount
+        guard count >= 10 else {
+            return String(localized: "One purchase, yours on every device with your Apple Account. Founding numbers go in order and stay yours.")
         }
-        badgeLabel.text = badgeText(store)
-        badgeLabel.isHidden = badgeLabel.text == nil
-        badgeRetry.isHidden = store.badge != .failed
+        return String(localized: "Join \(count) Founding Supporters. One purchase, yours on every device with your Apple Account.")
     }
 
     private func badgeText(_ store: SupporterStore) -> String? {
-        guard store.isSupporter else {
-            return store.productUnavailable ? String(localized: "Purchases are not available right now.") : nil
-        }
+        guard store.isSupporter else { return nil }
         switch store.badge {
-        case .needsSignIn: return String(localized: "Sign in with Twitch in Settings to show your badge in chat.")
+        case .needsSignIn: return String(localized: "Log in with Twitch in Settings to show your badge in chat.")
         case .shown(let login): return String(localized: "Your badge shows beside \(login) in chat.")
         case .failed: return String(localized: "Your badge couldn't be turned on yet.")
         case .claiming: return String(localized: "Turning on your badge…")
         case .none: return nil
-        }
-    }
-
-    private func setIcon(_ name: String?) {
-        guard UIApplication.shared.supportsAlternateIcons, UIApplication.shared.alternateIconName != name else { return }
-        Haptics.selection()
-        UIApplication.shared.setAlternateIconName(name) { [weak self] error in
-            if let error {
-                MidgarLog.notice("supporter: icon change failed: \(error)", category: .tips)
-            }
-            Task { @MainActor in self?.render() }
         }
     }
 
@@ -234,24 +267,66 @@ final class SupporterViewController: UIViewController {
         }
         purchasing = true
         render()
+        let tried = draft
         Task { [weak self] in
-            let outcome = await SupporterStore.shared.purchase(in: self?.view.window?.windowScene)
+            let outcome = await SupporterStore.shared.purchase(in: self?.view.window?.windowScene, tryingOn: tried)
             guard let self else { return }
             self.purchasing = false
-            self.render()
             switch outcome {
             case .purchased:
-                Haptics.notify(.success)
+                self.render()
+                self.celebrate()
             case .pending:
+                self.render()
                 self.alert(String(localized: "Waiting for Approval"), String(localized: "The purchase finishes once it's approved."))
             case .cancelled:
-                break
+                self.render()
             case .failed(let message):
+                self.render()
                 Haptics.notify(.error)
                 self.alert(String(localized: "Purchase Failed"), message)
             }
         }
     }
+
+    /// Brings the flame into view, then lets the sparks fly from where it now is.
+    private func celebrate() {
+        Haptics.notify(.success)
+        UIAccessibility.post(notification: .announcement, argument: String(localized: "Thank you for supporting Embr."))
+        let top = CGPoint(x: 0, y: -scrollView.adjustedContentInset.top)
+        let play = { [weak self] in
+            guard let self else { return }
+            SupporterCelebration.play(from: self.flame, color: SupporterStore.shared.choice.badgeColor.color)
+        }
+        guard !UIAccessibility.isReduceMotionEnabled else {
+            scrollView.setContentOffset(top, animated: false)
+            play()
+            return
+        }
+        UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState], animations: {
+            self.scrollView.contentOffset = top
+        }, completion: { _ in play() })
+    }
+
+    #if DEBUG
+    /// Tries a look on and scrolls for a screenshot: `-screenshotLook theme,flame,nameStyle,font,accent` and
+    /// `-screenshotScroll <points>`.
+    private func poseForScreenshots() {
+        if let look = ScreenshotRouter.option("Look")?.split(separator: ",").map(String.init), look.count == 5 {
+            draft.theme = SupporterTheme(rawValue: look[0]) ?? draft.theme
+            draft.badgeColor = SupporterAccent(rawValue: look[1]) ?? draft.badgeColor
+            draft.nameStyle = SupporterAPI.NameStyle(rawValue: look[2]) ?? draft.nameStyle
+            draft.chatFont = SupporterChatFont(rawValue: look[3]) ?? draft.chatFont
+            draft.accent = SupporterAccent(rawValue: look[4]) ?? draft.accent
+        }
+        if let offset = ScreenshotRouter.option("Scroll").flatMap(Double.init) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                guard let scrollView = self?.scrollView else { return }
+                scrollView.setContentOffset(CGPoint(x: 0, y: offset - scrollView.adjustedContentInset.top), animated: false)
+            }
+        }
+    }
+    #endif
 
     private func restore() {
         Task { [weak self] in
@@ -265,54 +340,6 @@ final class SupporterViewController: UIViewController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
         present(alert, animated: true)
-    }
-
-    private static func perk(symbol: String, text: String) -> UIView {
-        let icon = UIImageView(image: UIImage(systemName: symbol))
-        icon.tintColor = Theme.accent
-        icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .title3)
-        icon.contentMode = .center
-        icon.widthAnchor.constraint(equalToConstant: 34).isActive = true
-        icon.setContentHuggingPriority(.required, for: .horizontal)
-        icon.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let label = UILabel()
-        label.text = text
-        label.font = .preferredFont(forTextStyle: .body)
-        label.adjustsFontForContentSizeCategory = true
-        label.numberOfLines = 0
-        let row = UIStackView(arrangedSubviews: [icon, label])
-        row.axis = .horizontal
-        row.alignment = .center
-        row.spacing = 14
-        return row
-    }
-
-    private static func iconButton(preview: String, title: String) -> UIButton {
-        var configuration = UIButton.Configuration.plain()
-        configuration.image = UIImage(named: preview)?.preparingThumbnail(of: CGSize(width: 64, height: 64))
-        configuration.imagePlacement = .top
-        configuration.imagePadding = 6
-        configuration.title = title
-        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var updated = attributes
-            updated.font = .preferredFont(forTextStyle: .caption1)
-            return updated
-        }
-        configuration.background.cornerRadius = 18
-        configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 4, bottom: 8, trailing: 4)
-        let button = UIButton(configuration: configuration)
-        button.accessibilityLabel = String(localized: "\(title) icon")
-        return button
-    }
-
-    private static func swatch(_ accent: SupporterAccent) -> UIButton {
-        var configuration = UIButton.Configuration.plain()
-        configuration.image = UIImage(systemName: "circle.fill")
-        configuration.baseForegroundColor = accent.color
-        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 34)
-        let button = UIButton(configuration: configuration)
-        button.accessibilityLabel = accent.title
-        return button
     }
 }
 

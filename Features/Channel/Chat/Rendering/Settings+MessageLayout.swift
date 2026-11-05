@@ -40,4 +40,38 @@ extension Settings: MessageLayoutSettings {
     var chatLineSpacing: CGFloat {
         compactChat ? 0 : 2
     }
+
+    var chatMessageFont: SupporterChatFont {
+        SupporterLook.unlocked ? supporterChatFont : .standard
+    }
+
+    var chatShowsSupporterNameEffects: Bool {
+        supporterNameEffectsEnabled
+    }
+}
+
+/// What chat layout depends on: an open chat lays its messages out again only when one of these changes, including
+/// the supporters' looks it draws.
+struct ChatLayoutKey: Equatable, Sendable {
+    let fontSize: CGFloat
+    let showsTimestamps: Bool
+    let lineSpacing: CGFloat
+    let emoteScale: EmoteScale
+    let font: SupporterChatFont
+    let supporterNameEffects: Bool
+    let supporters: Int
+}
+
+extension Settings {
+    var chatLayoutKey: ChatLayoutKey {
+        ChatLayoutKey(
+            fontSize: chatMessageFontSize,
+            showsTimestamps: chatShowsTimestamps,
+            lineSpacing: chatLineSpacing,
+            emoteScale: chatPreferredEmoteScale,
+            font: chatMessageFont,
+            supporterNameEffects: chatShowsSupporterNameEffects,
+            supporters: SupporterDirectory.shared.revision
+        )
+    }
 }

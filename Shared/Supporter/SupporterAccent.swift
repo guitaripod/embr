@@ -1,8 +1,10 @@
 import UIKit
 import os
+import EmbrCore
 
-/// The accent colors a Founding Supporter can give Embr: the app's tint, mentions in chat and the live highlights.
-/// Everyone else, and a supporter who keeps the default, sees violet.
+/// The colors a Founding Supporter can give Embr: as the accent, the app's tint, mentions in chat and the live
+/// highlights, seen only by them; as the flame color, their chat badge and name, seen by everyone in Embr. Everyone
+/// else, and a supporter who keeps the default, sees violet.
 enum SupporterAccent: String, CaseIterable, Sendable {
     case violet
     case ember
@@ -34,6 +36,48 @@ enum SupporterAccent: String, CaseIterable, Sendable {
         case .ocean: String(localized: "Ocean", comment: "Accent color name")
         case .frost: String(localized: "Frost", comment: "Accent color name")
         }
+    }
+
+    /// The capitalized name the color's assets carry: `AppIcon-Ember`, `IconPreview-Ember`.
+    var assetSuffix: String {
+        rawValue.prefix(1).uppercased() + rawValue.dropFirst()
+    }
+
+    /// Whether text on a fill of this color reads better in black than in white: the light colors.
+    var prefersDarkText: Bool {
+        switch self {
+        case .gold, .mint, .frost: true
+        case .violet, .ember, .rose, .ocean: false
+        }
+    }
+
+    /// The large flame in this color, for the supporter screens.
+    var flameImage: UIImage? {
+        UIImage(named: "supporter-flame-\(rawValue)")
+    }
+
+    /// The chat badge in this color, bundled so it never waits on the network.
+    var badge: Badge {
+        Self.badges[self] ?? Self.makeBadge(self)
+    }
+
+    private static let badges: [SupporterAccent: Badge] = Dictionary(uniqueKeysWithValues: allCases.map { ($0, makeBadge($0)) })
+
+    private static func makeBadge(_ accent: SupporterAccent) -> Badge {
+        var urls: [EmoteScale: URL] = [:]
+        for (scale, pixels) in [(EmoteScale.x1, 18), (.x2, 36), (.x4, 72)] {
+            if let url = Bundle.main.url(forResource: "supporter-badge-\(accent.rawValue)-\(pixels)", withExtension: "png") {
+                urls[scale] = url
+            }
+        }
+        return Badge(
+            id: "1",
+            setID: "embr-supporter",
+            version: accent.rawValue,
+            title: String(localized: "Embr Founding Supporter"),
+            provider: .embr,
+            images: EmoteImageSet(urlsByScale: urls)
+        )
     }
 
     private static let state = OSAllocatedUnfairLock(initialState: SupporterAccent.violet)

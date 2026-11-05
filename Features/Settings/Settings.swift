@@ -44,6 +44,9 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var mutedKeywords: [String]?
 
     var accent: String?
+    var palette: String?
+    var chatFont: String?
+    var supporterNameEffects: Bool?
 
     var tvChatVisible: Bool?
     var tvChatPlacement: ChatPlacement?
@@ -128,6 +131,20 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var livePreviewsEnabled: Bool {
         livePreviews ?? true
+    }
+
+    /// Whether supporters' names show in their flame color and glow, as each supporter picked. Off, every name keeps
+    /// its Twitch color; the badges stay.
+    var supporterNameEffectsEnabled: Bool {
+        supporterNameEffects ?? true
+    }
+
+    var supporterTheme: SupporterTheme {
+        palette.flatMap(SupporterTheme.init(rawValue:)) ?? .standard
+    }
+
+    var supporterChatFont: SupporterChatFont {
+        chatFont.flatMap(SupporterChatFont.init(rawValue:)) ?? .standard
     }
 
     /// The content filter derived from current settings. The severe-slur list is active

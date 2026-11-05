@@ -4,7 +4,8 @@ import CoreGraphics
 import Foundation
 
 /// Renders Embr's flame for every place it appears outside the iPhone's main icon: the Apple TV's layered app icon and
-/// Top Shelf images, the Founding Supporter chat badge and the supporters' alternate iPhone icons.
+/// Top Shelf images, the Founding Supporter chat badge and large flame in every supporter color, and the supporters'
+/// alternate iPhone icons: the flame in each color, and the Midnight, Paper, Neon and Pixel designs.
 ///
 /// Usage: swift scripts/render-brand-art.swift <output directory>
 
@@ -271,14 +272,16 @@ func topShelf(width: Int, height: Int, scale: Int, name: String) {
     save(image, output.appendingPathComponent("topshelf/\(name)@\(scale)x.png"))
 }
 
-/// The chat badge: the flame alone on transparency, sized for the three badge scales.
-func badge(pixels: Int) {
+/// The chat badge in a supporter's flame color: the flame alone on transparency, sized for the three badge scales and
+/// the large flame on the supporter screen.
+func badge(_ palette: Palette, color: String, pixels: Int) {
     let image = render(width: pixels, height: pixels, opaque: false) { context in
         let inset = CGFloat(pixels) * 0.04
         let rect = CGRect(x: inset, y: inset, width: CGFloat(pixels) - inset * 2, height: CGFloat(pixels) - inset * 2)
-        FlameDrawing(palette: violet, rect: rect, glow: false).draw(in: context)
+        FlameDrawing(palette: palette, rect: rect, glow: false).draw(in: context)
     }
-    save(image, output.appendingPathComponent("badge/supporter-badge-\(pixels).png"))
+    let name = pixels == 600 ? "supporter-flame-\(color)" : "supporter-badge-\(color)-\(pixels)"
+    save(image, output.appendingPathComponent("badge/\(name).png"))
 }
 
 /// A full iPhone icon in one of the supporters' colors.
@@ -291,6 +294,157 @@ func phoneIcon(_ palette: Palette, name: String) {
     save(image, output.appendingPathComponent("icons/\(name).png"))
 }
 
+let iconFlame = CGRect(x: 512 - 341, y: 140, width: 682, height: 682)
+
+/// Midnight: the violet flame on pure black, for OLED home screens.
+func midnightIcon() {
+    let image = render(width: 1024, height: 1024, opaque: true) { context in
+        context.setFillColor(RGB(0, 0, 0).cg())
+        context.fill(CGRect(x: 0, y: 0, width: 1024, height: 1024))
+        context.drawRadialGradient(
+            falloff(RGB(60, 20, 110), 0.55),
+            startCenter: CGPoint(x: 512, y: 700), startRadius: 0, endCenter: CGPoint(x: 512, y: 700), endRadius: 420, options: []
+        )
+        FlameDrawing(palette: violet, rect: iconFlame).draw(in: context)
+    }
+    save(image, output.appendingPathComponent("icons/midnight.png"))
+}
+
+/// Paper: the flame on warm off-white, with a soft shadow where the glow would be.
+func paperIcon() {
+    let size = CGSize(width: 1024, height: 1024)
+    let image = render(width: 1024, height: 1024, opaque: true) { context in
+        context.setFillColor(RGB(236, 228, 214).cg())
+        context.fill(CGRect(origin: .zero, size: size))
+        context.drawRadialGradient(
+            gradient([(0, RGB(253, 250, 244)), (1, RGB(236, 228, 214))]),
+            startCenter: CGPoint(x: 512, y: 420), startRadius: 0, endCenter: CGPoint(x: 512, y: 420), endRadius: 760, options: [.drawsAfterEndLocation]
+        )
+        let drawing = FlameDrawing(palette: violet, rect: iconFlame, glow: false)
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: 26), blur: 60, color: RGB(120, 60, 160).cg(0.35))
+        context.addPath(FlameShape.path(FlameShape.outer, transform: drawing.transform))
+        context.setFillColor(RGB(236, 228, 214).cg())
+        context.fillPath()
+        context.restoreGState()
+        drawing.draw(in: context)
+    }
+    save(image, output.appendingPathComponent("icons/paper.png"))
+}
+
+/// Neon: the flame drawn as glowing tubes, the outer flame in the violet-to-gold gradient and the inner one in warm white.
+func neonIcon() {
+    let size = CGSize(width: 1024, height: 1024)
+    let image = render(width: 1024, height: 1024, opaque: true) { context in
+        background(Palette.tinted(outer: [], inner: [], glow: RGB(0, 0, 0), center: RGB(26, 12, 44)), in: context, size: size, focus: CGPoint(x: 512, y: 560))
+        let drawing = FlameDrawing(palette: violet, rect: iconFlame.insetBy(dx: 30, dy: 30))
+        context.drawRadialGradient(
+            falloff(RGB(120, 40, 200), 0.35),
+            startCenter: CGPoint(x: 512, y: 600), startRadius: 0, endCenter: CGPoint(x: 512, y: 600), endRadius: 460, options: []
+        )
+        let outer = FlameShape.path(FlameShape.outer, transform: drawing.transform)
+        let inner = FlameShape.path(FlameShape.inner, transform: drawing.transform)
+        let tubes: [(CGPath, CGFloat, [(CGFloat, RGB)], RGB)] = [
+            (outer, 40, violet.outer, RGB(190, 70, 255)),
+            (inner, 28, [(0, RGB(255, 140, 210)), (1, RGB(255, 240, 200))], RGB(255, 120, 190)),
+        ]
+        for (path, width, stops, glow) in tubes {
+            for (blur, alpha) in [(90.0, 0.85), (36.0, 0.9), (12.0, 1.0)] as [(CGFloat, CGFloat)] {
+                context.saveGState()
+                context.setShadow(offset: .zero, blur: blur, color: glow.cg(alpha))
+                context.addPath(path)
+                context.setLineWidth(width)
+                context.setLineJoin(.round)
+                context.setStrokeColor(glow.cg(1))
+                context.strokePath()
+                context.restoreGState()
+            }
+            context.saveGState()
+            context.addPath(path)
+            context.setLineWidth(width)
+            context.setLineJoin(.round)
+            context.replacePathWithStrokedPath()
+            context.clip()
+            let box = path.boundingBox
+            context.drawLinearGradient(gradient(stops), start: CGPoint(x: box.midX, y: box.minY), end: CGPoint(x: box.midX, y: box.maxY), options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            context.restoreGState()
+            context.saveGState()
+            context.addPath(path)
+            context.setLineWidth(width * 0.28)
+            context.setLineJoin(.round)
+            context.setStrokeColor(RGB(255, 255, 255).cg(0.75))
+            context.strokePath()
+            context.restoreGState()
+        }
+    }
+    save(image, output.appendingPathComponent("icons/neon.png"))
+}
+
+/// Snaps a small sprite to fully opaque or clear pixels in an eight-level palette and rings it with a one-pixel outline.
+func outlinedSprite(_ image: CGImage, outline: RGB) -> CGImage {
+    let width = image.width, height = image.height
+    var pixels = [UInt8](repeating: 0, count: width * height * 4)
+    let space = CGColorSpace(name: CGColorSpace.sRGB)!
+    let info = CGImageAlphaInfo.premultipliedLast.rawValue
+    pixels.withUnsafeMutableBytes { buffer in
+        let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: space, bitmapInfo: info)!
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+    }
+    func opaque(_ x: Int, _ y: Int) -> Bool {
+        guard x >= 0, y >= 0, x < width, y < height else { return false }
+        return pixels[(y * width + x) * 4 + 3] >= 128
+    }
+    var result = pixels
+    for y in 0..<height {
+        for x in 0..<width {
+            let index = (y * width + x) * 4
+            if opaque(x, y) {
+                let alpha = CGFloat(pixels[index + 3]) / 255
+                for channel in 0..<3 {
+                    let value = min(255, CGFloat(pixels[index + channel]) / max(alpha, 0.01))
+                    result[index + channel] = UInt8((value / 255 * 7).rounded() / 7 * 255)
+                }
+                result[index + 3] = 255
+            } else if opaque(x - 1, y) || opaque(x + 1, y) || opaque(x, y - 1) || opaque(x, y + 1) {
+                result[index] = UInt8(outline.r * 255)
+                result[index + 1] = UInt8(outline.g * 255)
+                result[index + 2] = UInt8(outline.b * 255)
+                result[index + 3] = 255
+            } else {
+                result[index] = 0; result[index + 1] = 0; result[index + 2] = 0; result[index + 3] = 0
+            }
+        }
+    }
+    return result.withUnsafeMutableBytes { buffer in
+        CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: space, bitmapInfo: info)!.makeImage()!
+    }
+}
+
+/// Pixel: the flame drawn on a 32-pixel grid with a dark one-pixel outline, scaled up without smoothing like an old
+/// game's sprite.
+func pixelIcon() {
+    let grid = 32
+    let soft = render(width: grid, height: grid, opaque: false) { context in
+        FlameDrawing(palette: violet, rect: CGRect(x: 3, y: 2, width: 26, height: 27), glow: false).draw(in: context)
+    }
+    let sprite = outlinedSprite(soft, outline: RGB(34, 12, 60))
+    let size = CGSize(width: 1024, height: 1024)
+    let image = render(width: 1024, height: 1024, opaque: true) { context in
+        background(violet, in: context, size: size, focus: CGPoint(x: 512, y: 560))
+        let cell: CGFloat = 24
+        let side = cell * CGFloat(grid)
+        let origin = CGPoint(x: (1024 - side) / 2, y: (1024 - side) / 2 + 12)
+        context.saveGState()
+        context.setShadow(offset: .zero, blur: 90, color: violet.glow.cg(0.7))
+        context.interpolationQuality = .none
+        context.translateBy(x: origin.x, y: origin.y + side)
+        context.scaleBy(x: 1, y: -1)
+        context.draw(sprite, in: CGRect(x: 0, y: 0, width: side, height: side))
+        context.restoreGState()
+    }
+    save(image, output.appendingPathComponent("icons/pixel.png"))
+}
+
 tvIcon(width: 1280, height: 768, scale: 1, folder: "tv-large")
 tvIcon(width: 400, height: 240, scale: 1, folder: "tv-small")
 tvIcon(width: 400, height: 240, scale: 2, folder: "tv-small")
@@ -298,8 +452,13 @@ topShelf(width: 1920, height: 720, scale: 1, name: "top-shelf")
 topShelf(width: 1920, height: 720, scale: 2, name: "top-shelf")
 topShelf(width: 2320, height: 720, scale: 1, name: "top-shelf-wide")
 topShelf(width: 2320, height: 720, scale: 2, name: "top-shelf-wide")
-for pixels in [18, 36, 72, 600] { badge(pixels: pixels) }
-for (palette, name) in [(Palette.violet, "violet"), (.ember, "ember"), (.rose, "rose"), (.gold, "gold"), (.mint, "mint"), (.ocean, "ocean"), (.frost, "frost")] {
+let colors: [(Palette, String)] = [(.violet, "violet"), (.ember, "ember"), (.rose, "rose"), (.gold, "gold"), (.mint, "mint"), (.ocean, "ocean"), (.frost, "frost")]
+for (palette, name) in colors {
+    for pixels in [18, 36, 72, 600] { badge(palette, color: name, pixels: pixels) }
     phoneIcon(palette, name: name)
 }
+midnightIcon()
+paperIcon()
+neonIcon()
+pixelIcon()
 print("rendered into \(output.path)")

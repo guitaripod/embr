@@ -47,7 +47,7 @@ final class ImageLoader: ImageLoading {
 
     private func load(url: URL, context: [SDWebImageContextOption: Any]) async -> UIImage? {
         #if DEBUG
-        if DemoWorld.isActive { return DemoArt.image(for: url) }
+        if DemoWorld.isActive, !url.isFileURL { return DemoArt.image(for: url) }
         #endif
         return await withCheckedContinuation { continuation in
             manager.loadImage(

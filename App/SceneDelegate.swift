@@ -20,6 +20,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         window.tintColor = Theme.accent
+        window.traitOverrides[SupporterThemeTrait.self] = SupporterStore.shared.theme
         window.backgroundColor = Theme.background
         window.overrideUserInterfaceStyle = Self.interfaceStyle(for: SettingsStore.shared.current.theme)
 

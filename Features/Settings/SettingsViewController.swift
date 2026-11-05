@@ -52,6 +52,7 @@ final class SettingsViewController: UIViewController {
         case highlightMentions
         case recentMessagesBackfill
         case animateEmotes
+        case supporterNameEffects
         case thirdPartyEmotes(EmoteProvider)
 
         case filterObjectionableContent
@@ -236,7 +237,7 @@ final class SettingsViewController: UIViewController {
         snapshot.appendItems([.showRecentlyWatched, .favoritesOnlyTop, .startTab, .clearWatchHistory], toSection: .home)
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
-             .highlightMentions, .recentMessagesBackfill, .animateEmotes]
+             .highlightMentions, .recentMessagesBackfill, .animateEmotes, .supporterNameEffects]
             + thirdPartyProviders.map(Row.thirdPartyEmotes),
             toSection: .chat
         )
@@ -301,7 +302,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func configure(_ cell: UICollectionViewListCell, for row: Row) {
-        cell.backgroundConfiguration = UIBackgroundConfiguration.listCell()
+        cell.backgroundConfiguration = Theme.groupedRowBackground()
         var content = cell.defaultContentConfiguration()
         let settings = store.current
         let tile = Self.iconImage(for: row)
@@ -352,6 +353,10 @@ final class SettingsViewController: UIViewController {
         case .compactChat:
             switchRow(cell, &content, title: String(localized: "Compact Chat"), isOn: settings.compactChat) { store, on in
                 store.update { $0.compactChat = on }
+            }
+        case .supporterNameEffects:
+            switchRow(cell, &content, title: String(localized: "Supporter Name Colors"), isOn: settings.supporterNameEffectsEnabled) { store, on in
+                store.update { $0.supporterNameEffects = on }
             }
         case .messageScale:
             sliderRow(
@@ -459,10 +464,13 @@ final class SettingsViewController: UIViewController {
 
         case .supporter:
             let supporter = SupporterStore.shared
-            content.text = supporter.isSupporter ? String(localized: "Founding Supporter") : String(localized: "Become a Founding Supporter")
-            content.secondaryText = supporter.isSupporter
-                ? String(localized: "Thank you. Icons, colors and your chat badge.")
-                : String(localized: "Your colors, app icons and a badge in chat.")
+            if supporter.isSupporter {
+                content.text = supporter.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
+                content.secondaryText = String(localized: "Your themes, icons, chat font and badge.")
+            } else {
+                content.text = String(localized: "Become a Founding Supporter")
+                content.secondaryText = String(localized: "Themes, app icons, chat fonts and a badge everyone sees.")
+            }
             content.secondaryTextProperties.color = .secondaryLabel
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
@@ -652,6 +660,7 @@ final class SettingsViewController: UIViewController {
         case .clearWatchHistory: spec = ("clock.badge.xmark", .systemRed)
         case .showTimestamps: spec = ("clock.fill", .systemGray)
         case .compactChat: spec = ("rectangle.compress.vertical", .systemTeal)
+        case .supporterNameEffects: spec = ("flame.fill", .systemOrange)
         case .messageScale: spec = ("textformat.size", .systemIndigo)
         case .fontSizeDelta: spec = ("character.cursor.ibeam", .systemIndigo)
         case .highlightMentions: spec = ("at", Theme.accent)
