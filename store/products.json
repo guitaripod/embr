@@ -205,6 +205,76 @@
         }
       },
       "reviewScreenshotMd5": "7ab6968b5d25fe862faf15a60840bc05"
+    },
+    {
+      "productId": "com.guitaripod.embr.supporter",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Embr Founding Supporter",
+      "familySharable": false,
+      "price": {
+        "territory": "USA",
+        "amount": "9.99"
+      },
+      "localizations": {
+        "de-DE": {
+          "name": "Gründungsunterstützer",
+          "description": "Deine Farben, App-Icons und ein Abzeichen im Chat."
+        },
+        "en-AU": {
+          "name": "Founding Supporter",
+          "description": "Your colours, app icons and a badge in chat."
+        },
+        "en-GB": {
+          "name": "Founding Supporter",
+          "description": "Your colours, app icons and a badge in chat."
+        },
+        "en-US": {
+          "name": "Founding Supporter",
+          "description": "Your colors, app icons and a badge in chat."
+        },
+        "es-ES": {
+          "name": "Miembro fundador",
+          "description": "Tus colores, iconos de app y una insignia en el chat."
+        },
+        "es-MX": {
+          "name": "Miembro fundador",
+          "description": "Tus colores, íconos de app y una insignia en el chat."
+        },
+        "fr-FR": {
+          "name": "Membre fondateur",
+          "description": "Vos couleurs, icônes d'app et un badge dans le chat."
+        },
+        "it": {
+          "name": "Sostenitore fondatore",
+          "description": "I tuoi colori, icone dell'app e un badge in chat."
+        },
+        "ja": {
+          "name": "創設サポーター",
+          "description": "カラー、Appアイコン、チャットのバッジ。"
+        },
+        "ko": {
+          "name": "창립 후원자",
+          "description": "나만의 색상, 앱 아이콘, 채팅 배지."
+        },
+        "pl": {
+          "name": "Założycielski Wspierający",
+          "description": "Twoje kolory, ikony aplikacji i odznaka na czacie."
+        },
+        "pt-BR": {
+          "name": "Apoiador Fundador",
+          "description": "Suas cores, ícones do app e um selo no chat."
+        },
+        "zh-Hans": {
+          "name": "创始支持者",
+          "description": "专属配色、App 图标和聊天徽章。"
+        },
+        "zh-Hant": {
+          "name": "創始支持者",
+          "description": "專屬配色、App 圖像和聊天徽章。"
+        }
+      },
+      "reviewScreenshot": "review/supporter.png",
+      "reviewNote": "Founding Supporter is a one-time purchase that unlocks only looks: seven accent colors, alternate iPhone icons and a flame badge beside the buyer's name in chat. Find it in Settings > Founding Supporter on iPhone and iPad, and Settings > Become a Founding Supporter on Apple TV. Watching and chat never need it."
     }
   ]
 }

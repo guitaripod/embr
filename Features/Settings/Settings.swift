@@ -43,6 +43,8 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var filterObjectionableContent: Bool?
     var mutedKeywords: [String]?
 
+    var accent: String?
+
     static let `default` = Settings(
         theme: .system,
         showTimestamps: false,

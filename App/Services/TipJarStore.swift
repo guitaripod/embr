@@ -13,9 +13,11 @@ protocol TipPurchasing: Sendable {
 extension MidgarStore: TipPurchasing {
     @MainActor
     func purchase(_ productID: String, confirmIn scene: UIWindowScene?) async throws -> MidgarPurchaseResult {
+        #if os(iOS)
         if let scene {
             return try await purchase(productID, confirmIn: scene)
         }
+        #endif
         return try await purchase(productID)
     }
 }
@@ -27,7 +29,7 @@ extension MidgarStore: TipPurchasing {
 final class TipJarStore {
     static let shared = TipJarStore()
 
-    static let productIDs = [
+    nonisolated static let productIDs = [
         "com.guitaripod.embr.tip.small",
         "com.guitaripod.embr.tip.medium",
         "com.guitaripod.embr.tip.large",
@@ -72,7 +74,7 @@ final class TipJarStore {
     func start() {
         guard eventsTask == nil else { return }
         if purchasing == nil, EmbrMidgar.reachesMidgarServices {
-            purchasing = EmbrMidgar.shared.makeStore(productIDs: Self.productIDs)
+            purchasing = EmbrMidgar.shared.commerce
         }
         guard let purchasing else { return }
         eventsTask = Task { [weak self] in

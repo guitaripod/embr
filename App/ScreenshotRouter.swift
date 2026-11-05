@@ -96,6 +96,12 @@ enum ScreenshotRouter {
                 let settings = (tabBar.selectedViewController as? UINavigationController)?.viewControllers.first as? SettingsViewController
                 settings?.showSupportForScreenshot()
             }
+        case "supporter", "supporterowned":
+            SupporterStore.shared.seedForScreenshots(supporter: route == "supporterowned")
+            tabBar.select(.settings)
+            after(0.6) {
+                (tabBar.selectedViewController as? UINavigationController)?.pushViewController(SupporterViewController(), animated: false)
+            }
         case "favorites":
             tabBar.select(.favorites)
             if !DemoWorld.isActive {

@@ -1,4 +1,6 @@
 import Foundation
+import os
+import EmbrCore
 import MidgarCommerce
 import MidgarCore
 import MidgarPortal
@@ -65,18 +67,30 @@ final class EmbrMidgar: Sendable {
         }
     }
 
-    /// The purchase engine for the tips. Creating the store starts its `Transaction.updates` listener, so create it once.
-    func makeStore(productIDs: [String]) -> MidgarStore {
-        MidgarStore(
-            configuration: MidgarStoreConfiguration(
-                appID: Self.appID,
-                productIDs: productIDs,
-                entitlementsByProduct: [:],
-                mode: .purchases
-            ),
-            identity: identity,
-            http: account
-        )
+    /// Every product Embr sells: the three tips and Founding Supporter.
+    static let productIDs = TipJarStore.productIDs + [SupporterAPI.productID]
+
+    private let commerceStore = OSAllocatedUnfairLock<MidgarStore?>(initialState: nil)
+
+    /// The one purchase engine of the process, made on first use. Creating a store starts its `Transaction.updates`
+    /// listener, so the tips and the supporter purchase share this one. The tips grant nothing; Founding Supporter
+    /// grants the `supporter` entitlement.
+    var commerce: MidgarStore {
+        commerceStore.withLock { store in
+            if let store { return store }
+            let made = MidgarStore(
+                configuration: MidgarStoreConfiguration(
+                    appID: Self.appID,
+                    productIDs: Self.productIDs,
+                    entitlementsByProduct: [SupporterAPI.productID: SupporterStore.entitlement],
+                    mode: .purchases
+                ),
+                identity: identity,
+                http: account
+            )
+            store = made
+            return made
+        }
     }
 
     /// False inside an XCTest or Swift Testing host and in a DEBUG demo capture, which must not mint identities or

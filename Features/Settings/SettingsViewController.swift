@@ -68,6 +68,7 @@ final class SettingsViewController: UIViewController {
         case accountAction
         case deleteAccount
 
+        case supporter
         case rateApp
         case shareApp
         case tip(String)
@@ -218,6 +219,7 @@ final class SettingsViewController: UIViewController {
             .store(in: &cancellables)
 
         TipJarStore.shared.changes
+            .merge(with: SupporterStore.shared.changes)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.reloadSupportSection()
@@ -252,7 +254,7 @@ final class SettingsViewController: UIViewController {
     /// Rate and Share always; then one row per tip once the App Store has answered, or a
     /// single status row while it is loading or unreachable.
     private func supportRows() -> [Row] {
-        var rows: [Row] = [.rateApp, .shareApp]
+        var rows: [Row] = [.supporter, .rateApp, .shareApp]
         #if DEBUG
         if ScreenshotHarness.previewTips {
             return rows + TipJarStore.productIDs.map(Row.tip)
@@ -455,6 +457,15 @@ final class SettingsViewController: UIViewController {
             cell.contentConfiguration = content
             cell.accessories = []
 
+        case .supporter:
+            let supporter = SupporterStore.shared
+            content.text = supporter.isSupporter ? String(localized: "Founding Supporter") : String(localized: "Become a Founding Supporter")
+            content.secondaryText = supporter.isSupporter
+                ? String(localized: "Thank you. Icons, colors and your chat badge.")
+                : String(localized: "Your colors, app icons and a badge in chat.")
+            content.secondaryTextProperties.color = .secondaryLabel
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
         case .rateApp:
             content.text = String(localized: "Rate Embr")
             content.textProperties.color = Theme.accent
@@ -658,6 +669,7 @@ final class SettingsViewController: UIViewController {
         case .accountStatus: spec = ("person.crop.circle.fill", Theme.accent)
         case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
         case .deleteAccount: spec = ("person.crop.circle.badge.xmark", .systemRed)
+        case .supporter: spec = ("flame.fill", Theme.accent)
         case .rateApp: spec = ("star.fill", .systemYellow)
         case .shareApp: spec = ("square.and.arrow.up.fill", .systemGreen)
         case let .tip(id): spec = (Self.tipSymbol(for: id), .systemOrange)
@@ -845,7 +857,7 @@ extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
         case .github, .accountAction, .deleteAccount, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
-             .rateApp, .shareApp, .tip, .clearWatchHistory:
+             .supporter, .rateApp, .shareApp, .tip, .clearWatchHistory:
             return true
         case .tipsStatus:
             return TipJarStore.shared.state == .unavailable
@@ -882,6 +894,8 @@ extension SettingsViewController: UICollectionViewDelegate {
             openSupportEmail()
         case .shareLogs:
             shareLogs(from: collectionView.cellForItem(at: indexPath))
+        case .supporter:
+            navigationController?.pushViewController(SupporterViewController(), animated: true)
         case .rateApp:
             UIApplication.shared.open(AppStoreLinks.writeReview)
         case .shareApp:

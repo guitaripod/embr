@@ -45,7 +45,10 @@ struct MessageLayout {
         let availableWidth = max(1, width - horizontalInset * 2)
         let replyHeight = message.reply != nil ? replyLineHeight + 2 : 0
 
-        let resolvedBadges = badges.resolve(message: message)
+        var resolvedBadges = badges.resolve(message: message)
+        if SupporterDirectory.shared.contains(message.author.id) {
+            resolvedBadges.append(SupporterDirectory.badge)
+        }
         let badgeBox = lineHeight
         let badgePrefixWidth = resolvedBadges.isEmpty
             ? 0
