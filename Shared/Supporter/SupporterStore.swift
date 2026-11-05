@@ -37,6 +37,8 @@ final class SupporterStore {
 
     private(set) var isSupporter: Bool
     private(set) var product: StoreProduct?
+    /// The App Store answered without Founding Supporter, or could not be reached; the screen offers to ask again.
+    private(set) var productUnavailable = false
     private(set) var badge: BadgeState = .none
 
     private let defaults: UserDefaults
@@ -46,6 +48,7 @@ final class SupporterStore {
     private var store: MidgarStore?
     private var eventsTask: Task<Void, Never>?
     private var claimTask: Task<Void, Never>?
+    private var loadingProduct = false
     private var cancellables = Set<AnyCancellable>()
 
     private static let supporterKey = "supporter.isSupporter"
@@ -102,11 +105,21 @@ final class SupporterStore {
     }
 
     func loadProduct() {
-        guard product == nil, let store else { return }
+        guard product == nil, !loadingProduct else { return }
+        guard let store else {
+            productUnavailable = true
+            changes.send()
+            return
+        }
+        loadingProduct = true
+        productUnavailable = false
+        changes.send()
         Task { [weak self] in
             let products = (try? await store.products()) ?? []
             guard let self else { return }
+            self.loadingProduct = false
             self.product = products.first { $0.id == Self.productID }
+            self.productUnavailable = self.product == nil
             if self.product == nil {
                 MidgarLog.notice("supporter: product not returned by the App Store", category: .tips)
             }

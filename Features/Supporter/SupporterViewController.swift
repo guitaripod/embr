@@ -176,6 +176,9 @@ final class SupporterViewController: UIViewController {
         if let price = store.product?.displayPrice {
             buyButton.configuration?.title = String(localized: "Become a Supporter · \(price)")
             buyButton.isEnabled = !purchasing
+        } else if store.productUnavailable {
+            buyButton.configuration?.title = String(localized: "Try Again")
+            buyButton.isEnabled = true
         } else {
             buyButton.configuration?.title = String(localized: "Loading Price…")
             buyButton.isEnabled = false
@@ -200,7 +203,9 @@ final class SupporterViewController: UIViewController {
     }
 
     private func badgeText(_ store: SupporterStore) -> String? {
-        guard store.isSupporter else { return nil }
+        guard store.isSupporter else {
+            return store.productUnavailable ? String(localized: "Purchases are not available right now.") : nil
+        }
         switch store.badge {
         case .needsSignIn: return String(localized: "Sign in with Twitch in Settings to show your badge in chat.")
         case .shown(let login): return String(localized: "Your badge shows beside \(login) in chat.")
@@ -223,6 +228,10 @@ final class SupporterViewController: UIViewController {
 
     private func buy() {
         guard !purchasing else { return }
+        guard SupporterStore.shared.product != nil else {
+            SupporterStore.shared.loadProduct()
+            return
+        }
         purchasing = true
         render()
         Task { [weak self] in
