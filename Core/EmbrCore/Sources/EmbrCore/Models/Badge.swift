@@ -6,6 +6,7 @@ public enum BadgeProvider: String, Sendable, Equatable, Hashable, Codable {
     case betterTTV
     case sevenTV
     case chatterino
+    case embr
 }
 
 public struct Badge: Sendable, Equatable, Hashable, Identifiable {

@@ -163,3 +163,10 @@ enum HelixMappers {
         )
     }
 }
+
+/// Decodes Helix answers for callers outside the API client, such as the Apple TV Top Shelf extension.
+public enum HelixDecoding {
+    public static func liveStreams(from data: Data) throws -> [LiveStream] {
+        try TwitchJSON.decode(HelixResponse<StreamDTO>.self, from: data).data.map(HelixMappers.liveStream)
+    }
+}

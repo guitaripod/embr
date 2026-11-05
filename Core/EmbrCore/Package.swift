@@ -5,6 +5,7 @@ let package = Package(
     name: "EmbrCore",
     platforms: [
         .iOS(.v18),
+        .tvOS(.v18),
         .macOS(.v14)
     ],
     products: [
