@@ -101,13 +101,7 @@ final class TVPlaybackCoordinator: NSObject, @preconcurrency AVPlayerViewControl
     }
 
     private func present(from presenter: UIViewController) {
-        Self.topmost(from: presenter).present(playerVC, animated: !UIAccessibility.isReduceMotionEnabled)
-    }
-
-    private static func topmost(from controller: UIViewController) -> UIViewController {
-        var top = controller
-        while let presented = top.presentedViewController { top = presented }
-        return top
+        TVRouter.topmost(from: presenter).present(playerVC, animated: !UIAccessibility.isReduceMotionEnabled)
     }
 
     private static var rootViewController: UIViewController? {
@@ -469,94 +463,22 @@ final class TVPlaybackCoordinator: NSObject, @preconcurrency AVPlayerViewControl
     }
 
     private func refreshMenus() {
-        var items: [UIMenuElement] = []
         let chatAvailable = channel != nil
-        let chatVisible = chatPanel != nil || (chatAvailable && SettingsStore.shared.current.tvChatVisibleEnabled)
-        if chatAvailable {
-            let chat = UIAction(
-                title: String(localized: "Chat"),
-                image: UIImage(systemName: chatVisible ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
-            ) { [weak self] _ in
-                self?.setChatVisible(!chatVisible)
-            }
-            chat.state = chatVisible ? .on : .off
-            items.append(chat)
-        }
-        if chatAvailable && chatVisible {
-            items.append(chatOptionsMenu())
-        }
-        if let quality = qualityMenu() {
-            items.append(quality)
-        }
-        if let stream {
-            items.append(favoriteAction(for: stream))
-            items.append(UIAction(title: String(localized: "Multiview"), image: UIImage(systemName: "rectangle.split.2x2")) { [weak self] _ in
-                self?.openMultiview(with: stream)
-            })
-        }
-        playerVC.transportBarCustomMenuItems = items
-    }
-
-    private func chatOptionsMenu() -> UIMenu {
-        let settings = SettingsStore.shared.current
-        let placement = UIMenu(title: String(localized: "Placement"), options: .displayInline, children: Settings.ChatPlacement.allCases.map { side in
-            let action = UIAction(title: side == .left ? String(localized: "Left") : String(localized: "Right")) { [weak self] _ in
-                SettingsStore.shared.update { $0.tvChatPlacement = side }
-                self?.placeChat()
-                self?.refreshMenus()
-            }
-            action.state = settings.tvChatPlacementPreference == side ? .on : .off
-            return action
-        })
-        let size = UIMenu(title: String(localized: "Text Size"), options: .displayInline, children: Settings.ChatTextSize.allCases.map { textSize in
-            let title: String = switch textSize {
-            case .small: String(localized: "Small")
-            case .medium: String(localized: "Medium")
-            case .large: String(localized: "Large")
-            }
-            let action = UIAction(title: title) { [weak self] _ in
-                SettingsStore.shared.update { $0.tvChatTextSize = textSize }
-                self?.chatPanel?.relayout()
-                self?.refreshMenus()
-            }
-            action.state = settings.tvChatTextSizePreference == textSize ? .on : .off
-            return action
-        })
-        return UIMenu(title: String(localized: "Chat Options"), image: UIImage(systemName: "textformat.size"), children: [placement, size])
-    }
-
-    private func qualityMenu() -> UIMenu? {
-        let qualities = hls.availableQualities.filter { !$0.isAudioOnly }
-        guard !qualities.isEmpty else { return nil }
-        let current = hls.currentQuality
-        var actions = [UIAction(title: String(localized: "Auto")) { [weak self] _ in
-            guard let self, let auto = StreamQuality.auto(from: qualities) else { return }
-            self.hls.setQuality(auto)
-            self.refreshMenus()
-        }]
-        actions[0].state = current == nil ? .on : .off
-        for quality in qualities {
-            let action = UIAction(title: quality.displayName) { [weak self] _ in
-                self?.hls.setQuality(quality)
-                self?.refreshMenus()
-            }
-            action.state = current == quality ? .on : .off
-            actions.append(action)
-        }
-        return UIMenu(title: String(localized: "Quality"), image: UIImage(systemName: "slider.horizontal.3"), options: .singleSelection, children: actions)
-    }
-
-    private func favoriteAction(for stream: LiveStream) -> UIAction {
-        let favorite = FavoritesStore.shared.isFavorite(stream.userID)
-        let action = UIAction(
-            title: favorite ? String(localized: "Favorited") : String(localized: "Favorite"),
-            image: UIImage(systemName: favorite ? "star.fill" : "star")
-        ) { [weak self] _ in
-            FavoritesStore.shared.toggle(id: stream.userID, login: stream.userLogin, name: stream.userName)
-            self?.refreshMenus()
-        }
-        action.state = favorite ? .on : .off
-        return action
+        playerVC.transportBarCustomMenuItems = TVTransportMenu.items(
+            chatAvailable: chatAvailable,
+            chatVisible: chatPanel != nil || (chatAvailable && SettingsStore.shared.current.tvChatVisibleEnabled),
+            qualities: hls.availableQualities.filter { !$0.isAudioOnly },
+            currentQuality: hls.currentQuality,
+            stream: stream,
+            actions: TVTransportMenu.Actions(
+                setChatVisible: { [weak self] in self?.setChatVisible($0) },
+                placeChat: { [weak self] in self?.placeChat() },
+                resizeChat: { [weak self] in self?.chatPanel?.relayout() },
+                setQuality: { [weak self] in self?.hls.setQuality($0) },
+                openMultiview: { [weak self] in self?.openMultiview(with: $0) },
+                refresh: { [weak self] in self?.refreshMenus() }
+            )
+        )
     }
 
     private func openMultiview(with stream: LiveStream) {
@@ -575,11 +497,11 @@ final class TVPlaybackCoordinator: NSObject, @preconcurrency AVPlayerViewControl
         alert.addAction(UIAlertAction(title: String(localized: "Close"), style: .cancel) { [weak self] _ in
             self?.closeThen { _ in }
         })
-        Self.topmost(from: playerVC).present(alert, animated: true)
+        TVRouter.topmost(from: playerVC).present(alert, animated: true)
     }
 
     private func presentFailure(_ message: String, retry: (() -> Void)?) {
-        guard Self.topmost(from: playerVC) as? UIAlertController == nil else { return }
+        guard TVRouter.topmost(from: playerVC) as? UIAlertController == nil else { return }
         let alert = UIAlertController(title: String(localized: "Can't Play"), message: message, preferredStyle: .alert)
         if let retry {
             alert.addAction(UIAlertAction(title: String(localized: "Try Again"), style: .default) { _ in retry() })
@@ -587,7 +509,7 @@ final class TVPlaybackCoordinator: NSObject, @preconcurrency AVPlayerViewControl
         alert.addAction(UIAlertAction(title: String(localized: "Close"), style: .cancel) { [weak self] _ in
             self?.closeThen { _ in }
         })
-        Self.topmost(from: playerVC).present(alert, animated: true)
+        TVRouter.topmost(from: playerVC).present(alert, animated: true)
     }
 
     private func closeThen(_ next: @escaping (UIViewController) -> Void) {
@@ -667,21 +589,8 @@ final class TVPlaybackCoordinator: NSObject, @preconcurrency AVPlayerViewControl
             other.playerVC.dismiss(animated: false)
         }
         Self.active = self
-        Self.topmost(from: root).present(playerVC, animated: false) {
+        TVRouter.topmost(from: root).present(playerVC, animated: false) {
             completionHandler(true)
         }
-    }
-}
-
-extension StreamQuality {
-    /// The name the quality menu shows: Twitch's `chunked` is the source rendition.
-    var displayName: String {
-        name.lowercased() == "chunked" ? String(localized: "Source") : name
-    }
-
-    /// A stand-in quality the player reads as "Auto": no peak bit rate, the master playlist chooses.
-    static func auto(from qualities: [StreamQuality]) -> StreamQuality? {
-        guard let first = qualities.first else { return nil }
-        return StreamQuality(name: "Auto", url: first.url)
     }
 }
