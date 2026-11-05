@@ -218,63 +218,63 @@
       "localizations": {
         "de-DE": {
           "name": "Gründungsunterstützer",
-          "description": "Deine Farben, App-Icons und ein Abzeichen im Chat."
+          "description": "Designs, Schriften, Symbole und ein Abzeichen für alle."
         },
         "en-AU": {
           "name": "Founding Supporter",
-          "description": "Your colours, app icons and a badge in chat."
+          "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "en-GB": {
           "name": "Founding Supporter",
-          "description": "Your colours, app icons and a badge in chat."
+          "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "en-US": {
           "name": "Founding Supporter",
-          "description": "Your colors, app icons and a badge in chat."
+          "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "es-ES": {
           "name": "Miembro fundador",
-          "description": "Tus colores, iconos de app y una insignia en el chat."
+          "description": "Temas, fuentes, iconos y una insignia que todos ven."
         },
         "es-MX": {
           "name": "Miembro fundador",
-          "description": "Tus colores, íconos de app y una insignia en el chat."
+          "description": "Temas, fuentes, íconos y una insignia que todos ven."
         },
         "fr-FR": {
           "name": "Membre fondateur",
-          "description": "Vos couleurs, icônes d'app et un badge dans le chat."
+          "description": "Thèmes, polices, icônes et un badge visible de tous."
         },
         "it": {
           "name": "Sostenitore fondatore",
-          "description": "I tuoi colori, icone dell'app e un badge in chat."
+          "description": "Temi, font, icone e un badge visibile a tutti."
         },
         "ja": {
           "name": "創設サポーター",
-          "description": "カラー、Appアイコン、チャットのバッジ。"
+          "description": "テーマ、チャットフォント、アイコン、みんなに見えるバッジ。"
         },
         "ko": {
           "name": "창립 후원자",
-          "description": "나만의 색상, 앱 아이콘, 채팅 배지."
+          "description": "테마, 채팅 글꼴, 아이콘, 모두에게 보이는 배지."
         },
         "pl": {
           "name": "Założycielski Wspierający",
-          "description": "Twoje kolory, ikony aplikacji i odznaka na czacie."
+          "description": "Motywy, czcionki czatu, ikony i odznaka dla każdego."
         },
         "pt-BR": {
           "name": "Apoiador Fundador",
-          "description": "Suas cores, ícones do app e um selo no chat."
+          "description": "Temas, fontes do chat, ícones e um selo para todos."
         },
         "zh-Hans": {
           "name": "创始支持者",
-          "description": "专属配色、App 图标和聊天徽章。"
+          "description": "主题、聊天字体、图标和所有人都能看到的徽章。"
         },
         "zh-Hant": {
           "name": "創始支持者",
-          "description": "專屬配色、App 圖像和聊天徽章。"
+          "description": "主題、聊天字體、圖示，以及所有人都看得到的徽章。"
         }
       },
       "reviewScreenshot": "review/supporter.png",
-      "reviewNote": "Founding Supporter is a one-time purchase that unlocks only looks: seven accent colors, alternate iPhone icons and a flame badge beside the buyer's name in chat. Find it in Settings > Founding Supporter on iPhone and iPad, and Settings > Become a Founding Supporter on Apple TV. Watching and chat never need it."
+      "reviewNote": "Founding Supporter is a one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven iPhone icons, and a flame badge in the buyer's color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying. Find it in Settings > Become a Founding Supporter on iPhone, iPad and Apple TV. Watching and chat never need it."
     }
   ]
 }
