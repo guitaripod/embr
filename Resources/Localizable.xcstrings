@@ -1503,6 +1503,70 @@
         }
       }
     },
+    "A one-time purchase that keeps Embr independent: themes, colors, chat fonts and a flame badge everyone sees. Nothing about watching ever needs it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein einmaliger Kauf, der Embr unabhängig hält: Designs, Farben, Chat-Schriften und ein Flammen-Abzeichen, das alle sehen. Zum Zuschauen wird das nie benötigt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una compra única que mantiene Embr independiente: temas, colores, fuentes del chat y una insignia de llama que todos ven. Mirar nunca necesita nada de esto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un achat unique qui garde Embr indépendant : thèmes, couleurs, polices du chat et un badge flamme que tout le monde voit. Regarder n'en a jamais besoin."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un acquisto unico che mantiene Embr indipendente: temi, colori, font della chat e un badge a forma di fiamma visibile a tutti. Guardare non ne ha mai bisogno."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrを独立して運営し続けるための一度きりの購入です。テーマ、色、チャットフォント、みんなに見える炎のバッジが含まれます。視聴には一切必要ありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr를 독립적으로 유지하는 일회성 구매입니다. 테마, 색상, 채팅 글꼴과 모두에게 보이는 불꽃 배지가 포함됩니다. 시청에는 아무것도 필요하지 않습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jednorazowy zakup, dzięki któremu Embr pozostaje niezależny: motywy, kolory, czcionki czatu i odznaka płomienia widoczna dla wszystkich. Oglądanie nigdy tego nie wymaga."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma compra única que mantém o Embr independente: temas, cores, fontes do chat e um selo de chama que todo mundo vê. Assistir nunca precisa disso."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性购买，让 Embr 保持独立：包括主题、颜色、聊天字体，以及所有人都能看到的火焰徽章。观看功能从来不需要它。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性購買，讓 Embr 保持獨立：包括主題、顏色、聊天字體，以及所有人都看得到的火焰徽章。觀看功能從來不需要它。"
+          }
+        }
+      }
+    },
     "A subscription still goes to your streamer and unlocks their emotes and badges, even though it can't remove ads inside Embr. If ad-free viewing is what you're after, the official Twitch app honors your Turbo subscription.": {
       "localizations": {
         "de": {
@@ -2715,6 +2779,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dźwięk w tle"
+          }
+        }
+      }
+    },
+    "Badge & Name": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abzeichen & Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insignia y nombre"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Badge et nom"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Badge e nome"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バッジと名前"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "배지와 이름"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odznaka i nazwa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selo e nome"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "徽章与昵称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "徽章與名稱"
           }
         }
       }
@@ -3936,6 +4064,70 @@
         }
       }
     },
+    "Chat Font": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat-Schrift"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuente del chat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Police du chat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Font della chat"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャットフォント"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "채팅 글꼴"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czcionka czatu"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fonte do chat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天字体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天字體"
+          }
+        }
+      }
+    },
     "Chat Only": {
       "localizations": {
         "de": {
@@ -3996,6 +4188,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko czat"
+          }
+        }
+      }
+    },
+    "Chat preview": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat-Vorschau"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista previa del chat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aperçu du chat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anteprima chat"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャットのプレビュー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "채팅 미리보기"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podgląd czatu"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prévia do chat"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天预览"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天預覽"
           }
         }
       }
@@ -6310,6 +6566,71 @@
         }
       }
     },
+    "Dusk": {
+      "comment": "Theme name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dämmerung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crepúsculo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crépuscule"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crepuscolo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダスク"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더스크"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmierzch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crepúsculo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "黄昏"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暮光"
+          }
+        }
+      }
+    },
     "Email %@\n\nThe address has been copied to your clipboard.": {
       "localizations": {
         "de": {
@@ -6434,6 +6755,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr Flyer"
+          }
+        }
+      }
+    },
+    "Embr is made by one independent developer. Founding Supporters keep it free for everyone and get looks no one else has. Try them on below; watching never needs any of it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr wird von einem unabhängigen Entwickler gemacht. Gründungsunterstützer halten Embr für alle kostenlos und bekommen Looks, die sonst niemand hat. Probiere sie unten aus; zum Zuschauen braucht man davon nie etwas."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr lo hace un desarrollador independiente. Los miembros fundadores la mantienen gratis para todos y obtienen aspectos que nadie más tiene. Pruébalos abajo; mirar nunca necesita nada de esto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr est développé par une seule personne, en toute indépendance. Les Membres fondateurs la gardent gratuite pour tout le monde et obtiennent des looks que personne d'autre n'a. Essayez-les ci-dessous : regarder n'a jamais besoin de rien de tout cela."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr è sviluppata da un solo sviluppatore indipendente. I Sostenitori fondatori la mantengono gratuita per tutti e ottengono aspetti che nessun altro ha. Provali qui sotto: guardare non richiede nulla di tutto questo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrは一人の独立した開発者が作っています。創設サポーターのおかげで、Embrは誰にとっても無料のままで、ほかにはない見た目を手に入れられます。下で試してみてください。視聴にこれらは一切必要ありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr는 한 명의 독립 개발자가 만들고 있습니다. 창립 후원자 덕분에 Embr는 모두에게 무료로 남고, 다른 누구도 가질 수 없는 외관을 얻을 수 있습니다. 아래에서 미리 적용해 보세요. 시청에는 이 중 어떤 것도 필요하지 않습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr tworzy jeden niezależny twórca. Założycielscy Wspierający utrzymują aplikację za darmo dla wszystkich i dostają wygląd, którego nie ma nikt inny. Wypróbuj go poniżej. Oglądanie nigdy niczego z tego nie wymaga."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Embr é feito por um desenvolvedor independente. Os Apoiadores Fundadores mantêm o app gratuito para todos e ganham visuais que ninguém mais tem. Experimente abaixo; assistir nunca exige nada disso."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 由一位独立开发者制作。创始支持者让它对所有人保持免费，并能获得别人没有的外观。可以在下方试用；观看从来不需要这些。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 由一位獨立開發者製作。創始支持者讓它對所有人保持免費，並能獲得別人沒有的外觀。可以在下方試用；觀看從來不需要這些。"
           }
         }
       }
@@ -7271,6 +7656,70 @@
         }
       }
     },
+    "Everyone watching in Embr sees your flame badge and name this way.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So sehen alle, die Embr nutzen, dein Flammen-Abzeichen und deinen Namen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Así verán tu insignia de llama y tu nombre todos los que usan Embr."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tous ceux qui regardent sur Embr voient ainsi votre badge flamme et votre nom."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi guarda su Embr vede così il tuo badge a forma di fiamma e il tuo nome."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrで視聴するすべての人に、この見た目で炎のバッジと名前が表示されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr를 시청하는 모든 사람에게 이런 모습으로 내 불꽃 배지와 이름이 보입니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdy oglądający w Embr widzi tak twoją odznakę płomienia i nazwę."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo mundo assistindo no Embr vê seu selo de chama e seu nome assim."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Embr 中观看的人都会以这种方式看到你的火焰徽章和昵称。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Embr 中觀看的人都會以這種方式看到你的火焰徽章和名稱。"
+          }
+        }
+      }
+    },
     "Exit Full Screen": {
       "localizations": {
         "de": {
@@ -7661,6 +8110,134 @@
         }
       }
     },
+    "first time catching this live, what a stream": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zum ersten Mal live dabei, was für ein Stream"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "primera vez que lo veo en directo, menudo stream"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "première fois que je tombe dessus en live, quel stream"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "prima volta che lo vedo in diretta, che stream"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初めてライブで見たけど、いい配信だね"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음으로 라이브로 봤는데 방송 진짜 좋다"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pierwszy raz na żywo, co za stream"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "primeira vez assistindo ao vivo, que stream"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第一次看直播，太精彩了"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第一次看直播，太精彩了"
+          }
+        }
+      }
+    },
+    "Flame Color": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flammenfarbe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color de la llama"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couleur de la flamme"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colore della fiamma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "炎の色"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "불꽃 색상"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kolor płomienia"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cor da chama"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "火焰颜色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "火焰顏色"
+          }
+        }
+      }
+    },
     "Followers %lldm": {
       "localizations": {
         "de": {
@@ -7913,6 +8490,135 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dostosowanie rozmiaru czcionki"
+          }
+        }
+      }
+    },
+    "Founding Supporter\nFounding Supporter is an optional one-time purchase through Apple that unlocks only looks. Its purchase record is handled like a tip's. If you are signed in with Twitch, your Twitch user id is stored with the purchase, your founding number and the badge color and name style you pick, so a flame badge can appear beside your name in chat. Those are published to everyone using Embr so their app can show them. Your Twitch token is used to confirm the account and is not kept.": {
+      "comment": "Privacy policy section",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gründungsunterstützer\nGründungsunterstützer ist ein optionaler einmaliger Kauf über Apple, der nur das Aussehen freischaltet. Die Kaufdaten werden wie bei einem Trinkgeld behandelt. Wenn du mit Twitch angemeldet bist, werden deine Twitch-Nutzer-ID, deine Gründungsnummer sowie die Abzeichenfarbe und der Namensstil, die du wählst, zusammen mit dem Kauf gespeichert, damit neben deinem Namen im Chat ein Flammen-Abzeichen erscheinen kann. Diese Angaben werden allen Embr-Nutzern veröffentlicht, damit deren App sie anzeigen kann. Dein Twitch-Token wird nur zur Bestätigung des Kontos verwendet und nicht gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miembro fundador\nMiembro fundador es una compra única y opcional a través de Apple que solo desbloquea aspectos visuales. Su registro de compra se trata como el de una propina. Si has iniciado sesión con Twitch, tu ID de usuario de Twitch se guarda con la compra, junto con tu número de fundador y el color de insignia y el estilo de nombre que elijas, para que aparezca una insignia de llama junto a tu nombre en el chat. Esos datos se publican para todas las personas que usan Embr, para que su app pueda mostrarlos. Tu token de Twitch se usa para confirmar la cuenta y no se conserva."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membre fondateur\nMembre fondateur est un achat unique et facultatif via Apple qui ne débloque que l'apparence. Son reçu d'achat est traité comme celui d'un pourboire. Si vous êtes connecté avec Twitch, votre identifiant d'utilisateur Twitch est enregistré avec l'achat, ainsi que votre numéro de fondateur et la couleur du badge et le style de nom que vous choisissez, afin qu'un badge flamme puisse apparaître à côté de votre nom dans le chat. Ces informations sont publiées auprès de tous les utilisateurs d'Embr pour que leur app puisse les afficher. Votre jeton Twitch sert une seule fois à confirmer le compte et n'est pas conservé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostenitore fondatore\nSostenitore fondatore è un acquisto facoltativo e una tantum tramite Apple che sblocca solo l'aspetto. La sua ricevuta d'acquisto è trattata come quella di una mancia. Se hai effettuato l'accesso con Twitch, il tuo ID utente Twitch viene salvato con l'acquisto insieme al tuo numero di fondatore, al colore del badge e allo stile del nome che scegli, così accanto al tuo nome in chat può comparire un badge a forma di fiamma. Queste informazioni vengono pubblicate per tutti gli utenti di Embr così che la loro app possa mostrarle. Il tuo token Twitch viene usato una sola volta per confermare l'account e non viene conservato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設サポーター\n創設サポーターは、見た目だけを解放する任意の一度きりの購入で、Appleを通じて行われます。購入記録はチップと同じように扱われます。Twitchでサインインしている場合、チャットであなたの名前の横に炎のバッジを表示できるよう、TwitchのユーザーID、創設番号、選んだバッジの色と名前のスタイルが購入と一緒に保存されます。これらは、各自のアプリでバッジを表示できるよう、Embrのすべての利用者に公開されます。Twitchのトークンはアカウントの確認のために使われ、保存されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 후원자\n창립 후원자는 Apple을 통해 이루어지는 선택적 일회성 구매로, 외관만 잠금 해제합니다. 구매 기록은 팁과 같은 방식으로 처리됩니다. Twitch로 로그인한 경우, 채팅에서 이름 옆에 불꽃 배지가 표시될 수 있도록 Twitch 사용자 ID, 창립 번호, 선택한 배지 색상과 이름 스타일이 구매와 함께 저장되며, 이 정보는 각자의 앱에서 표시할 수 있도록 Embr의 모든 사용자에게 공개됩니다. Twitch 토큰은 계정 확인에만 사용되며 보관되지 않습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Założycielski Wspierający\nZałożycielski Wspierający to opcjonalny jednorazowy zakup przez Apple, który odblokowuje tylko wygląd. Potwierdzenie zakupu jest traktowane tak samo jak przy napiwku. Jeśli jesteś zalogowany na Twitchu, twój identyfikator użytkownika Twitch jest zapisywany z zakupem, wraz z numerem założycielskim oraz wybranym kolorem odznaki i stylem nazwy, aby obok twojej nazwy na czacie mogła pojawić się odznaka płomienia. Są one publikowane wszystkim użytkownikom Embr, aby ich aplikacja mogła je pokazywać. Twój token Twitch jest używany jednorazowo do potwierdzenia konta i nie jest przechowywany."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apoiador Fundador\nApoiador Fundador é uma compra única e opcional feita pela Apple que libera apenas a aparência. O registro da compra é tratado como o de uma gorjeta. Se você estiver conectado à Twitch, seu ID de usuário da Twitch é salvo com a compra, junto com seu número de fundador e a cor do selo e o estilo de nome escolhidos, para que um selo de chama possa aparecer ao lado do seu nome no chat. Esses dados são publicados para todos que usam o Embr, para que o app deles possa mostrá-los. Seu token da Twitch é usado uma única vez para confirmar a conta e não é guardado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创始支持者\n创始支持者是通过 Apple 进行的可选一次性购买，只解锁外观。其购买记录的处理方式与打赏相同。如果你已用 Twitch 登录，你的 Twitch 用户 ID、创始编号，以及你选择的徽章颜色和昵称样式会与购买一起保存，以便在聊天中你的名字旁显示火焰徽章。这些信息会向所有使用 Embr 的用户公开，以便他们的 App 显示。你的 Twitch 令牌仅用于确认账户，不会被保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創始支持者\n創始支持者是透過 Apple 進行的選擇性一次性購買，只解鎖外觀。其購買紀錄的處理方式與贊助相同。如果你已用 Twitch 登入，你的 Twitch 使用者 ID、創始編號，以及你選擇的徽章顏色與名稱樣式會與購買一起儲存，讓聊天室中你的名字旁能顯示火焰徽章。這些資訊會向所有使用 Embr 的使用者公開，讓他們的 App 能顯示。你的 Twitch 權杖只會用來確認帳號，不會被保留。"
+          }
+        }
+      }
+    },
+    "Founding Supporter #%lld": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gründungsunterstützer #%lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miembro fundador #%lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membre fondateur #%lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sostenitore fondatore #%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設サポーター #%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 후원자 #%lld"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Założycielski Wspierający #%lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apoiador Fundador #%lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创始支持者 #%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創始支持者 #%lld"
           }
         }
       }
@@ -8237,6 +8943,70 @@
         }
       }
     },
+    "gg everyone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg an alle"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg a todos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg à tous"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg a tutti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg みんな"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg 다들"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg wszystkim"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg galera"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg 大家"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gg 大家"
+          }
+        }
+      }
+    },
     "GitHub": {
       "localizations": {
         "de": {
@@ -8425,6 +9195,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Globalne emotes"
+          }
+        }
+      }
+    },
+    "Glow": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leuchten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resplandor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lueur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagliore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "빛나기"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poświata"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brilho"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發光"
           }
         }
       }
@@ -9065,6 +9899,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zwiększ %@"
+          }
+        }
+      }
+    },
+    "Join %lld Founding Supporters. One purchase, yours on every device with your Apple Account.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werde einer von %lld Gründungsunterstützern. Ein Kauf, auf jedem Gerät mit deinem Apple-Account nutzbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Únete a %lld miembros fundadores. Una sola compra, tuya en todos tus dispositivos con tu cuenta de Apple."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejoignez %lld Membres fondateurs. Un seul achat, à vous sur tous vos appareils avec votre compte Apple."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unisciti a %lld Sostenitori fondatori. Un solo acquisto, tuo su tutti i dispositivi con il tuo Account Apple."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld人の創設サポーターに加わりましょう。一度の購入で、同じApple アカウントのすべてのデバイスで使えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld명의 창립 후원자와 함께하세요. 한 번만 구매하면 Apple 계정으로 로그인한 모든 기기에서 사용할 수 있습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołącz do %lld Założycielskich Wspierających. Jeden zakup, dostępny na każdym urządzeniu z kontem Apple."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Junte-se a %lld Apoiadores Fundadores. Uma compra, sua em todos os dispositivos com sua Conta Apple."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已有 %lld 位创始支持者加入。一次购买，使用你的 Apple 账户即可在每台设备上使用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已有 %lld 位創始支持者加入。一次購買，使用你的 Apple 帳號即可在每台裝置上使用。"
           }
         }
       }
@@ -9838,6 +10736,70 @@
         }
       }
     },
+    "Log in with Twitch in Settings to show your badge in chat.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich in den Einstellungen bei Twitch an, um dein Abzeichen im Chat zu zeigen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión con Twitch en Ajustes para mostrar tu insignia en el chat."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous avec Twitch dans les Réglages pour afficher votre badge dans le chat."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accedi con Twitch nelle Impostazioni per mostrare il tuo badge in chat."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定でTwitchにログインすると、チャットにバッジを表示できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정에서 Twitch에 로그인하면 채팅에 내 배지가 표시됩니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się na Twitchu w Ustawieniach, aby pokazać odznakę na czacie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre com a Twitch nos Ajustes para mostrar seu selo no chat."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在设置中登录 Twitch，即可在聊天中显示你的徽章。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在設定中登入 Twitch，即可在聊天中顯示你的徽章。"
+          }
+        }
+      }
+    },
     "Log Out": {
       "localizations": {
         "de": {
@@ -10542,6 +11504,136 @@
         }
       }
     },
+    "Midnight": {
+      "comment": "Theme and app icon name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitternacht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medianoche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minuit"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mezzanotte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ミッドナイト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미드나이트"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Północ"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meia-noite"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "午夜"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "午夜"
+          }
+        }
+      }
+    },
+    "Mono": {
+      "comment": "Chat font name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monospace"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monoespaciada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mono"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mono"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等幅"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고정 폭"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monospace"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monoespaçada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等宽"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等寬"
+          }
+        }
+      }
+    },
     "Mute": {
       "localizations": {
         "de": {
@@ -10730,6 +11822,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyciszone słowa kluczowe"
+          }
+        }
+      }
+    },
+    "Neon": {
+      "comment": "App icon name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neon"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neón"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Néon"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neon"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ネオン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "네온"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neon"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neon"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "霓虹"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "霓虹"
           }
         }
       }
@@ -12014,6 +13171,71 @@
         }
       }
     },
+    "OLED Black": {
+      "comment": "Theme name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OLED-Schwarz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Negro OLED"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noir OLED"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nero OLED"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OLED Black"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OLED Black"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czarny OLED"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preto OLED"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OLED 纯黑"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OLED 純黑"
+          }
+        }
+      }
+    },
     "On Twitch since %@": {
       "localizations": {
         "de": {
@@ -12074,6 +13296,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na Twitchu od %@"
+          }
+        }
+      }
+    },
+    "One purchase, yours on every device with your Apple Account. Founding numbers go in order and stay yours.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Kauf, auf jedem Gerät mit deinem Apple-Account nutzbar. Gründungsnummern werden der Reihe nach vergeben und gehören dir."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una sola compra, tuya en todos tus dispositivos con tu cuenta de Apple. Los números de fundador se asignan en orden y son tuyos para siempre."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un seul achat, à vous sur tous vos appareils avec votre compte Apple. Les numéros de fondateur sont attribués dans l'ordre et restent les vôtres."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un solo acquisto, tuo su tutti i dispositivi con il tuo Account Apple. I numeri di fondatore vengono assegnati in ordine e restano tuoi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一度の購入で、同じApple アカウントのすべてのデバイスで使えます。創設番号は購入順に付き、ずっとあなたのものです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 번만 구매하면 Apple 계정으로 로그인한 모든 기기에서 사용할 수 있습니다. 창립 번호는 순서대로 부여되며 계속 본인의 것으로 남습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden zakup, dostępny na każdym urządzeniu z kontem Apple. Numery założycielskie przydzielamy po kolei i zostają przy tobie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma compra, sua em todos os dispositivos com sua Conta Apple. Os números de fundador são dados em ordem e ficam com você."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次购买，使用你的 Apple 账户即可在每台设备上使用。创始编号按顺序发放，并永久归你所有。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次購買，使用你的 Apple 帳號即可在每台裝置上使用。創始編號依序發放，並永久屬於你。"
           }
         }
       }
@@ -12334,6 +13620,71 @@
         }
       }
     },
+    "Paper": {
+      "comment": "App icon name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papier"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ペーパー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "페이퍼"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papier"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Papel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "纸张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紙張"
+          }
+        }
+      }
+    },
     "Pause": {
       "localizations": {
         "de": {
@@ -12522,6 +13873,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Obraz w obrazie"
+          }
+        }
+      }
+    },
+    "Pixel": {
+      "comment": "App icon name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pixel"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Píxel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pixel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pixel"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ピクセル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "픽셀"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piksel"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pixel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "像素"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "像素"
           }
         }
       }
@@ -14126,6 +15542,71 @@
         }
       }
     },
+    "Rounded": {
+      "comment": "Chat font name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abgerundet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redondeada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrondie"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrotondato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SF Rounded"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SF Rounded"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaokrąglona"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arredondada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圆体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圓體"
+          }
+        }
+      }
+    },
     "Safety & Moderation": {
       "localizations": {
         "de": {
@@ -14890,6 +16371,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nadawca ma timeout"
+          }
+        }
+      }
+    },
+    "Serif": {
+      "comment": "Chat font name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "セリフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "세리프"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szeryfowa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serifada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "衬线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "襯線"
           }
         }
       }
@@ -16046,6 +17592,71 @@
         }
       }
     },
+    "Standard": {
+      "comment": "Theme and chat font name",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estándar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "표준"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardowy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标准"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準"
+          }
+        }
+      }
+    },
     "Stream quality, autoplay, and how chat stays in sync with the video.": {
       "localizations": {
         "de": {
@@ -16366,6 +17977,70 @@
         }
       }
     },
+    "Supporter Name Colors": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farben der Unterstützer-Namen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colores de nombre de miembros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couleurs des noms des membres"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colori dei nomi dei sostenitori"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サポーターの名前の色"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "후원자 이름 색상"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kolory nazw wspierających"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cores de nome dos apoiadores"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持者昵称颜色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "支持者名稱顏色"
+          }
+        }
+      }
+    },
     "Supporting your streamer still matters": {
       "localizations": {
         "de": {
@@ -16490,6 +18165,326 @@
           "stringUnit": {
             "state": "translated",
             "value": "System"
+          }
+        }
+      }
+    },
+    "Thank you for keeping Embr going. Everything here is yours to change any time.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke, dass du Embr am Laufen hältst. Alles hier kannst du jederzeit ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gracias por mantener Embr en marcha. Todo lo que ves aquí es tuyo para cambiarlo cuando quieras."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci de faire vivre Embr. Tout ici vous appartient, à modifier à tout moment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grazie per aiutare Embr ad andare avanti. Tutto qui è tuo: puoi cambiarlo quando vuoi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrを支えてくれてありがとうございます。ここにあるものは、いつでも変更できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr를 계속 운영할 수 있도록 도와주셔서 감사합니다. 여기의 모든 것은 언제든지 바꿀 수 있습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziękujemy, że wspierasz Embr. Wszystko tutaj możesz zmienić w dowolnym momencie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrigado por manter o Embr funcionando. Tudo aqui é seu para mudar quando quiser."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "感谢你支持 Embr 持续发展。这里的一切都可以随时更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "感謝你支持 Embr 持續發展。這裡的一切都可以隨時更改。"
+          }
+        }
+      }
+    },
+    "Thank you. Change your theme, colors, chat font and badge any time.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danke. Ändere Erscheinungsbild, Farben, Chat-Schrift und Abzeichen jederzeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gracias. Cambia tu tema, colores, fuente del chat e insignia cuando quieras."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci. Modifiez votre thème, vos couleurs, la police du chat et votre badge à tout moment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grazie. Cambia tema, colori, font della chat e badge quando vuoi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ありがとうございます。テーマ、色、チャットフォント、バッジはいつでも変更できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "감사합니다. 테마, 색상, 채팅 글꼴, 배지는 언제든지 바꿀 수 있습니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziękujemy. Motyw, kolory, czcionkę czatu i odznakę zmienisz w dowolnym momencie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrigado. Você pode mudar o tema, as cores, a fonte do chat e o selo a qualquer momento."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "谢谢你。可随时更改主题、颜色、聊天字体和徽章。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "謝謝你。可隨時更改主題、顏色、聊天字體和徽章。"
+          }
+        }
+      }
+    },
+    "that clutch was unreal": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "der Clutch war unreal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "qué clutch tan increíble"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ce clutch était abusé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "che clutch pazzesco"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あのクラッチ、ヤバすぎ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그 클러치 미쳤다"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ten clutch był nieziemski"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aquele clutch foi insano"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这波操作太离谱了"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這波操作太猛了"
+          }
+        }
+      }
+    },
+    "Themes, app icons, chat fonts and a badge everyone sees.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Designs, App-Symbole, Chat-Schriften und ein Abzeichen, das alle sehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas, iconos de app, fuentes del chat y una insignia que todos ven."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thèmes, icônes d'app, polices du chat et un badge visible de tous."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temi, icone dell'app, font della chat e un badge visibile a tutti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テーマ、Appアイコン、チャットフォント、みんなに見えるバッジ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "테마, 앱 아이콘, 채팅 글꼴, 모두에게 보이는 배지."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motywy, ikony aplikacji, czcionki czatu i odznaka widoczna dla wszystkich."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas, ícones do app, fontes do chat e um selo que todo mundo vê."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题、App 图标、聊天字体，以及所有人都能看到的徽章。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題、App 圖示、聊天字體，以及所有人都看得到的徽章。"
+          }
+        }
+      }
+    },
+    "Twitch Color": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch-Farbe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color de Twitch"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couleur Twitch"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colore Twitch"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitchの色"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch 색상"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kolor z Twitcha"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cor da Twitch"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch 颜色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twitch 顏色"
           }
         }
       }
@@ -19252,6 +21247,70 @@
         }
       }
     },
+    "You": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tú"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなた"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ty"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你"
+          }
+        }
+      }
+    },
     "You can't send messages here": {
       "localizations": {
         "de": {
@@ -19440,6 +21499,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wrócisz do przeglądania jako gość."
+          }
+        }
+      }
+    },
+    "Your themes, icons, chat font and badge.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Designs, Symbole, Chat-Schrift und Abzeichen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus temas, iconos, fuente del chat e insignia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos thèmes, icônes, police du chat et badge."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I tuoi temi, icone, font della chat e badge."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたのテーマ、アイコン、チャットフォント、バッジ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 테마, 아이콘, 채팅 글꼴과 배지."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje motywy, ikony, czcionka czatu i odznaka."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seus temas, ícones, fonte do chat e selo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的主题、图标、聊天字体和徽章。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的主題、圖示、聊天字體和徽章。"
           }
         }
       }
@@ -31881,71 +34004,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "留在你裝置上的內容\n你的設定、觀看紀錄，以及已封鎖或隱藏的使用者只會儲存在你的裝置上。你加上星號的頻道也會保存在你自己的 iCloud 帳號中，讓它們出現在登入同一帳號的其他裝置上；開發者永遠看不到它們。診斷紀錄會寫入 App 的私有儲存空間，除非你主動選擇分享，否則不會離開你的裝置。"
-          }
-        }
-      }
-    },
-    "Founding Supporter\nFounding Supporter is an optional one-time purchase through Apple that unlocks only looks. Its purchase record is handled like a tip's. If you are signed in with Twitch, your Twitch user id is stored with the purchase so a flame badge can appear beside your name in chat, and that user id is published to everyone using Embr so their app can show the badge. Your Twitch token is used once to confirm the account and is not kept.": {
-      "comment": "Privacy policy section",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gründungsunterstützer\nGründungsunterstützer ist ein optionaler einmaliger Kauf über Apple, der nur das Aussehen freischaltet. Der Kaufbeleg wird wie bei einem Trinkgeld behandelt. Wenn du mit Twitch angemeldet bist, wird deine Twitch-Nutzer-ID mit dem Kauf gespeichert, damit neben deinem Namen im Chat ein Flammen-Abzeichen erscheinen kann, und diese Nutzer-ID wird für alle Embr-Nutzer veröffentlicht, damit ihre App das Abzeichen anzeigen kann. Dein Twitch-Token wird einmal zur Bestätigung des Accounts verwendet und nicht aufbewahrt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Miembro fundador\nMiembro fundador es una compra única y opcional a través de Apple que solo desbloquea aspectos visuales. Su registro de compra se trata como el de una propina. Si has iniciado sesión con Twitch, tu ID de usuario de Twitch se guarda con la compra para que aparezca una insignia de llama junto a tu nombre en el chat, y ese ID se publica para todas las personas que usan Embr, de modo que su app pueda mostrar la insignia. Tu token de Twitch se usa una vez para confirmar la cuenta y no se conserva."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Membre fondateur\nMembre fondateur est un achat unique et facultatif via Apple qui ne débloque que l'apparence. Son reçu d'achat est traité comme celui d'un pourboire. Si vous êtes connecté avec Twitch, votre identifiant d'utilisateur Twitch est enregistré avec l'achat pour qu'un badge flamme apparaisse à côté de votre nom dans le chat, et cet identifiant est publié auprès de tous les utilisateurs d'Embr pour que leur app puisse afficher le badge. Votre jeton Twitch sert une seule fois à confirmer le compte et n'est pas conservé."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sostenitore fondatore\nSostenitore fondatore è un acquisto facoltativo una tantum tramite Apple che sblocca solo l'aspetto. La sua ricevuta d'acquisto è trattata come quella di una mancia. Se hai effettuato l'accesso con Twitch, il tuo ID utente Twitch viene salvato con l'acquisto affinché accanto al tuo nome in chat compaia un badge a forma di fiamma, e quell'ID utente viene pubblicato per tutti gli utenti di Embr così che la loro app possa mostrare il badge. Il tuo token Twitch viene usato una sola volta per confermare l'account e non viene conservato."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "創設サポーター\n創設サポーターは、見た目だけを解放する任意の買い切り購入で、Appleを通じて行われます。購入記録はチップと同じように扱われます。Twitchでサインインしている場合、チャットであなたの名前の横に炎のバッジを表示できるよう、TwitchのユーザーIDが購入と一緒に保存されます。このユーザーIDは、各自のアプリでバッジを表示できるよう、Embrのすべての利用者に公開されます。Twitchのトークンはアカウントの確認のために一度だけ使われ、保存されません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "창립 후원자\n창립 후원자는 Apple을 통한 선택적 일회성 구매로, 외관만 잠금 해제합니다. 구매 기록은 팁과 동일하게 처리됩니다. Twitch로 로그인한 경우 채팅에서 이름 옆에 불꽃 배지가 표시될 수 있도록 Twitch 사용자 ID가 구매와 함께 저장되며, 이 사용자 ID는 각자의 앱에서 배지를 표시할 수 있도록 모든 Embr 사용자에게 공개됩니다. Twitch 토큰은 계정 확인을 위해 한 번만 사용되며 보관되지 않습니다."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Założycielski Wspierający\nZałożycielski Wspierający to opcjonalny jednorazowy zakup przez Apple, który odblokowuje tylko wygląd. Potwierdzenie zakupu jest traktowane tak samo jak przy napiwku. Jeśli zalogujesz się przez Twitch, Twój identyfikator użytkownika Twitch zostanie zapisany wraz z zakupem, aby obok Twojej nazwy na czacie mogła pojawić się odznaka płomienia, a ten identyfikator jest publikowany dla wszystkich użytkowników Embr, aby ich aplikacja mogła wyświetlić odznakę. Twój token Twitch jest użyty raz do potwierdzenia konta i nie jest przechowywany."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apoiador Fundador\nApoiador Fundador é uma compra única e opcional feita pela Apple que libera apenas a aparência. O registro da compra é tratado como o de uma gorjeta. Se você estiver conectado com a Twitch, seu ID de usuário da Twitch é salvo com a compra para que um selo de chama apareça ao lado do seu nome no chat, e esse ID é publicado para todos que usam o Embr, para que o app deles possa mostrar o selo. Seu token da Twitch é usado uma única vez para confirmar a conta e não é guardado."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "创始支持者\n创始支持者是通过 Apple 进行的可选一次性购买，只解锁外观。其购买记录的处理方式与打赏相同。如果你已用 Twitch 登录，你的 Twitch 用户 ID 会与购买一起保存，以便在聊天中你的名字旁显示火焰徽章；该用户 ID 会向所有 Embr 用户公开，以便他们的 App 显示徽章。你的 Twitch 令牌仅用于确认账户一次，不会被保留。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "創始支持者\n創始支持者是透過 Apple 進行的選擇性一次性購買，只會解鎖外觀。其購買紀錄的處理方式與贊助相同。如果你已用 Twitch 登入，你的 Twitch 使用者 ID 會與購買一起儲存，讓聊天室中你的名字旁能顯示火焰徽章；該使用者 ID 會向所有 Embr 使用者公開，讓他們的 App 能顯示徽章。你的 Twitch 權杖只會用來確認帳號一次，不會被保留。"
           }
         }
       }

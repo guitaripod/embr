@@ -82,9 +82,9 @@ enum LegalText {
     Founding Supporter
     Founding Supporter is an optional one-time purchase through Apple that unlocks only looks. Its \
     purchase record is handled like a tip's. If you are signed in with Twitch, your Twitch user id is \
-    stored with the purchase so a flame badge can appear beside your name in chat, and that user id is \
-    published to everyone using Embr so their app can show the badge. Your Twitch token is used once to \
-    confirm the account and is not kept.
+    stored with the purchase, your founding number and the badge color and name style you pick, so a \
+    flame badge can appear beside your name in chat. Those are published to everyone using Embr so \
+    their app can show them. Your Twitch token is used to confirm the account and is not kept.
     """)
 
     private static let privacyMoreApps = String(localized: """
