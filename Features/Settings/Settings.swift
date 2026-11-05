@@ -45,6 +45,22 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var accent: String?
 
+    var tvChatVisible: Bool?
+    var tvChatPlacement: ChatPlacement?
+    var tvChatTextSize: ChatTextSize?
+    var livePreviews: Bool?
+
+    enum ChatPlacement: String, Codable, Sendable, Equatable, CaseIterable {
+        case right
+        case left
+    }
+
+    enum ChatTextSize: String, Codable, Sendable, Equatable, CaseIterable {
+        case small
+        case medium
+        case large
+    }
+
     static let `default` = Settings(
         theme: .system,
         showTimestamps: false,
@@ -96,6 +112,22 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var mutedKeywordList: [String] {
         mutedKeywords ?? []
+    }
+
+    var tvChatVisibleEnabled: Bool {
+        tvChatVisible ?? true
+    }
+
+    var tvChatPlacementPreference: ChatPlacement {
+        tvChatPlacement ?? .right
+    }
+
+    var tvChatTextSizePreference: ChatTextSize {
+        tvChatTextSize ?? .medium
+    }
+
+    var livePreviewsEnabled: Bool {
+        livePreviews ?? true
     }
 
     /// The content filter derived from current settings. The severe-slur list is active

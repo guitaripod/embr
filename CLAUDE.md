@@ -1,13 +1,15 @@
 # Embr — Agent Instructions
 
-Native UIKit iOS Twitch client (browse + watch + chat), with a Cloudflare Worker backend for OAuth and HLS resolution. Personal / sideload target.
+Native UIKit Twitch client for iPhone, iPad and Apple TV (browse + watch + chat), with a Cloudflare Worker backend for OAuth, HLS resolution and the Founding Supporter badges. One App Store record, universal purchase.
 
 See `CONTRACTS.md` for the authoritative architecture, type names, and module map. This file is the working guide.
 
 ## Stack
 
 - **EmbrCore** (`Core/EmbrCore/Sources/EmbrCore`): platform-agnostic Swift 6 logic — models, IRC/EventSub parsing, emote merge, HLS handling, Helix request specs, OAuth DTOs. **Compiles and tests on Linux and macOS.** No UIKit/AVFoundation/Combine/Security imports.
-- **Embr** (`App/`, `Features/`, `Resources/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone-only. Darwin-only — build on a Mac.
+- **Embr** (`App/`, `Features/`, `Resources/`, xcodegen): programmatic UIKit, MVVM with Combine `PassthroughSubject`, GRDB, Swift 6 strict concurrency, iOS 18+, iPhone and iPad. Darwin-only — build on a Mac.
+- **EmbrTV** (`TV/`, tvOS 18+, same bundle id): the Apple TV app. It compiles the shared services, chat engine, `HLSVideoPlayer` and settings straight from `App/` and `Features/` (the list is in `project.yml`); platform differences are `#if os(tvOS)` in those files. Plays in the system `AVPlayerViewController` (PiP and swap, Info tab, transport-bar menus, custom overlay, contextual actions) with chat in `contentOverlayView`. `EmbrTopShelf` (`TopShelf/`, bundle `com.guitaripod.embr.topshelf`) is the Top Shelf carousel; it reads the app's snapshot from a keychain item in the `com.guitaripod.embr.shelf` group (`ShelfShared/`) and looks up who is live itself.
+- **Shared/** (both apps): Founding Supporter (`SupporterStore`, `SupporterDirectory`, `SupporterAccent`) and `FavoritesSync`.
 - **services/embr** (Worker `embr`; `services/embr-demo-mail` is the App Review mail helper): Cloudflare Workers (Hono, KV). OAuth code exchange/refresh, app-token minting, HLS playlist resolution + proxy. TypeScript, vitest.
 - **MidgarKit** (from the monorepo's `packages/MidgarKit` by path, `project.yml`, decision D15): `MidgarCore` (logging, HTTP, Midgar ID), `MidgarCommerce` (the tips), `MidgarUI` (version info), `MidgarPortal` (the More Apps card). `EmbrMidgar` (`App/EmbrMidgar.swift`) is the composition root for all of it.
 
@@ -15,9 +17,12 @@ See `CONTRACTS.md` for the authoritative architecture, type names, and module ma
 
 - **Worker behind the gateway.** Every API request to Embr's worker goes to `https://api.midgarcorp.cc/v1/embr/...` through `MidgarGatewayTransport` (MidgarCore.HTTP, `X-App-ID: embr`). The client for it carries no Midgar ID and no `Authorization`: the worker reads no credential. The gateway sends `X-Forwarded-Prefix: /v1/embr`, and the worker builds its HLS proxy links from it. `/hls/proxy`, `/embed` and `/auth/callback` are public gateway calls (AVPlayer, the web view and Twitch cannot send `X-App-ID`).
 - **Twitch redirect URI** stays `https://embr.guitaripod.workers.dev/auth/callback` (`Configuration.twitchRedirectURI`), the one registered in the Twitch console. It is a browser navigation inside `ASWebAuthenticationSession`, not an app network call, so it needs neither the gateway nor an ATS exception. It is the only place that host appears in the app; changing it needs a console change first.
-- **Tips** are consumables bought through `MidgarStore` in `Mode.purchases` (`TipJarStore`): bought, finished and reported to the ledger with the Midgar ID. They unlock nothing, so `entitlementsByProduct` is empty.
+- **Purchases** go through one `MidgarStore` (`EmbrMidgar.commerce`) in `Mode.purchases`: the three tip consumables (`TipJarStore`, unlock nothing) and the Founding Supporter non-consumable (`SupporterStore`, entitlement `supporter`). Founding Supporter unlocks only looks: accent colors (`SupporterAccent` behind `Theme.accent`), alternate iPhone icons and a chat badge. Nothing about watching or chat may ever sit behind it (Twitch's developer agreement forbids charging for watching).
+- **Supporter badge.** `SupporterStore` posts the signed transaction and the Twitch token once to `POST /supporters/claim`; the worker verifies the JWS to Apple Root CA G3 and the token with Twitch (client id must be Embr's), then stores `supporter:<twitchUserID>`. Every app reads `GET /supporters` (`SupporterDirectory`) and `MessageLayout` appends the flame badge. The token travels in the body, is read once and never stored; this is the one worker route that reads a credential.
+- **Favorites sync** through iCloud key-value storage (`FavoritesSync`, `FavoritesLedger` in EmbrCore: later add or removal wins per channel). The Apple TV keeps its database in Caches (tvOS keeps nothing else), so the ledger restores the favorites if the system purges it.
+- **Apple TV sign-in** is Twitch's device code flow (`DeviceAuthorization`, `TVSignInViewController`, `AuthService.completeDeviceLogin`), straight from the TV to `id.twitch.tv` with the client id and no secret; refresh goes through the worker like every session. The TV app runs as the current tvOS user (`com.apple.developer.user-management`), so each person has their own sign-in and favorites.
 - **Midgar ID** starts at launch (`EmbrMidgar.start()`), in the team keychain group `cc.midgarcorp.shared`. The app's own group stays first in the entitlements so the Twitch tokens already in the Keychain keep resolving. A test host and a DEBUG demo capture start nothing and reach no Midgar service.
-- **Privacy** is declared in `Resources/PrivacyInfo.xcprivacy`, `store/privacy-label.md` and `web/midgarcorp/src/content/legal/embr/`: Midgar ID (User ID, linked), tips (Purchase History, linked), reports (Other User Content, not linked), More Apps (Product Interaction, not linked). Change one and change all three plus `LegalText.privacy`.
+- **Privacy** is declared in `Resources/PrivacyInfo.xcprivacy`, `store/privacy-label.md` and `web/midgarcorp/src/content/legal/embr/`: Midgar ID and a supporter's Twitch user id (User ID, linked), tips and Founding Supporter (Purchase History, linked), reports (Other User Content, not linked), More Apps (Product Interaction, not linked). Change one and change all three plus `LegalText.privacy` (one localized string per section).
 - **Review prompt** is `MidgarReviewPolicy` (`ReviewPrompt`); the success is 3 minutes of a confirmed live stream.
 
 ## Code style (non-negotiable)
@@ -60,6 +65,17 @@ export EMBR_BUNDLE_ID=com.guitaripod.embr EMBR_TEAM_ID=P4DQK6SRKR
 xcodegen generate
 xcodebuild test -project Embr.xcodeproj -scheme Embr -destination 'platform=iOS Simulator,id=<udid>' CODE_SIGNING_ALLOWED=NO
 ```
+
+### Apple TV app (Mac only)
+
+```bash
+scripts/tv-build.sh                 # simulator build (default) or: scripts/tv-build.sh device
+xcodebuild test -project Embr.xcodeproj -scheme EmbrTV -destination 'platform=tvOS Simulator,id=<udid>' CODE_SIGNING_ALLOWED=NO
+```
+
+`EmbrTVUITests` drives the Siri Remote (`XCUIRemote`) through browsing, the player, settings and sign-in and attaches a screenshot of each screen. App Store and review captures use the invented world: launch with `-embrDemo -tvRoute following|favorites|browse|player|multiview|channel|supporter|supporterowned|signin` (DEBUG only, `TV/App/TVScreenshotRoute.swift`). Device builds sign Debug with the `Embr tvOS Development` and `Embr Top Shelf Development` profiles (`~/.config/midgar/signing/`).
+
+Brand art (TV layered icon, Top Shelf images, supporter badge, supporters' iPhone icons) is rendered by `swift scripts/render-brand-art.swift <dir>`.
 
 ### Worker
 

@@ -5,9 +5,9 @@ enum Theme {
     /// Violet, or the accent a Founding Supporter picked.
     static var accent: UIColor { SupporterAccent.current.color }
 
-    static let background = dynamic(light: .systemBackground, dark: UIColor(white: 0.07, alpha: 1.0))
-    static let surface = dynamic(light: .secondarySystemBackground, dark: UIColor(white: 0.12, alpha: 1.0))
-    static let surfaceElevated = dynamic(light: .systemBackground, dark: UIColor(white: 0.16, alpha: 1.0))
+    static let background = dynamic(light: lightBackground, dark: UIColor(white: 0.07, alpha: 1.0))
+    static let surface = dynamic(light: lightSurface, dark: UIColor(white: 0.12, alpha: 1.0))
+    static let surfaceElevated = dynamic(light: lightBackground, dark: UIColor(white: 0.16, alpha: 1.0))
 
     static let primaryText = UIColor.label
     static let secondaryText = UIColor.secondaryLabel
@@ -70,5 +70,22 @@ enum Theme {
             brightness = min(brightness, 0.7)
         }
         return UIColor(hue: hue, saturation: saturation, brightness: brightness, alpha: alpha)
+    }
+
+    /// The light-mode page color. tvOS has no system background colors, so it gets the gray the system draws behind apps.
+    private static var lightBackground: UIColor {
+        #if os(tvOS)
+        UIColor(white: 0.92, alpha: 1.0)
+        #else
+        .systemBackground
+        #endif
+    }
+
+    private static var lightSurface: UIColor {
+        #if os(tvOS)
+        UIColor(white: 0.86, alpha: 1.0)
+        #else
+        .secondarySystemBackground
+        #endif
     }
 }

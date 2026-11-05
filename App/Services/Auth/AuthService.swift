@@ -98,7 +98,9 @@ actor AuthService: AuthControlling {
     private func wipePersonalData() async {
         await DatabaseManager.shared.wipePersonalData()
         await WatchHistoryStore.shared.clear()
+        #if os(iOS)
         await FollowedLiveService.shared.reset()
+        #endif
     }
 
     func validAccessToken() async throws -> String {
@@ -183,6 +185,7 @@ actor AuthService: AuthControlling {
         return try await awaitValue(from: task, signOutOnDefinitiveFailure: false)
     }
 
+    #if os(iOS)
     @MainActor
     func login(presentationAnchor: ASPresentationAnchor) async throws -> AuthenticatedUser {
         let request = try await prepareLogin()
@@ -198,6 +201,32 @@ actor AuthService: AuthControlling {
             throw APIError.invalidRequest("login callback missing code")
         }
         return try await completeLogin(code: code, redirectURI: request.redirectURI)
+    }
+    #endif
+
+    /// Finishes a sign-in made with Twitch's device code on another screen (the Apple TV): the token Twitch handed the
+    /// poll becomes the session like a browser sign-in's, refreshed later through the worker.
+    func completeDeviceLogin(_ token: DeviceAuthorization.Token) async throws -> AuthenticatedUser {
+        let validation = try await validate(accessToken: token.accessToken)
+        guard let userID = validation.userID, let login = validation.login else {
+            throw APIError.invalidRequest("device token carries no user")
+        }
+        let stored = StoredCredentials(
+            userID: userID,
+            login: login,
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiresAt: Date().addingTimeInterval(TimeInterval(validation.expiresIn)),
+            scopes: validation.scopes.isEmpty ? (token.scope ?? DeviceAuthorization.scopes) : validation.scopes
+        )
+        loadedFromStore = true
+        credentials = stored
+        await store.save(stored)
+        let user = Self.user(from: stored)
+        publish(.authenticated(user))
+        startPeriodicValidation()
+        MidgarLog.info("logged in with a device code as \(user.login)", category: .auth)
+        return user
     }
 
     private struct LoginRequest: Sendable {

@@ -1,5 +1,6 @@
 import UIKit
 
+#if os(iOS)
 @MainActor
 enum Haptics {
     static func selection(_ store: SettingsStore = .shared) {
@@ -17,3 +18,4 @@ enum Haptics {
         UINotificationFeedbackGenerator().notificationOccurred(type)
     }
 }
+#endif

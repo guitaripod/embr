@@ -57,10 +57,10 @@ final class FavoritesStore {
         return true
     }
 
-    func add(id: String, login: String, name: String) {
+    func add(id: String, login: String, name: String, addedAt: Date = Date()) {
         guard !id.isEmpty, !login.isEmpty, !isFavorite(id) else { return }
-        let channel = FavoriteChannel(id: id, login: login, name: name, addedAt: Date())
-        apply([channel] + channels)
+        let channel = FavoriteChannel(id: id, login: login, name: name, addedAt: addedAt)
+        apply(([channel] + channels).sorted { $0.addedAt > $1.addedAt })
         let record = JoinedChannelRecord(broadcasterID: id, login: login, displayName: name, addedAt: channel.addedAt)
         Task { await database.addFavoriteChannel(record) }
         MidgarLog.info("favorited \(login)", category: .persistence)

@@ -25,7 +25,7 @@ final class DatabaseManager: Sendable {
     private static func openDefaultQueue() -> DatabaseQueue {
         do {
             let support = try FileManager.default.url(
-                for: .applicationSupportDirectory,
+                for: persistentDirectory,
                 in: .userDomainMask,
                 appropriateFor: nil,
                 create: true
@@ -37,6 +37,17 @@ final class DatabaseManager: Sendable {
             MidgarLog.error("failed to open database, using in-memory: \(error)", category: .persistence)
             return try! DatabaseQueue()
         }
+    }
+
+    /// Where the database lives. tvOS keeps nothing but a few hundred kilobytes of defaults between launches, so the
+    /// Apple TV stores it in Caches; the favorites in it are also in iCloud (`FavoritesSync`), which restores them if
+    /// the system ever purges the file.
+    private static var persistentDirectory: FileManager.SearchPathDirectory {
+        #if os(tvOS)
+        .cachesDirectory
+        #else
+        .applicationSupportDirectory
+        #endif
     }
 
     private static var migrator: DatabaseMigrator {

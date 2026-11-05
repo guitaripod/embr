@@ -38,6 +38,13 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?
 
+    /// The player itself, for `AVPlayerViewController` on Apple TV, which draws the video and the transport controls.
+    var avPlayer: AVPlayer { player }
+
+    /// Runs on every item this player creates (a load, a quality swap, a restore), so the Apple TV player can give each
+    /// one its title and artwork for the info panel.
+    var itemConfigurator: ((AVPlayerItem) -> Void)?
+
     private let playerView = PlayerView()
     private let player = AVPlayer()
     private let stateSubject = CurrentValueSubject<VideoState, Never>(.idle)
@@ -339,6 +346,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private func attach(_ item: AVPlayerItem) {
         detachObservers()
         currentItem = item
+        itemConfigurator?(item)
         liveLatencyConfigured = false
         item.preferredPeakBitRate = peakBitRate(for: currentQuality)
 
@@ -508,13 +516,16 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         item.configuredTimeOffsetFromLive = CMTime(seconds: target, preferredTimescale: 600)
     }
 
+    /// tvOS gets picture in picture from `AVPlayerViewController`, so the inline controller is iOS only.
     private func configurePictureInPicture() {
+        #if os(iOS)
         guard AVPictureInPictureController.isPictureInPictureSupported() else {
             MidgarLog.info("HLS PiP unsupported on device", category: .playback)
             return
         }
         pictureInPictureController = AVPictureInPictureController(playerLayer: playerView.playerLayer)
         pictureInPictureController?.canStartPictureInPictureAutomaticallyFromInline = true
+        #endif
     }
 
     private func configureAudioSession() {

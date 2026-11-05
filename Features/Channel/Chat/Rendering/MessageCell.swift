@@ -6,6 +6,9 @@ final class MessageCell: UICollectionViewCell {
     static let reuseID = "MessageCell"
 
     private let textLabel = UILabel()
+    #if os(tvOS)
+    private let textCanvas = LaidOutTextView()
+    #endif
     private let replyPreview = ReplyPreviewView()
     private let highlightView = UIView()
 
@@ -36,6 +39,10 @@ final class MessageCell: UICollectionViewCell {
         textLabel.numberOfLines = 0
         textLabel.isUserInteractionEnabled = false
         contentView.addSubview(textLabel)
+        #if os(tvOS)
+        textLabel.isHidden = true
+        contentView.addSubview(textCanvas)
+        #endif
 
         replyPreview.isHidden = true
         contentView.addSubview(replyPreview)
@@ -60,7 +67,9 @@ final class MessageCell: UICollectionViewCell {
 
     @objc private func handleSwipeReply() {
         guard onSwipeReply != nil else { return }
+        #if os(iOS)
         Haptics.impact(.light)
+        #endif
         UIView.animate(withDuration: 0.12, animations: {
             self.contentView.transform = self.contentView.transform.concatenating(CGAffineTransform(translationX: 16, y: 0))
         }, completion: { _ in
@@ -130,6 +139,10 @@ final class MessageCell: UICollectionViewCell {
             textLabel.attributedText = muted
             contentView.alpha = 0.4
         }
+
+        #if os(tvOS)
+        textCanvas.attributedText = textLabel.attributedText
+        #endif
 
         if let reply = message.reply {
             replyPreview.isHidden = false
@@ -292,6 +305,9 @@ final class MessageCell: UICollectionViewCell {
             width: bounds.width - laidOut.textOrigin.x - 8,
             height: laidOut.height - laidOut.textOrigin.y - 4
         )
+        #if os(tvOS)
+        textCanvas.frame = CGRect(origin: textLabel.frame.origin, size: CGSize(width: laidOut.textWidth, height: textLabel.frame.height))
+        #endif
 
         for (index, placement) in laidOut.emotePlacements.enumerated() where index < emoteViews.count {
             emoteViews[index].frame = placement.frame
@@ -321,6 +337,9 @@ final class MessageCell: UICollectionViewCell {
             view.isHidden = true
         }
         textLabel.attributedText = nil
+        #if os(tvOS)
+        textCanvas.attributedText = nil
+        #endif
         replyPreview.isHidden = true
         highlightView.isHidden = true
         contentView.alpha = 1

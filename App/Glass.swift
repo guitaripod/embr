@@ -7,13 +7,13 @@ enum Glass {
     /// `contentView`, or place it behind sibling content.
     static func view(cornerRadius: CGFloat = 0, tint: UIColor? = nil, interactive: Bool = false) -> UIVisualEffectView {
         let effectView: UIVisualEffectView
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, tvOS 26.0, *) {
             let glass = UIGlassEffect()
             glass.tintColor = tint
             glass.isInteractive = interactive
             effectView = UIVisualEffectView(effect: glass)
         } else {
-            effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterialDark))
+            effectView = UIVisualEffectView(effect: UIBlurEffect(style: fallbackBlurStyle))
             if let tint {
                 effectView.contentView.backgroundColor = tint.withAlphaComponent(0.18)
             }
@@ -30,7 +30,16 @@ enum Glass {
     /// Whether real Liquid Glass is available; useful to drop opaque fills that
     /// would otherwise defeat the translucency.
     static var isAvailable: Bool {
-        if #available(iOS 26.0, *) { return true }
+        if #available(iOS 26.0, tvOS 26.0, *) { return true }
         return false
+    }
+
+    /// The material behind glass on systems before Liquid Glass. tvOS has no chrome materials.
+    private static var fallbackBlurStyle: UIBlurEffect.Style {
+        #if os(tvOS)
+        .dark
+        #else
+        .systemChromeMaterialDark
+        #endif
     }
 }

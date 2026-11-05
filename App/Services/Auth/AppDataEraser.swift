@@ -22,7 +22,9 @@ struct AppDataEraser: LocalDataErasing {
         SettingsStore.shared.reset()
         WatchHistoryStore.shared.clear()
         FavoritesStore.shared.reset()
+        #if os(iOS)
         FollowedLiveService.shared.reset()
+        #endif
     }
 
     /// Removing the whole persistent domain also drops the onboarding flag, which is what
@@ -33,9 +35,11 @@ struct AppDataEraser: LocalDataErasing {
     }
 
     private func clearNotifications() {
+        #if os(iOS)
         let center = UNUserNotificationCenter.current()
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
+        #endif
     }
 
     private func clearCaches() async {

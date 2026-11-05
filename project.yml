@@ -51,6 +51,7 @@ targets:
       path: App/Embr.entitlements
       properties:
         keychain-access-groups: *midgarKeychainGroups
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.guitaripod.embr
@@ -70,6 +71,10 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_USER_SCRIPT_SANDBOXING: YES
       configs:
+        Debug:
+          CODE_SIGN_STYLE[sdk=iphoneos*]: Manual
+          CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]: "Embr Development"
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
@@ -154,6 +159,209 @@ targets:
         DEVELOPMENT_TEAM: P4DQK6SRKR
         CODE_SIGN_STYLE: Automatic
 
+  EmbrTV:
+    type: application
+    platform: tvOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: TV
+        excludes:
+          - "Info.plist"
+          - "EmbrTV.entitlements"
+      - path: Shared
+      - path: ShelfShared
+      - path: App/Services
+        excludes:
+          - "Auth/TwitchLoginCoordinator.swift"
+          - "FollowedLiveService.swift"
+          - "LiveSidebarModel.swift"
+      - path: App/Demo
+      - path: App/AppContainer.swift
+      - path: App/EmbrMidgar.swift
+      - path: App/LogCategories.swift
+      - path: App/Theme.swift
+      - path: App/Haptics.swift
+      - path: App/Motion.swift
+      - path: App/Glass.swift
+      - path: App/Secrets.swift
+      - path: Features/Settings/Settings.swift
+      - path: Features/Settings/SettingsStore.swift
+      - path: Features/Channel/Chat/ChatRoom.swift
+      - path: Features/Channel/Chat/ChatRow.swift
+      - path: Features/Channel/Chat/ChatViewModel.swift
+      - path: Features/Channel/Chat/EventSubChatSource.swift
+      - path: Features/Channel/Chat/IRCChatSource.swift
+      - path: Features/Channel/Chat/VODChatSource.swift
+      - path: Features/Channel/Chat/Network
+      - path: Features/Channel/Chat/Rendering
+      - path: Features/Channel/Video/HLSVideoPlayer.swift
+      - path: Features/Channel/Video/VideoPlaying.swift
+      - path: Features/Channel/Video/Network
+      - path: Features/Legal/LegalText.swift
+      - path: Resources/Localizable.xcstrings
+      - path: Resources/PrivacyInfo.xcprivacy
+    dependencies:
+      - package: EmbrCore
+        product: EmbrCore
+      - package: GRDB
+        product: GRDB
+      - package: SDWebImage
+        product: SDWebImage
+      - package: SDWebImageWebPCoder
+        product: SDWebImageWebPCoder
+      - package: MidgarKit
+        product: MidgarCore
+      - package: MidgarKit
+        product: MidgarCommerce
+      - package: MidgarKit
+        product: MidgarPortal
+      - package: MidgarKit
+        product: MidgarUI
+      - target: EmbrTopShelf
+        embed: true
+        codeSign: true
+    entitlements:
+      path: TV/EmbrTV.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
+          - $(AppIdentifierPrefix)cc.midgarcorp.shared
+          - $(AppIdentifierPrefix)com.guitaripod.embr.shelf
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
+        com.apple.developer.user-management:
+          - runs-as-current-user
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.guitaripod.embr
+        PRODUCT_NAME: Embr
+        PRODUCT_MODULE_NAME: EmbrTV
+        ASSETCATALOG_COMPILER_APPICON_NAME: "App Icon & Top Shelf Image"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        MARKETING_VERSION: "1.4.0"
+        CURRENT_PROJECT_VERSION: "25"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION: YES
+        TARGETED_DEVICE_FAMILY: "3"
+        DEVELOPMENT_TEAM: P4DQK6SRKR
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+      configs:
+        Debug:
+          CODE_SIGN_STYLE[sdk=appletvos*]: Manual
+          CODE_SIGN_IDENTITY[sdk=appletvos*]: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER[sdk=appletvos*]: "Embr tvOS Development"
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Embr tvOS App Store"
+          DEVELOPMENT_TEAM: P4DQK6SRKR
+    info:
+      path: TV/Info.plist
+      properties:
+        CFBundleDisplayName: Embr
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIUserInterfaceStyle: Automatic
+        UIBackgroundModes:
+          - audio
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).TVSceneDelegate
+        CFBundleURLTypes:
+          - CFBundleURLName: com.guitaripod.embr
+            CFBundleURLSchemes:
+              - embr
+        EmbrShelfKeychainGroup: $(AppIdentifierPrefix)com.guitaripod.embr.shelf
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+
+  EmbrTVUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests/EmbrTVUITests
+    dependencies:
+      - target: EmbrTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.guitaripod.embr.tvuitests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: P4DQK6SRKR
+        CODE_SIGN_STYLE: Automatic
+        TEST_TARGET_NAME: EmbrTV
+
+  EmbrTopShelf:
+    type: tv-app-extension
+    platform: tvOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: TopShelf
+        excludes:
+          - "Info.plist"
+          - "EmbrTopShelf.entitlements"
+      - path: ShelfShared
+      - path: App/Secrets.swift
+      - path: Resources/Localizable.xcstrings
+    dependencies:
+      - package: EmbrCore
+        product: EmbrCore
+      - package: MidgarKit
+        product: MidgarCore
+    entitlements:
+      path: TopShelf/EmbrTopShelf.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.guitaripod.embr.shelf
+        com.apple.developer.user-management:
+          - runs-as-current-user
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.guitaripod.embr.topshelf
+        PRODUCT_NAME: EmbrTopShelf
+        PRODUCT_MODULE_NAME: EmbrTopShelf
+        MARKETING_VERSION: "1.4.0"
+        CURRENT_PROJECT_VERSION: "25"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION: YES
+        TARGETED_DEVICE_FAMILY: "3"
+        DEVELOPMENT_TEAM: P4DQK6SRKR
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+      configs:
+        Debug:
+          CODE_SIGN_STYLE[sdk=appletvos*]: Manual
+          CODE_SIGN_IDENTITY[sdk=appletvos*]: "Apple Development"
+          PROVISIONING_PROFILE_SPECIFIER[sdk=appletvos*]: "Embr Top Shelf Development"
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Embr Top Shelf App Store"
+          DEVELOPMENT_TEAM: P4DQK6SRKR
+    info:
+      path: TopShelf/Info.plist
+      properties:
+        CFBundleDisplayName: Embr
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        EmbrShelfKeychainGroup: $(AppIdentifierPrefix)com.guitaripod.embr.shelf
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.tv-top-shelf
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ContentProvider
+
 schemes:
   Embr:
     build:
@@ -166,3 +374,19 @@ schemes:
       config: Debug
       targets:
         - EmbrTests
+  EmbrTV:
+    build:
+      targets:
+        EmbrTV: all
+        EmbrTopShelf: all
+        EmbrTVUITests: [test]
+    run:
+      config: Debug
+      executable: EmbrTV
+    test:
+      config: Debug
+      targets:
+        - name: EmbrTVUITests
+          parallelizable: false
+    archive:
+      config: Release
