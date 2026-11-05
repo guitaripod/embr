@@ -204,4 +204,43 @@ import Testing
         #expect(request.url.absoluteString == "https://api.example.com/v1/embr/supporters/claim")
         #expect(decoded == SupporterAPI.ClaimRequest(signedTransaction: "jws", twitchAccessToken: "tok"))
     }
+
+    @Test func theDirectoryCarriesEachSupportersNumberAndLook() throws {
+        let json = #"{"supporters":["1","22"],"profiles":{"1":{"number":1,"color":"gold","nameStyle":"glow"},"22":{"number":null,"color":"neon","nameStyle":"sparkle"}},"count":2}"#
+        let directory = try WorkerEndpoints.decodeSupporterDirectory(Data(json.utf8))
+        let profiles = directory.resolvedProfiles
+
+        #expect(directory.supporterCount == 2)
+        #expect(profiles["1"] == SupporterAPI.Profile(number: 1, color: "gold", nameStyle: "glow"))
+        #expect(profiles["1"]?.style == .glow)
+        #expect(profiles["22"]?.number == nil)
+        #expect(profiles["22"]?.style == .twitch)
+    }
+
+    @Test func aDirectoryFromAnOlderWorkerGivesEverySupporterTheDefaultLook() throws {
+        let directory = try WorkerEndpoints.decodeSupporterDirectory(Data(#"{"supporters":["7"]}"#.utf8))
+
+        #expect(directory.supporterCount == 1)
+        #expect(directory.resolvedProfiles["7"] == SupporterAPI.Profile(number: nil, color: "violet", nameStyle: "twitch"))
+    }
+
+    @Test func aClaimAnswersWithTheFoundingNumberAndLook() throws {
+        let claim = try WorkerEndpoints.decodeSupporterClaim(Data(#"{"twitchUserID":"111","number":12,"color":"mint","nameStyle":"color"}"#.utf8))
+        let older = try WorkerEndpoints.decodeSupporterClaim(Data(#"{"twitchUserID":"111"}"#.utf8))
+
+        #expect(claim.profile == SupporterAPI.Profile(number: 12, color: "mint", nameStyle: "color"))
+        #expect(older.profile == SupporterAPI.Profile(number: nil, color: "violet", nameStyle: "twitch"))
+    }
+
+    @Test func aStyleChangePostsTheTokenColorAndNameStyle() throws {
+        let request = endpoints.updateSupporterStyle(SupporterAPI.StyleRequest(twitchAccessToken: "tok", color: "rose", nameStyle: .glow))
+        let body = try #require(request.body)
+        let decoded = try JSONDecoder().decode(SupporterAPI.StyleRequest.self, from: body)
+        let answer = try WorkerEndpoints.decodeSupporterProfile(Data(#"{"id":"111","number":3,"color":"rose","nameStyle":"glow"}"#.utf8))
+
+        #expect(request.method == .post)
+        #expect(request.url.absoluteString == "https://api.example.com/v1/embr/supporters/style")
+        #expect(decoded == SupporterAPI.StyleRequest(twitchAccessToken: "tok", color: "rose", nameStyle: .glow))
+        #expect(answer == SupporterAPI.Profile(number: 3, color: "rose", nameStyle: "glow"))
+    }
 }
