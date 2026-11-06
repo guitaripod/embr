@@ -101,6 +101,6 @@ Summary: Embr collects the minimum to work and does not track you: no analytics 
 6. Settings — `Themes, haptics, your way`
 
 ## Support / URLs
-- Support email: guitaripod@gmail.com
+- Support email: marcus@midgarcorp.cc
 - Privacy Policy URL: https://midgarcorp.cc/legal/embr/privacy
 - Terms of Use URL: https://midgarcorp.cc/legal/embr/terms

@@ -1,7 +1,7 @@
 import Foundation
 
 enum LegalText {
-    static let supportEmail = "guitaripod@gmail.com"
+    static let supportEmail = "marcus@midgarcorp.cc"
     static let lastUpdated = String(localized: "5 November 2026")
 
     static let termsURL = URL(string: "https://midgarcorp.cc/legal/embr/terms")!
