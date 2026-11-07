@@ -59,6 +59,7 @@ final class StreamInfoView: UIView {
         gameConfig.cornerStyle = .capsule
         gameConfig.baseForegroundColor = Theme.accent
         gameConfig.buttonSize = .small
+        gameConfig.titleLineBreakMode = .byTruncatingTail
         gameButton.configuration = gameConfig
         gameButton.contentHorizontalAlignment = .leading
         gameButton.addAction(UIAction { [weak self] _ in self?.onTapGame?() }, for: .touchUpInside)
@@ -86,7 +87,10 @@ final class StreamInfoView: UIView {
         liveCluster.setContentHuggingPriority(.required, for: .horizontal)
         liveCluster.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        let metaRow = UIStackView(arrangedSubviews: [gameButton, UIView(), liveCluster])
+        let metaSpacer = UIView()
+        metaSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        metaSpacer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+        let metaRow = UIStackView(arrangedSubviews: [gameButton, metaSpacer, liveCluster])
         metaRow.axis = .horizontal
         metaRow.spacing = 8
         metaRow.alignment = .center
