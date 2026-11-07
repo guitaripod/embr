@@ -4,7 +4,7 @@ import EmbrCore
 /// The slim bar above a moderator's composer: how many messages AutoMod holds and unban requests wait, or the log's
 /// length when nothing waits. Tapping it opens the queue.
 @MainActor
-final class ModerationBar: UIControl {
+final class ModerationBar: UIButton {
     static let height: CGFloat = 34
     var onOpen: (() -> Void)?
 
