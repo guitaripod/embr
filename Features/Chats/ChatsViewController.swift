@@ -19,6 +19,7 @@ final class ChatsViewController: UIViewController {
     private var strip: UICollectionView!
     private var stripHeight: NSLayoutConstraint!
     private var stripSource: UICollectionViewDiffableDataSource<Int, StripItem>!
+    private var chipStates: [StripItem: ChipState] = [:]
     private let columns = UIStackView()
     private let emptyState = UIStackView()
     private var controllers: [String: ChatViewController] = [:]
@@ -116,26 +117,8 @@ final class ChatsViewController: UIViewController {
 
         let chip = UICollectionView.CellRegistration<ChatChipCell, StripItem> { [weak self] cell, _, item in
             guard let self else { return }
-            switch item {
-            case .mentions:
-                cell.show(
-                    title: String(localized: "Mentions"),
-                    symbol: "at",
-                    count: self.model.unseenMentions,
-                    alert: self.model.unseenMentions > 0,
-                    selected: false
-                )
-            case .chat(let id):
-                let entry = self.model.entries.first { $0.id == id }
-                let session = self.model.session(for: id)
-                cell.show(
-                    title: entry?.name ?? id,
-                    symbol: nil,
-                    count: session?.unread ?? 0,
-                    alert: (session?.highlights ?? 0) > 0,
-                    selected: self.shown.contains(id)
-                )
-            }
+            let state = self.chipState(for: item)
+            cell.show(title: state.title, symbol: state.symbol, count: state.count, alert: state.alert, selected: state.selected)
         }
         stripSource = UICollectionViewDiffableDataSource(collectionView: strip) { collectionView, indexPath, item in
             collectionView.dequeueConfiguredReusableCell(using: chip, for: indexPath, item: item)
@@ -230,15 +213,74 @@ final class ChatsViewController: UIViewController {
             column.setShowsHeader(shown.count > 1)
             column.setTitle(model.entries.first { $0.id == id }?.name ?? id)
         }
-        emptyState.isHidden = !ids.isEmpty
-        columns.isHidden = ids.isEmpty
-        strip.isHidden = ids.isEmpty && model.mentions.isEmpty
+        setHidden(emptyState, !ids.isEmpty)
+        setHidden(columns, ids.isEmpty)
+        setHidden(strip, ids.isEmpty && model.mentions.isEmpty)
         if view.window != nil { model.setVisible(Set(shown)) }
+        updateStrip(items: [.mentions] + ids.map(StripItem.chat))
+    }
+
+    /// What one chip shows; the strip redraws a chip only when this changes.
+    private struct ChipState: Equatable {
+        let title: String
+        let symbol: String?
+        let count: Int
+        let alert: Bool
+        let selected: Bool
+
+        /// What decides the chip's width: a count that only changes value or color is redrawn in place, without asking
+        /// the strip to measure its chips again.
+        var widthKey: String {
+            "\(title)|\(symbol ?? "")|\(ChatChipCell.badgeText(count)?.count ?? 0)"
+        }
+    }
+
+    private func chipState(for item: StripItem) -> ChipState {
+        switch item {
+        case .mentions:
+            let unseen = model.unseenMentions
+            return ChipState(title: String(localized: "Mentions"), symbol: "at", count: unseen, alert: unseen > 0, selected: false)
+        case .chat(let id):
+            let session = model.session(for: id)
+            return ChipState(
+                title: model.entries.first { $0.id == id }?.name ?? id,
+                symbol: nil,
+                count: session?.unread ?? 0,
+                alert: (session?.highlights ?? 0) > 0,
+                selected: shown.contains(id)
+            )
+        }
+    }
+
+    /// Busy chats change the model several times a second; the strip is applied again only when its chips or their
+    /// order changed, and then only the chips that look different are redrawn.
+    private func updateStrip(items: [StripItem]) {
+        let states = Dictionary(uniqueKeysWithValues: items.map { ($0, chipState(for: $0)) })
+        let current = stripSource.snapshot()
+        let changed = items.filter { chipStates[$0] != nil && chipStates[$0] != states[$0] }
+        defer { chipStates = states }
+        if current.itemIdentifiers == items {
+            let resized = changed.filter { chipStates[$0]?.widthKey != states[$0]?.widthKey }
+            for item in changed where !resized.contains(item) {
+                guard let state = states[item], let indexPath = stripSource.indexPath(for: item),
+                      let cell = strip.cellForItem(at: indexPath) as? ChatChipCell else { continue }
+                cell.show(title: state.title, symbol: state.symbol, count: state.count, alert: state.alert, selected: state.selected)
+            }
+            guard !resized.isEmpty else { return }
+            var snapshot = current
+            snapshot.reconfigureItems(resized)
+            stripSource.apply(snapshot, animatingDifferences: false)
+            return
+        }
         var snapshot = NSDiffableDataSourceSnapshot<Int, StripItem>()
         snapshot.appendSections([0])
-        snapshot.appendItems([.mentions] + ids.map(StripItem.chat), toSection: 0)
-        snapshot.reconfigureItems(snapshot.itemIdentifiers)
+        snapshot.appendItems(items, toSection: 0)
+        snapshot.reconfigureItems(changed.filter { current.indexOfItem($0) != nil })
         stripSource.apply(snapshot, animatingDifferences: false)
+    }
+
+    private func setHidden(_ view: UIView, _ hidden: Bool) {
+        if view.isHidden != hidden { view.isHidden = hidden }
     }
 
     /// Takes down the chat of every column whose session the model replaced, as it does when the viewer signs in or
@@ -499,6 +541,7 @@ private final class ChatColumnView: UIView {
 /// A chip in the Chats strip: a chat's name, or Mentions, with a count of what arrived out of sight.
 @MainActor
 private final class ChatChipCell: UICollectionViewCell {
+    private var shownSymbol: String? = ""
     private let icon = UIImageView()
     private let titleLabel = UILabel()
     private let badge = BadgeLabel()
@@ -538,16 +581,24 @@ private final class ChatChipCell: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    nonisolated static func badgeText(_ count: Int) -> String? {
+        count == 0 ? nil : count > 99 ? "99+" : "\(count)"
+    }
+
     func show(title: String, symbol: String?, count: Int, alert: Bool, selected: Bool) {
-        titleLabel.text = title
-        icon.image = symbol.flatMap { UIImage(systemName: $0) }
-        icon.isHidden = symbol == nil
+        if titleLabel.text != title { titleLabel.text = title }
+        if symbol != shownSymbol {
+            shownSymbol = symbol
+            icon.image = symbol.flatMap { UIImage(systemName: $0) }
+            icon.isHidden = symbol == nil
+        }
         let foreground = selected ? UIColor.white : Theme.primaryText
         titleLabel.textColor = foreground
         icon.tintColor = selected ? .white : Theme.accent
         contentView.backgroundColor = selected ? Theme.accent : Theme.surfaceElevated
-        badge.isHidden = count == 0
-        badge.text = count > 99 ? "99+" : "\(count)"
+        if badge.isHidden != (count == 0) { badge.isHidden = count == 0 }
+        let badgeText = Self.badgeText(count)
+        if badge.text != badgeText { badge.text = badgeText }
         badge.backgroundColor = alert ? Theme.accent : Theme.secondaryText.withAlphaComponent(0.25)
         badge.textColor = alert ? .white : Theme.primaryText
         if selected, alert { badge.backgroundColor = .white; badge.textColor = Theme.accent }

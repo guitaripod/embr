@@ -190,9 +190,11 @@ final class ChatsModel {
         viewModel.start()
     }
 
+    /// Counts what arrived; a chat on screen with nothing standing out changes nothing anyone sees, so it stays quiet.
     private func record(_ activity: ChatActivity, in session: Session) {
         let onScreen = visible.contains(session.entry.id)
         let highlights = newMentions(in: activity)
+        guard !onScreen || !highlights.isEmpty, activity.added > 0 || !highlights.isEmpty else { return }
         if !onScreen {
             session.unread += activity.added
             session.highlights += highlights.count
