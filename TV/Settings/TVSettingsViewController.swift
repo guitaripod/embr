@@ -7,8 +7,9 @@ import MidgarPortal
 import MidgarUI
 
 /// The Settings tab: the Twitch account, Founding Supporter, how chat looks beside the video, previews, appearance,
-/// the tip jar, Midgar's other apps and the legal pages.
-final class TVSettingsViewController: UITableViewController {
+/// the tip jar, Midgar's other apps and the legal pages. Laid out like the Apple TV's own Settings: the list on the
+/// right, and on the left a picture, name and description of the section in focus.
+final class TVSettingsViewController: TVSettingsPageViewController, UITableViewDataSource, UITableViewDelegate, UINavigationControllerDelegate {
     private enum Row: Hashable {
         case account
         case supporter
@@ -33,17 +34,19 @@ final class TVSettingsViewController: UITableViewController {
 
     private struct Section {
         let title: String?
-        let footer: String?
+        let detail: String?
+        let picture: TVSettingsHeroView.Picture
         let rows: [Row]
     }
 
     private var sections: [Section] = []
+    private var focusedSection = 0
     private var user: AuthenticatedUser?
     private var blockedCount = 0
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
-        super.init(style: .grouped)
+    override init() {
+        super.init()
         title = String(localized: "Settings")
     }
 
@@ -52,8 +55,10 @@ final class TVSettingsViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        tableView.remembersLastFocusedIndexPath = true
+        navigationController?.delegate = self
+        tableView.dataSource = self
+        tableView.delegate = self
+
         AppContainer.shared.auth.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.refresh() }
@@ -61,7 +66,10 @@ final class TVSettingsViewController: UITableViewController {
         SupporterStore.shared.changes
             .merge(with: TipJarStore.shared.changes)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.rebuild() }
+            .sink { [weak self] in
+                self?.hero.refreshAccent()
+                self?.rebuild()
+            }
             .store(in: &cancellables)
         SettingsStore.shared.changes
             .receive(on: DispatchQueue.main)
@@ -69,11 +77,17 @@ final class TVSettingsViewController: UITableViewController {
             .store(in: &cancellables)
         TipJarStore.shared.loadProducts()
         SupporterStore.shared.loadProduct()
+        rebuild()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refresh()
+    }
+
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        let ownTitle = viewController is TVSettingsPageViewController || viewController is TVTextViewController
+        navigationController.setNavigationBarHidden(ownTitle, animated: animated)
     }
 
     private func refresh() {
@@ -86,59 +100,95 @@ final class TVSettingsViewController: UITableViewController {
         }
     }
 
+    /// Lays the list out again. When only the values changed, the rows are filled in place so focus stays where it is.
     private func rebuild() {
-        let supporter = SupporterStore.shared.isSupporter
+        let previous = sections.map(\.rows)
+        sections = makeSections()
+        if previous == sections.map(\.rows) {
+            tableView.reconfigureRows(at: tableView.indexPathsForVisibleRows ?? [])
+        } else {
+            tableView.reloadData()
+        }
+        focusedSection = min(focusedSection, max(0, sections.count - 1))
+        showHero(animated: false)
+    }
+
+    private func makeSections() -> [Section] {
+        let store = SupporterStore.shared
+        let supporter = store.isSupporter
         let chatRows: [Row] = [.chatVisible, .chatPlacement, .chatTextSize, .timestamps, .animatedEmotes, .supporterNames]
             + [.emotes(.sevenTV), .emotes(.betterTTV), .emotes(.frankerFaceZ)]
         let tipRows = TipJarStore.shared.products.map { Row.tip($0.id) }
-        sections = [
-            Section(title: String(localized: "Twitch Account"), footer: nil, rows: [.account]),
+        return [
+            Section(
+                title: String(localized: "Twitch Account"),
+                detail: user == nil ? String(localized: "Embr can then show the channels you follow and chat as you. It never sees your password.") : nil,
+                picture: .symbol("person.crop.circle"),
+                rows: [.account]
+            ),
             Section(
                 title: String(localized: "Founding Supporter"),
-                footer: supporter
+                detail: supporter
                     ? String(localized: "Thank you. Change your theme, colors, chat font and badge any time.")
                     : String(localized: "A one-time purchase that keeps Embr independent: themes, colors, chat fonts and a flame badge everyone sees. Nothing about watching ever needs it."),
+                picture: .flame(supporter ? store.choice.badgeColor : .violet),
                 rows: [.supporter]
             ),
-            Section(title: String(localized: "Chat"), footer: nil, rows: chatRows),
+            Section(title: String(localized: "Chat"), detail: nil, picture: .symbol("bubble.left.and.bubble.right.fill"), rows: chatRows),
             Section(
                 title: String(localized: "Safety"),
-                footer: String(localized: "Objectionable messages are hidden. Users you block are hidden from your chat and reported to the developer."),
+                detail: String(localized: "Objectionable messages are hidden. Users you block are hidden from your chat and reported to the developer."),
+                picture: .symbol("hand.raised.fill"),
                 rows: [.filter, .blocked]
             ),
             Section(
                 title: String(localized: "Browsing"),
-                footer: String(localized: "A focused stream starts a short muted preview. Also off when Video Autoplay is off in the Apple TV's Accessibility settings."),
+                detail: String(localized: "A focused stream starts a short muted preview. Also off when Video Autoplay is off in the Apple TV's Accessibility settings."),
+                picture: .symbol("play.rectangle.on.rectangle.fill"),
                 rows: [.previews, .theme]
             ),
-            Section(title: String(localized: "Tip Jar"), footer: String(localized: "Tips unlock nothing. They keep Embr going."), rows: tipRows),
-            Section(title: nil, footer: nil, rows: [.moreApps]),
-            Section(title: String(localized: "About"), footer: nil, rows: [.terms, .privacy, .support, .version]),
+            Section(
+                title: String(localized: "Tip Jar"),
+                detail: String(localized: "Tips unlock nothing. They keep Embr going."),
+                picture: .symbol("heart.fill"),
+                rows: tipRows
+            ),
+            Section(title: nil, detail: nil, picture: .symbol("square.grid.2x2.fill"), rows: [.moreApps]),
+            Section(title: String(localized: "About"), detail: nil, picture: .symbol("info.circle.fill"), rows: [.terms, .privacy, .support, .version]),
         ].filter { !$0.rows.isEmpty }
-        tableView.reloadData()
     }
 
-    override func numberOfSections(in tableView: UITableView) -> Int {
+    private func showHero(animated: Bool) {
+        guard sections.indices.contains(focusedSection) else { return }
+        let section = sections[focusedSection]
+        let title = section.title ?? (section.rows.first == .moreApps ? String(localized: "More Apps from Midgar") : "")
+        hero.show(TVSettingsHeroView.Content(picture: section.picture, title: title, detail: section.detail), animated: animated)
+    }
+
+    func numberOfSections(in tableView: UITableView) -> Int {
         sections.count
     }
 
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         sections[section].rows.count
     }
 
-    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         sections[section].title
     }
 
-    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        sections[section].footer
+    func tableView(_ tableView: UITableView, didUpdateFocusIn context: UITableViewFocusUpdateContext, with coordinator: UIFocusAnimationCoordinator) {
+        guard let indexPath = context.nextFocusedIndexPath, indexPath.section != focusedSection else { return }
+        focusedSection = indexPath.section
+        showHero(animated: true)
     }
 
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
-        var content = cell.defaultContentConfiguration()
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        var content = UIListContentConfiguration.valueCell()
         let settings = SettingsStore.shared.current
         cell.accessoryType = .none
+        cell.accessibilityHint = sections[indexPath.section].detail
         switch sections[indexPath.section].rows[indexPath.row] {
         case .account:
             if let user {
@@ -157,12 +207,11 @@ final class TVSettingsViewController: UITableViewController {
             if store.isSupporter {
                 content.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "You're a Founding Supporter")
                 content.secondaryText = badgeText(store.badge)
-                cell.accessoryType = .disclosureIndicator
             } else {
                 content.text = String(localized: "Become a Founding Supporter")
                 content.secondaryText = store.product?.displayPrice
-                cell.accessoryType = .disclosureIndicator
             }
+            cell.accessoryType = .disclosureIndicator
         case .supporterNames:
             toggle(&content, String(localized: "Supporter Name Colors"), settings.supporterNameEffectsEnabled)
         case .chatVisible:
@@ -231,7 +280,8 @@ final class TVSettingsViewController: UITableViewController {
         }
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         let store = SettingsStore.shared
         switch sections[indexPath.section].rows[indexPath.row] {
         case .account:
@@ -251,6 +301,7 @@ final class TVSettingsViewController: UITableViewController {
         case .chatTextSize:
             pickOption(
                 title: String(localized: "Chat Text Size"),
+                symbol: "textformat.size",
                 options: Settings.ChatTextSize.allCases,
                 selected: store.current.tvChatTextSizePreference,
                 label: { Self.title(for: $0) }
@@ -270,6 +321,7 @@ final class TVSettingsViewController: UITableViewController {
         case .theme:
             pickOption(
                 title: String(localized: "Appearance"),
+                symbol: "circle.lefthalf.filled",
                 options: Settings.ThemePreference.allCases,
                 selected: store.current.theme,
                 label: { Self.title(for: $0) }
@@ -295,12 +347,13 @@ final class TVSettingsViewController: UITableViewController {
 
     private func pickOption<Option: Equatable>(
         title: String,
+        symbol: String,
         options: [Option],
         selected: Option,
         label: @escaping (Option) -> String,
         choose: @escaping (Option) -> Void
     ) {
-        let picker = TVOptionsViewController(title: title, options: options.map(label), selected: options.firstIndex(of: selected)) { index in
+        let picker = TVOptionsViewController(title: title, symbol: symbol, options: options.map(label), selected: options.firstIndex(of: selected)) { index in
             choose(options[index])
         }
         navigationController?.pushViewController(picker, animated: true)
@@ -356,53 +409,18 @@ final class TVSettingsViewController: UITableViewController {
 }
 
 /// A list of choices with a check on the current one; picking returns to the previous screen.
-final class TVOptionsViewController: UITableViewController {
+final class TVOptionsViewController: TVSettingsPageViewController, UITableViewDataSource, UITableViewDelegate {
+    private let symbol: String
     private let options: [String]
     private var selected: Int?
     private let choose: (Int) -> Void
 
-    init(title: String, options: [String], selected: Int?, choose: @escaping (Int) -> Void) {
+    init(title: String, symbol: String, options: [String], selected: Int?, choose: @escaping (Int) -> Void) {
+        self.symbol = symbol
         self.options = options
         self.selected = selected
         self.choose = choose
-        super.init(style: .grouped)
-        self.title = title
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        options.count
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        var content = cell.defaultContentConfiguration()
-        content.text = options[indexPath.row]
-        cell.contentConfiguration = content
-        cell.accessoryType = indexPath.row == selected ? .checkmark : .none
-        return cell
-    }
-
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        selected = indexPath.row
-        choose(indexPath.row)
-        navigationController?.popViewController(animated: true)
-    }
-
-    override func indexPathForPreferredFocusedView(in tableView: UITableView) -> IndexPath? {
-        selected.map { IndexPath(row: $0, section: 0) }
-    }
-}
-
-/// A long text the remote scrolls: the terms and the privacy policy.
-final class TVTextViewController: UIViewController {
-    private let text: String
-
-    init(title: String, text: String) {
-        self.text = text
-        super.init(nibName: nil, bundle: nil)
+        super.init()
         self.title = title
     }
 
@@ -411,68 +429,94 @@ final class TVTextViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let textView = UITextView()
-        textView.text = text
-        textView.font = TVFont.body
-        textView.textColor = Theme.primaryText
-        textView.backgroundColor = .clear
-        textView.isSelectable = true
-        textView.isScrollEnabled = true
-        textView.panGestureRecognizer.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.indirect.rawValue)]
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(textView)
-        NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            textView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            textView.widthAnchor.constraint(equalToConstant: 1200),
-        ])
+        tableView.dataSource = self
+        tableView.delegate = self
+        hero.show(TVSettingsHeroView.Content(picture: .symbol(symbol), title: title ?? "", detail: nil), animated: false)
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        options.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        var content = UIListContentConfiguration.cell()
+        content.text = options[indexPath.row]
+        cell.contentConfiguration = content
+        cell.accessoryType = indexPath.row == selected ? .checkmark : .none
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        selected = indexPath.row
+        choose(indexPath.row)
+        navigationController?.popViewController(animated: true)
+    }
+
+    func indexPathForPreferredFocusedView(in tableView: UITableView) -> IndexPath? {
+        selected.map { IndexPath(row: $0, section: 0) }
     }
 }
 
 /// The users blocked on this Apple TV; selecting one unblocks it.
-final class TVBlockedUsersViewController: UITableViewController {
+final class TVBlockedUsersViewController: TVSettingsPageViewController, UITableViewDataSource, UITableViewDelegate {
     private var users: [BlockedUserRecord] = []
 
-    init() {
-        super.init(style: .grouped)
+    override init() {
+        super.init()
         title = String(localized: "Blocked Users")
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        tableView.dataSource = self
+        tableView.delegate = self
+        showHero()
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         Task { [weak self] in
             self?.users = await DatabaseManager.shared.blockedUsers()
             self?.tableView.reloadData()
+            self?.showHero()
         }
     }
 
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    private func showHero() {
+        let detail = users.isEmpty ? nil : String(localized: "Select a user to unblock them.")
+        hero.show(TVSettingsHeroView.Content(picture: .symbol("hand.raised.fill"), title: title ?? "", detail: detail), animated: false)
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         max(users.count, 1)
     }
 
-    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        users.isEmpty ? nil : String(localized: "Select a user to unblock them.")
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        var content = cell.defaultContentConfiguration()
-        content.text = users.isEmpty ? String(localized: "Nobody is blocked") : users[indexPath.row].login
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        var content = UIListContentConfiguration.cell()
+        if users.isEmpty {
+            content.text = String(localized: "Nobody is blocked")
+        } else {
+            content.text = users[indexPath.row].login
+            content.image = UIImage(systemName: "person.crop.circle.badge.xmark")
+        }
         cell.contentConfiguration = content
         return cell
     }
 
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         guard indexPath.row < users.count else { return }
         let user = users[indexPath.row]
         Task { [weak self] in
             await DatabaseManager.shared.removeBlockedUser(userID: user.userID)
             self?.users = await DatabaseManager.shared.blockedUsers()
             self?.tableView.reloadData()
+            self?.showHero()
         }
     }
 }
