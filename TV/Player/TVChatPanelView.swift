@@ -29,6 +29,7 @@ final class TVChatPanelView: UIView, UICollectionViewDelegateFlowLayout {
         layout.minimumLineSpacing = 0
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         super.init(frame: .zero)
+        overrideUserInterfaceStyle = .dark
         buildHierarchy(title: title)
         configureDataSource()
         bind()

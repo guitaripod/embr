@@ -43,6 +43,9 @@ final class TVChannelCell: UICollectionViewCell {
         ])
         isAccessibilityElement = true
         accessibilityTraits = .button
+        registerForTraitChanges([UITraitUserInterfaceStyle.self, SupporterThemeTrait.self]) { (cell: TVChannelCell, _: UITraitCollection) in
+            cell.liveDot.layer.borderColor = Theme.background.resolvedColor(with: cell.traitCollection).cgColor
+        }
     }
 
     @available(*, unavailable)
@@ -55,11 +58,6 @@ final class TVChannelCell: UICollectionViewCell {
         accessibilityLabel = channel.isLive
             ? String(localized: "\(channel.displayName), live")
             : channel.displayName
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        liveDot.layer.borderColor = Theme.background.resolvedColor(with: traitCollection).cgColor
     }
 
     override func prepareForReuse() {

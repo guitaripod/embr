@@ -26,6 +26,7 @@ final class TVSupporterViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = Theme.background
         flame.contentMode = .scaleAspectFit
 
         titleLabel.font = TVFont.screenTitle

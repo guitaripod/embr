@@ -13,8 +13,11 @@ final class TVSceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         window.tintColor = Theme.accent
         window.traitOverrides[SupporterThemeTrait.self] = SupporterStore.shared.theme
-        window.backgroundColor = Theme.background
         window.overrideUserInterfaceStyle = Self.style(for: SettingsStore.shared.current.theme)
+        Self.paint(window)
+        window.registerForTraitChanges([UITraitUserInterfaceStyle.self, SupporterThemeTrait.self]) { (window: UIWindow, _: UITraitCollection) in
+            Self.paint(window)
+        }
         let root = TVRootViewController()
         self.root = root
         window.rootViewController = root
@@ -67,6 +70,13 @@ final class TVSceneDelegate: UIResponder, UIWindowSceneDelegate {
             MidgarLog.info("tv: opening \(context.url.absoluteString)", category: .app)
             TVRouter.handle(link, from: root)
         }
+    }
+
+    /// Fills the window with the page color for its current appearance and theme. A window resolves a dynamic
+    /// background once and keeps it, so this runs again whenever the Apple TV or Embr's Appearance setting switches
+    /// between light and dark, or a supporter changes theme.
+    private static func paint(_ window: UIWindow) {
+        window.backgroundColor = Theme.background.resolvedColor(with: window.traitCollection)
     }
 
     private static func style(for theme: Settings.ThemePreference) -> UIUserInterfaceStyle {

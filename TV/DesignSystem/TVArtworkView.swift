@@ -82,7 +82,8 @@ final class TVArtworkView: UIImageView {
     }
 }
 
-/// Placeholder art: a symbol on a soft gradient, cached per symbol and shape.
+/// Placeholder art: a symbol on a soft gradient, cached per symbol and shape. The image carries a light and a dark
+/// version, and an image view shows the one for its appearance and switches when it changes.
 @MainActor
 enum TVPlaceholder {
     private static var cache: [String: UIImage] = [:]
@@ -91,10 +92,22 @@ enum TVPlaceholder {
     static func image(symbol: String, circular: Bool) -> UIImage {
         let key = "\(symbol)|\(circular)"
         if let cached = cache[key] { return cached }
+        let asset = UIImageAsset()
+        let light = UITraitCollection(userInterfaceStyle: .light)
+        let dark = UITraitCollection(userInterfaceStyle: .dark)
+        asset.register(render(symbol: symbol, circular: circular, dark: false), with: light)
+        asset.register(render(symbol: symbol, circular: circular, dark: true), with: dark)
+        let image = asset.image(with: UITraitCollection.current.userInterfaceStyle == .light ? light : dark)
+        cache[key] = image
+        return image
+    }
+
+    private static func render(symbol: String, circular: Bool, dark: Bool) -> UIImage {
         let canvas = circular ? CGSize(width: 270, height: 270) : size
-        let image = UIGraphicsImageRenderer(size: canvas).image { context in
-            let top = UIColor(white: 0.22, alpha: 1)
-            let bottom = UIColor(white: 0.12, alpha: 1)
+        return UIGraphicsImageRenderer(size: canvas).image { context in
+            let top = UIColor(white: dark ? 0.22 : 0.86, alpha: 1)
+            let bottom = UIColor(white: dark ? 0.12 : 0.78, alpha: 1)
+            let glyphColor = dark ? UIColor(white: 1, alpha: 0.35) : UIColor(white: 0, alpha: 0.25)
             let space = CGColorSpaceCreateDeviceRGB()
             if circular {
                 context.cgContext.addEllipse(in: CGRect(origin: .zero, size: canvas))
@@ -104,13 +117,11 @@ enum TVPlaceholder {
                 context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: canvas.height), options: [])
             }
             let configuration = UIImage.SymbolConfiguration(pointSize: canvas.height * 0.28, weight: .regular)
-            if let glyph = UIImage(systemName: symbol, withConfiguration: configuration)?.withTintColor(UIColor(white: 1, alpha: 0.35), renderingMode: .alwaysOriginal) {
+            if let glyph = UIImage(systemName: symbol, withConfiguration: configuration)?.withTintColor(glyphColor, renderingMode: .alwaysOriginal) {
                 let origin = CGPoint(x: (canvas.width - glyph.size.width) / 2, y: (canvas.height - glyph.size.height) / 2)
                 glyph.draw(at: origin)
             }
         }
-        cache[key] = image
-        return image
     }
 
     /// A square crop of `picture` inside a circle, for avatars, which keeps the focus effect round.
