@@ -90,6 +90,41 @@ enum DemoChat {
         ]
     }
 
+    /// Messages per second asked for with `-screenshotChatRate`, read straight from the launch arguments since chat
+    /// sources start off the main actor.
+    static var liveRate: Int? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-screenshotChatRate"), index + 1 < arguments.count else { return nil }
+        return Int(arguments[index + 1])
+    }
+
+    /// A steady flow of new messages at the given rate, for measuring how chat holds up in a busy channel.
+    static func live(for channel: ChannelInfo, perSecond rate: Int, into continuation: AsyncStream<ChatEvent>.Continuation) -> Task<Void, Never> {
+        Task {
+            var random = DemoRandom(seed: "live-" + channel.broadcasterLogin)
+            let motif = DemoWorld.game(id: channel.gameID)?.motif ?? .room
+            let lines = (flavor[flavorKey(motif)] ?? []) + general
+            let perTick = max(1, rate / 20)
+            var sequence = 0
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                for _ in 0..<perTick {
+                    let position = Int(random.next() % UInt64(chatters.count))
+                    let chatter = chatters[position]
+                    sequence += 1
+                    continuation.yield(.message(ChatMessage(
+                        id: "demo-live-\(channel.broadcasterLogin)-\(sequence)",
+                        channelID: channel.id,
+                        timestamp: Date(),
+                        author: user(chatter, index: position),
+                        fragments: [.text(lines[Int(random.next() % UInt64(lines.count))])],
+                        badges: chatter.badges.map { MessageBadge(setID: $0, id: "1") }
+                    )))
+                }
+            }
+        }
+    }
+
     static func messages(for channel: ChannelInfo, count: Int = 64) -> [ChatMessage] {
         var random = DemoRandom(seed: "chat-" + channel.broadcasterLogin)
         let motif = DemoWorld.game(id: channel.gameID)?.motif ?? .room
@@ -170,6 +205,10 @@ final class DemoChatSource: ChatSource {
                 for event in DemoChat.moderation(channelID: channel.id) {
                     continuation.yield(.moderation(event))
                 }
+            }
+            if let rate = DemoChat.liveRate, rate > 0 {
+                let flow = DemoChat.live(for: channel, perSecond: rate, into: continuation)
+                continuation.onTermination = { _ in flow.cancel() }
             }
         }
     }
