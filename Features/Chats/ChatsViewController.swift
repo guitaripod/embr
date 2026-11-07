@@ -415,6 +415,9 @@ final class ChatsViewController: UIViewController {
         case "mentions": presentMentions()
         case "compose": frontChat?.focusComposer()
         case "emotes": frontChat?.focusComposer(emotes: true)
+        case "tap":
+            let tapped = composerAccessoryView.tapFieldForTesting()
+            MidgarLog.info("chats: folded composer tap reached the field: \(tapped)", category: .chat)
         case "draft":
             frontChat?.focusComposer()
             frontChat?.composeForScreenshot(draft: "see you all at the finals tonight", reply: false)

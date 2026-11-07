@@ -4,21 +4,26 @@ import UIKit
 /// unsent draft, with the emote button beside it. Tapping it opens the full composer above the keyboard; signed out it
 /// offers to log in.
 @MainActor
-final class ChatComposerAccessoryView: UIControl {
+final class ChatComposerAccessoryView: UIView {
     /// Asked to open the composer, on the emote keyboard when the emote button was tapped.
     var onCompose: ((Bool) -> Void)?
 
-    private let label = UILabel()
+    private let fieldButton = UIButton(type: .system)
     private let emoteButton = UIButton(type: .system)
-    private let loginLabel = UILabel()
     private var canCompose = true
+    private var shown: (text: String, isDraft: Bool) = ("", false)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        label.font = .preferredFont(forTextStyle: .body)
-        label.adjustsFontForContentSizeCategory = true
-        label.lineBreakMode = .byTruncatingTail
-        label.isUserInteractionEnabled = false
+        fieldButton.contentHorizontalAlignment = .fill
+        fieldButton.addAction(UIAction { [weak self] _ in
+            Haptics.selection()
+            self?.onCompose?(false)
+        }, for: .primaryActionTriggered)
+        fieldButton.accessibilityCustomActions = [UIAccessibilityCustomAction(name: String(localized: "Emotes")) { [weak self] _ in
+            self?.onCompose?(true)
+            return true
+        }]
 
         var emote = UIButton.Configuration.plain()
         emote.image = UIImage(systemName: "face.smiling", withConfiguration: UIImage.SymbolConfiguration(pointSize: 19, weight: .regular))
@@ -30,44 +35,25 @@ final class ChatComposerAccessoryView: UIControl {
             self?.onCompose?(true)
         }, for: .primaryActionTriggered)
 
-        loginLabel.text = String(localized: "Log In")
-        loginLabel.font = .preferredFont(forTextStyle: .body).withWeight(.semibold)
-        loginLabel.adjustsFontForContentSizeCategory = true
-        loginLabel.textColor = Theme.accent
-        loginLabel.isHidden = true
-        loginLabel.isUserInteractionEnabled = false
-
-        let row = UIStackView(arrangedSubviews: [label, loginLabel, emoteButton])
+        let row = UIStackView(arrangedSubviews: [fieldButton, emoteButton])
         row.axis = .horizontal
-        row.alignment = .center
-        row.spacing = 8
+        row.alignment = .fill
+        row.spacing = 0
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
             row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
             row.topAnchor.constraint(equalTo: topAnchor),
             row.bottomAnchor.constraint(equalTo: bottomAnchor),
             emoteButton.widthAnchor.constraint(equalToConstant: 44),
-            emoteButton.heightAnchor.constraint(equalToConstant: 44),
         ])
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        loginLabel.setContentHuggingPriority(.required, for: .horizontal)
-
-        addAction(UIAction { [weak self] _ in
-            Haptics.selection()
-            self?.onCompose?(false)
-        }, for: .primaryActionTriggered)
-        isAccessibilityElement = true
-        accessibilityCustomActions = [UIAccessibilityCustomAction(name: String(localized: "Emotes")) { [weak self] _ in
-            self?.onCompose?(true)
-            return true
-        }]
         if #available(iOS 26.0, *) {
             registerForTraitChanges([UITraitTabAccessoryEnvironment.self]) { (view: ChatComposerAccessoryView, _) in
                 view.applyEnvironment()
             }
         }
+        styleField()
     }
 
     @available(*, unavailable)
@@ -76,14 +62,42 @@ final class ChatComposerAccessoryView: UIControl {
     /// Shows the unsent draft when there is one, the composer's placeholder otherwise.
     func show(placeholder: String, draft: String, canCompose: Bool) {
         self.canCompose = canCompose
-        let hasDraft = !draft.isEmpty
-        label.text = hasDraft ? draft : placeholder
-        label.textColor = hasDraft ? Theme.primaryText : .placeholderText
-        loginLabel.isHidden = canCompose
+        shown = draft.isEmpty ? (placeholder, false) : (draft, true)
+        styleField()
         applyEnvironment()
-        accessibilityLabel = hasDraft ? String(localized: "Draft: \(draft)") : placeholder
-        accessibilityHint = canCompose ? String(localized: "Opens the message field") : nil
-        accessibilityTraits = .button
+        fieldButton.accessibilityLabel = shown.isDraft ? String(localized: "Draft: \(draft)") : placeholder
+        fieldButton.accessibilityHint = canCompose ? String(localized: "Opens the message field") : nil
+    }
+
+    #if DEBUG
+    /// Taps the field the way a finger does, from the point at its center, for checking the folded composer opens.
+    func tapFieldForTesting() -> Bool {
+        let center = fieldButton.convert(CGPoint(x: fieldButton.bounds.midX, y: fieldButton.bounds.midY), to: nil)
+        guard let hit = window?.hitTest(center, with: nil), hit === fieldButton || hit.isDescendant(of: fieldButton) else { return false }
+        fieldButton.sendActions(for: .primaryActionTriggered)
+        return true
+    }
+    #endif
+
+    /// The field reads like the composer's own: placeholder gray or the draft in full color, then Log In in the accent
+    /// when signed out. A button, so a tap anywhere on it opens the composer with the system's press feedback.
+    private func styleField() {
+        var config = UIButton.Configuration.plain()
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 18, bottom: 0, trailing: 8)
+        config.titleLineBreakMode = .byTruncatingTail
+        var title = AttributedString(shown.text)
+        title.font = UIFont.preferredFont(forTextStyle: .body)
+        title.foregroundColor = shown.isDraft ? Theme.primaryText : UIColor.placeholderText
+        if !canCompose {
+            var login = AttributedString("  " + String(localized: "Log In"))
+            login.font = UIFont.preferredFont(forTextStyle: .body).withWeight(.semibold)
+            login.foregroundColor = Theme.accent
+            title += login
+        }
+        config.attributedTitle = title
+        config.titleAlignment = .leading
+        fieldButton.configuration = config
+        fieldButton.contentHorizontalAlignment = .leading
     }
 
     /// Inline beside a minimized tab bar there is room only for the field.
@@ -93,9 +107,5 @@ final class ChatComposerAccessoryView: UIControl {
             inline = traitCollection.tabAccessoryEnvironment == .inline
         }
         emoteButton.isHidden = inline || !canCompose
-    }
-
-    override var isHighlighted: Bool {
-        didSet { label.alpha = isHighlighted ? 0.5 : 1 }
     }
 }
