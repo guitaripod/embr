@@ -31,8 +31,8 @@ final class ModerationBar: UIControl {
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: ChatMetrics.edge),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -ChatMetrics.edge),
             row.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         addAction(UIAction { [weak self] _ in self?.onOpen?() }, for: .primaryActionTriggered)
@@ -184,7 +184,7 @@ final class ConnectionStatusBar: UIView {
         stack.alignment = .center
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: ChatMetrics.edge, bottom: 6, trailing: ChatMetrics.edge)
         addSubview(stack)
 
         NSLayoutConstraint.activate([
@@ -214,16 +214,40 @@ final class NewMessagesPill: UIControl {
 
     func setCount(_ count: Int) {
         label.text = count == 1 ? String(localized: "1 new message") : String(localized: "\(count) new messages")
+        accessibilityLabel = label.text
+    }
+
+    /// Rises in from below with a little spring, and drops away when the chat is back at the newest message.
+    func setShown(_ shown: Bool) {
+        guard shown == isHidden else { return }
+        guard window != nil, !Motion.reduced else {
+            isHidden = !shown
+            return
+        }
+        if shown {
+            isHidden = false
+            alpha = 0
+            transform = CGAffineTransform(translationX: 0, y: 12).scaledBy(x: 0.92, y: 0.92)
+        }
+        UIView.animate(withDuration: 0.38, delay: 0, usingSpringWithDamping: 0.78, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.alpha = shown ? 1 : 0
+            self.transform = shown ? .identity : CGAffineTransform(translationX: 0, y: 12).scaledBy(x: 0.92, y: 0.92)
+        } completion: { _ in
+            if !shown, self.alpha == 0 { self.isHidden = true }
+        }
     }
 
     private func setUp() {
-        layer.cornerRadius = 16
+        layer.cornerRadius = 18
         layer.cornerCurve = .continuous
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityHint = String(localized: "Jumps to the newest message")
 
         if Glass.isAvailable {
             backgroundColor = .clear
-            let glass = Glass.view(cornerRadius: 16, tint: Theme.accent, interactive: true)
+            let glass = Glass.view(cornerRadius: 18, tint: Theme.accent, interactive: true)
             glass.isUserInteractionEnabled = false
             addSubview(glass)
             NSLayoutConstraint.activate([
@@ -237,11 +261,11 @@ final class NewMessagesPill: UIControl {
         }
 
         icon.image = UIImage(systemName: "arrow.down")
-        icon.tintColor = .white
+        icon.tintColor = Theme.onAccent
         icon.contentMode = .scaleAspectFit
 
-        label.font = .systemFont(ofSize: 13, weight: .semibold)
-        label.textColor = .white
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = Theme.onAccent
 
         let row = UIStackView(arrangedSubviews: [icon, label])
         row.axis = .horizontal
@@ -250,7 +274,7 @@ final class NewMessagesPill: UIControl {
         row.isUserInteractionEnabled = false
         row.translatesAutoresizingMaskIntoConstraints = false
         row.isLayoutMarginsRelativeArrangement = true
-        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 16)
+        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 9, leading: 14, bottom: 9, trailing: 16)
         addSubview(row)
 
         NSLayoutConstraint.activate([
@@ -259,7 +283,8 @@ final class NewMessagesPill: UIControl {
             row.leadingAnchor.constraint(equalTo: leadingAnchor),
             row.trailingAnchor.constraint(equalTo: trailingAnchor),
             icon.widthAnchor.constraint(equalToConstant: 14),
-            icon.heightAnchor.constraint(equalToConstant: 14)
+            icon.heightAnchor.constraint(equalToConstant: 14),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 36)
         ])
     }
 
@@ -301,7 +326,7 @@ final class GuestChatBar: UIView {
         row.alignment = .center
         row.translatesAutoresizingMaskIntoConstraints = false
         row.isLayoutMarginsRelativeArrangement = true
-        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 12)
+        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ChatMetrics.composerVertical, leading: ChatMetrics.edge, bottom: ChatMetrics.composerVertical, trailing: ChatMetrics.edge)
         addSubview(row)
 
         NSLayoutConstraint.activate([

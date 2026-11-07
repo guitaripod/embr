@@ -42,14 +42,23 @@ final class EmoteAutocompleteView: UIView {
         onSelect = handler
     }
 
+    /// What Tab or a tap on the first chip would insert.
+    var firstSuggestion: AutocompleteSuggestion? {
+        suggestions.first
+    }
+
     func update(_ suggestions: [AutocompleteSuggestion]) {
+        guard suggestions != self.suggestions else { return }
         self.suggestions = suggestions
-        isHidden = suggestions.isEmpty
         rebuild()
     }
 
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: UIFontMetrics(forTextStyle: .subheadline).scaledValue(for: 44))
+    }
+
     private func setUp() {
-        backgroundColor = Theme.surfaceElevated
+        backgroundColor = .clear
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.alwaysBounceHorizontal = true
@@ -60,7 +69,7 @@ final class EmoteAutocompleteView: UIView {
         stack.spacing = 8
         stack.alignment = .center
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: ChatMetrics.edge, bottom: 0, trailing: ChatMetrics.edge)
         scrollView.addSubview(stack)
 
         NSLayoutConstraint.activate([
@@ -118,11 +127,18 @@ private final class SuggestionChip: UIControl {
         super.removeFromSuperview()
     }
 
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.55 : 1 }
+    }
+
     private func setUp() {
-        backgroundColor = Theme.surface
-        layer.cornerRadius = 8
+        backgroundColor = .tertiarySystemFill
+        layer.cornerRadius = 18
         layer.cornerCurve = .continuous
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = suggestion.label
 
         let content = UIStackView()
         content.translatesAutoresizingMaskIntoConstraints = false
@@ -131,13 +147,14 @@ private final class SuggestionChip: UIControl {
         content.alignment = .center
         content.isUserInteractionEnabled = false
         content.isLayoutMarginsRelativeArrangement = true
-        content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+        content.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 12)
         addSubview(content)
 
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: .systemFont(ofSize: 15, weight: .medium), maximumPointSize: 22)
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = Theme.primaryText
         label.text = suggestion.label
 
@@ -146,16 +163,18 @@ private final class SuggestionChip: UIControl {
             content.addArrangedSubview(iconView)
             content.addArrangedSubview(label)
             NSLayoutConstraint.activate([
-                iconView.widthAnchor.constraint(equalToConstant: 22),
-                iconView.heightAnchor.constraint(equalToConstant: 22)
+                iconView.widthAnchor.constraint(equalToConstant: 26),
+                iconView.heightAnchor.constraint(equalToConstant: 26)
             ])
             loadIcon()
         case .mention:
             label.textColor = Theme.accent
+            content.directionalLayoutMargins.leading = 12
             content.addArrangedSubview(label)
         }
 
         NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
             content.topAnchor.constraint(equalTo: topAnchor),
             content.bottomAnchor.constraint(equalTo: bottomAnchor),
             content.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -167,7 +186,7 @@ private final class SuggestionChip: UIControl {
         guard case .emote(let emote) = suggestion else { return }
         loadTask = Task { [weak self] in
             guard let self else { return }
-            let image = await images.emoteImage(for: emote, scale: .x1)
+            let image = await images.emoteImage(for: emote, scale: .x2)
             if !Task.isCancelled { self.iconView.image = image }
         }
     }

@@ -4,6 +4,8 @@ import EmbrCore
 enum Theme {
     /// Violet, or the accent a Founding Supporter picked.
     static var accent: UIColor { SupporterAccent.current.color }
+    /// Text and symbols on a filled accent surface: dark on the pale supporter accents, white on the rest.
+    static var onAccent: UIColor { SupporterAccent.current.prefersDarkText ? .black : .white }
 
     static let background = themed(\.background)
     static let surface = themed(\.surface)

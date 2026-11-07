@@ -348,9 +348,12 @@ final class ChatViewModel {
         replyParentID = parentID
     }
 
+    /// Sends a message, as a reply when one is set. A reply the viewer switched to while this message travelled stays
+    /// set for their next message.
     func send(_ text: String) async throws -> SendResult {
-        let result = try await room.send(text, replyParentID: replyParentID)
-        if result.isSent {
+        let parent = replyParentID
+        let result = try await room.send(text, replyParentID: parent)
+        if result.isSent, replyParentID == parent {
             replyParentID = nil
         }
         return result
@@ -435,6 +438,7 @@ private actor MessageStore {
     private var paused = false
     private var pausedNewCount = 0
     private var frozenRows: [ChatRow] = []
+    private var searchQuery = ""
 
     private var catalog = EmoteCatalog()
     private var badges = BadgeCatalog()
@@ -508,6 +512,7 @@ private actor MessageStore {
         if !paused {
             pausedNewCount = 0
             frozenRows = []
+            searchQuery = ""
             return liveSnapshot()
         }
         frozenRows = Array(rows.suffix(liveWindow))
@@ -662,17 +667,19 @@ private actor MessageStore {
             .map { ChatRow(message: $0.message, laidOut: layout.layout($0.message)) }
     }
 
+    /// Narrows the paused chat to messages matching the query, and keeps it narrowed while new messages arrive; an
+    /// empty query goes back to the chat as it was paused.
     func search(_ query: String) -> ChatSnapshot {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !trimmed.isEmpty else {
-            return ChatSnapshot(rows: Array(rows.suffix(liveWindow)), isPaused: paused, newCount: pausedNewCount)
+        searchQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return currentSnapshot()
+    }
+
+    private func searchMatches() -> [ChatRow] {
+        rows.filter { row in
+            row.message.author.displayName.lowercased().contains(searchQuery)
+                || row.message.author.login.lowercased().contains(searchQuery)
+                || row.message.plainText.lowercased().contains(searchQuery)
         }
-        let matches = rows.filter { row in
-            row.message.author.displayName.lowercased().contains(trimmed)
-                || row.message.author.login.lowercased().contains(trimmed)
-                || row.message.plainText.lowercased().contains(trimmed)
-        }
-        return ChatSnapshot(rows: matches, isPaused: true, newCount: pausedNewCount)
     }
 
     private func makeRow(_ message: ChatMessage) -> ChatRow {
@@ -685,6 +692,9 @@ private actor MessageStore {
         layout = MessageLayout(width: width, settings: settings, catalog: catalog, badges: badges, currentUserLogin: currentUserLogin)
         for position in rows.indices {
             rows[position] = ChatRow(message: rows[position].message, laidOut: layout?.layout(rows[position].message))
+        }
+        for position in frozenRows.indices {
+            frozenRows[position] = ChatRow(message: frozenRows[position].message, laidOut: layout?.layout(frozenRows[position].message))
         }
     }
 
@@ -703,7 +713,10 @@ private actor MessageStore {
     }
 
     private func currentSnapshot() -> ChatSnapshot {
-        paused ? frozenSnapshot() : liveSnapshot()
+        if !searchQuery.isEmpty {
+            return ChatSnapshot(rows: searchMatches(), isPaused: true, newCount: pausedNewCount)
+        }
+        return paused ? frozenSnapshot() : liveSnapshot()
     }
 
     private func liveSnapshot() -> ChatSnapshot {
@@ -712,6 +725,7 @@ private actor MessageStore {
     }
 
     private func frozenSnapshot() -> ChatSnapshot {
-        ChatSnapshot(rows: frozenRows, isPaused: true, newCount: pausedNewCount)
+        guard searchQuery.isEmpty else { return ChatSnapshot(rows: searchMatches(), isPaused: true, newCount: pausedNewCount) }
+        return ChatSnapshot(rows: frozenRows, isPaused: true, newCount: pausedNewCount)
     }
 }

@@ -11,6 +11,11 @@ protocol ChatViewControllerDelegate: AnyObject {
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL)
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage)
     func chatViewControllerDidRequestLogin(_ controller: ChatViewController)
+    func chatViewController(_ controller: ChatViewController, isComposing: Bool)
+}
+
+extension ChatViewControllerDelegate {
+    func chatViewController(_ controller: ChatViewController, isComposing: Bool) {}
 }
 
 @MainActor
@@ -23,7 +28,10 @@ final class ChatViewController: UIViewController {
     private let isReadOnly: Bool
     private let currentUserLogin: String?
     private let broadcasterLogin: String?
-    private var canModerate = false
+    private var canModerate = false {
+        didSet { composerIfLoaded?.isExemptFromSlowMode = canModerate }
+    }
+    private var composerIfLoaded: ChatInputView?
     private let animator = EmoteAnimator.shared
 
     private var collectionView: UICollectionView!
@@ -39,6 +47,7 @@ final class ChatViewController: UIViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private var isPaused = false
+    private var searchShown = false
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
 
@@ -124,6 +133,16 @@ final class ChatViewController: UIViewController {
         viewModel.stop()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        view.endEditing(true)
+    }
+
+    /// Puts the keyboard away, as when the chat leaves the screen while the viewer is writing.
+    func endComposing() {
+        view.endEditing(true)
+    }
+
     #if DEBUG
     /// Opens the moderator's queue, for a screenshot.
     func presentModerationQueueForScreenshot() {
@@ -140,6 +159,14 @@ final class ChatViewController: UIViewController {
         guard let row = pick else { return }
         canModerate = canModerate || ScreenshotHarness.moderates
         presentUserCard(for: row.message.author, message: row.message)
+    }
+
+    /// Types a draft and starts a reply to the newest message, for a screenshot of the composer at work.
+    func composeForScreenshot(draft: String?, reply: Bool) {
+        if reply, let row = dataSource.snapshot().itemIdentifiers.first(where: { $0.message.notice == nil }) {
+            beginReply(to: row.message)
+        }
+        if let draft { composer.typeForScreenshot(draft) }
     }
 
     /// Brings up the system keyboard, or the emote keyboard, for a screenshot of the composer.
@@ -183,6 +210,7 @@ final class ChatViewController: UIViewController {
         collectionView.alwaysBounceVertical = true
         collectionView.keyboardDismissMode = .interactive
         collectionView.contentInsetAdjustmentBehavior = .scrollableAxes
+        collectionView.contentInset = UIEdgeInsets(top: ChatMetrics.rowVertical, left: 0, bottom: 0, right: 0)
         let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboardOnTap))
         dismissTap.cancelsTouchesInView = false
         dismissTap.delegate = self
@@ -213,13 +241,14 @@ final class ChatViewController: UIViewController {
             }
             cell.onTapEmote = { [weak self] emote in
                 guard let self else { return }
+                self.presentEmoteCard(emote)
                 self.delegate?.chatViewController(self, didTapEmote: emote)
             }
             cell.onTapLink = { [weak self] url in
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didTapLink: url)
             }
-            cell.onSwipeReply = self.isAnonymous ? nil : { [weak self] in
+            cell.onSwipeReply = self.isAnonymous || self.isReadOnly ? nil : { [weak self] in
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didRequestReplyTo: row.message)
             }
@@ -239,7 +268,8 @@ final class ChatViewController: UIViewController {
         emptyLabel.text = isReadOnly
             ? String(localized: "Loading chat replay…")
             : String(localized: "Waiting for messages…")
-        emptyLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        emptyLabel.font = .preferredFont(forTextStyle: .subheadline)
+        emptyLabel.adjustsFontForContentSizeCategory = true
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
         view.insertSubview(emptyLabel, belowSubview: collectionView)
@@ -269,12 +299,12 @@ final class ChatViewController: UIViewController {
             statusBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             statusBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-            searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            searchField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12),
-            searchField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12),
+            searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ChatMetrics.rowSpacing),
+            searchField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: ChatMetrics.edge),
+            searchField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ChatMetrics.edge),
 
             newMessagesPill.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            newMessagesPill.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: -12)
+            newMessagesPill.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: -ChatMetrics.edge)
         ])
 
         view.bringSubviewToFront(statusBar)
@@ -291,6 +321,16 @@ final class ChatViewController: UIViewController {
         }
         composer.translatesAutoresizingMaskIntoConstraints = false
         composer.delegate = self
+        composer.isExemptFromSlowMode = canModerate
+        composer.onEditingChanged = { [weak self] editing in
+            guard let self else { return }
+            if editing, self.isPaused { self.jumpToLatest() }
+            self.delegate?.chatViewController(self, isComposing: editing)
+        }
+        composer.onEmoteKeyboardChanged = { [weak self] showing in
+            self?.collectionView.keyboardDismissMode = showing ? .onDrag : .interactive
+        }
+        composerIfLoaded = composer
         view.addSubview(composer)
 
         moderationBar.translatesAutoresizingMaskIntoConstraints = false
@@ -416,6 +456,12 @@ final class ChatViewController: UIViewController {
     private func apply(_ snapshot: ChatSnapshot) {
         isPaused = snapshot.isPaused
         emptyLabel.isHidden = !snapshot.rows.isEmpty
+        if snapshot.rows.isEmpty {
+            let query = (searchField.text ?? "").trimmingCharacters(in: .whitespaces)
+            emptyLabel.text = !query.isEmpty
+                ? String(localized: "No messages match “\(query)”")
+                : isReadOnly ? String(localized: "Loading chat replay…") : String(localized: "Waiting for messages…")
+        }
         if chatterIndex.count > Self.chatterIndexCap * 2 {
             chatterIndex.removeAll(keepingCapacity: true)
         }
@@ -429,7 +475,7 @@ final class ChatViewController: UIViewController {
         diff.appendItems(snapshot.rows.reversed(), toSection: 0)
         let shouldStickToBottom = !snapshot.isPaused
         let finish = { [weak self] in
-            guard let self, shouldStickToBottom else { return }
+            guard let self, shouldStickToBottom, !self.collectionView.isTracking, !self.collectionView.isDecelerating else { return }
             self.scrollToLatest(animated: false)
         }
         if snapshot.relayout {
@@ -440,9 +486,9 @@ final class ChatViewController: UIViewController {
 
         if snapshot.isPaused, snapshot.newCount > 0 {
             newMessagesPill.setCount(snapshot.newCount)
-            newMessagesPill.isHidden = false
+            newMessagesPill.setShown(true)
         } else {
-            newMessagesPill.isHidden = true
+            newMessagesPill.setShown(false)
         }
         if snapshot.alerts > 0 { alertHighlight() }
     }
@@ -487,9 +533,22 @@ final class ChatViewController: UIViewController {
         present(card, animated: true)
     }
 
+    /// Opens the card for an emote tapped in chat; where the viewer can chat it offers to put the emote in their message.
+    private func presentEmoteCard(_ emote: Emote) {
+        Haptics.selection()
+        let canInsert = !isAnonymous && !isReadOnly
+        let card = EmoteCardViewController(emote: emote, images: images, onInsert: canInsert ? { [weak self] emote in
+            guard let self else { return }
+            EmoteUsage.record(emote)
+            self.composer.insertEmote(emote.name)
+            _ = self.composer.becomeFirstResponder()
+        } : nil)
+        present(card, animated: true)
+    }
+
     private func scrollToLatest(animated: Bool) {
         guard collectionView.numberOfSections > 0, collectionView.numberOfItems(inSection: 0) > 0 else { return }
-        collectionView.setContentOffset(.zero, animated: animated)
+        collectionView.setContentOffset(CGPoint(x: 0, y: -collectionView.adjustedContentInset.top), animated: animated)
     }
 
     /// Enables moderator actions once the logged-in user is seen wearing a
@@ -505,9 +564,7 @@ final class ChatViewController: UIViewController {
     }
 
     private func jumpToLatest() {
-        searchField.isHidden = true
-        searchField.text = nil
-        searchField.resignFirstResponder()
+        setSearchShown(false)
         viewModel.setPaused(false)
         scrollToLatest(animated: true)
     }
@@ -549,32 +606,77 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         return CGSize(width: width, height: laidOut.height)
     }
 
+    /// Reading back pauses the chat a row up from the newest message and resumes it only back at the bottom, so a
+    /// finger resting near the bottom does not flick it between the two.
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         let delta = abs(scrollView.contentOffset.y - lastContentOffsetY)
         lastContentOffsetY = scrollView.contentOffset.y
+        let moving = scrollView.isTracking || scrollView.isDecelerating
         let wasFast = fastScroll
-        fastScroll = delta > 40
+        fastScroll = moving && delta > 40
         if fastScroll != wasFast {
             animator.isPaused = fastScroll
         }
 
-        let atBottom = scrollView.contentOffset.y <= 8
-        if atBottom {
-            if isPaused {
+        let fromBottom = scrollView.contentOffset.y + scrollView.adjustedContentInset.top
+        let userMoved = scrollView.isTracking || scrollView.isDecelerating
+        let searching = !(searchField.text ?? "").isEmpty
+        if fromBottom <= 4 {
+            if isPaused, userMoved || !searching {
                 isPaused = false
-                searchField.isHidden = true
+                setSearchShown(false)
                 viewModel.setPaused(false)
             }
-        } else if !isPaused {
+        } else if !isPaused, fromBottom > 16, userMoved {
             isPaused = true
             viewModel.setPaused(true)
-            searchField.isHidden = false
+            setSearchShown(true)
         }
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        resumeEmoteAnimation()
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { resumeEmoteAnimation() }
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        resumeEmoteAnimation()
+    }
+
+    private func resumeEmoteAnimation() {
         fastScroll = false
         animator.isPaused = false
+    }
+
+    /// The search field slides in over the top of a paused chat and out again when it resumes, taking its query with
+    /// it.
+    private func setSearchShown(_ shown: Bool) {
+        if !shown, !(searchField.text ?? "").isEmpty {
+            searchField.text = nil
+            searchField.resignFirstResponder()
+        }
+        guard shown != searchShown else { return }
+        searchShown = shown
+        guard view.window != nil, !Motion.reduced else {
+            searchField.isHidden = !shown
+            searchField.alpha = 1
+            searchField.transform = .identity
+            return
+        }
+        if shown, searchField.isHidden {
+            searchField.alpha = 0
+            searchField.transform = CGAffineTransform(translationX: 0, y: -8)
+        }
+        searchField.isHidden = false
+        UIView.animate(withDuration: 0.22, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut]) {
+            self.searchField.alpha = shown ? 1 : 0
+            self.searchField.transform = shown ? .identity : CGAffineTransform(translationX: 0, y: -8)
+        } completion: { _ in
+            if !self.searchShown { self.searchField.isHidden = true }
+        }
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -600,11 +702,11 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
             sheet.addAction(UIAlertAction(title: String(localized: "Delete Message"), style: .destructive) { [weak self] _ in
                 self?.viewModel.deleteMessage(messageID: message.id)
             })
-            sheet.addAction(UIAlertAction(title: String(localized: "Timeout 10 min"), style: .default) { [weak self] _ in
-                self?.viewModel.timeoutUser(userID: message.author.id, duration: 600)
+            sheet.addAction(UIAlertAction(title: String(localized: "Timeout…"), style: .default) { [weak self] _ in
+                self?.presentTimeoutChoices(for: message, sourceRect: sourceRect)
             })
-            sheet.addAction(UIAlertAction(title: String(localized: "Ban"), style: .destructive) { [weak self] _ in
-                self?.viewModel.banUser(userID: message.author.id)
+            sheet.addAction(UIAlertAction(title: String(localized: "Ban…"), style: .destructive) { [weak self] _ in
+                self?.confirmBan(of: message.author)
             })
         }
         if !isOwn {
@@ -632,6 +734,43 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         present(sheet, animated: true)
     }
 
+    private func presentTimeoutChoices(for message: ChatMessage, sourceRect: CGRect) {
+        let sheet = UIAlertController(title: String(localized: "Time out @\(message.author.login)"), message: nil, preferredStyle: .actionSheet)
+        let choices: [(String, Int)] = [
+            (String(localized: "1 minute"), 60),
+            (String(localized: "10 minutes"), 600),
+            (String(localized: "1 hour"), 3600),
+            (String(localized: "1 day"), 86_400),
+        ]
+        for (title, seconds) in choices {
+            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                Haptics.notify(.success)
+                self?.viewModel.timeoutUser(userID: message.author.id, duration: seconds)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = sourceRect
+        }
+        present(sheet, animated: true)
+    }
+
+    /// A ban lasts until someone lifts it, so it asks once more before it happens.
+    private func confirmBan(of user: ChatUser) {
+        let alert = UIAlertController(
+            title: String(localized: "Ban @\(user.login)?"),
+            message: String(localized: "They can't chat here until a moderator unbans them."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "Ban"), style: .destructive) { [weak self] _ in
+            Haptics.notify(.warning)
+            self?.viewModel.banUser(userID: user.id)
+        })
+        present(alert, animated: true)
+    }
+
     private func presentReportReasons(for message: ChatMessage, sourceRect: CGRect) {
         let sheet = UIAlertController(
             title: String(localized: "Report @\(message.author.login)"),
@@ -656,15 +795,14 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
 
 extension ChatViewController: ChatInputViewDelegate {
     func chatInput(_ input: ChatInputView, didSubmit text: String) {
+        Haptics.impact(.soft)
+        input.beginSending(text)
         if text.trimmingCharacters(in: .whitespaces).hasPrefix("/") {
-            input.setSending(true)
             Task { [weak self] in
                 guard let self else { return }
                 let outcome = await self.viewModel.runCommand(text.trimmingCharacters(in: .whitespaces))
-                input.setSending(false)
                 if case .handled = outcome {
-                    Haptics.selection()
-                    input.clear()
+                    input.sendSucceeded(startsCooldown: false)
                     input.hideReply()
                 } else {
                     self.performSend(text, input: input)
@@ -676,24 +814,20 @@ extension ChatViewController: ChatInputViewDelegate {
     }
 
     private func performSend(_ text: String, input: ChatInputView) {
-        input.setSending(true)
         Task { [weak self] in
             guard let self else { return }
             do {
                 let result = try await self.viewModel.send(text)
-                input.setSending(false)
                 if result.isSent {
-                    Haptics.notify(.success)
-                    input.clear()
-                    input.hideReply()
+                    input.sendSucceeded()
+                    if self.viewModel.currentReplyParentID == nil { input.hideReply() }
                 } else {
                     Haptics.notify(.error)
-                    input.showDropReason(result.dropReason ?? String(localized: "Message rejected"))
+                    input.sendFailed(result.dropReason ?? String(localized: "Message rejected"))
                 }
             } catch {
                 Haptics.notify(.error)
-                input.setSending(false)
-                input.showDropReason(Self.describe(error))
+                input.sendFailed(Self.describe(error))
                 MidgarLog.notice("Chat send failed: \(error)", category: .chat)
             }
         }

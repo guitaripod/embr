@@ -24,6 +24,12 @@ final class EmoteKeyboardView: UIView {
     private let emptyLabel = UILabel()
     private var bottomBarBottom: NSLayoutConstraint!
     private var homeInset: CGFloat = 0
+    private var preferredHeights: [Bool: CGFloat] = [:]
+    private var isLandscape = false
+    private var chips: [UIButton] = []
+    private var selectedChip = -1
+    private var repeatTimer: Timer?
+    private var repeatTicks = 0
     private let pageGuide = UILayoutGuide()
     private var pageLeading: NSLayoutConstraint!
 
@@ -35,7 +41,55 @@ final class EmoteKeyboardView: UIView {
         pageLeading.constant = inset
     }
 
-    override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: 320 + homeInset) }
+    override var intrinsicContentSize: CGSize {
+        let height = preferredHeights[isLandscape] ?? Self.rememberedHeight(landscape: isLandscape) ?? typicalHeight
+        return CGSize(width: UIView.noIntrinsicMetric, height: height)
+    }
+
+    /// The system keyboard's usual height with its suggestion bar, until the real one has been seen.
+    private var typicalHeight: CGFloat {
+        if traitCollection.userInterfaceIdiom == .pad { return 398 + bottomInset }
+        return (isLandscape ? 230 : 311) + bottomInset
+    }
+
+    /// The home indicator's inset, read from the key window before this keyboard is in one.
+    private var bottomInset: CGFloat {
+        if let window { return window.safeAreaInsets.bottom }
+        let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        return windows.first { $0.isKeyWindow }?.safeAreaInsets.bottom ?? 0
+    }
+
+    /// Matches the system keyboard's height, home indicator area included, so swapping keyboards keeps the chat still.
+    /// The height is kept per orientation and remembered, so the emote keyboard opened first next time is already the
+    /// right size.
+    func setPreferredHeight(_ height: CGFloat, landscape: Bool) {
+        Self.remember(height, landscape: landscape)
+        preferredHeights[landscape] = height
+        if landscape == isLandscape { fitHeight(landscape: landscape) }
+    }
+
+    /// An input view comes up at its frame's height, so the frame takes the height this keyboard wants for the
+    /// orientation before it shows, and again when the orientation changes.
+    func fitHeight(landscape: Bool) {
+        isLandscape = landscape
+        let height = intrinsicContentSize.height
+        guard abs(frame.height - height) > 0.5 else { return }
+        frame.size.height = height
+        invalidateIntrinsicContentSize()
+    }
+
+    private static func heightKey(landscape: Bool) -> String {
+        landscape ? "chat.keyboardHeight.landscape" : "chat.keyboardHeight.portrait"
+    }
+
+    private static func rememberedHeight(landscape: Bool) -> CGFloat? {
+        let stored = UserDefaults.standard.double(forKey: heightKey(landscape: landscape))
+        return stored > 0 ? CGFloat(stored) : nil
+    }
+
+    private static func remember(_ height: CGFloat, landscape: Bool) {
+        UserDefaults.standard.set(Double(height), forKey: heightKey(landscape: landscape))
+    }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
@@ -64,10 +118,18 @@ final class EmoteKeyboardView: UIView {
     }
 
     private func rebuild() {
+        let previous = sections.map(\.section)
         sections = Self.buildSections(catalog, recents: recents)
-        rebuildChips()
         applySnapshot()
+        if sections.map(\.section) != previous { rebuildChips() }
+        selectChip(topSection())
         emptyLabel.isHidden = !sections.isEmpty
+    }
+
+    /// The section showing at the top of the grid.
+    private func topSection() -> Int {
+        let top = CGPoint(x: collectionView.bounds.midX, y: collectionView.contentOffset.y + collectionView.adjustedContentInset.top + 30)
+        return (collectionView.indexPathForItem(at: top) ?? collectionView.indexPathsForVisibleItems.min())?.section ?? 0
     }
 
     private func loadRecents() {
@@ -127,7 +189,7 @@ final class EmoteKeyboardView: UIView {
         chipsStack.alignment = .center
         chipsStack.translatesAutoresizingMaskIntoConstraints = false
         chipsStack.isLayoutMarginsRelativeArrangement = true
-        chipsStack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        chipsStack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 4, leading: ChatMetrics.edge, bottom: 0, trailing: ChatMetrics.edge)
         chipsScroll.addSubview(chipsStack)
         addSubview(chipsScroll)
 
@@ -141,7 +203,8 @@ final class EmoteKeyboardView: UIView {
         configureDataSource()
 
         emptyLabel.text = String(localized: "No emotes available")
-        emptyLabel.font = .systemFont(ofSize: 14)
+        emptyLabel.font = .preferredFont(forTextStyle: .subheadline)
+        emptyLabel.adjustsFontForContentSizeCategory = true
         emptyLabel.textColor = Theme.secondaryText
         emptyLabel.textAlignment = .center
         emptyLabel.isHidden = true
@@ -157,6 +220,9 @@ final class EmoteKeyboardView: UIView {
             Haptics.impact(.light)
             self?.onBackspace?()
         }, for: .touchUpInside)
+        let hold = UILongPressGestureRecognizer(target: self, action: #selector(holdBackspace(_:)))
+        hold.minimumPressDuration = 0.4
+        backspaceButton.addGestureRecognizer(hold)
 
         let bottomBar = UIStackView(arrangedSubviews: [keyboardButton, UIView(), backspaceButton])
         bottomBar.axis = .horizontal
@@ -175,7 +241,7 @@ final class EmoteKeyboardView: UIView {
             chipsScroll.topAnchor.constraint(equalTo: topAnchor),
             chipsScroll.leadingAnchor.constraint(equalTo: pageGuide.leadingAnchor),
             chipsScroll.trailingAnchor.constraint(equalTo: pageGuide.trailingAnchor),
-            chipsScroll.heightAnchor.constraint(equalToConstant: 40),
+            chipsScroll.heightAnchor.constraint(equalToConstant: 44),
             chipsStack.topAnchor.constraint(equalTo: chipsScroll.contentLayoutGuide.topAnchor),
             chipsStack.bottomAnchor.constraint(equalTo: chipsScroll.contentLayoutGuide.bottomAnchor),
             chipsStack.leadingAnchor.constraint(equalTo: chipsScroll.contentLayoutGuide.leadingAnchor),
@@ -210,27 +276,72 @@ final class EmoteKeyboardView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
     }
 
-    private func rebuildChips() {
-        chipsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for entry in sections {
-            let chip = UIButton(type: .system)
-            var config = UIButton.Configuration.gray()
-            config.baseForegroundColor = Theme.primaryText
-            config.cornerStyle = .capsule
-            config.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 12, bottom: 5, trailing: 12)
-            var title = AttributedString(entry.section.title)
-            title.font = .systemFont(ofSize: 13, weight: .semibold)
-            config.attributedTitle = title
-            chip.configuration = config
-            let sectionTitle = entry.section.title
-            chip.addAction(UIAction { [weak self] _ in self?.scrollToSection(title: sectionTitle) }, for: .touchUpInside)
-            chipsStack.addArrangedSubview(chip)
+    /// Holding delete keeps deleting, faster after the first few, like the system keyboard.
+    @objc private func holdBackspace(_ recognizer: UILongPressGestureRecognizer) {
+        switch recognizer.state {
+        case .began:
+            repeatTicks = 0
+            onBackspace?()
+            Haptics.impact(.light)
+            repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.repeatBackspace() }
+            }
+        case .ended, .cancelled, .failed:
+            repeatTimer?.invalidate()
+            repeatTimer = nil
+        default:
+            break
         }
     }
 
-    private func scrollToSection(title: String) {
-        guard let index = sections.firstIndex(where: { $0.section.title == title }),
-              !sections[index].emotes.isEmpty else { return }
+    private func repeatBackspace() {
+        repeatTicks += 1
+        guard repeatTicks > 4 || repeatTicks % 2 == 0 else { return }
+        onBackspace?()
+    }
+
+    private func rebuildChips() {
+        chipsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        chips = []
+        selectedChip = -1
+        for (index, entry) in sections.enumerated() {
+            let chip = UIButton(type: .system)
+            chip.addAction(UIAction { [weak self] _ in self?.scrollToSection(index) }, for: .touchUpInside)
+            chips.append(chip)
+            chipsStack.addArrangedSubview(chip)
+            styleChip(chip, title: entry.section.title, selected: false)
+        }
+    }
+
+    private func styleChip(_ chip: UIButton, title: String, selected: Bool) {
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = selected ? Theme.accent : .tertiarySystemFill
+        config.baseForegroundColor = selected ? Theme.onAccent : Theme.primaryText
+        config.cornerStyle = .capsule
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        var attributed = AttributedString(title)
+        attributed.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(for: .systemFont(ofSize: 13, weight: .semibold), maximumPointSize: 20)
+        config.attributedTitle = attributed
+        chip.configuration = config
+        chip.accessibilityTraits = selected ? [.button, .selected] : .button
+    }
+
+    /// Marks the section showing at the top of the grid and brings its chip into view.
+    private func selectChip(_ index: Int) {
+        guard index != selectedChip, chips.indices.contains(index) else { return }
+        if chips.indices.contains(selectedChip) {
+            styleChip(chips[selectedChip], title: sections[selectedChip].section.title, selected: false)
+        }
+        selectedChip = index
+        styleChip(chips[index], title: sections[index].section.title, selected: true)
+        let frame = chips[index].convert(chips[index].bounds, to: chipsScroll).insetBy(dx: -24, dy: 0)
+        chipsScroll.scrollRectToVisible(frame, animated: true)
+    }
+
+    private func scrollToSection(_ index: Int) {
+        guard sections.indices.contains(index), !sections[index].emotes.isEmpty else { return }
+        Haptics.selection()
+        selectChip(index)
         collectionView.scrollToItem(at: IndexPath(item: 0, section: index), at: .top, animated: true)
     }
 
@@ -245,12 +356,7 @@ final class EmoteKeyboardView: UIView {
                     layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(54)),
                     repeatingSubitem: item, count: columns)
                 let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
-                section.boundarySupplementaryItems = [
-                    NSCollectionLayoutBoundarySupplementaryItem(
-                        layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(28)),
-                        elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-                ]
+                section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: ChatMetrics.edge - 4, bottom: 12, trailing: ChatMetrics.edge - 4)
                 return section
             }
         }
@@ -261,22 +367,8 @@ final class EmoteKeyboardView: UIView {
             guard let self else { return }
             cell.configure(with: emote, images: self.images)
         }
-        let header = UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
-            elementKind: UICollectionView.elementKindSectionHeader
-        ) { [weak self] view, _, indexPath in
-            guard let self, let section = self.dataSource.sectionIdentifier(for: indexPath.section) else { return }
-            var content = view.defaultContentConfiguration()
-            content.text = section.title
-            content.textProperties.color = Theme.secondaryText
-            content.textProperties.font = .systemFont(ofSize: 12, weight: .semibold)
-            view.contentConfiguration = content
-            view.backgroundConfiguration = .clear()
-        }
         dataSource = UICollectionViewDiffableDataSource<EmoteSection, Emote>(collectionView: collectionView) { collectionView, indexPath, emote in
             collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: emote)
-        }
-        dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
-            collectionView.dequeueConfiguredReusableSupplementary(using: header, for: indexPath)
         }
     }
 
@@ -291,6 +383,11 @@ final class EmoteKeyboardView: UIView {
 }
 
 extension EmoteKeyboardView: UICollectionViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollView.isTracking || scrollView.isDecelerating else { return }
+        selectChip(topSection())
+    }
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
         guard let emote = dataSource.itemIdentifier(for: indexPath) else { return }
@@ -328,6 +425,9 @@ private final class EmoteKeyCell: UICollectionViewCell {
     }
 
     func configure(with emote: Emote, images: ImageLoading) {
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = emote.name
         loadTask?.cancel()
         imageView.image = nil
         imageView.autoPlayAnimatedImage = SettingsStore.shared.current.animateEmotes

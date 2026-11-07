@@ -17,6 +17,7 @@ final class ChatsViewController: UIViewController {
     private let model: ChatsModel
     private let auth: AuthService
     private var strip: UICollectionView!
+    private var stripHeight: NSLayoutConstraint!
     private var stripSource: UICollectionViewDiffableDataSource<Int, StripItem>!
     private let columns = UIStackView()
     private let emptyState = UIStackView()
@@ -96,11 +97,11 @@ final class ChatsViewController: UIViewController {
 
     private func setUpStrip() {
         let layout = UICollectionViewCompositionalLayout { _, _ in
-            let size = NSCollectionLayoutSize(widthDimension: .estimated(120), heightDimension: .absolute(36))
+            let size = NSCollectionLayoutSize(widthDimension: .estimated(120), heightDimension: .absolute(Self.chipHeight))
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitems: [NSCollectionLayoutItem(layoutSize: size)])
             let section = NSCollectionLayoutSection(group: group)
             section.interGroupSpacing = 8
-            section.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: ChatMetrics.edge, bottom: 6, trailing: ChatMetrics.edge)
             return section
         }
         let configuration = UICollectionViewCompositionalLayoutConfiguration()
@@ -141,7 +142,17 @@ final class ChatsViewController: UIViewController {
         }
     }
 
+    /// Chips grow with Dynamic Type, and the strip with them.
+    nonisolated private static var chipHeight: CGFloat {
+        UIFontMetrics(forTextStyle: .subheadline).scaledValue(for: 36)
+    }
+
     private func setUpColumns() {
+        stripHeight = strip.heightAnchor.constraint(equalToConstant: Self.chipHeight + 12)
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (controller: ChatsViewController, _) in
+            controller.stripHeight.constant = Self.chipHeight + 12
+            controller.strip.collectionViewLayout.invalidateLayout()
+        }
         columns.axis = .horizontal
         columns.distribution = .fillEqually
         columns.spacing = 1
@@ -152,7 +163,7 @@ final class ChatsViewController: UIViewController {
             strip.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             strip.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             strip.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            strip.heightAnchor.constraint(equalToConstant: 48),
+            stripHeight,
             columns.topAnchor.constraint(equalTo: strip.bottomAnchor),
             columns.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             columns.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
@@ -314,6 +325,25 @@ final class ChatsViewController: UIViewController {
         present(UINavigationController(rootViewController: mentions), animated: true)
     }
 
+    /// Tapping the chip of the chat already showing alone offers what its column header offers when chats share the
+    /// screen: watching the stream or closing the chat.
+    private func presentChatActions(for entry: ChatsModel.Entry, from source: UIView?) {
+        let sheet = UIAlertController(title: entry.name, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: String(localized: "Watch Stream"), style: .default) { [weak self] _ in
+            self?.watch(entry)
+        })
+        sheet.addAction(UIAlertAction(title: String(localized: "Close Chat"), style: .destructive) { [weak self] _ in
+            Haptics.impact(.light)
+            self?.model.close(entry.id)
+        })
+        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        if let popover = sheet.popoverPresentationController, let source {
+            popover.sourceView = source
+            popover.sourceRect = source.bounds
+        }
+        present(sheet, animated: true)
+    }
+
     private func watch(_ entry: ChatsModel.Entry) {
         guard let url = URL(string: "embr://channel/\(entry.login)"), let tabBar = tabBarController as? RootTabBarController else { return }
         let router = DeepLinkRouter()
@@ -327,7 +357,12 @@ extension ChatsViewController: UICollectionViewDelegate {
         Haptics.selection()
         switch stripSource.itemIdentifier(for: indexPath) {
         case .mentions: presentMentions()
-        case .chat(let id): model.select(id)
+        case .chat(let id):
+            if shown.count == 1, shown.first == id, let entry = model.entries.first(where: { $0.id == id }) {
+                presentChatActions(for: entry, from: collectionView.cellForItem(at: indexPath))
+            } else {
+                model.select(id)
+            }
         case nil: break
         }
     }
@@ -527,12 +562,5 @@ private final class BadgeLabel: UILabel {
     override var intrinsicContentSize: CGSize {
         let size = super.intrinsicContentSize
         return CGSize(width: size.width + 10, height: size.height)
-    }
-}
-
-private extension UIFont {
-    func withWeight(_ weight: UIFont.Weight) -> UIFont {
-        let descriptor = fontDescriptor.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: weight]])
-        return UIFont(descriptor: descriptor, size: 0)
     }
 }

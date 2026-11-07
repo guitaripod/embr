@@ -13,20 +13,36 @@ enum AutocompleteToken: Equatable {
     case mention(String)
 }
 
+/// The chat composer: a reply strip, autocomplete, a status line and the field with its emote button beside the send
+/// button. The field starts on the chat's text edge, grows with the message up to a few lines, and every part that
+/// comes and goes animates with the bar so the chat above follows smoothly.
 @MainActor
-final class ChatInputView: UIView {
+final class ChatInputView: UIView, UIGestureRecognizerDelegate {
     weak var delegate: ChatInputViewDelegate?
+    /// Told when the viewer starts or stops writing, so the screen around the chat can make room for it.
+    var onEditingChanged: ((Bool) -> Void)?
+    /// Moderators and the broadcaster are not held to slow mode.
+    var isExemptFromSlowMode = false {
+        didSet { if isExemptFromSlowMode { endCooldown() } }
+    }
+    /// Told when the emote keyboard comes up or goes away, since dragging the chat cannot pull it down the way it
+    /// pulls down the system keyboard.
+    var onEmoteKeyboardChanged: ((Bool) -> Void)?
 
     private let container = UIStackView()
     private let replyPreview = ReplyComposerBar()
     private let autocomplete: EmoteAutocompleteView
+    private let statusLabel = UILabel()
+    private let statusRow = UIView()
     private let inputRow = UIStackView()
+    private let field = UIView()
     private let textView: EmoteTextView
-    private let emoteButton = UIButton(type: .system)
-    private let sendButton = UIButton(type: .system)
-    private let spinner = UIActivityIndicatorView(style: .medium)
-    private let dropReasonLabel = UILabel()
-    private let dropContainer = UIStackView()
+    private let emoteButton = EmoteToggleButton()
+    private let sendButton = SendButton()
+    private var fieldCap: NSLayoutConstraint!
+    private var lastFieldHeight: CGFloat = 0
+    private var lastFieldWidth: CGFloat = 0
+    private var lastLandscape: Bool?
 
     private let images: ImageLoading
     private var catalog = EmoteCatalog()
@@ -38,9 +54,12 @@ final class ChatInputView: UIView {
         keyboard.onSwitchToKeyboard = { [weak self] in self?.switchToSystemKeyboard() }
         return keyboard
     }()
-    private var isSending = false {
-        didSet { updateSendState() }
-    }
+    private var isSending = false
+    private var inFlight: String?
+    private var dropReason: String?
+    private var slowModeSeconds: Int?
+    private var cooldownEnds: Date?
+    private var cooldownTimer: Timer?
 
     init(images: ImageLoading) {
         self.images = images
@@ -48,6 +67,7 @@ final class ChatInputView: UIView {
         self.autocomplete = EmoteAutocompleteView(images: images, onSelect: { _ in })
         super.init(frame: .zero)
         setUp()
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillChangeFrame(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     }
 
     @available(*, unavailable)
@@ -62,12 +82,46 @@ final class ChatInputView: UIView {
         emoteKeyboard.setPageLeading(inset)
     }
 
-    func setSending(_ sending: Bool) {
-        isSending = sending
+    /// Clears the field the moment a message goes out, so the next one can be typed while it travels.
+    func beginSending(_ text: String) {
+        isSending = true
+        inFlight = text
+        dropReason = nil
+        textView.reset()
+        refreshAutocomplete()
+        updateFieldHeight()
+    }
+
+    /// The message went through; in slow mode the next one waits for the countdown.
+    func sendSucceeded(startsCooldown: Bool = true) {
+        isSending = false
+        inFlight = nil
+        if startsCooldown, let seconds = slowModeSeconds, seconds > 0, !isExemptFromSlowMode {
+            startCooldown(seconds)
+        }
+        updateSendState()
+        updateStatus()
+    }
+
+    /// The message did not go out: it comes back into the field unless something new was typed meanwhile, and the
+    /// reason shows under it.
+    func sendFailed(_ reason: String) {
+        isSending = false
+        if let inFlight {
+            let typedMeanwhile = textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+            textView.setText(typedMeanwhile.isEmpty ? inFlight : inFlight + " " + typedMeanwhile)
+            refreshAutocomplete()
+            updateFieldHeight()
+        }
+        inFlight = nil
+        showDropReason(reason)
+        updateSendState()
     }
 
     func setRoomState(_ state: RoomState) {
         textView.placeholder = Self.placeholder(for: state)
+        slowModeSeconds = state.slowMode
+        if state.slowMode == nil { endCooldown() }
     }
 
     private static func placeholder(for state: RoomState) -> String {
@@ -83,15 +137,20 @@ final class ChatInputView: UIView {
         return String(localized: "Send a message · \(parts.joined(separator: ", "))")
     }
 
+    /// Shows why a message did not go out, with a shake of the field; nil clears it.
     func showDropReason(_ reason: String?) {
-        dropReasonLabel.text = reason
-        dropContainer.isHidden = (reason == nil)
+        dropReason = reason
+        updateStatus()
+        guard let reason else { return }
+        shakeField()
+        UIAccessibility.post(notification: .announcement, argument: String(localized: "Message not sent. \(reason)"))
     }
 
     func clear() {
         textView.reset()
+        dropReason = nil
         refreshAutocomplete()
-        showDropReason(nil)
+        updateFieldHeight()
     }
 
     func insertEmote(_ name: String) {
@@ -113,9 +172,16 @@ final class ChatInputView: UIView {
     func showEmoteKeyboardForScreenshot() {
         showEmoteKeyboard()
     }
+
+    /// Types a draft into the field, for a screenshot of the composer at work.
+    func typeForScreenshot(_ text: String) {
+        textView.insertEmoteName(text)
+        refreshAutocomplete()
+    }
     #endif
 
-    @objc private func emoteTapped() {
+    private func toggleEmoteKeyboard() {
+        Haptics.selection()
         if showingEmoteKeyboard {
             switchToSystemKeyboard()
         } else {
@@ -126,8 +192,10 @@ final class ChatInputView: UIView {
     private func showEmoteKeyboard() {
         showingEmoteKeyboard = true
         emoteKeyboard.setCatalog(catalog)
+        emoteKeyboard.fitHeight(landscape: isLandscape)
         textView.inputView = emoteKeyboard
-        updateEmoteButtonIcon()
+        emoteButton.setShowsKeyboard(true, animated: true)
+        onEmoteKeyboardChanged?(true)
         if textView.isFirstResponder {
             textView.reloadInputViews()
         } else {
@@ -139,27 +207,41 @@ final class ChatInputView: UIView {
         guard showingEmoteKeyboard else { return }
         showingEmoteKeyboard = false
         textView.inputView = nil
-        updateEmoteButtonIcon()
+        emoteButton.setShowsKeyboard(false, animated: true)
+        onEmoteKeyboardChanged?(false)
         if textView.isFirstResponder { textView.reloadInputViews() }
     }
 
-    private func updateEmoteButtonIcon() {
-        emoteButton.configuration?.image = UIImage(systemName: showingEmoteKeyboard ? "keyboard" : "face.smiling")
-        emoteButton.accessibilityLabel = showingEmoteKeyboard ? String(localized: "Keyboard") : String(localized: "Emotes")
+    /// The emote keyboard takes the system keyboard's height, so switching between them does not move the chat.
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard textView.isFirstResponder, !showingEmoteKeyboard,
+              let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let screen = window?.windowScene?.screen,
+              frame.minY < screen.bounds.maxY, frame.height > 200 else { return }
+        emoteKeyboard.setPreferredHeight(frame.height, landscape: isLandscape)
+    }
+
+    private var isLandscape: Bool {
+        window?.windowScene?.effectiveGeometry.interfaceOrientation.isLandscape ?? false
     }
 
     func showReply(displayName: String, text: String) {
         replyPreview.configure(displayName: displayName, text: text)
-        replyPreview.isHidden = false
+        setArrangedHidden(replyPreview, false)
     }
 
     func hideReply() {
-        replyPreview.isHidden = true
+        setArrangedHidden(replyPreview, true)
     }
 
     @discardableResult
     override func becomeFirstResponder() -> Bool {
         textView.becomeFirstResponder()
+    }
+
+    @discardableResult
+    override func resignFirstResponder() -> Bool {
+        textView.resignFirstResponder()
     }
 
     var isEditing: Bool {
@@ -188,14 +270,18 @@ final class ChatInputView: UIView {
             self?.insertSuggestion(suggestion)
         }
 
-        dropReasonLabel.font = .systemFont(ofSize: 12, weight: .regular)
-        dropReasonLabel.textColor = .systemRed
-        dropReasonLabel.numberOfLines = 2
-
-        dropContainer.addArrangedSubview(dropReasonLabel)
-        dropContainer.isLayoutMarginsRelativeArrangement = true
-        dropContainer.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 2, leading: 14, bottom: 2, trailing: 14)
-        dropContainer.isHidden = true
+        statusLabel.font = .preferredFont(forTextStyle: .caption1)
+        statusLabel.adjustsFontForContentSizeCategory = true
+        statusLabel.numberOfLines = 2
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusRow.addSubview(statusLabel)
+        statusRow.isHidden = true
+        NSLayoutConstraint.activate([
+            statusLabel.topAnchor.constraint(equalTo: statusRow.topAnchor, constant: 6),
+            statusLabel.bottomAnchor.constraint(equalTo: statusRow.bottomAnchor),
+            statusLabel.leadingAnchor.constraint(equalTo: statusRow.leadingAnchor, constant: ChatMetrics.edge + ChatMetrics.fieldTextInsets.left),
+            statusLabel.trailingAnchor.constraint(equalTo: statusRow.trailingAnchor, constant: -ChatMetrics.edge)
+        ])
 
         replyPreview.isHidden = true
         replyPreview.onCancel = { [weak self] in
@@ -207,88 +293,159 @@ final class ChatInputView: UIView {
 
         container.addArrangedSubview(replyPreview)
         container.addArrangedSubview(autocomplete)
-        container.addArrangedSubview(dropContainer)
+        container.addArrangedSubview(statusRow)
         container.addArrangedSubview(inputRow)
 
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: topAnchor),
             container.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
             container.leadingAnchor.constraint(equalTo: leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: trailingAnchor),
-            autocomplete.heightAnchor.constraint(equalToConstant: 44)
+            container.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
+
+        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(swipedDown))
+        swipeDown.direction = .down
+        addGestureRecognizer(swipeDown)
     }
 
     private func configureInputRow() {
+        let sendInset = (ChatMetrics.field - ChatMetrics.sendDiameter) / 2
         inputRow.axis = .horizontal
         inputRow.alignment = .bottom
-        inputRow.spacing = 8
+        inputRow.spacing = ChatMetrics.rowSpacing - sendInset
         inputRow.isLayoutMarginsRelativeArrangement = true
-        inputRow.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
+        inputRow.directionalLayoutMargins = NSDirectionalEdgeInsets(
+            top: ChatMetrics.composerVertical,
+            leading: ChatMetrics.edge,
+            bottom: ChatMetrics.composerVertical,
+            trailing: ChatMetrics.edge - sendInset
+        )
 
-        textView.backgroundColor = Theme.surfaceElevated
-        textView.layer.cornerRadius = 16
-        textView.layer.cornerCurve = .continuous
-        textView.font = .systemFont(ofSize: 16)
-        textView.textColor = Theme.primaryText
-        textView.isScrollEnabled = false
-        textView.textContainerInset = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
-        textView.onTextChange = { [weak self] in self?.refreshAutocomplete() }
-        textView.onReturn = { [weak self] in self?.sendTapped() }
-        textView.onEndEditing = { [weak self] in self?.switchToSystemKeyboard() }
-        textView.placeholder = String(localized: "Send a message")
+        field.backgroundColor = .tertiarySystemFill
+        field.layer.cornerRadius = ChatMetrics.field / 2
+        field.layer.cornerCurve = .continuous
+        field.translatesAutoresizingMaskIntoConstraints = false
+        let focusTap = UITapGestureRecognizer(target: self, action: #selector(focusField))
+        focusTap.cancelsTouchesInView = false
+        focusTap.delegate = self
+        field.addGestureRecognizer(focusTap)
+
         textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.onTextChange = { [weak self] in
+            guard let self else { return }
+            if self.dropReason != nil { self.dropReason = nil }
+            self.refreshAutocomplete()
+            self.updateFieldHeight()
+        }
+        textView.onTextSizeChange = { [weak self] in self?.updateFieldHeight() }
+        textView.onReturn = { [weak self] in self?.sendTapped() }
+        textView.onBeginEditing = { [weak self] in self?.onEditingChanged?(true) }
+        textView.onEndEditing = { [weak self] in
+            self?.switchToSystemKeyboard()
+            self?.onEditingChanged?(false)
+        }
+        textView.onTab = { [weak self] in self?.acceptFirstSuggestion() }
+        textView.placeholder = String(localized: "Send a message")
+        field.addSubview(textView)
 
-        var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "paperplane.fill")
-        sendButton.configuration = config
-        sendButton.tintColor = Theme.accent
-        sendButton.isEnabled = false
-        sendButton.alpha = 0.35
-        sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
-
-        spinner.hidesWhenStopped = true
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-
-        let sendContainer = UIView()
-        sendContainer.translatesAutoresizingMaskIntoConstraints = false
-        sendContainer.addSubview(sendButton)
-        sendContainer.addSubview(spinner)
-
-        var emoteConfig = UIButton.Configuration.plain()
-        emoteConfig.image = UIImage(systemName: "face.smiling")
-        emoteButton.configuration = emoteConfig
-        emoteButton.tintColor = Theme.secondaryText
         emoteButton.translatesAutoresizingMaskIntoConstraints = false
-        emoteButton.accessibilityLabel = String(localized: "Emotes")
-        emoteButton.addTarget(self, action: #selector(emoteTapped), for: .touchUpInside)
+        emoteButton.addAction(UIAction { [weak self] _ in self?.toggleEmoteKeyboard() }, for: .primaryActionTriggered)
+        field.addSubview(emoteButton)
 
-        inputRow.addArrangedSubview(emoteButton)
-        inputRow.addArrangedSubview(textView)
-        inputRow.addArrangedSubview(sendContainer)
+        sendButton.addAction(UIAction { [weak self] _ in self?.sendTapped() }, for: .primaryActionTriggered)
 
+        inputRow.addArrangedSubview(field)
+        inputRow.addArrangedSubview(sendButton)
+
+        fieldCap = textView.heightAnchor.constraint(equalToConstant: ChatMetrics.fieldMaxHeight)
+        let emoteSide = ChatMetrics.field - 4
         NSLayoutConstraint.activate([
-            emoteButton.widthAnchor.constraint(equalToConstant: 38),
-            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: 36),
-            textView.heightAnchor.constraint(lessThanOrEqualToConstant: 120),
-            sendContainer.widthAnchor.constraint(equalToConstant: 44),
-            sendContainer.heightAnchor.constraint(equalToConstant: 44),
-            sendButton.centerXAnchor.constraint(equalTo: sendContainer.centerXAnchor),
-            sendButton.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor),
-            spinner.centerXAnchor.constraint(equalTo: sendContainer.centerXAnchor),
-            spinner.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor)
+            textView.topAnchor.constraint(equalTo: field.topAnchor),
+            textView.bottomAnchor.constraint(equalTo: field.bottomAnchor),
+            textView.leadingAnchor.constraint(equalTo: field.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: field.trailingAnchor),
+            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: ChatMetrics.field),
+            emoteButton.trailingAnchor.constraint(equalTo: field.trailingAnchor, constant: -2),
+            emoteButton.bottomAnchor.constraint(equalTo: field.bottomAnchor, constant: -2),
+            emoteButton.widthAnchor.constraint(equalToConstant: emoteSide),
+            emoteButton.heightAnchor.constraint(equalToConstant: emoteSide)
         ])
     }
 
-    private func refreshAutocomplete() {
-        updateSendAvailability()
-        guard let token = currentToken() else {
-            autocomplete.update([])
-            return
+    /// The tap that focuses the field from its padding leaves the emote button's own taps alone.
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !(touch.view is UIControl)
+    }
+
+    @objc private func focusField() {
+        guard !textView.isFirstResponder else { return }
+        textView.becomeFirstResponder()
+    }
+
+    @objc private func swipedDown() {
+        guard textView.isFirstResponder else { return }
+        textView.resignFirstResponder()
+    }
+
+    /// The field grows a line at a time with the draft, then scrolls inside itself once it reaches its cap.
+    private func updateFieldHeight() {
+        let width = textView.bounds.width
+        guard width > 0 else { return }
+        let fitting = ceil(textView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height)
+        let capped = fitting > ChatMetrics.fieldMaxHeight
+        if capped != textView.isScrollEnabled {
+            textView.isScrollEnabled = capped
+            fieldCap.isActive = capped
         }
-        let suggestions = delegate?.chatInput(self, suggestionsFor: token) ?? []
+        if capped {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.textView.scrollRangeToVisible(self.textView.selectedRange)
+            }
+        }
+        let height = min(max(fitting, ChatMetrics.field), ChatMetrics.fieldMaxHeight)
+        guard abs(height - lastFieldHeight) > 0.5 else { return }
+        let grows = lastFieldHeight > 0
+        lastFieldHeight = height
+        textView.invalidateIntrinsicContentSize()
+        if grows { animateLayout() }
+    }
+
+    /// A new width can change how many lines the draft takes, and a new orientation the keyboard height the emote
+    /// keyboard matches.
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let width = textView.bounds.width
+        if lastFieldHeight == 0 || abs(width - lastFieldWidth) > 0.5 {
+            lastFieldWidth = width
+            updateFieldHeight()
+        }
+        let landscape = isLandscape
+        if landscape != lastLandscape {
+            lastLandscape = landscape
+            if showingEmoteKeyboard, textView.isFirstResponder {
+                emoteKeyboard.fitHeight(landscape: landscape)
+                textView.reloadInputViews()
+            }
+        }
+    }
+
+    private func refreshAutocomplete() {
+        updateSendState()
+        updateStatus()
+        let suggestions: [AutocompleteSuggestion]
+        if let token = currentToken() {
+            suggestions = delegate?.chatInput(self, suggestionsFor: token) ?? []
+        } else {
+            suggestions = []
+        }
+        let wasHidden = autocomplete.isHidden
         autocomplete.update(suggestions)
+        textView.acceptsTab = !suggestions.isEmpty
+        if wasHidden != suggestions.isEmpty {
+            autocomplete.isHidden = wasHidden
+            setArrangedHidden(autocomplete, suggestions.isEmpty)
+        }
     }
 
     private func currentToken() -> AutocompleteToken? {
@@ -296,7 +453,8 @@ final class ChatInputView: UIView {
         let caret = min(textView.plainCaretOffset, text.count)
         let caretIndex = text.index(text.startIndex, offsetBy: caret)
         let upToCaret = text[text.startIndex..<caretIndex]
-        guard let word = upToCaret.split(whereSeparator: { $0.isWhitespace }).last, word.count >= 2 else { return nil }
+        guard let last = upToCaret.last, !last.isWhitespace,
+              let word = upToCaret.split(whereSeparator: { $0.isWhitespace }).last, word.count >= 2 else { return nil }
         let string = String(word)
         if string.hasPrefix("@") {
             return .mention(String(string.dropFirst()))
@@ -304,337 +462,153 @@ final class ChatInputView: UIView {
         return .emote(string)
     }
 
+    private func acceptFirstSuggestion() {
+        guard let first = autocomplete.firstSuggestion else { return }
+        insertSuggestion(first)
+    }
+
     private func insertSuggestion(_ suggestion: AutocompleteSuggestion) {
+        Haptics.selection()
         if case .emote(let emote) = suggestion { EmoteUsage.record(emote) }
         textView.replaceCurrentToken(with: suggestion.insertionText + " ")
         refreshAutocomplete()
+        updateFieldHeight()
     }
 
-    @objc private func sendTapped() {
-        guard !isSending else { return }
-        let text = textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        showDropReason(nil)
+    private var draft: String {
+        textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func sendTapped() {
+        let text = draft
+        guard !isSending, !text.isEmpty else { return }
+        guard cooldownRemaining == 0 || text.hasPrefix("/") else {
+            Haptics.notify(.warning)
+            return
+        }
+        guard text.count <= ChatMetrics.messageLimit else {
+            Haptics.notify(.error)
+            shakeField()
+            return
+        }
+        dropReason = nil
+        updateStatus()
         delegate?.chatInput(self, didSubmit: text)
     }
 
     private func updateSendState() {
+        let length = draft.count
+        let sendable = length > 0 && length <= ChatMetrics.messageLimit
         if isSending {
-            spinner.startAnimating()
-            sendButton.isHidden = true
+            sendButton.setMode(.sending)
+        } else if sendable, cooldownRemaining == 0 || draft.hasPrefix("/") {
+            sendButton.setMode(.ready)
+        } else if cooldownRemaining > 0 {
+            sendButton.setMode(.cooldown(cooldownRemaining))
         } else {
-            spinner.stopAnimating()
-            sendButton.isHidden = false
+            sendButton.setMode(.empty)
         }
-        updateSendAvailability()
     }
 
-    private func updateSendAvailability() {
-        let hasText = !textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let enabled = hasText && !isSending
-        sendButton.isEnabled = enabled
-        sendButton.alpha = enabled ? 1 : 0.35
-    }
-}
-
-@MainActor
-private final class ReplyComposerBar: UIView {
-    var onCancel: (() -> Void)?
-    private let titleLabel = UILabel()
-    private let bodyLabel = UILabel()
-    private let cancelButton = UIButton(type: .system)
-
-    init() {
-        super.init(frame: .zero)
-        setUp()
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    func configure(displayName: String, text: String) {
-        titleLabel.text = String(localized: "Replying to \(displayName)")
-        bodyLabel.text = text
-    }
-
-    private func setUp() {
-        backgroundColor = Theme.surfaceElevated
-
-        titleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
-        titleLabel.textColor = Theme.accent
-        bodyLabel.font = .systemFont(ofSize: 13)
-        bodyLabel.textColor = Theme.secondaryText
-        bodyLabel.numberOfLines = 1
-
-        let labels = UIStackView(arrangedSubviews: [titleLabel, bodyLabel])
-        labels.axis = .vertical
-        labels.spacing = 2
-
-        var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "xmark.circle.fill")
-        cancelButton.configuration = config
-        cancelButton.tintColor = Theme.secondaryText
-        cancelButton.addAction(UIAction { [weak self] _ in self?.onCancel?() }, for: .touchUpInside)
-        cancelButton.setContentHuggingPriority(.required, for: .horizontal)
-
-        let row = UIStackView(arrangedSubviews: [labels, cancelButton])
-        row.axis = .horizontal
-        row.alignment = .center
-        row.spacing = 8
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.isLayoutMarginsRelativeArrangement = true
-        row.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 10)
-        addSubview(row)
-
-        NSLayoutConstraint.activate([
-            row.topAnchor.constraint(equalTo: topAnchor),
-            row.bottomAnchor.constraint(equalTo: bottomAnchor),
-            row.leadingAnchor.constraint(equalTo: leadingAnchor),
-            row.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
-    }
-}
-
-@MainActor
-private final class EmoteTextView: UITextView, UITextViewDelegate {
-    var onTextChange: (() -> Void)?
-    var onReturn: (() -> Void)?
-    var onEndEditing: (() -> Void)?
-
-    private let images: ImageLoading
-    private var catalog = EmoteCatalog()
-    private var loadTasks: [String: Task<Void, Never>] = [:]
-    private let placeholderLabel = UILabel()
-    private var pendingRetokenize = false
-    private var pendingRedraw = false
-
-    init(images: ImageLoading) {
-        self.images = images
-        super.init(frame: .zero, textContainer: nil)
-        delegate = self
-        allowsEditingTextAttributes = false
-        autocapitalizationType = .sentences
-        returnKeyType = .send
-        enablesReturnKeyAutomatically = true
-        placeholderLabel.font = .systemFont(ofSize: 16)
-        placeholderLabel.textColor = Theme.secondaryText
-        placeholderLabel.numberOfLines = 1
-        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(placeholderLabel)
-        NSLayoutConstraint.activate([
-            placeholderLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 15),
-            placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
-            placeholderLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8)
-        ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    var placeholder: String = "" {
-        didSet { placeholderLabel.text = placeholder }
-    }
-
-    func setCatalog(_ catalog: EmoteCatalog) {
-        self.catalog = catalog
-    }
-
-    var plainText: String {
-        reconstruct(attributedText, upTo: attributedText.length)
-    }
-
-    var plainCaretOffset: Int {
-        caretPlainOffset()
-    }
-
-    func reset() {
-        attributedText = NSAttributedString(string: "", attributes: defaultAttributes)
-        typingAttributes = defaultAttributes
-        selectedRange = NSRange(location: 0, length: 0)
-        placeholderLabel.isHidden = false
-    }
-
-    func replaceCurrentToken(with replacement: String) {
-        let source = plainText
-        let caret = caretPlainOffset()
-        let caretIndex = source.index(source.startIndex, offsetBy: min(caret, source.count))
-        let prefix = source[source.startIndex..<caretIndex]
-        let tokenStart = prefix.lastIndex(where: { $0.isWhitespace }).map { source.index(after: $0) } ?? source.startIndex
-        let rebuilt = String(source[source.startIndex..<tokenStart]) + replacement + String(source[caretIndex...])
-        let newCaret = source.distance(from: source.startIndex, to: tokenStart) + replacement.count
-        render(plain: rebuilt, caret: newCaret)
-    }
-
-    func insertEmoteName(_ text: String) {
-        let source = plainText
-        let caret = min(caretPlainOffset(), source.count)
-        let caretIndex = source.index(source.startIndex, offsetBy: caret)
-        let prefix = String(source[source.startIndex..<caretIndex])
-        let suffix = String(source[caretIndex...])
-        let spacer = (prefix.isEmpty || prefix.hasSuffix(" ")) ? "" : " "
-        let inserted = spacer + text + " "
-        render(plain: prefix + inserted + suffix, caret: caret + inserted.count)
-        onTextChange?()
-    }
-
-    func textViewDidChange(_ textView: UITextView) {
-        if markedTextRange == nil {
-            if pendingRetokenize {
-                pendingRetokenize = false
-                pendingRedraw = false
-                render(plain: plainText, caret: caretPlainOffset())
-            } else if pendingRedraw {
-                pendingRedraw = false
-                redrawAttachments()
-            }
+    /// One line under the field's text edge for whatever needs saying: why a message failed, how close the draft is
+    /// to Twitch's limit, or how long slow mode holds the next message.
+    private func updateStatus() {
+        let length = draft.count
+        let remaining = ChatMetrics.messageLimit - length
+        let text: String?
+        let color: UIColor
+        if let dropReason {
+            text = dropReason
+            color = Self.errorText
+        } else if remaining < 0 {
+            text = String(localized: "Over the limit: \(-remaining)")
+            color = Self.errorText
+        } else if remaining <= ChatMetrics.counterThreshold {
+            text = String(localized: "Characters left: \(remaining)")
+            color = Theme.secondaryText
+        } else if cooldownRemaining > 0 {
+            text = String(localized: "Slow mode: you can send again in \(cooldownRemaining)s")
+            color = Self.slowModeText
+        } else {
+            text = nil
+            color = Theme.secondaryText
         }
-        placeholderLabel.isHidden = attributedText.length > 0
-        onTextChange?()
-    }
-
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" { onReturn?(); return false }
-        if text.contains("\n") {
-            textView.insertText(text.replacingOccurrences(of: "\n", with: " "))
-            return false
+        statusLabel.text = text
+        statusLabel.textColor = color
+        if statusRow.isHidden != (text == nil) {
+            setArrangedHidden(statusRow, text == nil)
         }
-        if text.contains(" ") { pendingRetokenize = true }
-        return true
     }
 
-    func textViewDidEndEditing(_ textView: UITextView) {
-        onEndEditing?()
+    /// Status colors deep enough to read as small text on the light theme, the system hues on the dark one.
+    private static let errorText = Theme.dynamic(light: UIColor(red: 0.77, green: 0.12, blue: 0.10, alpha: 1), dark: .systemRed)
+    private static let slowModeText = Theme.dynamic(light: UIColor(red: 0.66, green: 0.33, blue: 0.0, alpha: 1), dark: .systemOrange)
+
+    private var cooldownRemaining: Int {
+        guard let cooldownEnds else { return 0 }
+        return max(0, Int(ceil(cooldownEnds.timeIntervalSinceNow)))
     }
 
-    private var defaultAttributes: [NSAttributedString.Key: Any] {
-        [.font: font ?? .systemFont(ofSize: 16), .foregroundColor: textColor ?? Theme.primaryText]
-    }
-
-    private func caretPlainOffset() -> Int {
-        reconstruct(attributedText, upTo: selectedRange.location).count
-    }
-
-    private func render(plain: String, caret: Int) {
-        let mutable = NSMutableAttributedString()
-        var emittedPlain = 0
-        var caretLocation = 0
-        var caretAssigned = false
-        let scanner = TokenScanner(plain)
-        while let piece = scanner.next() {
-            if !caretAssigned, emittedPlain + piece.count > caret {
-                caretLocation = mutable.length + (caret - emittedPlain)
-                caretAssigned = true
-            }
-            switch piece {
-            case .whitespace(let value):
-                mutable.append(NSAttributedString(string: value, attributes: defaultAttributes))
-            case .word(let value):
-                if let emote = catalog.lookup(value) {
-                    let attachment = EmoteTextAttachment(emoteName: emote.name)
-                    let emoteWidth = max(20, 20 * CGFloat(emote.aspectRatio))
-                    attachment.bounds = CGRect(x: 0, y: -4, width: emoteWidth, height: 20)
-                    mutable.append(NSAttributedString(attachment: attachment))
-                    loadAttachment(attachment, emote: emote)
-                } else {
-                    mutable.append(NSAttributedString(string: value, attributes: defaultAttributes))
-                }
-            }
-            emittedPlain += piece.count
+    private func startCooldown(_ seconds: Int) {
+        cooldownEnds = Date().addingTimeInterval(TimeInterval(seconds))
+        cooldownTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.tickCooldown() }
         }
-        if !caretAssigned { caretLocation = mutable.length }
-        attributedText = mutable
-        typingAttributes = defaultAttributes
-        selectedRange = NSRange(location: min(caretLocation, mutable.length), length: 0)
-        placeholderLabel.isHidden = mutable.length > 0
+        RunLoop.main.add(timer, forMode: .common)
+        cooldownTimer = timer
+        tickCooldown()
     }
 
-    private func loadAttachment(_ attachment: EmoteTextAttachment, emote: Emote) {
-        if let url = emote.images.url(preferring: .x1), let cached = images.cachedImage(for: url) {
-            attachment.image = cached
+    private func tickCooldown() {
+        if cooldownRemaining == 0 {
+            endCooldown()
             return
         }
-        let key = emote.id
-        loadTasks[key]?.cancel()
-        loadTasks[key] = Task { [weak self] in
-            guard let self else { return }
-            let image = await self.images.emoteImage(for: emote, scale: .x1)
-            if Task.isCancelled { return }
-            attachment.image = image
-            self.redrawAttachments()
+        updateSendState()
+        updateStatus()
+    }
+
+    private func endCooldown() {
+        guard cooldownEnds != nil else { return }
+        cooldownTimer?.invalidate()
+        cooldownTimer = nil
+        cooldownEnds = nil
+        updateSendState()
+        updateStatus()
+    }
+
+    private func shakeField() {
+        guard !Motion.reduced else { return }
+        let shake = CAKeyframeAnimation(keyPath: "transform.translation.x")
+        shake.values = [0, -9, 8, -6, 4, -2, 0]
+        shake.duration = 0.42
+        shake.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        field.layer.add(shake, forKey: "shake")
+    }
+
+    private func setArrangedHidden(_ view: UIView, _ hidden: Bool) {
+        guard view.isHidden != hidden else { return }
+        guard window != nil, !Motion.reduced else {
+            view.isHidden = hidden
+            view.alpha = hidden ? 0 : 1
+            return
+        }
+        if !hidden { view.alpha = 0 }
+        UIView.animate(withDuration: 0.32, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            view.isHidden = hidden
+            view.alpha = hidden ? 0 : 1
+            self.superview?.layoutIfNeeded()
         }
     }
 
-    private func redrawAttachments() {
-        guard markedTextRange == nil else { pendingRedraw = true; return }
-        let preservedSelection = selectedRange
-        let current = attributedText
-        attributedText = current
-        selectedRange = preservedSelection
-    }
-
-    private func reconstruct(_ attributed: NSAttributedString, upTo location: Int) -> String {
-        var result = ""
-        let bounded = NSRange(location: 0, length: max(0, min(location, attributed.length)))
-        attributed.enumerateAttributes(in: bounded, options: []) { attributes, subRange, _ in
-            if let emoteAttachment = attributes[.attachment] as? EmoteTextAttachment {
-                result += emoteAttachment.emoteName
-            } else {
-                result += attributed.attributedSubstring(from: subRange).string
-            }
+    private func animateLayout() {
+        guard window != nil, !Motion.reduced else {
+            superview?.layoutIfNeeded()
+            return
         }
-        return result
-    }
-}
-
-private enum InputPiece {
-    case word(String)
-    case whitespace(String)
-
-    var count: Int {
-        switch self {
-        case .word(let value): return value.count
-        case .whitespace(let value): return value.count
+        UIView.animate(withDuration: 0.24, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+            self.superview?.layoutIfNeeded()
         }
     }
-}
-
-private final class TokenScanner {
-    private let characters: [Character]
-    private var index = 0
-
-    init(_ string: String) {
-        self.characters = Array(string)
-    }
-
-    func next() -> InputPiece? {
-        guard index < characters.count else { return nil }
-        let isSpace = characters[index].isWhitespace
-        var buffer = ""
-        while index < characters.count, characters[index].isWhitespace == isSpace {
-            buffer.append(characters[index])
-            index += 1
-        }
-        return isSpace ? .whitespace(buffer) : .word(buffer)
-    }
-}
-
-final class EmoteTextAttachment: NSTextAttachment {
-    let emoteName: String
-
-    init(emoteName: String) {
-        self.emoteName = emoteName
-        super.init(data: nil, ofType: nil)
-        image = EmoteTextAttachment.transparentPlaceholder
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
-    /// Clear placeholder so the attachment shows nothing (not TextKit's "missing
-    /// attachment" document glyph) while the real emote image loads asynchronously.
-    private static let transparentPlaceholder: UIImage = {
-        let format = UIGraphicsImageRendererFormat.preferred()
-        format.opaque = false
-        return UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1), format: format).image { _ in }
-    }()
 }
