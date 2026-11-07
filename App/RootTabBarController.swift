@@ -163,7 +163,8 @@ final class RootTabBarController: UITabBarController {
 
     /// The tabs in the order they are shown, which the Go menu numbers.
     var orderedTabs: [Tab] {
-        tabs.compactMap { shown in Tab.allCases.first { uiTab(for: $0) === shown } }
+        let shown = tabs.compactMap { shown in Tab.allCases.first { uiTab(for: $0) === shown } }
+        return settingsIsTab ? shown : shown + [.settings]
     }
 
     /// Whether a Go-menu command or keyboard shortcut has a tab to land on right now.
