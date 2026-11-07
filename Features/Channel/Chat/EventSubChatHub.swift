@@ -14,8 +14,12 @@ actor EventSubChatHub {
         var listeners: [UUID: AsyncStream<ChatEvent>.Continuation] = [:]
         var subscriptionIDs: [String] = []
         var moderationIDs: [String] = []
+        var staleIDs: [String] = []
         var subscribed = false
+        var stopped = false
         var subscribeTask: Task<Void, Never>?
+        var moderationTask: Task<Void, Never>?
+        var generation = 0
         var attempt = 0
 
         func send(_ event: ChatEvent) {
@@ -33,6 +37,7 @@ actor EventSubChatHub {
     private var sockets: [Int: ChatSocket] = [:]
     private var liveGeneration = 0
     private var nextGeneration = 0
+    private var nextRoomGeneration = 0
     private var rooms: [String: Room] = [:]
     private var sessionID: String?
     private var sessionUserID: String?
@@ -66,44 +71,36 @@ actor EventSubChatHub {
         if room.listeners.isEmpty {
             room.subscribeTask?.cancel()
             rooms[channelID] = nil
-            unsubscribe(room.subscriptionIDs + room.moderationIDs, channel: room.channel)
+            unsubscribe(room.subscriptionIDs + room.moderationIDs + room.staleIDs, channel: room.channel)
             scheduleIdleClose()
         } else {
             rooms[channelID] = room
         }
     }
 
-    /// Reconnects when the connection is stale or has given up, as on returning to the foreground or getting the
-    /// network back.
+    /// Reconnects when the connection is stale or has given up, as on returning to the foreground, getting the network
+    /// back or tapping to reconnect, and on a live connection subscribes again every chat that stopped trying.
     func wake() {
         guard !rooms.isEmpty else { return }
         let stale = sockets.isEmpty || gaveUp || Date().timeIntervalSince(lastKeepalive) > Double(keepaliveSeconds)
-        guard stale else { return }
-        MidgarLog.info("EventSub hub wake → reconnect", category: .eventsub)
-        attempt = 0
-        connect()
+        if stale {
+            MidgarLog.info("EventSub hub wake → reconnect", category: .eventsub)
+            attempt = 0
+            connect()
+            return
+        }
+        guard sessionID != nil else { return }
+        for (channelID, room) in rooms where room.stopped {
+            MidgarLog.info("EventSub hub wake → subscribe to \(room.channel.broadcasterLogin) again", category: .eventsub)
+            rooms[channelID]?.attempt = 0
+            subscribe(channelID)
+        }
     }
 
     /// Adds or removes the moderator subscriptions of every open chat after Moderator Tools was turned on or off or
     /// its scopes were granted.
-    func refreshModeration() async {
-        guard let sessionID else { return }
-        guard let token = try? await auth.validAccessToken(), let user = await auth.currentUser() else { return }
-        for channelID in rooms.keys {
-            guard let room = rooms[channelID], room.subscribed else { continue }
-            let applies = await ModerationAccess.shared.toolsApply(to: channelID)
-            if applies, room.moderationIDs.isEmpty {
-                let ids = await subscriber.createModeratorSubscriptions(broadcasterID: channelID, moderatorID: user.id, sessionID: sessionID, token: token)
-                guard self.sessionID == sessionID, rooms[channelID] != nil else {
-                    await subscriber.deleteSubscriptions(ids, token: token)
-                    continue
-                }
-                rooms[channelID]?.moderationIDs = ids
-            } else if !applies, !room.moderationIDs.isEmpty {
-                rooms[channelID]?.moderationIDs = []
-                await subscriber.deleteSubscriptions(room.moderationIDs, token: token)
-            }
-        }
+    func refreshModeration() {
+        for channelID in rooms.keys { syncModeration(channelID) }
     }
 
     private func add(_ channel: ChannelInfo, listener: UUID, continuation: AsyncStream<ChatEvent>.Continuation) {
@@ -119,8 +116,8 @@ actor EventSubChatHub {
         room.listeners[listener] = continuation
         rooms[channel.id] = room
         continuation.yield(.connection(.connecting))
-        if let sessionID, !gaveUp {
-            subscribe(channel.id, sessionID: sessionID)
+        if sessionID != nil, !gaveUp {
+            subscribe(channel.id)
         } else if sockets.isEmpty || gaveUp {
             attempt = 0
             connect()
@@ -131,12 +128,7 @@ actor EventSubChatHub {
         teardownSockets()
         gaveUp = false
         sessionID = nil
-        for id in rooms.keys {
-            rooms[id]?.subscribed = false
-            rooms[id]?.subscriptionIDs = []
-            rooms[id]?.moderationIDs = []
-            rooms[id]?.subscribeTask?.cancel()
-        }
+        resetRooms()
         broadcast(.connection(attempt == 0 ? .connecting : .reconnecting(attempt: attempt)))
         liveGeneration = openSocket(at: endpoint)
     }
@@ -199,9 +191,10 @@ actor EventSubChatHub {
                 sessionID = id
                 attempt = 0
                 MidgarLog.info("EventSub hub moved to a new session, \(rooms.count) chat(s) carried over", category: .eventsub)
+                for (channelID, room) in rooms where !room.subscribed { subscribe(channelID) }
             } else {
                 sessionID = id
-                for channelID in rooms.keys { subscribe(channelID, sessionID: id) }
+                for channelID in rooms.keys { subscribe(channelID) }
             }
 
         case .keepalive:
@@ -229,12 +222,15 @@ actor EventSubChatHub {
         case .revocation(let reason, let subscriptionType, let broadcasterID):
             MidgarLog.notice("EventSub revocation \(subscriptionType ?? "?") for \(broadcasterID ?? "?"): \(reason)", category: .eventsub)
             guard let broadcasterID, let room = rooms[broadcasterID] else { return }
-            if Self.isPermanentRevocation(reason) {
+            if let subscriptionType, EventSubSubscriptionRequest.isModeratorType(subscriptionType) {
+                dropModeration(broadcasterID)
+            } else if Self.isPermanentRevocation(reason) {
                 rooms[broadcasterID]?.subscribed = false
+                rooms[broadcasterID]?.stopped = true
                 room.send(.connection(.disconnected(reason: String(localized: "Chat unavailable"))))
-            } else if subscriptionType == "channel.chat.message", let sessionID {
+            } else if subscriptionType == "channel.chat.message", sessionID != nil {
                 room.send(.notice(SystemNotice(text: String(localized: "Chat subscription revoked. Reconnecting."), isError: true)))
-                subscribe(broadcasterID, sessionID: sessionID, after: 2)
+                subscribe(broadcasterID, after: 2)
             }
         }
     }
@@ -252,19 +248,36 @@ actor EventSubChatHub {
         liveGeneration = generation
     }
 
-    private func subscribe(_ channelID: String, sessionID: String, after delay: Double = 0) {
+    /// Starts a fresh subscription of the channel's chat, after a delay when retrying. The subscriptions it still holds
+    /// are deleted first, and work still running for an earlier one is dropped. It subscribes on whichever session is
+    /// open when it runs, and waits for the next welcome when none is.
+    private func subscribe(_ channelID: String, after delay: Double = 0) {
         guard var room = rooms[channelID] else { return }
         room.subscribeTask?.cancel()
+        nextRoomGeneration += 1
+        let generation = nextRoomGeneration
+        room.generation = generation
+        room.staleIDs += room.subscriptionIDs + room.moderationIDs
+        room.subscriptionIDs = []
+        room.moderationIDs = []
+        room.subscribed = false
+        room.stopped = false
         room.subscribeTask = Task { [weak self] in
             if delay > 0 { try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000)) }
             guard !Task.isCancelled else { return }
-            await self?.createSubscriptions(channelID: channelID, sessionID: sessionID)
+            await self?.createSubscriptions(channelID: channelID, generation: generation)
         }
         rooms[channelID] = room
     }
 
-    private func createSubscriptions(channelID: String, sessionID: String) async {
-        guard let channel = rooms[channelID]?.channel else { return }
+    /// Whether work started for a chat's subscription still belongs to it: the session is the same and the chat has
+    /// not been subscribed again or closed since.
+    private func isCurrent(_ channelID: String, sessionID: String, generation: Int) -> Bool {
+        self.sessionID == sessionID && rooms[channelID]?.generation == generation
+    }
+
+    private func createSubscriptions(channelID: String, generation: Int) async {
+        guard let sessionID, let channel = rooms[channelID]?.channel, rooms[channelID]?.generation == generation else { return }
         do {
             let token = try await auth.validAccessToken()
             guard let user = await auth.currentUser() else { throw APIError.unauthorized }
@@ -276,8 +289,13 @@ actor EventSubChatHub {
                 return
             }
             sessionUserID = user.id
+            guard isCurrent(channelID, sessionID: sessionID, generation: generation) else { return }
+            if let stale = rooms[channelID]?.staleIDs, !stale.isEmpty {
+                rooms[channelID]?.staleIDs = []
+                await subscriber.deleteSubscriptions(stale, token: token)
+            }
             let ids = try await subscriber.createChatSubscriptions(broadcasterID: channel.id, userID: user.id, sessionID: sessionID, token: token)
-            guard self.sessionID == sessionID, rooms[channelID] != nil else {
+            guard isCurrent(channelID, sessionID: sessionID, generation: generation) else {
                 await subscriber.deleteSubscriptions(ids, token: token)
                 return
             }
@@ -286,20 +304,13 @@ actor EventSubChatHub {
             rooms[channelID]?.attempt = 0
             rooms[channelID]?.send(.connection(.connected))
             MidgarLog.info("EventSub hub subscribed to \(channel.broadcasterLogin) (\(rooms.count) chat(s) on one connection)", category: .eventsub)
-            if await ModerationAccess.shared.toolsApply(to: channelID) {
-                let moderation = await subscriber.createModeratorSubscriptions(broadcasterID: channel.id, moderatorID: user.id, sessionID: sessionID, token: token)
-                guard self.sessionID == sessionID, rooms[channelID] != nil else {
-                    await subscriber.deleteSubscriptions(moderation, token: token)
-                    return
-                }
-                rooms[channelID]?.moderationIDs = moderation
-                MidgarLog.info("EventSub hub: moderator tools on in \(channel.broadcasterLogin) (\(moderation.count) subscription(s))", category: .eventsub)
-            }
+            syncModeration(channelID)
         } catch {
-            guard !Task.isCancelled, self.sessionID == sessionID, let room = rooms[channelID] else { return }
+            guard !Task.isCancelled, isCurrent(channelID, sessionID: sessionID, generation: generation), let room = rooms[channelID] else { return }
             let apiError = error as? APIError
             if apiError == .unauthorized || apiError == .forbidden {
                 MidgarLog.notice("EventSub subscribe to \(channel.broadcasterLogin) unauthorized", category: .eventsub)
+                rooms[channelID]?.stopped = true
                 room.send(.connection(.disconnected(reason: String(localized: "Sign in to chat"))))
                 return
             }
@@ -307,6 +318,7 @@ actor EventSubChatHub {
             let tries = room.attempt + 1
             rooms[channelID]?.attempt = tries
             guard tries <= Self.maxAttempts else {
+                rooms[channelID]?.stopped = true
                 room.send(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
                 return
             }
@@ -315,7 +327,62 @@ actor EventSubChatHub {
             if case .rateLimited(let resetAt)? = apiError {
                 delay = max(delay, max(5, resetAt?.timeIntervalSinceNow ?? 15) + Double.random(in: 0...2))
             }
-            subscribe(channelID, sessionID: sessionID, after: delay)
+            subscribe(channelID, after: delay)
+        }
+    }
+
+    /// Queues a check of the chat's moderator subscriptions behind any check still running for it, so two never
+    /// create the same subscriptions at once.
+    private func syncModeration(_ channelID: String) {
+        guard var room = rooms[channelID] else { return }
+        let previous = room.moderationTask
+        let generation = room.generation
+        room.moderationTask = Task { [weak self] in
+            await previous?.value
+            await self?.reconcileModeration(channelID, generation: generation)
+        }
+        rooms[channelID] = room
+    }
+
+    /// Makes the chat's moderator subscriptions match whether Moderator Tools applies there: creates them when it
+    /// does and they are missing, deletes them when it no longer does.
+    private func reconcileModeration(_ channelID: String, generation: Int) async {
+        guard let sessionID, let room = rooms[channelID], room.subscribed, room.generation == generation else { return }
+        let applies = await ModerationAccess.shared.toolsApply(to: channelID)
+        guard isCurrent(channelID, sessionID: sessionID, generation: generation), let room = rooms[channelID] else { return }
+        if applies, room.moderationIDs.isEmpty {
+            guard let token = try? await auth.validAccessToken(), let user = await auth.currentUser() else { return }
+            let ids = await subscriber.createModeratorSubscriptions(broadcasterID: channelID, moderatorID: user.id, sessionID: sessionID, token: token)
+            guard isCurrent(channelID, sessionID: sessionID, generation: generation) else {
+                await subscriber.deleteSubscriptions(ids, token: token)
+                return
+            }
+            rooms[channelID]?.moderationIDs = ids
+            MidgarLog.info("EventSub hub: moderator tools on in \(room.channel.broadcasterLogin) (\(ids.count) subscription(s))", category: .eventsub)
+        } else if !applies, !room.moderationIDs.isEmpty {
+            rooms[channelID]?.moderationIDs = []
+            unsubscribe(room.moderationIDs, channel: room.channel)
+            MidgarLog.info("EventSub hub: moderator tools off in \(room.channel.broadcasterLogin)", category: .eventsub)
+        }
+    }
+
+    /// Lets go of a chat's moderator subscriptions after Twitch revoked one, as it does when the viewer stops
+    /// moderating there, and forgets which channels they moderate so the next check asks again.
+    private func dropModeration(_ channelID: String) {
+        guard let room = rooms[channelID], !room.moderationIDs.isEmpty else { return }
+        rooms[channelID]?.moderationIDs = []
+        unsubscribe(room.moderationIDs, channel: room.channel)
+        Task { await ModerationAccess.shared.forget() }
+    }
+
+    /// Forgets every chat's subscriptions once their session is gone; Twitch drops them with it.
+    private func resetRooms() {
+        for id in rooms.keys {
+            rooms[id]?.subscribeTask?.cancel()
+            rooms[id]?.subscribed = false
+            rooms[id]?.subscriptionIDs = []
+            rooms[id]?.moderationIDs = []
+            rooms[id]?.staleIDs = []
         }
     }
 
@@ -381,6 +448,7 @@ actor EventSubChatHub {
     private func scheduleReconnect() {
         teardownSockets()
         sessionID = nil
+        resetRooms()
         guard !rooms.isEmpty else { return }
         attempt += 1
         guard attempt <= Self.maxAttempts else {

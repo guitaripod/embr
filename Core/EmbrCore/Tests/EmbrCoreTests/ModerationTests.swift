@@ -112,6 +112,8 @@ struct ModerationTests {
         #expect(requests.map(\.type) == ["automod.message.hold", "automod.message.update", "channel.moderate", "channel.unban_request.create"])
         #expect(requests.map(\.version) == ["2", "2", "2", "1"])
         #expect(requests.allSatisfy { $0.condition == ["broadcaster_user_id": "1", "moderator_user_id": "2"] })
+        #expect(requests.allSatisfy { EventSubSubscriptionRequest.isModeratorType($0.type) })
+        #expect(!EventSubSubscriptionRequest.isModeratorType("channel.chat.message"))
     }
 
     @Test("Allowing a held message posts the moderator, message and action")

@@ -57,16 +57,25 @@ public struct EventSubSubscriptionRequest: Encodable, Sendable, Equatable {
         ]
     }
 
+    /// The moderator subscription types and their versions, in the order ``moderatorSubscriptions(broadcasterID:moderatorID:sessionID:)`` makes them.
+    private static let moderatorTypes = [
+        ("automod.message.hold", "2"),
+        ("automod.message.update", "2"),
+        ("channel.moderate", "2"),
+        ("channel.unban_request.create", "1"),
+    ]
+
+    /// Whether a subscription type is one of the moderator subscriptions, which Twitch revokes on its own when the
+    /// viewer stops moderating the channel.
+    public static func isModeratorType(_ type: String) -> Bool {
+        moderatorTypes.contains { $0.0 == type }
+    }
+
     /// What a moderator of the channel subscribes to besides chat: AutoMod's held messages and their outcome, the
     /// moderation log and unban requests. Each needs the moderator scopes and fails for a viewer who is not a moderator
     /// there.
     public static func moderatorSubscriptions(broadcasterID: String, moderatorID: String, sessionID: String) -> [EventSubSubscriptionRequest] {
-        [
-            ("automod.message.hold", "2"),
-            ("automod.message.update", "2"),
-            ("channel.moderate", "2"),
-            ("channel.unban_request.create", "1"),
-        ].map { type, version in
+        moderatorTypes.map { type, version in
             EventSubSubscriptionRequest(
                 type: type,
                 version: version,
