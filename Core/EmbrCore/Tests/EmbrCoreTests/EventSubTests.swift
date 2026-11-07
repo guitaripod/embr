@@ -89,7 +89,42 @@ struct EventSubTests {
           }
         }
         """
-        #expect(try EventSubMessage.decode(Data(json.utf8)) == .revocation(reason: "authorization_revoked"))
+        #expect(try EventSubMessage.decode(Data(json.utf8)) == .revocation(reason: "authorization_revoked", subscriptionType: "channel.chat.message", broadcasterID: nil))
+    }
+
+    @Test("A revocation names the channel its subscription was for")
+    func revocationCarriesBroadcaster() throws {
+        let json = """
+        {
+          "metadata": { "message_type": "revocation" },
+          "payload": {
+            "subscription": {
+              "id": "f1c2a387-161a-49f9-a165-0f21d7a4e1c4",
+              "status": "user_removed",
+              "type": "channel.chat.message_delete",
+              "version": "1",
+              "condition": { "broadcaster_user_id": "71001", "user_id": "9" }
+            }
+          }
+        }
+        """
+        #expect(try EventSubMessage.decode(Data(json.utf8)) == .revocation(reason: "user_removed", subscriptionType: "channel.chat.message_delete", broadcasterID: "71001"))
+    }
+
+    @Test("A notification without a condition takes its channel from the event")
+    func notificationFallsBackToEventBroadcaster() throws {
+        let json = """
+        {
+          "metadata": { "message_type": "notification", "subscription_type": "channel.chat.clear" },
+          "payload": { "event": { "broadcaster_user_id": "71002", "broadcaster_user_login": "pixelpilgrim" } }
+        }
+        """
+        guard case let .notification(type, broadcasterID, _) = try EventSubMessage.decode(Data(json.utf8)) else {
+            Issue.record("expected a notification")
+            return
+        }
+        #expect(type == "channel.chat.clear")
+        #expect(broadcasterID == "71002")
     }
 
     @Test("Unknown message_type throws")
@@ -105,11 +140,12 @@ struct EventSubTests {
     @Test("Maps a chat.message notification to ChatMessage with fragments, badges, color, reply")
     func chatMessageNotification() throws {
         let message = try EventSubMessage.decode(Data(Self.chatMessageEnvelope.utf8))
-        guard case let .notification(subscriptionType, eventData) = message else {
+        guard case let .notification(subscriptionType, broadcasterID, eventData) = message else {
             Issue.record("expected notification, got \(message)")
             return
         }
         #expect(subscriptionType == "channel.chat.message")
+        #expect(broadcasterID == "1971641")
 
         let chat = try EventSubMapper.chatMessage(fromEvent: eventData, timestamp: timestamp)
         #expect(chat.id == "cc106a89-1814-919d-454c-f4f2f970aae7")
@@ -165,7 +201,7 @@ struct EventSubTests {
 
     @Test("chatEvent dispatches message subscription")
     func chatEventMessage() throws {
-        guard case let .notification(_, eventData) = try EventSubMessage.decode(Data(Self.chatMessageEnvelope.utf8)) else {
+        guard case let .notification(_, _, eventData) = try EventSubMessage.decode(Data(Self.chatMessageEnvelope.utf8)) else {
             Issue.record("expected notification")
             return
         }
@@ -306,7 +342,7 @@ struct EventSubTests {
           }
         }
         """
-        guard case let .notification(subscriptionType, eventData) = try EventSubMessage.decode(Data(envelope.utf8)) else {
+        guard case let .notification(subscriptionType, _, eventData) = try EventSubMessage.decode(Data(envelope.utf8)) else {
             Issue.record("expected notification")
             return
         }

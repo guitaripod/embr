@@ -190,6 +190,7 @@ targets:
       - path: Features/Channel/Chat/ChatRow.swift
       - path: Features/Channel/Chat/ChatViewModel.swift
       - path: Features/Channel/Chat/EventSubChatSource.swift
+      - path: Features/Channel/Chat/EventSubChatHub.swift
       - path: Features/Channel/Chat/IRCChatSource.swift
       - path: Features/Channel/Chat/VODChatSource.swift
       - path: Features/Channel/Chat/Network

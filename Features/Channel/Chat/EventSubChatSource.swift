@@ -1,307 +1,31 @@
 import Foundation
 import EmbrCore
-import MidgarCore
 
+/// A channel's chat for a signed-in viewer, carried on the connection every open chat shares (``EventSubChatHub``).
+/// Sending goes through the Twitch API, not through this source.
 actor EventSubChatSource: ChatSource {
     private let channel: ChannelInfo
-    private let api: TwitchAPIProviding
-    private let auth: AuthControlling
-    private let subscriber: EventSubSubscriber
+    private let hub: EventSubChatHub
+    private let listener = UUID()
 
-    private let endpoint = URL(string: "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30")!
-    private let defaultKeepalive = 30
-
-    private let socketClient = ChatSocketClient()
-    private var sockets: [Int: ChatSocket] = [:]
-    private var liveGeneration = 0
-    private var nextGeneration = 0
-    private var watchdogTask: Task<Void, Never>?
-    private var subscribeTask: Task<Void, Never>?
-    private var reconnectTask: Task<Void, Never>?
-    private var continuation: AsyncStream<ChatEvent>.Continuation?
-    private var keepaliveSeconds: Int
-    private var lastKeepalive = Date()
-    private var attempt = 0
-    private var stopped = false
-
-    init(
-        channel: ChannelInfo,
-        api: TwitchAPIProviding,
-        auth: AuthControlling,
-        subscriber: EventSubSubscriber = EventSubSubscriber()
-    ) {
+    init(channel: ChannelInfo, hub: EventSubChatHub = .shared) {
         self.channel = channel
-        self.api = api
-        self.auth = auth
-        self.subscriber = subscriber
-        self.keepaliveSeconds = defaultKeepalive
+        self.hub = hub
     }
 
     nonisolated func start() -> AsyncStream<ChatEvent> {
-        AsyncStream { continuation in
-            Task { await self.begin(continuation) }
-        }
+        hub.join(channel, listener: listener)
     }
 
     func stop() async {
-        stopped = true
-        teardown()
-        continuation?.yield(.connection(.disconnected(reason: nil)))
-        continuation?.finish()
-        continuation = nil
+        await hub.leave(channelID: channel.id, listener: listener)
     }
 
     func send(_ text: String, replyParentID: String?) async throws -> SendResult {
         throw APIError.invalidRequest("EventSub chat source does not send")
     }
 
-    private func begin(_ continuation: AsyncStream<ChatEvent>.Continuation) {
-        self.continuation = continuation
-        continuation.onTermination = { [weak self] _ in
-            Task { await self?.stop() }
-        }
-        connect()
-    }
-
-    private func connect() {
-        guard !stopped else { return }
-        teardownSockets()
-        continuation?.yield(.connection(attempt == 0 ? .connecting : .reconnecting(attempt: attempt)))
-        let generation = openSocket(at: endpoint)
-        liveGeneration = generation
-    }
-
-    @discardableResult
-    private func openSocket(at url: URL) -> Int {
-        let generation = nextGeneration
-        nextGeneration += 1
-        let task = socketClient.open(url)
-        sockets[generation] = task
-        task.resume()
-        Task { [weak self] in
-            await self?.receiveLoop(generation: generation)
-        }
-        return generation
-    }
-
-    private func receiveLoop(generation: Int) async {
-        while !stopped {
-            guard let task = sockets[generation] else { return }
-            do {
-                guard let frame = try await task.receive() else { continue }
-                let data: Data
-                switch frame {
-                case .binary(let value): data = value
-                case .text(let value): data = Data(value.utf8)
-                }
-                await handle(data, generation: generation)
-            } catch {
-                if stopped || Task.isCancelled { return }
-                guard sockets[generation] != nil else { return }
-                if generation == liveGeneration {
-                    MidgarLog.notice("EventSub receive failed: \(error)", category: .eventsub)
-                    scheduleReconnect()
-                } else {
-                    sockets[generation] = nil
-                }
-                return
-            }
-        }
-    }
-
-    private func handle(_ data: Data, generation: Int) async {
-        let decoded: EventSubMessage
-        do {
-            decoded = try EventSubMessage.decode(data)
-        } catch {
-            MidgarLog.notice("EventSub decode failed: \(error)", category: .eventsub)
-            return
-        }
-
-        let isReconnect = generation != liveGeneration
-
-        switch decoded {
-        case .welcome(let sessionID, let keepalive):
-            if isReconnect {
-                promote(generation: generation)
-            }
-            keepaliveSeconds = keepalive ?? defaultKeepalive
-            lastKeepalive = Date()
-            startWatchdog()
-            if isReconnect {
-                attempt = 0
-            } else {
-                scheduleSubscription(sessionID: sessionID)
-            }
-
-        case .keepalive:
-            lastKeepalive = Date()
-
-        case .notification(let subscriptionType, let event):
-            lastKeepalive = Date()
-            do {
-                let chatEvent = try EventSubMapper.chatEvent(
-                    subscriptionType: subscriptionType,
-                    eventData: event,
-                    timestamp: Date()
-                )
-                continuation?.yield(chatEvent)
-            } catch {
-                MidgarLog.notice("EventSub map \(subscriptionType) failed: \(error)", category: .eventsub)
-            }
-
-        case .reconnect(let urlString):
-            guard generation == liveGeneration else { return }
-            guard let url = URL(string: urlString) else {
-                scheduleReconnect()
-                return
-            }
-            MidgarLog.info("EventSub session_reconnect", category: .eventsub)
-            openSocket(at: url)
-
-        case .revocation(let reason):
-            MidgarLog.notice("EventSub revocation: \(reason)", category: .eventsub)
-            if Self.isPermanentRevocation(reason) {
-                teardownSockets()
-                continuation?.yield(.connection(.disconnected(reason: String(localized: "Chat unavailable"))))
-            } else {
-                continuation?.yield(.notice(SystemNotice(text: String(localized: "Chat subscription revoked. Reconnecting."), isError: true)))
-                scheduleReconnect()
-            }
-        }
-    }
-
-    private static func isPermanentRevocation(_ reason: String) -> Bool {
-        ["authorization_revoked", "user_removed", "version_removed"].contains(reason)
-    }
-
     func wake() async {
-        guard !stopped else { return }
-        let stale = sockets.isEmpty || Date().timeIntervalSince(lastKeepalive) > Double(keepaliveSeconds)
-        guard stale else { return }
-        MidgarLog.info("EventSub wake → reconnect", category: .eventsub)
-        attempt = 0
-        connect()
-    }
-
-    private func promote(generation: Int) {
-        guard sockets[generation] != nil else { return }
-        if let old = sockets[liveGeneration], liveGeneration != generation {
-            old.close()
-            sockets[liveGeneration] = nil
-        }
-        liveGeneration = generation
-    }
-
-    private func scheduleSubscription(sessionID: String) {
-        subscribeTask?.cancel()
-        subscribeTask = Task { [weak self] in
-            await self?.createSubscription(sessionID: sessionID)
-        }
-    }
-
-    private func createSubscription(sessionID: String) async {
-        do {
-            let token = try await auth.validAccessToken()
-            guard let user = await auth.currentUser() else {
-                throw APIError.unauthorized
-            }
-            try await subscriber.createChatSubscriptions(
-                broadcasterID: channel.id,
-                userID: user.id,
-                sessionID: sessionID,
-                token: token
-            )
-            guard !stopped else { return }
-            attempt = 0
-            continuation?.yield(.connection(.connected))
-            MidgarLog.info("EventSub subscribed to chat for \(channel.broadcasterLogin)", category: .eventsub)
-        } catch {
-            if stopped { return }
-            let apiError = error as? APIError
-            if apiError == .unauthorized || apiError == .forbidden {
-                MidgarLog.notice("EventSub subscribe unauthorized; chat disabled until re-auth", category: .eventsub)
-                teardownSockets()
-                continuation?.yield(.connection(.disconnected(reason: String(localized: "Sign in to chat"))))
-                return
-            }
-            MidgarLog.error("EventSub subscription failed: \(error)", category: .eventsub)
-            if case .rateLimited(let resetAt)? = apiError {
-                let wait = max(5, resetAt?.timeIntervalSinceNow ?? 15) + Double.random(in: 0...2)
-                scheduleReconnect(minDelay: wait)
-            } else {
-                scheduleReconnect()
-            }
-        }
-    }
-
-    private func startWatchdog() {
-        watchdogTask?.cancel()
-        let timeout = keepaliveSeconds
-        watchdogTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                guard let self else { return }
-                if await self.keepaliveExpired(timeout: timeout) {
-                    await self.handleWatchdogTimeout()
-                    return
-                }
-            }
-        }
-    }
-
-    private func keepaliveExpired(timeout: Int) -> Bool {
-        Date().timeIntervalSince(lastKeepalive) > Double(timeout) + 5
-    }
-
-    private func handleWatchdogTimeout() {
-        guard !stopped else { return }
-        MidgarLog.notice("EventSub keepalive watchdog fired, reconnecting", category: .eventsub)
-        scheduleReconnect()
-    }
-
-    private func scheduleReconnect(minDelay: Double? = nil) {
-        guard !stopped else { return }
-        teardownSockets()
-        attempt += 1
-        guard attempt <= Self.maxAttempts else {
-            MidgarLog.notice("EventSub gave up after \(attempt - 1) attempts", category: .eventsub)
-            continuation?.yield(.connection(.disconnected(reason: String(localized: "Tap to reconnect"))))
-            return
-        }
-        let delay = max(Self.backoffSeconds(attempt: attempt), minDelay ?? 0)
-        continuation?.yield(.connection(.reconnecting(attempt: attempt)))
-        reconnectTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            if Task.isCancelled { return }
-            await self?.connect()
-        }
-    }
-
-    private static let maxAttempts = 10
-
-    private func teardownSockets() {
-        reconnectTask?.cancel()
-        reconnectTask = nil
-        watchdogTask?.cancel()
-        watchdogTask = nil
-        subscribeTask?.cancel()
-        subscribeTask = nil
-        for task in sockets.values {
-            task.close()
-        }
-        sockets.removeAll()
-    }
-
-    private func teardown() {
-        teardownSockets()
-        socketClient.invalidate()
-    }
-
-    private static func backoffSeconds(attempt: Int) -> Double {
-        let capped = min(attempt, 4)
-        let base = pow(2.0, Double(capped - 1))
-        let jitter = Double.random(in: 0...0.5)
-        return min(base, 8.0) + jitter
+        await hub.wake()
     }
 }

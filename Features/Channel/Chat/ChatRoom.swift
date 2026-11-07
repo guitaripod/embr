@@ -220,7 +220,7 @@ actor ChatRoom {
             return VODChatSource(channel: channel, videoID: videoID)
         }
         return loggedIn
-            ? EventSubChatSource(channel: channel, api: api, auth: auth)
+            ? EventSubChatSource(channel: channel)
             : IRCChatSource(channel: channel)
     }
 

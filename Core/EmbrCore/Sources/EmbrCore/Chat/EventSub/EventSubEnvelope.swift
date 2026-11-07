@@ -3,9 +3,10 @@ import Foundation
 public enum EventSubMessage: Sendable, Equatable {
     case welcome(sessionID: String, keepaliveSeconds: Int?)
     case keepalive
-    case notification(subscriptionType: String, event: Data)
+    /// An event, with the channel its subscription is for, so one session can carry many channels' chats.
+    case notification(subscriptionType: String, broadcasterID: String?, event: Data)
     case reconnect(url: String)
-    case revocation(reason: String)
+    case revocation(reason: String, subscriptionType: String?, broadcasterID: String?)
 
     public static func decode(_ data: Data) throws -> EventSubMessage {
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -61,12 +62,17 @@ public enum EventSubMessage: Sendable, Equatable {
             throw APIError.decoding("notification missing payload.event")
         }
         let eventData = try JSONSerialization.data(withJSONObject: event)
-        return .notification(subscriptionType: subscriptionType, event: eventData)
+        let broadcasterID = broadcasterID(subscription: subscription) ?? (event as? [String: Any])?["broadcaster_user_id"] as? String
+        return .notification(subscriptionType: subscriptionType, broadcasterID: broadcasterID, event: eventData)
     }
 
     private static func decodeRevocation(_ payload: [String: Any]) -> EventSubMessage {
         let subscription = payload["subscription"] as? [String: Any]
         let reason = (subscription?["status"] as? String) ?? "unknown"
-        return .revocation(reason: reason)
+        return .revocation(reason: reason, subscriptionType: subscription?["type"] as? String, broadcasterID: broadcasterID(subscription: subscription))
+    }
+
+    private static func broadcasterID(subscription: [String: Any]?) -> String? {
+        (subscription?["condition"] as? [String: Any])?["broadcaster_user_id"] as? String
     }
 }
