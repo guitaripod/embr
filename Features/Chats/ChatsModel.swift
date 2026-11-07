@@ -136,15 +136,18 @@ final class ChatsModel {
         changes.send()
     }
 
-    /// The chats on screen right now: their counts reset and stay at zero while they show.
+    /// The chats on screen right now: their counts reset and stay at zero while they show. It reports a change only
+    /// when something changed, since the tab calls it each time it lays out.
     func setVisible(_ ids: Set<String>) {
+        var changed = visible != ids
         visible = ids
         for id in ids {
             guard let session = sessions[id], session.unread != 0 || session.highlights != 0 else { continue }
             session.unread = 0
             session.highlights = 0
+            changed = true
         }
-        changes.send()
+        if changed { changes.send() }
     }
 
     func markMentionsSeen() {
@@ -162,8 +165,11 @@ final class ChatsModel {
     #if DEBUG
     /// Opens the given chats in memory only, for screenshots of the invented world.
     func seedForScreenshots(_ seeded: [Entry]) {
+        for session in sessions.values { session.viewModel.stop() }
+        sessions.removeAll()
         entries = seeded
         selectedID = seeded.first?.id
+        if isActive { for entry in entries { startSession(entry) } }
         changes.send()
     }
     #endif
@@ -186,17 +192,26 @@ final class ChatsModel {
 
     private func record(_ activity: ChatActivity, in session: Session) {
         let onScreen = visible.contains(session.entry.id)
+        let highlights = newMentions(in: activity)
         if !onScreen {
             session.unread += activity.added
-            session.highlights += activity.highlights.count
+            session.highlights += highlights.count
         }
-        if !activity.highlights.isEmpty {
+        if !highlights.isEmpty {
             let now = Date()
-            mentions.insert(contentsOf: activity.highlights.reversed().map { Mention(channel: session.entry, row: $0, arrived: now) }, at: 0)
+            mentions.insert(contentsOf: highlights.reversed().map { Mention(channel: session.entry, row: $0, arrived: now) }, at: 0)
             if mentions.count > Self.mentionCap { mentions.removeLast(mentions.count - Self.mentionCap) }
-            if !onScreen { unseenMentions += activity.highlights.count }
+            if !onScreen { unseenMentions += highlights.count }
         }
         changes.send()
+    }
+
+    /// The activity's highlighted messages that Mentions does not hold yet; a chat closed and opened again loads its
+    /// recent messages a second time.
+    private func newMentions(in activity: ChatActivity) -> [ChatRow] {
+        guard !activity.highlights.isEmpty else { return [] }
+        let known = Set(mentions.map(\.row.id))
+        return activity.highlights.filter { !known.contains($0.id) }
     }
 
     /// Signing in or out changes how every chat connects and who it highlights, so the open chats start over.

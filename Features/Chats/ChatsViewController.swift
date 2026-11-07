@@ -21,6 +21,7 @@ final class ChatsViewController: UIViewController {
     private let columns = UIStackView()
     private let emptyState = UIStackView()
     private var controllers: [String: ChatViewController] = [:]
+    private var controllerSessions: [String: ChatsModel.Session] = [:]
     private var columnViews: [String: ChatColumnView] = [:]
     private var recent: [String] = []
     private var shown: [String] = []
@@ -199,6 +200,7 @@ final class ChatsViewController: UIViewController {
     /// Lays the screen out for the open chats: the strip, then the chat in front, or on a wide iPad as many as fit side
     /// by side in strip order, the most recently picked first to stay.
     private func render() {
+        dropReplacedControllers()
         let ids = model.entries.map(\.id)
         recent.removeAll { !ids.contains($0) }
         if let selected = model.selected?.id {
@@ -226,7 +228,19 @@ final class ChatsViewController: UIViewController {
         snapshot.appendItems([.mentions] + ids.map(StripItem.chat), toSection: 0)
         snapshot.reconfigureItems(snapshot.itemIdentifiers)
         stripSource.apply(snapshot, animatingDifferences: false)
-        navigationController?.tabBarItem.badgeValue = model.unseenMentions > 0 ? "\(model.unseenMentions)" : nil
+    }
+
+    /// Takes down the chat of every column whose session the model replaced, as it does when the viewer signs in or
+    /// out, so the column is built again around the new one.
+    private func dropReplacedControllers() {
+        for (id, session) in controllerSessions where model.session(for: id) !== session {
+            controllerSessions[id] = nil
+            columnViews.removeValue(forKey: id)?.removeFromSuperview()
+            guard let controller = controllers.removeValue(forKey: id) else { continue }
+            controller.willMove(toParent: nil)
+            controller.view.removeFromSuperview()
+            controller.removeFromParent()
+        }
     }
 
     private func layoutColumns() {
@@ -240,6 +254,7 @@ final class ChatsViewController: UIViewController {
         }
         for id in Array(controllers.keys) where !model.contains(id) {
             controllers.removeValue(forKey: id)
+            controllerSessions.removeValue(forKey: id)
         }
         for (index, id) in shown.enumerated() {
             guard let session = model.session(for: id) else { continue }
@@ -264,6 +279,7 @@ final class ChatsViewController: UIViewController {
             )
             chat.delegate = self
             controllers[id] = chat
+            controllerSessions[id] = session
             return chat
         }()
         let column = ChatColumnView()

@@ -188,6 +188,10 @@ final class RootTabBarController: UITabBarController {
         favoritesTab.badgeValue = count > 0 ? "\(count)" : nil
     }
 
+    private func setChatsBadge(_ count: Int) {
+        chatsTab.badgeValue = count > 0 ? "\(count)" : nil
+    }
+
     private func bind() {
         auth.statePublisher
             .receive(on: DispatchQueue.main)
@@ -199,6 +203,12 @@ final class RootTabBarController: UITabBarController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 MainActor.assumeIsolated { self?.setFavoritesBadge(FavoritesLiveMonitor.shared.liveCount) }
+            }
+            .store(in: &cancellables)
+        ChatsModel.shared.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeIsolated { self?.setChatsBadge(ChatsModel.shared.unseenMentions) }
             }
             .store(in: &cancellables)
         guard usesSidebar else { return }
