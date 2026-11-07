@@ -720,112 +720,19 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
     }
 
     private func presentMessageActions(for message: ChatMessage, sourceRect: CGRect) {
-        let isOwn = message.author.login.lowercased() == currentUserLogin?.lowercased()
-        let sheet = UIAlertController(title: message.author.displayName, message: nil, preferredStyle: .actionSheet)
-        if !isAnonymous && !isReadOnly {
-            sheet.addAction(UIAlertAction(title: String(localized: "Reply"), style: .default) { [weak self] _ in
+        ChatMessageActions(
+            message: message,
+            isOwn: message.author.login.lowercased() == currentUserLogin?.lowercased(),
+            canChat: canCompose,
+            canModerate: canModerate,
+            channelLogin: broadcasterLogin,
+            viewModel: viewModel,
+            onReply: { [weak self] in
                 guard let self else { return }
                 self.delegate?.chatViewController(self, didRequestReplyTo: message)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: String(localized: "View Profile"), style: .default) { [weak self] _ in
-            self?.presentUserCard(for: message.author, message: message)
-        })
-        sheet.addAction(UIAlertAction(title: String(localized: "Copy Message"), style: .default) { _ in
-            UIPasteboard.general.string = message.plainText
-        })
-        if canModerate, !isOwn {
-            sheet.addAction(UIAlertAction(title: String(localized: "Delete Message"), style: .destructive) { [weak self] _ in
-                self?.viewModel.deleteMessage(messageID: message.id)
-            })
-            sheet.addAction(UIAlertAction(title: String(localized: "Timeout…"), style: .default) { [weak self] _ in
-                self?.presentTimeoutChoices(for: message, sourceRect: sourceRect)
-            })
-            sheet.addAction(UIAlertAction(title: String(localized: "Ban…"), style: .destructive) { [weak self] _ in
-                self?.confirmBan(of: message.author)
-            })
-        }
-        if !isOwn {
-            sheet.addAction(UIAlertAction(title: String(localized: "Block @\(message.author.login)"), style: .destructive) { [weak self] _ in
-                guard let self else { return }
-                Haptics.notify(.success)
-                self.viewModel.block(
-                    userID: message.author.id,
-                    login: message.author.login,
-                    message: message,
-                    channelLogin: self.broadcasterLogin
-                )
-            })
-        }
-        if !isOwn {
-            sheet.addAction(UIAlertAction(title: String(localized: "Report Message"), style: .destructive) { [weak self] _ in
-                self?.presentReportReasons(for: message, sourceRect: sourceRect)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = sourceRect
-        }
-        present(sheet, animated: true)
-    }
-
-    private func presentTimeoutChoices(for message: ChatMessage, sourceRect: CGRect) {
-        let sheet = UIAlertController(title: String(localized: "Time out @\(message.author.login)"), message: nil, preferredStyle: .actionSheet)
-        let choices: [(String, Int)] = [
-            (String(localized: "1 minute"), 60),
-            (String(localized: "10 minutes"), 600),
-            (String(localized: "1 hour"), 3600),
-            (String(localized: "1 day"), 86_400),
-        ]
-        for (title, seconds) in choices {
-            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                Haptics.notify(.success)
-                self?.viewModel.timeoutUser(userID: message.author.id, duration: seconds)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = sourceRect
-        }
-        present(sheet, animated: true)
-    }
-
-    /// A ban lasts until someone lifts it, so it asks once more before it happens.
-    private func confirmBan(of user: ChatUser) {
-        let alert = UIAlertController(
-            title: String(localized: "Ban @\(user.login)?"),
-            message: String(localized: "They can't chat here until a moderator unbans them."),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        alert.addAction(UIAlertAction(title: String(localized: "Ban"), style: .destructive) { [weak self] _ in
-            Haptics.notify(.warning)
-            self?.viewModel.banUser(userID: user.id)
-        })
-        present(alert, animated: true)
-    }
-
-    private func presentReportReasons(for message: ChatMessage, sourceRect: CGRect) {
-        let sheet = UIAlertController(
-            title: String(localized: "Report @\(message.author.login)"),
-            message: String(localized: "Reports are reviewed and this user will be hidden from your chat."),
-            preferredStyle: .actionSheet
-        )
-        for reason in ChatReportReason.allCases {
-            sheet.addAction(UIAlertAction(title: reason.title, style: .destructive) { [weak self] _ in
-                guard let self else { return }
-                Haptics.notify(.success)
-                self.viewModel.report(message: message, reason: reason.rawValue, channelLogin: self.broadcasterLogin)
-            })
-        }
-        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = sourceRect
-        }
-        present(sheet, animated: true)
+            },
+            onViewProfile: { [weak self] in self?.presentUserCard(for: message.author, message: message) }
+        ).present(from: self, sourceRect: sourceRect)
     }
 }
 
