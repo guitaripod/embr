@@ -1,9 +1,11 @@
-SIGNING IN WITH THE DEMO ACCOUNT: TWITCH EMAILS A ONE-TIME CODE
-Twitch, not Embr, sends a one-time verification code by email on every sign-in from a new device. Twitch has no setting to turn this off and no fixed code. The demo account's email arrives on this page, which shows the newest code within seconds and refreshes itself:
+SIGNING IN WITH THE DEMO ACCOUNT (Twitch)
+Embr has no Sign in with Apple. Twitch's login page, which Embr opens, shows Twitch's own "Continue with Apple", "Google" and "Amazon" buttons: please do not use them. They sign in with the reviewer's own account, which is not the demo account, so Twitch shows an error or offers to create a new Twitch account. Type the demo username and password into Twitch's fields instead.
+
+Twitch then emails a one-time verification code, as it does on every sign-in from a new device. Twitch has no setting to turn this off and no fixed code. The demo account's email arrives on this page, which shows the newest code within seconds and refreshes itself:
 {CODE_PAGE_URL}
 
-1. In Embr: Settings > Log In with Twitch (or "Log in to chat" under any stream).
-2. Enter the username and password from the fields above.
+1. In Embr: Connect Twitch Account on the welcome screen, or later Settings > Log In with Twitch.
+2. On Twitch's page, type the username and password from the fields above and tap Log In.
 3. When Twitch asks for the verification code, open the link above in Safari on any device. The code appears within seconds of Twitch asking for it, with how long ago it arrived.
 4. Enter that code on Twitch's screen to finish signing in.
 
