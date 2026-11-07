@@ -2,7 +2,6 @@ import UIKit
 import AuthenticationServices
 import Combine
 import EmbrCore
-import SafariServices
 import MidgarCore
 
 @MainActor
@@ -953,10 +952,7 @@ extension ChannelViewController: ChatViewControllerDelegate {
     }
 
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL) {
-        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return }
-        let safari = SFSafariViewController(url: url)
-        safari.preferredControlTintColor = Theme.accent
-        present(safari, animated: true)
+        openWebLink(url)
     }
 
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage) {

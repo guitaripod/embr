@@ -28,6 +28,8 @@ actor ChatRoom {
     private let auth: AuthControlling
     private let emotes: EmoteCataloging
     private let recentMessages: RecentMessagesProviding
+    /// Whether the room asks the recent-messages service for history, as Settings' Backfill Recent Messages says.
+    private let backfills: Bool
 
     private let flushInterval: UInt64 = 200_000_000
 
@@ -65,7 +67,8 @@ actor ChatRoom {
         api: TwitchAPIProviding,
         auth: AuthControlling,
         emotes: EmoteCataloging,
-        recentMessages: RecentMessagesProviding
+        recentMessages: RecentMessagesProviding,
+        backfills: Bool = true
     ) {
         self.channel = channel
         self.mode = mode
@@ -74,6 +77,7 @@ actor ChatRoom {
         self.auth = auth
         self.emotes = emotes
         self.recentMessages = recentMessages
+        self.backfills = backfills
     }
 
     nonisolated func start() -> AsyncStream<ChatRoomEvent> {
@@ -185,6 +189,7 @@ actor ChatRoom {
     }
 
     private func backfill(_ kind: BackfillKind) async {
+        guard backfills else { return }
         let recent = await recentMessages.recentMessages(channelLogin: channel.broadcasterLogin, limit: 100)
         guard !stopped, !Task.isCancelled, !recent.isEmpty else { return }
         let rewritten = recent.map(rewriteChannelID)

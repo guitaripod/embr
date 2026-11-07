@@ -1,6 +1,5 @@
 import UIKit
 import Combine
-import SafariServices
 import EmbrCore
 import MidgarCore
 
@@ -555,10 +554,7 @@ extension ChatsViewController: ChatViewControllerDelegate {
     func chatViewController(_ controller: ChatViewController, didTapEmote emote: Emote) {}
 
     func chatViewController(_ controller: ChatViewController, didTapLink url: URL) {
-        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else { return }
-        let safari = SFSafariViewController(url: url)
-        safari.preferredControlTintColor = Theme.accent
-        present(safari, animated: true)
+        openWebLink(url)
     }
 
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage) {

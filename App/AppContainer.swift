@@ -47,7 +47,8 @@ final class AppContainer {
             api: api,
             auth: auth,
             emotes: emotes,
-            recentMessages: RecentMessagesClient.shared
+            recentMessages: RecentMessagesClient.shared,
+            backfills: settings.current.recentMessagesBackfill
         )
     }
 }
