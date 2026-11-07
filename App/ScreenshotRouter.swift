@@ -100,14 +100,14 @@ enum ScreenshotRouter {
             ScreenshotHarness.previewTips = true
             tabBar.select(.settings)
             after(0.6) {
-                let settings = (tabBar.selectedViewController as? UINavigationController)?.viewControllers.first as? SettingsViewController
+                let settings = tabBar.settingsNavigationController.viewControllers.first as? SettingsViewController
                 settings?.showSupportForScreenshot()
             }
         case "supporter", "supporterowned":
             SupporterStore.shared.seedForScreenshots(supporter: route == "supporterowned")
             tabBar.select(.settings)
             after(0.6) {
-                (tabBar.selectedViewController as? UINavigationController)?.pushViewController(SupporterViewController(), animated: false)
+                tabBar.settingsNavigationController.pushViewController(SupporterViewController(), animated: false)
             }
         case "favorites":
             tabBar.select(.favorites)
@@ -166,7 +166,7 @@ enum ScreenshotRouter {
         case "moreapps":
             tabBar.select(.settings)
             after(0.8) {
-                guard let nav = tabBar.selectedViewController as? UINavigationController, let top = nav.topViewController else { return }
+                guard let top = tabBar.settingsNavigationController.topViewController else { return }
                 Midgar.present(from: top, config: EmbrMidgar.shared.portalConfig)
             }
         case "profile":
@@ -183,10 +183,21 @@ enum ScreenshotRouter {
                 let host = tabBar.selectedNavigationController?.topViewController
                 host.flatMap(chatController(in:))?.presentUserCardForScreenshot(login: option("Profile"))
             }
+        case "chats":
+            let logins = option("Chats")?.split(separator: ",").map(String.init) ?? ["lumenfox", "pixelpilgrim", "northerncrane"]
+            ChatsModel.shared.seedForScreenshots(logins.compactMap { login in
+                DemoWorld.channel(login: login).map { ChatsModel.Entry(id: $0.id, login: $0.login, name: $0.name) }
+            })
+            tabBar.select(.chats)
+            if let sheet = option("Sheet") {
+                after(8.0) {
+                    (tabBar.selectedNavigationController?.viewControllers.first as? ChatsViewController)?.presentForScreenshot(sheet)
+                }
+            }
         case "highlights":
             tabBar.select(.settings)
             after(0.8) {
-                tabBar.selectedNavigationController?.pushViewController(HighlightsViewController(), animated: false)
+                tabBar.settingsNavigationController.pushViewController(HighlightsViewController(), animated: false)
             }
         case "channel", "channelaudio", "channelchat", "channelfull", "channelfullchat":
             let poses: [String: ScreenshotHarness.ChannelPose] = [

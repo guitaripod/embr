@@ -9,6 +9,7 @@ final class ChatViewModel {
     let roomStateSubject = PassthroughSubject<RoomState, Never>()
     let catalogSubject = PassthroughSubject<EmoteCatalog, Never>()
     let noticeSubject = PassthroughSubject<SystemNotice, Never>()
+    let activitySubject = PassthroughSubject<ChatActivity, Never>()
 
     private let room: ChatRoom
     private let reporter: ReportClient
@@ -18,6 +19,9 @@ final class ChatViewModel {
     private var consumeTask: Task<Void, Never>?
     private var replyParentID: String?
     private var cancellables = Set<AnyCancellable>()
+    private var lastCatalog: EmoteCatalog?
+    private var lastRoomState: RoomState?
+    private var lastConnection: ConnectionStatus?
 
     init(
         room: ChatRoom,
@@ -253,6 +257,19 @@ final class ChatViewModel {
         Task { await room.stop() }
     }
 
+    /// Sends a chat that is already running, as it stands, to a screen that starts showing it: the Chats tab moves
+    /// one chat between screens without reconnecting it.
+    func replay() {
+        if let lastConnection { connectionSubject.send(lastConnection) }
+        if let lastRoomState { roomStateSubject.send(lastRoomState) }
+        if let lastCatalog { catalogSubject.send(lastCatalog) }
+        Task {
+            if let snapshot = await store.replaySnapshot() {
+                snapshotSubject.send(snapshot)
+            }
+        }
+    }
+
     func setPaused(_ paused: Bool) {
         Task {
             if let snapshot = await store.setPaused(paused) {
@@ -300,10 +317,12 @@ final class ChatViewModel {
         switch event {
         case .catalog(let catalog, let badges):
             await store.setCatalogs(catalog: catalog, badges: badges)
+            lastCatalog = catalog
             catalogSubject.send(catalog)
         case .messages(let messages):
-            if let snapshot = await store.append(messages) {
+            if let (snapshot, activity) = await store.append(messages) {
                 snapshotSubject.send(snapshot)
+                if activity.added > 0 { activitySubject.send(activity) }
             }
         case .backfill(let messages):
             if let snapshot = await store.merge(messages) {
@@ -322,8 +341,10 @@ final class ChatViewModel {
                 snapshotSubject.send(snapshot)
             }
         case .roomState(let state):
+            lastRoomState = state
             roomStateSubject.send(state)
         case .connection(let status):
+            lastConnection = status
             connectionSubject.send(status)
         case .notice(let notice):
             noticeSubject.send(notice)
@@ -345,6 +366,7 @@ private actor MessageStore {
     private var width: CGFloat = 0
     private var layout: MessageLayout?
     private let currentUserLogin: String?
+    private var highlighter: ChatHighlighter
     private var blockedUserIDs: Set<String> = []
     private var filter: ContentFilter
 
@@ -358,6 +380,7 @@ private actor MessageStore {
         self.layoutKey = settings.chatLayoutKey
         self.currentUserLogin = currentUserLogin
         self.filter = filter
+        self.highlighter = settings.makeHighlighter(login: currentUserLogin)
     }
 
     /// Lays every message out again when something chat layout depends on changed.
@@ -365,6 +388,7 @@ private actor MessageStore {
         let key = settings.chatLayoutKey
         guard key != layoutKey else { return nil }
         self.settings = settings
+        highlighter = settings.makeHighlighter(login: currentUserLogin)
         layoutKey = key
         rebuildLayout()
         guard !rows.isEmpty else { return nil }
@@ -440,10 +464,10 @@ private actor MessageStore {
         return filter.shouldHide(message.plainText)
     }
 
-    func append(_ messages: [ChatMessage]) -> ChatSnapshot? {
+    func append(_ messages: [ChatMessage]) -> (ChatSnapshot, ChatActivity)? {
         guard !messages.isEmpty else { return nil }
         var added = 0
-        var alerts = 0
+        var highlights: [ChatRow] = []
         for message in messages {
             if isSuppressed(message) { continue }
             let row = makeRow(message)
@@ -452,8 +476,10 @@ private actor MessageStore {
             } else {
                 index[message.id] = rows.count
                 rows.append(row)
-                added += 1
-                if row.laidOut?.highlight != nil, message.timestamp >= opened { alerts += 1 }
+                if message.timestamp >= opened {
+                    added += 1
+                    if highlighter.reason(for: message) != nil { highlights.append(row) }
+                }
             }
         }
         trimIfNeeded()
@@ -464,7 +490,15 @@ private actor MessageStore {
         } else {
             snapshot = liveSnapshot()
         }
-        return ChatSnapshot(rows: snapshot.rows, isPaused: snapshot.isPaused, newCount: snapshot.newCount, alerts: alerts)
+        let activity = ChatActivity(added: added, highlights: highlights)
+        return (ChatSnapshot(rows: snapshot.rows, isPaused: snapshot.isPaused, newCount: snapshot.newCount, alerts: highlights.count), activity)
+    }
+
+    /// The chat as it stands, for a screen that starts showing it; nil until anything arrived.
+    func replaySnapshot() -> ChatSnapshot? {
+        guard !rows.isEmpty else { return nil }
+        let current = currentSnapshot()
+        return ChatSnapshot(rows: current.rows, isPaused: current.isPaused, newCount: current.newCount, relayout: true)
     }
 
     /// Merges gap-backfill messages after a reconnect: skips ids already buffered and anything

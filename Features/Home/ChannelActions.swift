@@ -5,6 +5,7 @@ enum ChannelActions {
     static func menu(login: String, broadcasterID: String, name: String, from vc: UIViewController, extraActions: [UIAction] = []) -> UIMenu {
         UIMenu(children: [
             favoriteAction(login: login, broadcasterID: broadcasterID, name: name),
+            openInChatsAction(login: login, broadcasterID: broadcasterID, name: name, from: vc),
             UIAction(title: String(localized: "View Profile"), image: UIImage(systemName: "person.crop.circle")) { [weak vc] _ in
                 guard let vc else { return }
                 vc.present(ProfileSheetViewController(login: login, navigator: vc.navigationController), animated: true)
@@ -40,6 +41,16 @@ enum ChannelActions {
         let item = UIDragItem(itemProvider: provider)
         item.localObject = login
         return [item]
+    }
+
+    /// Keeps the channel's chat open in the Chats tab and goes there.
+    private static func openInChatsAction(login: String, broadcasterID: String, name: String, from vc: UIViewController) -> UIAction {
+        UIAction(title: String(localized: "Open in Chats"), image: UIImage(systemName: "bubble.left.and.bubble.right")) { [weak vc] _ in
+            ChatsModel.shared.open(ChatsModel.Entry(id: broadcasterID, login: login, name: name))
+            Haptics.selection()
+            let root = (vc as? RootTabBarController) ?? (vc?.tabBarController as? RootTabBarController)
+            root?.select(.chats)
+        }
     }
 
     private static func favoriteAction(login: String, broadcasterID: String, name: String) -> UIAction {

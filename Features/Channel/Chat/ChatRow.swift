@@ -28,6 +28,13 @@ struct ChatRow: Sendable, Hashable, Identifiable {
     }
 }
 
+/// What arrived in a chat in one batch: how many new messages, and those that stand out for the viewer. A chat kept
+/// open out of sight counts these as unread.
+struct ChatActivity: Sendable {
+    let added: Int
+    let highlights: [ChatRow]
+}
+
 struct ChatSnapshot: Sendable {
     let rows: [ChatRow]
     let isPaused: Bool

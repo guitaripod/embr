@@ -353,6 +353,7 @@ final class ChatViewController: UIViewController {
                 MainActor.assumeIsolated { self?.statusBar.showNotice(notice) }
             }
             .store(in: &cancellables)
+        viewModel.replay()
     }
 
     private func apply(_ snapshot: ChatSnapshot) {

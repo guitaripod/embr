@@ -94,6 +94,7 @@ enum KeyCommands {
         case .following: return String(localized: "Following")
         case .favorites: return String(localized: "Favorites")
         case .top: return String(localized: "Top")
+        case .chats: return String(localized: "Chats")
         case .search: return String(localized: "Search")
         case .settings: return String(localized: "Settings")
         }
@@ -104,6 +105,7 @@ enum KeyCommands {
         case .following: return #selector(AppDelegate.goToFollowing(_:))
         case .favorites: return #selector(AppDelegate.goToFavorites(_:))
         case .top: return #selector(AppDelegate.goToTop(_:))
+        case .chats: return #selector(AppDelegate.goToChats(_:))
         case .search: return #selector(AppDelegate.goToSearch(_:))
         case .settings: return #selector(AppDelegate.goToSettings(_:))
         }
@@ -194,6 +196,7 @@ extension AppDelegate {
     @objc func goToFollowing(_ sender: Any?) { KeyCommands.activeRoot?.select(.following) }
     @objc func goToFavorites(_ sender: Any?) { KeyCommands.activeRoot?.select(.favorites) }
     @objc func goToTop(_ sender: Any?) { KeyCommands.activeRoot?.select(.top) }
+    @objc func goToChats(_ sender: Any?) { KeyCommands.activeRoot?.select(.chats) }
     @objc func goToSearch(_ sender: Any?) {
         guard let root = KeyCommands.activeRoot else { return }
         root.select(.search)

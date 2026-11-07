@@ -16,19 +16,25 @@ final class RootTabBarController: UITabBarController {
         case following
         case favorites
         case top
+        case chats
         case search
         case settings
     }
 
     private lazy var topNav = wrap(TopViewController())
     private lazy var favoritesNav = wrap(FavoritesViewController())
+    private lazy var chatsNav = wrap(ChatsViewController())
     private lazy var searchNav = wrap(SearchViewController())
     private lazy var settingsNav = wrap(SettingsViewController())
     private var followingNav: UINavigationController?
 
     private lazy var topTab = makeTab(.top, navigation: topNav)
     private lazy var favoritesTab = makeTab(.favorites, navigation: favoritesNav)
-    private lazy var searchTab = makeTab(.search, navigation: searchNav)
+    private lazy var chatsTab = makeTab(.chats, navigation: chatsNav)
+    private lazy var searchTab: UITab = {
+        let navigation = searchNav
+        return UISearchTab { _ in navigation }
+    }()
     private lazy var settingsTab = makeTab(.settings, navigation: settingsNav)
     private var followingTab: UITab?
 
@@ -48,6 +54,10 @@ final class RootTabBarController: UITabBarController {
 
     /// The iPad shows a sidebar with the channels live right now; the phone keeps its tab bar.
     private var usesSidebar: Bool { !OrientationCoordinator.isPhone }
+
+    /// The phone's tab bar shows five tabs before it hides the rest behind More, so there Settings opens from a gear on
+    /// each tab's first screen instead of being a tab.
+    private var settingsIsTab: Bool { usesSidebar }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         OrientationCoordinator.mask
@@ -102,6 +112,10 @@ final class RootTabBarController: UITabBarController {
     }
 
     func select(_ tab: Tab) {
+        if tab == .settings, !settingsIsTab {
+            presentSettings()
+            return
+        }
         guard let target = uiTab(for: tab), tabs.contains(where: { $0 === target }) else { return }
         if target !== selectedTab {
             closePlayback(in: selectedNavigationController)
@@ -154,6 +168,7 @@ final class RootTabBarController: UITabBarController {
 
     /// Whether a Go-menu command or keyboard shortcut has a tab to land on right now.
     func canSelect(_ tab: Tab) -> Bool {
+        if tab == .settings { return true }
         guard let target = uiTab(for: tab) else { return false }
         return tabs.contains { $0 === target }
     }
@@ -163,6 +178,7 @@ final class RootTabBarController: UITabBarController {
         case .following: return followingTab
         case .favorites: return favoritesTab
         case .top: return topTab
+        case .chats: return chatsTab
         case .search: return searchTab
         case .settings: return settingsTab
         }
@@ -218,13 +234,14 @@ final class RootTabBarController: UITabBarController {
         if isLoggedIn {
             let following = followingTab ?? makeFollowingTab()
             followingTab = following
-            tabs.append(contentsOf: [following, favoritesTab, topTab])
+            tabs.append(contentsOf: [following, favoritesTab, topTab, chatsTab])
         } else {
             followingTab = nil
             followingNav = nil
-            tabs.append(contentsOf: [topTab, favoritesTab])
+            tabs.append(contentsOf: [topTab, favoritesTab, chatsTab])
         }
-        tabs.append(contentsOf: [searchTab, settingsTab])
+        tabs.append(searchTab)
+        if settingsIsTab { tabs.append(settingsTab) }
         if usesSidebar { tabs.append(liveGroup) }
         let previous = selectedTab
         setTabs(tabs, animated: false)
@@ -268,7 +285,32 @@ final class RootTabBarController: UITabBarController {
         return uiTab
     }
 
+    /// Settings' navigation stack, whether it is a tab or, on the phone, opened over the tabs.
+    var settingsNavigationController: UINavigationController { settingsNav }
+
+    /// Opens Settings over the current tab, on the phone where it is not a tab.
+    func presentSettings() {
+        guard settingsNav.presentingViewController == nil else { return }
+        settingsNav.popToRootViewController(animated: false)
+        settingsNav.viewControllers.first?.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .done, primaryAction: UIAction { [weak self] _ in
+            self?.settingsNav.dismiss(animated: true)
+        })
+        settingsNav.modalPresentationStyle = .pageSheet
+        (presentedViewController ?? self).present(settingsNav, animated: true)
+    }
+
+    private func settingsButton() -> UIBarButtonItem {
+        let item = UIBarButtonItem(image: UIImage(systemName: "gearshape"), primaryAction: UIAction(title: String(localized: "Settings")) { [weak self] _ in
+            self?.presentSettings()
+        })
+        item.accessibilityLabel = String(localized: "Settings")
+        return item
+    }
+
     private func wrap(_ controller: UIViewController) -> UINavigationController {
+        if !settingsIsTab, !(controller is SettingsViewController) {
+            controller.navigationItem.leftBarButtonItem = settingsButton()
+        }
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = true
         navigation.navigationBar.tintColor = Theme.accent
