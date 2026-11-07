@@ -53,11 +53,25 @@ final class ChatViewModel {
             }
             .store(in: &cancellables)
         settings.changes
+            .map(\.moderatorToolsEnabled)
+            .removeDuplicates()
+            .filter { !$0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.clearModeration() }
+            .store(in: &cancellables)
+        settings.changes
             .map { _ in () }
             .merge(with: SupporterStore.shared.changes)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.applyLayoutSettings() }
             .store(in: &cancellables)
+    }
+
+    /// Empties the moderation queue once Moderator Tools is turned off, which hides its bar and closes the queue.
+    private func clearModeration() {
+        guard !moderation.isEmpty else { return }
+        moderation = ModerationQueue()
+        moderationSubject.send(moderation)
     }
 
     /// Draws the open chat again when its text size, font or a supporter's look changed.
