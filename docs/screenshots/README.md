@@ -1,79 +1,54 @@
 # App Store screenshots
 
-Nine captioned panels per listing language, iPhone 6.9" (1320×2868). Captions live in
-`metadata/screenshot-captions.json`; raw captures and composed panels are generated into the
-gitignored `marketing/raw/` and `marketing/panels/`.
+Ten iPhone 6.9" panels (1320×2868), nine iPad 13" panels (2064×2752) and ten iPhone Duo panels at
+the four Duo sizes, in every listing language, plus the text-free Header and Search Results image
+(5244×2950). Every panel is the same design: a dark night with ember and violet light drifting
+across the whole set, a two-line headline whose second line glows in Embr's ember gradient, a short
+line under it, and the capture in its real device frame (`frames`), sometimes with one part of the
+screen lifted out and enlarged.
 
-| # | Panel | Source |
-|---|-------|--------|
-| 1 | hero | `marketing/hero.png` — a device capture of live video beside chat, headline repainted per language |
-| 2 | favorites | `-screenshotRoute favorites -screenshotFavorites a,b,c` |
-| 3 | top | `-screenshotRoute top` |
-| 4 | chat | `-screenshotRoute channelchat -screenshotChannel <login>` |
-| 5 | audio | `-screenshotRoute channelaudio -screenshotChannel <login>` |
-| 6 | categories | `-screenshotRoute categories` |
-| 7 | search | `-screenshotRoute search -screenshotQuery "Just Chatting"` |
-| 8 | settings | `-screenshotRoute settings` |
-| 9 | onboarding | first plain launch of a fresh install |
+Everything shown comes from the DEBUG demo world (`-embrDemo`): invented channels, procedural stream
+art and scripted chat with Twitch, 7TV, BetterTTV and FrankerFaceZ emotes, so every capture is the
+same each run, works offline and shows no stranger's message and no real streamer.
 
-The hero is the one panel a simulator cannot make: it does not decode live video. To refresh
-it, capture the channel screen on a device and replace `marketing/hero.png` with a framed
-panel of the same geometry.
+| # | Panel | Capture |
+|---|-------|---------|
+| 1 | watch | `-screenshotRoute channel -screenshotChannel lumenfox` |
+| 2 | emotes | `-screenshotRoute chats -screenshotSheet emotes` |
+| 3 | chats | `-screenshotRoute chats` (iPad: three chats side by side) |
+| 4 | fullscreen | `-screenshotRoute channelfullchat -screenshotChannel lumenfox` (iPhone only) |
+| 5 | mentions | `-screenshotRoute chats -screenshotSheet mentions` |
+| 6 | usercard | `-screenshotRoute usercard -screenshotChannel lumenfox -screenshotModerator 1` |
+| 7 | favorites | `-screenshotRoute favorites` |
+| 8 | audio | `-screenshotRoute channelaudio -screenshotChannel quietmoth` |
+| 9 | moderate | `-screenshotRoute modqueue -screenshotChannel lumenfox -screenshotModerator 1` |
+| 10 | supporter | `-screenshotRoute supporter` |
 
-## Capture
+All routes run with `-embrDemo -screenshotTheme dark -screenshotAuth 1`.
 
-A DEBUG-only harness (`App/ScreenshotHarness.swift`, driven by
-`SceneDelegate.handleScreenshotRoute`) poses each screen from launch arguments, so nothing is
-tapped. Build the Debug app for the simulator, then:
-
-```bash
-scripts/ios-build.sh "generic/platform=iOS Simulator"
-scripts/capture-store-shots.py --sim <iPhone 17 Pro Max udid> \
-  --app ~/Library/Developer/Xcode/DerivedData/Embr-*/Build/Products/Debug-iphonesimulator/Embr.app \
-  --chat-channel <live channel> --audio-channel <live channel> --favorites a,b,c
-```
-
-Each language starts from a fresh install. Data is live from Twitch, so pick channels that are
-live with a calm chat, and read every chat capture before uploading: chat is written by
-strangers.
-
-Other routes: `support` (Settings scrolled to the tip jar, with fixed US prices — the In-App
-Purchase review screenshot), `following` (seeded follows, signed-in look), `moreapps`, and
-`open -screenshotURL <url>`, which sends any deep link (e.g. `embr://favorites`) through the
-router without the system's "Open in Embr?" prompt that `simctl openurl` stops at.
-
-## iPad
-
-The iPad build lays out by window size, so iPad screens come from an iPad Pro 13" simulator
-(2064×2752) with the same routes. Portrait needs nothing extra. Landscape needs the window
-turned, and an app that supports iPad multitasking may not turn itself; `requestGeometryUpdate`
-is refused with "The current windowing mode does not allow for programmatic changes to
-interface orientation". A capture copy marked full-screen may, so for landscape:
+## Run
 
 ```bash
-cp -R <Debug-iphonesimulator/Embr.app> /tmp/capture/
-/usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" /tmp/capture/Embr.app/Info.plist
-codesign --force --sign - /tmp/capture/Embr.app
-xcrun simctl install <ipad udid> /tmp/capture/Embr.app
-xcrun simctl launch <ipad udid> com.guitaripod.embr -screenshotRoute top -screenshotOrientation landscape
+scripts/ios-build.sh "platform=iOS Simulator,id=<udid>"     # or xcodebuild into a scratch DerivedData
+scripts/capture-store-panels.py --sim <iPhone 17 Pro Max udid> --app <Debug-iphonesimulator/Embr.app>
+scripts/capture-store-panels.py --sim <iPad Pro 13" udid> --app <…/Embr.app> --device ipad
+scripts/store-panels.py                 # every device and locale into store/shots/<device>/<locale>/
+scripts/store-panels.py --creative      # store/creative/<locale>/header.png
+midgar shots embr --train ios --apply   # upload
 ```
 
-`simctl io screenshot` saves the framebuffer upright for portrait, so turn a landscape PNG a
-quarter turn counter-clockwise (PIL: `image.rotate(90, expand=True)`). Never ship that copy; it
-exists only to be photographed.
+Captures land in `marketing/raw/<device>/<language>/` (gitignored), one set per app language;
+listing languages the app does not speak use the English captures with their own captions.
+Captions are `marketing/captions.json`: two title lines, the line that glows, and the line under it,
+per listing locale. Keep a title line within 20 characters (10 in Chinese and Japanese) and never
+use a word for "free" (guideline 2.3.7).
 
-iPad routes and switches: `channelfull` (video full screen), `channelfullchat` (with chat
-floating over it), `videos -screenshotChannel <login>` (a channel's videos grid),
-`-screenshotSidebar shown`, and `-screenshotPopAfter <seconds>`, which goes back to the list to
-check that the tab bar and sidebar return after a video page hid them.
+iPad captures are portrait: an app that turns its own window to landscape lands in iPadOS's
+windowed mode on the simulator, wallpaper and Dock around it.
 
-## Compose
+The iPhone Duo panels come from the `iphone-duo` skill's `capture.py`, one screen per state
+(`marketing/raw/duo/<language>/<screen>__<state>.png`).
 
-```bash
-scripts/compose-store-shots.py            # every language in the captions file
-scripts/compose-store-shots.py --locale ja
-```
-
-Headlines are drawn through AppKit, so Japanese, Korean and both Chinese scripts get the
-system's own faces and the right Han forms per language. es-MX uses the es-ES panels;
-en-GB and en-AU fall back to en-US.
+Other routes: `support` (Settings > Support Embr with fixed US tip prices, the In-App Purchase review
+screenshot), `settings` (`-screenshotSettingsPage <page>`), `following`, `moreapps`, and
+`open -screenshotURL <url>`.

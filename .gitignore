@@ -26,6 +26,9 @@ App/Secrets.swift
 
 # Store screenshot pipeline (reproducible from scripts/ + metadata/)
 marketing/raw/
-marketing/panels/
-marketing/raw-ipad/
-marketing/panels-ipad/
+marketing/framed/
+store/shots/iphone/
+store/shots/ipad/
+store/shots/duo/
+store/creative/
+store/previews/

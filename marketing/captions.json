@@ -1,0 +1,1802 @@
+{
+  "en-US": {
+    "watch": {
+      "title": [
+        "Watch live.",
+        "Chat native."
+      ],
+      "accent": 1,
+      "sub": "A native iPhone player and chat, built for speed."
+    },
+    "emotes": {
+      "title": [
+        "Every emote.",
+        "Every provider."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV and FrankerFaceZ, in chat and on your emote keyboard."
+    },
+    "chats": {
+      "title": [
+        "All your chats.",
+        "One tab."
+      ],
+      "accent": 1,
+      "sub": "Keep chats open without the video, with unread counts on each."
+    },
+    "fullscreen": {
+      "title": [
+        "Go fullscreen.",
+        "Keep the chat."
+      ],
+      "accent": 1,
+      "sub": "Turn your phone and chat floats beside the stream."
+    },
+    "mentions": {
+      "title": [
+        "Never miss",
+        "a mention."
+      ],
+      "accent": 1,
+      "sub": "Mentions and highlights from every open chat, gathered in one place."
+    },
+    "usercard": {
+      "title": [
+        "Know who's",
+        "talking."
+      ],
+      "accent": 1,
+      "sub": "Tap a name for their card, their messages and quick actions."
+    },
+    "favorites": {
+      "title": [
+        "Favorites,",
+        "no account."
+      ],
+      "accent": 1,
+      "sub": "Star any channel to see when it's live. Sign in only if you want to."
+    },
+    "audio": {
+      "title": [
+        "Listen with",
+        "the screen off."
+      ],
+      "accent": 1,
+      "sub": "Background audio and an audio-only mode keep the stream going."
+    },
+    "moderate": {
+      "title": [
+        "Moderate from",
+        "your pocket."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, unban requests and the mod log for channels you moderate."
+    },
+    "supporter": {
+      "title": [
+        "Make it",
+        "yours."
+      ],
+      "accent": 1,
+      "sub": "Themes, chat fonts and a badge everyone in Embr sees. Try them on first."
+    },
+    "sidebyside": {
+      "title": [
+        "Three chats.",
+        "Side by side."
+      ],
+      "accent": 1,
+      "sub": "Keep up to three chats open at once on iPad."
+    }
+  },
+  "en-AU": {
+    "watch": {
+      "title": [
+        "Watch live.",
+        "Chat native."
+      ],
+      "accent": 1,
+      "sub": "A native iPhone player and chat, built for speed."
+    },
+    "emotes": {
+      "title": [
+        "Every emote.",
+        "Every provider."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV and FrankerFaceZ, in chat and on your emote keyboard."
+    },
+    "chats": {
+      "title": [
+        "All your chats.",
+        "One tab."
+      ],
+      "accent": 1,
+      "sub": "Keep chats open without the video, with unread counts on each."
+    },
+    "fullscreen": {
+      "title": [
+        "Go fullscreen.",
+        "Keep the chat."
+      ],
+      "accent": 1,
+      "sub": "Turn your phone and chat floats beside the stream."
+    },
+    "mentions": {
+      "title": [
+        "Never miss",
+        "a mention."
+      ],
+      "accent": 1,
+      "sub": "Mentions and highlights from every open chat, gathered in one place."
+    },
+    "usercard": {
+      "title": [
+        "Know who's",
+        "talking."
+      ],
+      "accent": 1,
+      "sub": "Tap a name for their card, their messages and quick actions."
+    },
+    "favorites": {
+      "title": [
+        "Favourites,",
+        "no account."
+      ],
+      "accent": 1,
+      "sub": "Star any channel to see when it's live. Sign in only if you want to."
+    },
+    "audio": {
+      "title": [
+        "Listen with",
+        "the screen off."
+      ],
+      "accent": 1,
+      "sub": "Background audio and an audio-only mode keep the stream going."
+    },
+    "moderate": {
+      "title": [
+        "Moderate from",
+        "your pocket."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, unban requests and the mod log for channels you moderate."
+    },
+    "supporter": {
+      "title": [
+        "Make it",
+        "yours."
+      ],
+      "accent": 1,
+      "sub": "Themes, chat fonts and a badge everyone in Embr sees. Try them on first."
+    },
+    "sidebyside": {
+      "title": [
+        "Three chats.",
+        "Side by side."
+      ],
+      "accent": 1,
+      "sub": "Keep up to three chats open at once on iPad."
+    }
+  },
+  "en-GB": {
+    "watch": {
+      "title": [
+        "Watch live.",
+        "Chat native."
+      ],
+      "accent": 1,
+      "sub": "A native iPhone player and chat, built for speed."
+    },
+    "emotes": {
+      "title": [
+        "Every emote.",
+        "Every provider."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV and FrankerFaceZ, in chat and on your emote keyboard."
+    },
+    "chats": {
+      "title": [
+        "All your chats.",
+        "One tab."
+      ],
+      "accent": 1,
+      "sub": "Keep chats open without the video, with unread counts on each."
+    },
+    "fullscreen": {
+      "title": [
+        "Go fullscreen.",
+        "Keep the chat."
+      ],
+      "accent": 1,
+      "sub": "Turn your phone and the chat floats beside the stream."
+    },
+    "mentions": {
+      "title": [
+        "Never miss",
+        "a mention."
+      ],
+      "accent": 1,
+      "sub": "Mentions and highlights from every open chat, gathered in one place."
+    },
+    "usercard": {
+      "title": [
+        "Know who's",
+        "talking."
+      ],
+      "accent": 1,
+      "sub": "Tap a name for their card, their messages and quick actions."
+    },
+    "favorites": {
+      "title": [
+        "Favourites,",
+        "no account."
+      ],
+      "accent": 1,
+      "sub": "Star any channel to see when it's live. Sign in only if you want to."
+    },
+    "audio": {
+      "title": [
+        "Listen with",
+        "the screen off."
+      ],
+      "accent": 1,
+      "sub": "Background audio and an audio-only mode keep the stream going."
+    },
+    "moderate": {
+      "title": [
+        "Moderate from",
+        "your pocket."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, unban requests and the mod log for channels you moderate."
+    },
+    "supporter": {
+      "title": [
+        "Make it",
+        "yours."
+      ],
+      "accent": 1,
+      "sub": "Themes, chat fonts and a badge everyone in Embr sees. Try them on first."
+    },
+    "sidebyside": {
+      "title": [
+        "Three chats.",
+        "Side by side."
+      ],
+      "accent": 1,
+      "sub": "Keep up to three chats open at once on iPad."
+    }
+  },
+  "de-DE": {
+    "watch": {
+      "title": [
+        "Live schauen.",
+        "Chat, blitzschnell."
+      ],
+      "accent": 1,
+      "sub": "Ein nativer iPhone-Player mit Chat, gebaut für Tempo."
+    },
+    "emotes": {
+      "title": [
+        "Jede Emote.",
+        "Jeder Anbieter."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV und FrankerFaceZ, im Chat und auf deiner Emote-Tastatur."
+    },
+    "chats": {
+      "title": [
+        "Alle Chats.",
+        "Ein Tab."
+      ],
+      "accent": 1,
+      "sub": "Chats offen halten, ohne Video, mit Zählern für ungelesene Nachrichten."
+    },
+    "fullscreen": {
+      "title": [
+        "Vollbild.",
+        "Chat bleibt."
+      ],
+      "accent": 1,
+      "sub": "Gerät drehen, und die Chat-Fenster schweben neben dem Stream."
+    },
+    "mentions": {
+      "title": [
+        "Keine Erwähnung",
+        "verpasst."
+      ],
+      "accent": 1,
+      "sub": "Erwähnungen und Highlights aus allen offenen Chats, an einem Ort."
+    },
+    "usercard": {
+      "title": [
+        "Wer ist das?",
+        "Auf einen Blick."
+      ],
+      "accent": 1,
+      "sub": "Tippe auf einen Namen für Karte, Nachrichten und Schnellaktionen."
+    },
+    "favorites": {
+      "title": [
+        "Favoriten,",
+        "ohne Konto."
+      ],
+      "accent": 1,
+      "sub": "Kanäle mit Stern markieren, um Livegänge zu sehen. Anmelden nur auf Wunsch."
+    },
+    "audio": {
+      "title": [
+        "Hören mit",
+        "dunklem Display."
+      ],
+      "accent": 1,
+      "sub": "Hintergrundaudio und ein Nur-Audio-Modus halten den Stream am Laufen."
+    },
+    "moderate": {
+      "title": [
+        "Moderieren von",
+        "der Hosentasche."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, Entbannungsanfragen und das Mod-Protokoll für deine Kanäle."
+    },
+    "supporter": {
+      "title": [
+        "Mach es",
+        "zu deinem."
+      ],
+      "accent": 1,
+      "sub": "Themes, Chat-Schriften und ein Abzeichen für alle in Embr. Probier es vorher aus."
+    },
+    "sidebyside": {
+      "title": [
+        "Drei Chats.",
+        "Nebeneinander."
+      ],
+      "accent": 1,
+      "sub": "Bis zu drei Chats gleichzeitig offen halten, auf dem iPad."
+    }
+  },
+  "es-ES": {
+    "watch": {
+      "title": [
+        "Mira en directo.",
+        "Chat nativo."
+      ],
+      "accent": 1,
+      "sub": "Reproductor y chat nativos de iPhone, hechos para ir rápido."
+    },
+    "emotes": {
+      "title": [
+        "Cada emote.",
+        "Cada proveedor."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV y FrankerFaceZ, en el chat y en tu teclado de emotes."
+    },
+    "chats": {
+      "title": [
+        "Todos tus chats.",
+        "Una sola pestaña."
+      ],
+      "accent": 1,
+      "sub": "Mantén los chats abiertos sin el vídeo, con contador de no leídos en cada uno."
+    },
+    "fullscreen": {
+      "title": [
+        "Pantalla completa.",
+        "Con el chat."
+      ],
+      "accent": 1,
+      "sub": "Gira el móvil y los chats flotan junto al directo."
+    },
+    "mentions": {
+      "title": [
+        "No te pierdas",
+        "ninguna mención."
+      ],
+      "accent": 1,
+      "sub": "Menciones y destacados de todos los chats abiertos, en un solo lugar."
+    },
+    "usercard": {
+      "title": [
+        "Sabe quién",
+        "está hablando."
+      ],
+      "accent": 1,
+      "sub": "Toca un nombre para ver su tarjeta, sus mensajes y acciones rápidas."
+    },
+    "favorites": {
+      "title": [
+        "Favoritos,",
+        "sin cuenta."
+      ],
+      "accent": 1,
+      "sub": "Marca canales con estrella y ve cuándo emiten. Inicia sesión solo si quieres."
+    },
+    "audio": {
+      "title": [
+        "Escucha sin",
+        "mirar la pantalla."
+      ],
+      "accent": 1,
+      "sub": "El audio en segundo plano y un modo solo audio mantienen el directo."
+    },
+    "moderate": {
+      "title": [
+        "Modera desde",
+        "tu bolsillo."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, solicitudes de desbaneo y el registro de moderación de tus canales."
+    },
+    "supporter": {
+      "title": [
+        "Personalízalo",
+        "a tu gusto."
+      ],
+      "accent": 1,
+      "sub": "Temas, fuentes del chat y una insignia que todos en Embr ven. Pruébalos antes."
+    },
+    "sidebyside": {
+      "title": [
+        "Tres chats.",
+        "Lado a lado."
+      ],
+      "accent": 1,
+      "sub": "Mantén hasta tres chats abiertos a la vez en iPad."
+    }
+  },
+  "es-MX": {
+    "watch": {
+      "title": [
+        "Mira en vivo.",
+        "Chat nativo."
+      ],
+      "accent": 1,
+      "sub": "Un reproductor y chat nativos para iPhone, hechos para ser rápidos."
+    },
+    "emotes": {
+      "title": [
+        "Cada emote.",
+        "Cada proveedor."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV y FrankerFaceZ, en el chat y en tu teclado de emotes."
+    },
+    "chats": {
+      "title": [
+        "Todos tus chats.",
+        "Una sola pestaña."
+      ],
+      "accent": 1,
+      "sub": "Deja chats abiertos sin el video, con contador de no leídos en cada uno."
+    },
+    "fullscreen": {
+      "title": [
+        "Pantalla completa.",
+        "Con el chat."
+      ],
+      "accent": 1,
+      "sub": "Gira tu celular y los chats flotan junto al stream."
+    },
+    "mentions": {
+      "title": [
+        "No te pierdas",
+        "ni una mención."
+      ],
+      "accent": 1,
+      "sub": "Menciones y destacados de todos tus chats abiertos, en un solo lugar."
+    },
+    "usercard": {
+      "title": [
+        "Sabe quién",
+        "está hablando."
+      ],
+      "accent": 1,
+      "sub": "Toca un nombre para ver su tarjeta, sus mensajes y acciones rápidas."
+    },
+    "favorites": {
+      "title": [
+        "Favoritos,",
+        "sin cuenta."
+      ],
+      "accent": 1,
+      "sub": "Marca canales con estrella y ve cuándo están en vivo. Inicia sesión si quieres."
+    },
+    "audio": {
+      "title": [
+        "Escucha con",
+        "pantalla apagada."
+      ],
+      "accent": 1,
+      "sub": "El audio en segundo plano y un modo solo audio mantienen el stream activo."
+    },
+    "moderate": {
+      "title": [
+        "Modera desde",
+        "tu bolsillo."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, solicitudes de desbaneo y el registro de mod de tus canales."
+    },
+    "supporter": {
+      "title": [
+        "Personalízalo",
+        "a tu gusto."
+      ],
+      "accent": 1,
+      "sub": "Temas, fuentes para el chat y una insignia que todos en Embr ven. Pruébalos antes."
+    },
+    "sidebyside": {
+      "title": [
+        "Tres chats.",
+        "Lado a lado."
+      ],
+      "accent": 1,
+      "sub": "Mantén hasta tres chats abiertos al mismo tiempo en iPad."
+    }
+  },
+  "fr-FR": {
+    "watch": {
+      "title": [
+        "Regarde en direct.",
+        "Chat natif."
+      ],
+      "accent": 1,
+      "sub": "Un lecteur et un chat natifs sur iPhone, pensés pour la vitesse."
+    },
+    "emotes": {
+      "title": [
+        "Chaque émote.",
+        "Chaque service."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV et FrankerFaceZ, dans le chat et dans ton clavier d'émotes."
+    },
+    "chats": {
+      "title": [
+        "Tous tes chats.",
+        "Un seul onglet."
+      ],
+      "accent": 1,
+      "sub": "Garde les chats ouverts sans la vidéo, avec les non-lus de chacun."
+    },
+    "fullscreen": {
+      "title": [
+        "Plein écran.",
+        "Le chat reste."
+      ],
+      "accent": 1,
+      "sub": "Tourne ton téléphone : les chats flottent à côté du direct."
+    },
+    "mentions": {
+      "title": [
+        "Ne rate plus",
+        "aucune mention."
+      ],
+      "accent": 1,
+      "sub": "Mentions et moments forts de tous les chats ouverts, réunis au même endroit."
+    },
+    "usercard": {
+      "title": [
+        "Vois qui",
+        "prend la parole."
+      ],
+      "accent": 1,
+      "sub": "Touche un nom pour voir sa carte, ses messages et des actions rapides."
+    },
+    "favorites": {
+      "title": [
+        "Favoris,",
+        "sans compte."
+      ],
+      "accent": 1,
+      "sub": "Ajoute une chaîne en favori pour voir son direct. Connexion facultative."
+    },
+    "audio": {
+      "title": [
+        "Écoute avec",
+        "l'écran éteint."
+      ],
+      "accent": 1,
+      "sub": "Le son en arrière-plan et un mode audio seul gardent le direct en route."
+    },
+    "moderate": {
+      "title": [
+        "Modère depuis",
+        "ta poche."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, demandes de débannissement et journal de modération de tes chaînes."
+    },
+    "supporter": {
+      "title": [
+        "Personnalise",
+        "à ta façon."
+      ],
+      "accent": 1,
+      "sub": "Thèmes, polices de chat et un badge visible par tout Embr. Essaie avant."
+    },
+    "sidebyside": {
+      "title": [
+        "Trois chats.",
+        "Côte à côte."
+      ],
+      "accent": 1,
+      "sub": "Garde jusqu'à trois chats ouverts en même temps sur iPad."
+    }
+  },
+  "id": {
+    "watch": {
+      "title": [
+        "Tonton langsung.",
+        "Chat terasa asli."
+      ],
+      "accent": 1,
+      "sub": "Pemutar dan chat asli untuk iPhone, dibuat untuk kecepatan."
+    },
+    "emotes": {
+      "title": [
+        "Semua emote.",
+        "Semua penyedia."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV, dan FrankerFaceZ, di chat dan di papan emote kamu."
+    },
+    "chats": {
+      "title": [
+        "Semua chatmu.",
+        "Satu tab."
+      ],
+      "accent": 1,
+      "sub": "Biarkan chat terbuka tanpa video, lengkap dengan jumlah pesan belum dibaca."
+    },
+    "fullscreen": {
+      "title": [
+        "Layar penuh.",
+        "Chat tetap ada."
+      ],
+      "accent": 1,
+      "sub": "Putar ponselmu dan chat melayang di samping siaran."
+    },
+    "mentions": {
+      "title": [
+        "Jangan lewatkan",
+        "satu sebutan."
+      ],
+      "accent": 1,
+      "sub": "Sebutan dan sorotan dari semua chat yang terbuka, dikumpulkan di satu tempat."
+    },
+    "usercard": {
+      "title": [
+        "Kenali siapa",
+        "yang bicara."
+      ],
+      "accent": 1,
+      "sub": "Ketuk nama untuk melihat kartunya, pesannya, dan aksi cepat."
+    },
+    "favorites": {
+      "title": [
+        "Favorit,",
+        "tanpa akun."
+      ],
+      "accent": 1,
+      "sub": "Beri bintang pada kanal untuk melihat saat kanal tayang. Masuk hanya jika mau."
+    },
+    "audio": {
+      "title": [
+        "Dengarkan dengan",
+        "layar mati."
+      ],
+      "accent": 1,
+      "sub": "Audio latar dan mode khusus audio membuat siaran tetap berjalan."
+    },
+    "moderate": {
+      "title": [
+        "Moderasi dari",
+        "saku kamu."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, permintaan unban, dan log moderasi untuk kanal yang kamu moderasi."
+    },
+    "supporter": {
+      "title": [
+        "Buat jadi",
+        "milikmu."
+      ],
+      "accent": 1,
+      "sub": "Tema, font chat, dan lencana yang dilihat semua orang di Embr. Coba dulu."
+    },
+    "sidebyside": {
+      "title": [
+        "Tiga chat.",
+        "Berdampingan."
+      ],
+      "accent": 1,
+      "sub": "Buka hingga tiga chat sekaligus di iPad."
+    }
+  },
+  "it": {
+    "watch": {
+      "title": [
+        "Guarda in diretta.",
+        "Chat nativa."
+      ],
+      "accent": 1,
+      "sub": "Un player e una chat nativi per iPhone, pensati per la velocità."
+    },
+    "emotes": {
+      "title": [
+        "Ogni emote.",
+        "Ogni provider."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV e FrankerFaceZ, in chat e nella tastiera emote."
+    },
+    "chats": {
+      "title": [
+        "Tutte le chat.",
+        "Una scheda."
+      ],
+      "accent": 1,
+      "sub": "Tieni aperte le chat senza video, con il conteggio dei non letti su ognuna."
+    },
+    "fullscreen": {
+      "title": [
+        "A schermo intero.",
+        "Tieni la chat."
+      ],
+      "accent": 1,
+      "sub": "Ruota il telefono e le chat fluttuano accanto alla diretta."
+    },
+    "mentions": {
+      "title": [
+        "Non perdere",
+        "più una menzione."
+      ],
+      "accent": 1,
+      "sub": "Menzioni e momenti salienti da tutte le chat aperte, in un unico posto."
+    },
+    "usercard": {
+      "title": [
+        "Scopri chi",
+        "sta parlando."
+      ],
+      "accent": 1,
+      "sub": "Tocca un nome per vedere il suo profilo, i messaggi e le azioni rapide."
+    },
+    "favorites": {
+      "title": [
+        "Preferiti,",
+        "senza account."
+      ],
+      "accent": 1,
+      "sub": "Metti una stella a un canale per vedere quando va in diretta. Accedi solo se vuoi."
+    },
+    "audio": {
+      "title": [
+        "Ascolta con",
+        "lo schermo spento."
+      ],
+      "accent": 1,
+      "sub": "Audio in background e una modalità solo audio tengono viva la diretta."
+    },
+    "moderate": {
+      "title": [
+        "Modera dalla",
+        "tua tasca."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, richieste di sblocco e il registro mod dei canali che moderi."
+    },
+    "supporter": {
+      "title": [
+        "Rendilo",
+        "tuo."
+      ],
+      "accent": 1,
+      "sub": "Temi, font della chat e un badge che tutti in Embr vedono. Provali prima."
+    },
+    "sidebyside": {
+      "title": [
+        "Tre chat.",
+        "Fianco a fianco."
+      ],
+      "accent": 1,
+      "sub": "Tieni aperte fino a tre chat contemporaneamente su iPad."
+    }
+  },
+  "ja": {
+    "watch": {
+      "title": [
+        "ライブ視聴。",
+        "チャットも快適。"
+      ],
+      "accent": 1,
+      "sub": "速さを追求した、iPhone専用のプレーヤーとチャット。"
+    },
+    "emotes": {
+      "title": [
+        "全エモート。",
+        "全プロバイダー。"
+      ],
+      "accent": 1,
+      "sub": "7TV・BetterTTV・FrankerFaceZ対応。チャットと絵文字欄で。"
+    },
+    "chats": {
+      "title": [
+        "すべてのチャット",
+        "1つのタブに。"
+      ],
+      "accent": 1,
+      "sub": "動画なしでチャットを開いたまま、未読数もすぐ確認。"
+    },
+    "fullscreen": {
+      "title": [
+        "全画面で視聴。",
+        "チャットも残す。"
+      ],
+      "accent": 1,
+      "sub": "端末を横にすると、チャットが配信の横に浮かびます。"
+    },
+    "mentions": {
+      "title": [
+        "メンションを",
+        "見逃さない。"
+      ],
+      "accent": 1,
+      "sub": "開いているすべてのチャットのメンションとハイライトを一か所に。"
+    },
+    "usercard": {
+      "title": [
+        "誰が話して",
+        "いるかわかる。"
+      ],
+      "accent": 1,
+      "sub": "名前をタップして、カード・発言・クイック操作を表示。"
+    },
+    "favorites": {
+      "title": [
+        "お気に入り、",
+        "アカウント不要。"
+      ],
+      "accent": 1,
+      "sub": "チャンネルにスターを付けると配信開始がわかります。サインインは任意。"
+    },
+    "audio": {
+      "title": [
+        "画面オフでも",
+        "聴ける。"
+      ],
+      "accent": 1,
+      "sub": "バックグラウンド再生と音声のみモードで配信を流し続けます。"
+    },
+    "moderate": {
+      "title": [
+        "外出先でも",
+        "モデレート。"
+      ],
+      "accent": 1,
+      "sub": "AutoMod、アンバン申請、担当チャンネルのモデログに対応。"
+    },
+    "supporter": {
+      "title": [
+        "自分好みに。",
+        "カスタマイズ。"
+      ],
+      "accent": 1,
+      "sub": "テーマ、チャットのフォント、Embrの全員に見えるバッジ。先に試せます。"
+    },
+    "sidebyside": {
+      "title": [
+        "チャットは3つ。",
+        "横並びで。"
+      ],
+      "accent": 1,
+      "sub": "iPadで最大3つのチャットを同時に開いておけます。"
+    }
+  },
+  "ko": {
+    "watch": {
+      "title": [
+        "라이브 시청.",
+        "채팅도 네이티브."
+      ],
+      "accent": 1,
+      "sub": "빠름에 맞춘 네이티브 iPhone 플레이어와 채팅."
+    },
+    "emotes": {
+      "title": [
+        "모든 이모트.",
+        "모든 제공자."
+      ],
+      "accent": 1,
+      "sub": "7TV·BetterTTV·FrankerFaceZ 이모트를 채팅·키보드에."
+    },
+    "chats": {
+      "title": [
+        "모든 채팅,",
+        "하나의 탭."
+      ],
+      "accent": 1,
+      "sub": "영상 없이 채팅을 열어 두고 안 읽은 수를 확인하세요."
+    },
+    "fullscreen": {
+      "title": [
+        "전체 화면.",
+        "채팅은 그대로."
+      ],
+      "accent": 1,
+      "sub": "휴대폰을 돌리면 채팅이 방송 옆에 떠 있어요."
+    },
+    "mentions": {
+      "title": [
+        "멘션을",
+        "놓치지 마세요."
+      ],
+      "accent": 1,
+      "sub": "열린 모든 채팅의 멘션과 하이라이트를 한곳에 모았어요."
+    },
+    "usercard": {
+      "title": [
+        "누가 말하는지",
+        "한눈에."
+      ],
+      "accent": 1,
+      "sub": "이름을 탭하면 카드, 메시지, 빠른 작업을 볼 수 있어요."
+    },
+    "favorites": {
+      "title": [
+        "즐겨찾기,",
+        "계정 없이."
+      ],
+      "accent": 1,
+      "sub": "채널에 별표를 찍으면 방송 시작을 알려줘요. 로그인은 선택 사항."
+    },
+    "audio": {
+      "title": [
+        "화면을 끈 채",
+        "듣기."
+      ],
+      "accent": 1,
+      "sub": "백그라운드 오디오와 오디오 전용 모드로 방송을 계속 들을 수 있어요."
+    },
+    "moderate": {
+      "title": [
+        "외출 중에도",
+        "모더레이션."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, 차단 해제 요청, 담당 채널의 모드 로그를 확인하세요."
+    },
+    "supporter": {
+      "title": [
+        "나만의",
+        "스타일로."
+      ],
+      "accent": 1,
+      "sub": "테마, 채팅 글꼴, Embr 전체에 보이는 배지. 먼저 체험하세요."
+    },
+    "sidebyside": {
+      "title": [
+        "채팅 3개를",
+        "나란히."
+      ],
+      "accent": 1,
+      "sub": "iPad에서 채팅을 최대 3개까지 동시에 열어 두세요."
+    }
+  },
+  "pl": {
+    "watch": {
+      "title": [
+        "Oglądaj na żywo.",
+        "Czat natywny."
+      ],
+      "accent": 1,
+      "sub": "Natywny odtwarzacz i czat na iPhone'a, zbudowany z myślą o szybkości."
+    },
+    "emotes": {
+      "title": [
+        "Wszystkie emotki.",
+        "Wszyscy dostawcy."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV i FrankerFaceZ, w czacie i na klawiaturze emotek."
+    },
+    "chats": {
+      "title": [
+        "Wszystkie czaty.",
+        "Jedna karta."
+      ],
+      "accent": 1,
+      "sub": "Trzymaj czaty otwarte bez wideo, z licznikiem nieprzeczytanych przy każdym."
+    },
+    "fullscreen": {
+      "title": [
+        "Pełny ekran.",
+        "Czat zostaje."
+      ],
+      "accent": 1,
+      "sub": "Obróć telefon, a czat będzie pływać obok transmisji."
+    },
+    "mentions": {
+      "title": [
+        "Nie przegap",
+        "żadnej wzmianki."
+      ],
+      "accent": 1,
+      "sub": "Wzmianki i wyróżnienia ze wszystkich otwartych czatów w jednym miejscu."
+    },
+    "usercard": {
+      "title": [
+        "Sprawdź, kto",
+        "pisze."
+      ],
+      "accent": 1,
+      "sub": "Dotknij nazwy, by zobaczyć kartę, wiadomości i szybkie akcje."
+    },
+    "favorites": {
+      "title": [
+        "Ulubione,",
+        "bez konta."
+      ],
+      "accent": 1,
+      "sub": "Oznacz kanał gwiazdką, by widzieć, kiedy jest na żywo. Logowanie opcjonalne."
+    },
+    "audio": {
+      "title": [
+        "Słuchaj przy",
+        "wyłączonym ekranie."
+      ],
+      "accent": 1,
+      "sub": "Dźwięk w tle i tryb tylko audio podtrzymują transmisję."
+    },
+    "moderate": {
+      "title": [
+        "Moderuj prosto",
+        "z kieszeni."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, prośby o odbanowanie i dziennik moderacji kanałów, które prowadzisz."
+    },
+    "supporter": {
+      "title": [
+        "Ustaw to",
+        "po swojemu."
+      ],
+      "accent": 1,
+      "sub": "Motywy, czcionki czatu i odznaka widoczna w Embr. Wypróbuj najpierw."
+    },
+    "sidebyside": {
+      "title": [
+        "Trzy czaty.",
+        "Obok siebie."
+      ],
+      "accent": 1,
+      "sub": "Miej otwarte nawet trzy czaty naraz na iPadzie."
+    }
+  },
+  "pt-BR": {
+    "watch": {
+      "title": [
+        "Assista ao vivo.",
+        "Chat nativo."
+      ],
+      "accent": 1,
+      "sub": "Player e chat nativos para iPhone, feitos para ser rápidos."
+    },
+    "emotes": {
+      "title": [
+        "Cada emote.",
+        "Cada provedor."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV e FrankerFaceZ, no chat e no seu teclado de emotes."
+    },
+    "chats": {
+      "title": [
+        "Todos os chats.",
+        "Uma aba só."
+      ],
+      "accent": 1,
+      "sub": "Mantenha chats abertos sem o vídeo, com contagem de não lidas em cada um."
+    },
+    "fullscreen": {
+      "title": [
+        "Tela cheia.",
+        "Com o chat."
+      ],
+      "accent": 1,
+      "sub": "Gire o celular e os chats flutuam ao lado da transmissão."
+    },
+    "mentions": {
+      "title": [
+        "Nunca perca",
+        "uma menção."
+      ],
+      "accent": 1,
+      "sub": "Menções e destaques de todos os chats abertos, reunidos em um lugar."
+    },
+    "usercard": {
+      "title": [
+        "Saiba quem",
+        "está falando."
+      ],
+      "accent": 1,
+      "sub": "Toque em um nome para ver o cartão, as mensagens e ações rápidas."
+    },
+    "favorites": {
+      "title": [
+        "Favoritos,",
+        "sem conta."
+      ],
+      "accent": 1,
+      "sub": "Marque canais com estrela para ver quando entram ao vivo. Entre só se quiser."
+    },
+    "audio": {
+      "title": [
+        "Ouça com a",
+        "tela desligada."
+      ],
+      "accent": 1,
+      "sub": "Áudio em segundo plano e modo só áudio mantêm a transmissão rolando."
+    },
+    "moderate": {
+      "title": [
+        "Modere do seu",
+        "bolso."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, pedidos de desbanimento e o log de moderação dos canais que você modera."
+    },
+    "supporter": {
+      "title": [
+        "Deixe com a",
+        "sua cara."
+      ],
+      "accent": 1,
+      "sub": "Temas, fontes do chat e um selo que todos no Embr veem. Experimente antes."
+    },
+    "sidebyside": {
+      "title": [
+        "Três chats.",
+        "Lado a lado."
+      ],
+      "accent": 1,
+      "sub": "Mantenha até três chats abertos ao mesmo tempo no iPad."
+    }
+  },
+  "ru": {
+    "watch": {
+      "title": [
+        "Смотри в эфире.",
+        "Чат нативный."
+      ],
+      "accent": 1,
+      "sub": "Нативный плеер и чат для iPhone, созданные для скорости."
+    },
+    "emotes": {
+      "title": [
+        "Все эмоуты.",
+        "Все сервисы."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV и FrankerFaceZ — в чате и на клавиатуре эмоутов."
+    },
+    "chats": {
+      "title": [
+        "Все чаты —",
+        "в одной вкладке."
+      ],
+      "accent": 1,
+      "sub": "Держи чаты открытыми без видео и смотри счётчик непрочитанных."
+    },
+    "fullscreen": {
+      "title": [
+        "Полный экран.",
+        "Чат остаётся."
+      ],
+      "accent": 1,
+      "sub": "Поверни телефон, и чаты плавают рядом с трансляцией."
+    },
+    "mentions": {
+      "title": [
+        "Не пропусти",
+        "упоминания."
+      ],
+      "accent": 1,
+      "sub": "Упоминания и отметки из всех открытых чатов собраны в одном месте."
+    },
+    "usercard": {
+      "title": [
+        "Узнай, кто",
+        "говорит."
+      ],
+      "accent": 1,
+      "sub": "Нажми на имя, чтобы увидеть карточку, сообщения и быстрые действия."
+    },
+    "favorites": {
+      "title": [
+        "Избранное,",
+        "без аккаунта."
+      ],
+      "accent": 1,
+      "sub": "Отметь канал звёздочкой, чтобы видеть, когда он в эфире. Вход — по желанию."
+    },
+    "audio": {
+      "title": [
+        "Слушай при",
+        "выключенном экране."
+      ],
+      "accent": 1,
+      "sub": "Фоновый звук и режим только аудио не дают стриму прерваться."
+    },
+    "moderate": {
+      "title": [
+        "Модерируй",
+        "из кармана."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, запросы на разбан и журнал модерации для каналов, где ты модератор."
+    },
+    "supporter": {
+      "title": [
+        "Сделай",
+        "под себя."
+      ],
+      "accent": 1,
+      "sub": "Темы, шрифты чата и значок, который видят все в Embr. Сначала попробуй."
+    },
+    "sidebyside": {
+      "title": [
+        "Три чата.",
+        "Рядом."
+      ],
+      "accent": 1,
+      "sub": "Открой до трёх чатов одновременно на iPad."
+    }
+  },
+  "th": {
+    "watch": {
+      "title": [
+        "ดูสด",
+        "แชตเป็นธรรมชาติ"
+      ],
+      "accent": 1,
+      "sub": "เครื่องเล่นและแชตแบบเนทีฟสำหรับ iPhone ออกแบบมาให้ลื่นไหล"
+    },
+    "emotes": {
+      "title": [
+        "อีโมตทั้งหมด",
+        "ทุกผู้ให้บริการ"
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV และ FrankerFaceZ ทั้งในแชตและแป้นอีโมต"
+    },
+    "chats": {
+      "title": [
+        "แชตทั้งหมดของคุณ",
+        "ในแท็บเดียว"
+      ],
+      "accent": 1,
+      "sub": "เปิดแชตค้างไว้โดยไม่ต้องดูวิดีโอ พร้อมจำนวนข้อความที่ยังไม่อ่าน"
+    },
+    "fullscreen": {
+      "title": [
+        "ดูเต็มจอ",
+        "แชตยังอยู่"
+      ],
+      "accent": 1,
+      "sub": "หมุนโทรศัพท์ แล้วแชตจะลอยอยู่ข้างสตรีม"
+    },
+    "mentions": {
+      "title": [
+        "อย่าพลาด",
+        "การกล่าวถึง"
+      ],
+      "accent": 1,
+      "sub": "การกล่าวถึงและไฮไลต์จากทุกแชตที่เปิดอยู่ รวมไว้ในที่เดียว"
+    },
+    "usercard": {
+      "title": [
+        "รู้ว่าใคร",
+        "กำลังพูด"
+      ],
+      "accent": 1,
+      "sub": "แตะชื่อเพื่อดูการ์ด ข้อความ และคำสั่งด่วนของคนนั้น"
+    },
+    "favorites": {
+      "title": [
+        "รายการโปรด",
+        "ไม่ต้องมีบัญชี"
+      ],
+      "accent": 1,
+      "sub": "กดดาวช่องใดก็ได้เพื่อดูว่าเมื่อไรถ่ายทอดสด ลงชื่อเข้าใช้เฉพาะเมื่อต้องการ"
+    },
+    "audio": {
+      "title": [
+        "ฟังต่อ",
+        "ตอนจอดับ"
+      ],
+      "accent": 1,
+      "sub": "เล่นเสียงเบื้องหลังและโหมดเสียงอย่างเดียว ให้สตรีมเล่นต่อได้"
+    },
+    "moderate": {
+      "title": [
+        "ดูแลแชต",
+        "จากกระเป๋าคุณ"
+      ],
+      "accent": 1,
+      "sub": "AutoMod คำขอปลดแบน และบันทึกการดูแลของช่องที่คุณเป็นผู้ดูแล"
+    },
+    "supporter": {
+      "title": [
+        "ปรับให้",
+        "เป็นของคุณ"
+      ],
+      "accent": 1,
+      "sub": "ธีม ฟอนต์แชต และป้ายที่ทุกคนใน Embr เห็น ลองใช้ก่อนได้"
+    },
+    "sidebyside": {
+      "title": [
+        "สามแชต",
+        "เคียงข้างกัน"
+      ],
+      "accent": 1,
+      "sub": "เปิดแชตได้สูงสุดสามรายการพร้อมกันบน iPad"
+    }
+  },
+  "tr": {
+    "watch": {
+      "title": [
+        "Canlı izle.",
+        "Sohbet de akıcı."
+      ],
+      "accent": 1,
+      "sub": "Hız için tasarlanmış, iPhone'a özel yerel oynatıcı ve sohbet."
+    },
+    "emotes": {
+      "title": [
+        "Tüm emotlar.",
+        "Tüm sağlayıcılar."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV ve FrankerFaceZ; sohbette ve emot klavyende."
+    },
+    "chats": {
+      "title": [
+        "Tüm sohbetlerin,",
+        "tek sekmede."
+      ],
+      "accent": 1,
+      "sub": "Sohbetleri videosuz açık tut, her birinde okunmamış sayısıyla."
+    },
+    "fullscreen": {
+      "title": [
+        "Tam ekran.",
+        "Sohbet yanında."
+      ],
+      "accent": 1,
+      "sub": "Telefonunu çevir, sohbet kayan pencerelerle yayının yanında kalsın."
+    },
+    "mentions": {
+      "title": [
+        "Hiçbir etiketi",
+        "kaçırma."
+      ],
+      "accent": 1,
+      "sub": "Açık tüm sohbetlerdeki etiketler ve öne çıkanlar tek yerde."
+    },
+    "usercard": {
+      "title": [
+        "Kimin konuştuğunu",
+        "bil."
+      ],
+      "accent": 1,
+      "sub": "Bir isme dokun; kartını, mesajlarını ve hızlı işlemlerini gör."
+    },
+    "favorites": {
+      "title": [
+        "Favoriler,",
+        "hesapsız."
+      ],
+      "accent": 1,
+      "sub": "Bir kanala yıldız koy, yayına geçince gör. Giriş yalnızca istersen."
+    },
+    "audio": {
+      "title": [
+        "Ekran kapalıyken",
+        "dinle."
+      ],
+      "accent": 1,
+      "sub": "Arka plan sesi ve yalnızca ses modu yayını akmaya devam ettirir."
+    },
+    "moderate": {
+      "title": [
+        "Cebinden",
+        "moderasyon yap."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, ban açma istekleri ve moderatörü olduğun kanalların mod günlüğü."
+    },
+    "supporter": {
+      "title": [
+        "Kendine",
+        "göre yap."
+      ],
+      "accent": 1,
+      "sub": "Temalar, sohbet yazı tipleri ve Embr'deki herkesin gördüğü rozet. Önce dene."
+    },
+    "sidebyside": {
+      "title": [
+        "Üç sohbet.",
+        "Yan yana."
+      ],
+      "accent": 1,
+      "sub": "iPad'de aynı anda en fazla üç sohbeti açık tut."
+    }
+  },
+  "vi": {
+    "watch": {
+      "title": [
+        "Xem trực tiếp.",
+        "Chat mượt mà."
+      ],
+      "accent": 1,
+      "sub": "Trình phát và chat gốc cho iPhone, được làm để nhanh."
+    },
+    "emotes": {
+      "title": [
+        "Mọi emote.",
+        "Mọi nền tảng."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV và FrankerFaceZ, trong chat và bàn phím emote của bạn."
+    },
+    "chats": {
+      "title": [
+        "Mọi chat của bạn,",
+        "một thẻ."
+      ],
+      "accent": 1,
+      "sub": "Giữ chat mở mà không cần video, kèm số tin chưa đọc ở mỗi chat."
+    },
+    "fullscreen": {
+      "title": [
+        "Toàn màn hình.",
+        "Vẫn có chat."
+      ],
+      "accent": 1,
+      "sub": "Xoay điện thoại, chat sẽ nổi cạnh luồng phát."
+    },
+    "mentions": {
+      "title": [
+        "Đừng bỏ lỡ",
+        "lượt nhắc tên."
+      ],
+      "accent": 1,
+      "sub": "Lượt nhắc và điểm nổi bật từ mọi chat đang mở, gom về một chỗ."
+    },
+    "usercard": {
+      "title": [
+        "Biết ai",
+        "đang nói."
+      ],
+      "accent": 1,
+      "sub": "Chạm vào tên để xem thẻ, tin nhắn và thao tác nhanh."
+    },
+    "favorites": {
+      "title": [
+        "Yêu thích,",
+        "không cần tài khoản."
+      ],
+      "accent": 1,
+      "sub": "Gắn sao cho kênh để biết khi nào kênh lên sóng. Chỉ đăng nhập nếu bạn muốn."
+    },
+    "audio": {
+      "title": [
+        "Nghe khi",
+        "tắt màn hình."
+      ],
+      "accent": 1,
+      "sub": "Âm thanh nền và chế độ chỉ âm thanh giữ cho luồng phát tiếp tục."
+    },
+    "moderate": {
+      "title": [
+        "Kiểm duyệt ngay",
+        "trên điện thoại."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, yêu cầu bỏ cấm và nhật ký kiểm duyệt của các kênh bạn quản lý."
+    },
+    "supporter": {
+      "title": [
+        "Biến nó",
+        "thành của bạn."
+      ],
+      "accent": 1,
+      "sub": "Giao diện, phông chữ chat và huy hiệu mọi người trong Embr thấy. Thử trước."
+    },
+    "sidebyside": {
+      "title": [
+        "Ba chat cùng lúc.",
+        "Song song."
+      ],
+      "accent": 1,
+      "sub": "Mở tối đa ba chat cùng lúc trên iPad."
+    }
+  },
+  "zh-Hans": {
+    "watch": {
+      "title": [
+        "直播观看。",
+        "聊天原生。"
+      ],
+      "accent": 1,
+      "sub": "专为速度打造的原生 iPhone 播放器与聊天。"
+    },
+    "emotes": {
+      "title": [
+        "所有表情。",
+        "所有平台。"
+      ],
+      "accent": 1,
+      "sub": "支持 7TV、BetterTTV、FrankerFaceZ，聊天与表情键盘。"
+    },
+    "chats": {
+      "title": [
+        "所有聊天，",
+        "一个标签。"
+      ],
+      "accent": 1,
+      "sub": "不看视频也能保持聊天，并显示每个的未读数。"
+    },
+    "fullscreen": {
+      "title": [
+        "全屏观看。",
+        "聊天不丢。"
+      ],
+      "accent": 1,
+      "sub": "旋转手机，聊天浮窗会停靠在直播旁边。"
+    },
+    "mentions": {
+      "title": [
+        "不错过",
+        "任何提及。"
+      ],
+      "accent": 1,
+      "sub": "汇总所有已打开聊天中的提及和高亮，一处查看。"
+    },
+    "usercard": {
+      "title": [
+        "谁在说话，",
+        "一点即知。"
+      ],
+      "accent": 1,
+      "sub": "点按名字即可查看其资料卡、消息和快捷操作。"
+    },
+    "favorites": {
+      "title": [
+        "收藏频道，",
+        "无需账号。"
+      ],
+      "accent": 1,
+      "sub": "给频道加星标，即可看到它何时开播。只在你需要时登录。"
+    },
+    "audio": {
+      "title": [
+        "熄屏照常听。",
+        "音频不中断。"
+      ],
+      "accent": 1,
+      "sub": "后台播放和纯音频模式，让直播持续进行。"
+    },
+    "moderate": {
+      "title": [
+        "随身管理，",
+        "轻松审核。"
+      ],
+      "accent": 1,
+      "sub": "AutoMod、解封申请，以及你管理频道的管理日志。"
+    },
+    "supporter": {
+      "title": [
+        "个性化设置，",
+        "只属于你。"
+      ],
+      "accent": 1,
+      "sub": "主题、聊天字体，以及 Embr 中所有人都能看到的徽章。可先试用。"
+    },
+    "sidebyside": {
+      "title": [
+        "三个聊天，",
+        "并排查看。"
+      ],
+      "accent": 1,
+      "sub": "在 iPad 上最多同时打开三个聊天。"
+    }
+  },
+  "zh-Hant": {
+    "watch": {
+      "title": [
+        "直播觀看。",
+        "聊天原生。"
+      ],
+      "accent": 1,
+      "sub": "專為速度打造的原生 iPhone 播放器與聊天。"
+    },
+    "emotes": {
+      "title": [
+        "所有表情。",
+        "所有平台。"
+      ],
+      "accent": 1,
+      "sub": "支援 7TV、BetterTTV、FrankerFaceZ，聊天與表情鍵盤。"
+    },
+    "chats": {
+      "title": [
+        "所有聊天，",
+        "一個分頁。"
+      ],
+      "accent": 1,
+      "sub": "不看影片也能保持聊天，並顯示每個聊天的未讀數。"
+    },
+    "fullscreen": {
+      "title": [
+        "全螢幕觀看。",
+        "聊天不丟。"
+      ],
+      "accent": 1,
+      "sub": "旋轉手機，聊天浮窗會停靠在直播旁邊。"
+    },
+    "mentions": {
+      "title": [
+        "不錯過",
+        "任何提及。"
+      ],
+      "accent": 1,
+      "sub": "彙整所有已開啟聊天中的提及與亮點，一處查看。"
+    },
+    "usercard": {
+      "title": [
+        "誰在說話，",
+        "一點即知。"
+      ],
+      "accent": 1,
+      "sub": "點按名稱即可查看其資料卡、訊息與快捷操作。"
+    },
+    "favorites": {
+      "title": [
+        "收藏頻道，",
+        "無需帳號。"
+      ],
+      "accent": 1,
+      "sub": "為頻道加星號，即可看到何時開台。只在你需要時登入。"
+    },
+    "audio": {
+      "title": [
+        "螢幕關閉照常聽。",
+        "音訊不中斷。"
+      ],
+      "accent": 1,
+      "sub": "背景播放與純音訊模式，讓直播持續進行。"
+    },
+    "moderate": {
+      "title": [
+        "隨身管理，",
+        "輕鬆審核。"
+      ],
+      "accent": 1,
+      "sub": "AutoMod、解封申請，以及你管理頻道的管理紀錄。"
+    },
+    "supporter": {
+      "title": [
+        "個人化設定，",
+        "只屬於你。"
+      ],
+      "accent": 1,
+      "sub": "主題、聊天字型，以及 Embr 中所有人都看得到的徽章。可先試用。"
+    },
+    "sidebyside": {
+      "title": [
+        "三個聊天，",
+        "並排查看。"
+      ],
+      "accent": 1,
+      "sub": "在 iPad 上最多同時開啟三個聊天。"
+    }
+  },
+  "ar-SA": {
+    "watch": {
+      "title": [
+        "شاهد مباشرة.",
+        "الدردشة أصلية."
+      ],
+      "accent": 1,
+      "sub": "مشغّل ودردشة أصليان على iPhone، مصممان للسرعة."
+    },
+    "emotes": {
+      "title": [
+        "كل الإيموتات.",
+        "كل المزودين."
+      ],
+      "accent": 1,
+      "sub": "7TV وBetterTTV وFrankerFaceZ، في الدردشة ولوحة الإيموت."
+    },
+    "chats": {
+      "title": [
+        "كل دردشاتك.",
+        "في تبويب واحد."
+      ],
+      "accent": 1,
+      "sub": "أبقِ الدردشات مفتوحة بدون الفيديو، مع عدّ الرسائل غير المقروءة لكل منها."
+    },
+    "fullscreen": {
+      "title": [
+        "ملء الشاشة.",
+        "والدردشة معك."
+      ],
+      "accent": 1,
+      "sub": "أدر هاتفك وتبقى الدردشة عائمة بجانب البث."
+    },
+    "mentions": {
+      "title": [
+        "لا تفوّت",
+        "أي إشارة."
+      ],
+      "accent": 1,
+      "sub": "الإشارات والتمييزات من كل دردشة مفتوحة، في مكان واحد."
+    },
+    "usercard": {
+      "title": [
+        "اعرف من",
+        "يتحدث."
+      ],
+      "accent": 1,
+      "sub": "اضغط على الاسم لعرض بطاقته ورسائله وإجراءات سريعة."
+    },
+    "favorites": {
+      "title": [
+        "المفضلة،",
+        "بدون حساب."
+      ],
+      "accent": 1,
+      "sub": "ضع نجمة على أي قناة لتعرف متى تبدأ البث. سجّل الدخول فقط إن أردت."
+    },
+    "audio": {
+      "title": [
+        "استمع والشاشة",
+        "مطفأة."
+      ],
+      "accent": 1,
+      "sub": "الصوت في الخلفية ووضع الصوت فقط يبقيان البث مستمراً."
+    },
+    "moderate": {
+      "title": [
+        "أدر الإشراف",
+        "من جيبك."
+      ],
+      "accent": 1,
+      "sub": "AutoMod وطلبات فك الحظر وسجل الإشراف للقنوات التي تشرف عليها."
+    },
+    "supporter": {
+      "title": [
+        "اجعله",
+        "لك وحدك."
+      ],
+      "accent": 1,
+      "sub": "سمات وخطوط للدردشة وشارة يراها الجميع في Embr. جرّبها أولاً."
+    },
+    "sidebyside": {
+      "title": [
+        "ثلاث دردشات.",
+        "جنباً إلى جنب."
+      ],
+      "accent": 1,
+      "sub": "افتح حتى ثلاث دردشات في وقت واحد على iPad."
+    }
+  }
+}
