@@ -41,7 +41,10 @@ enum DemoChat {
         "the music is perfect tonight", "o7", "chat is on fire today hypefox", "my cat is watching this with me",
         "can you zoom in a bit?", "love the new overlay", "been here since the first stream owlwave", "sadmoth that was so close",
         "popcornpanda", "ok that was clean", "what's the song?", "saving this clip for later",
-        "hi from Lisbon!", "greetings from rainy Helsinki", "noodlelove noodlelove", "refreshing the page just to see more of this"
+        "hi from Lisbon!", "greetings from rainy Helsinki", "noodlelove noodlelove", "refreshing the page just to see more of this",
+        "frogvibe frogvibe frogvibe", "catbop the beat in this one", "rocketgo LET'S GO", "bonk", "crowned king of the run",
+        "thinkhard what if you go left", "dogwave hi chat", "teatime", "partyhat happy stream day!", "brainmelt",
+        "sparkle so pretty sparkle", "zoomies", "pizzatime anyone else hungry?", "ghosty spooky hours"
     ]
 
     private static let flavor: [String: [String]] = [
@@ -76,6 +79,20 @@ enum DemoChat {
         ChatUser(id: "8\(String(format: "%04d", index))", login: chatter.login, displayName: chatter.name, color: ChatColor(hex: chatter.color))
     }
 
+    /// The lines that make the newest messages show off: the channel's own emotes and two mentions of the signed-in
+    /// demo viewer, keyed by how far from the newest message they sit.
+    private static func scriptedLine(at distance: Int, channel: ChannelInfo) -> String? {
+        let own = DemoEmotes.channelNames(login: channel.broadcasterLogin)
+        switch distance {
+        case 2: return "\(own[0]) \(own[0]) \(own[0])"
+        case 7: return "@\(DemoWorld.userLogin) welcome back! you missed the best part catbop"
+        case 11: return "\(own[1]) this stream is so cozy \(own[4])"
+        case 17: return "@\(DemoWorld.userLogin) the clip you asked for is up sparkle"
+        case 24: return "frogvibe rocketgo crowned \(own[3])"
+        default: return nil
+        }
+    }
+
     /// A moderator's view of the invented chat: two messages AutoMod holds, an unban request and a few log lines.
     static func moderation(channelID: String) -> [ModerationEvent] {
         let now = Date()
@@ -88,6 +105,37 @@ enum DemoChat {
             .held(HeldMessage(id: "held-2", author: user("link_larry", "LinkLarry"), text: "free skins at sk1ns-giveaway dot com", reason: "blocked term", heldAt: now.addingTimeInterval(-10))),
             .unbanRequest(UnbanRequest(id: "req-1", user: user("sorry_sam", "SorrySam"), text: "I was out of line last week, sorry. Won't happen again.", createdAt: now.addingTimeInterval(-3600))),
         ]
+    }
+
+    private static let mentionLines = [
+        "you're back! how was the trip?", "saved you a seat, the raid is about to land", "are you staying for the second half?",
+        "the clip you asked for is up", "your shield loadout tip worked first try", "see you at the meetup on Saturday?",
+    ]
+
+    /// Two messages mentioning the signed-in demo viewer that arrive a moment after the chat opens, as a live chat's
+    /// would, so Mentions and the unread counts have something to gather; history from before the chat opened never
+    /// counts.
+    static func arrivals(for channel: ChannelInfo, into continuation: AsyncStream<ChatEvent>.Continuation) -> Task<Void, Never> {
+        Task {
+            var random = DemoRandom(seed: "arrivals-" + channel.broadcasterLogin)
+            let first = Int(random.next() % UInt64(mentionLines.count))
+            let lines = [0, 3].map { step in
+                (chatters[Int(random.next() % UInt64(chatters.count))], "@\(DemoWorld.userLogin) " + mentionLines[(first + step) % mentionLines.count])
+            }
+            for (offset, line) in lines.enumerated() {
+                try? await Task.sleep(nanoseconds: UInt64(1_200_000_000 + offset * 900_000_000))
+                guard !Task.isCancelled else { return }
+                let position = chatters.firstIndex { $0.login == line.0.login } ?? 0
+                continuation.yield(.message(ChatMessage(
+                    id: "demo-arrival-\(channel.broadcasterLogin)-\(offset)",
+                    channelID: channel.id,
+                    timestamp: Date(),
+                    author: user(line.0, index: position),
+                    fragments: [.text(line.1)],
+                    badges: line.0.badges.map { MessageBadge(setID: $0, id: "1") }
+                )))
+            }
+        }
     }
 
     /// Messages per second asked for with `-screenshotChatRate`, read straight from the launch arguments since chat
@@ -165,6 +213,9 @@ enum DemoChat {
                 type = .channelPointsHighlighted
                 fragments = [.text("Highlighted: hydrate, you legend cozycup")]
             }
+            if let text = scriptedLine(at: count - index, channel: channel) {
+                fragments = [.text(text)]
+            }
             result.append(ChatMessage(
                 id: "demo-\(channel.broadcasterLogin)-\(index)",
                 channelID: channel.id,
@@ -206,9 +257,11 @@ final class DemoChatSource: ChatSource {
                     continuation.yield(.moderation(event))
                 }
             }
-            if let rate = DemoChat.liveRate, rate > 0 {
-                let flow = DemoChat.live(for: channel, perSecond: rate, into: continuation)
-                continuation.onTermination = { _ in flow.cancel() }
+            let arrivals = DemoChat.arrivals(for: channel, into: continuation)
+            let flow = DemoChat.liveRate.flatMap { $0 > 0 ? DemoChat.live(for: channel, perSecond: $0, into: continuation) : nil }
+            continuation.onTermination = { _ in
+                arrivals.cancel()
+                flow?.cancel()
             }
         }
     }

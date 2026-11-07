@@ -64,6 +64,7 @@ enum ScreenshotRouter {
             $0.highlightMentions = true
             $0.highlightWords = highlights ? ["clip", "song"] : nil
             $0.highlightUsers = highlights ? ["tobias_ward"] : nil
+            $0.moderatorTools = DemoWorld.showsModeration
         }
         UserDefaults.standard.removeObject(forKey: "channel.chatColumnWidth")
         let favoriteLogins = option("Favorites")?.split(separator: ",").map(String.init) ?? DemoWorld.favoriteLogins

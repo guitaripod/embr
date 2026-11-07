@@ -179,8 +179,6 @@ enum DemoWorld {
         DemoChannel(id: "71036", login: "lowtidelou", name: "LowTideLou", gameID: "9114", title: "", viewers: 0, minutesLive: 0, language: "en", tags: ["English", "Building"], bio: "Builds that only exist at low tide.", partner: "", yearsOld: 1),
     ]
 
-    static let emoteNames = ["pogfox", "heartbeat", "clapfox", "sadmoth", "owlwave", "noodlelove", "gg", "hypefox", "o7", "cozycup", "kekw2", "popcornpanda"]
-
     static func startedAt(of channel: DemoChannel) -> Date {
         Date().addingTimeInterval(-TimeInterval(channel.minutesLive * 60))
     }

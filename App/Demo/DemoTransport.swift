@@ -15,6 +15,7 @@ enum DemoTransport {
         if url.host == mount.host, path.hasPrefix(mount.path) {
             return worker(path: String(path.dropFirst(mount.path.count)))
         }
+        if let payload = DemoEmotes.thirdParty(url) { return json(payload) }
         return notFound()
     }
 
@@ -55,8 +56,8 @@ enum DemoTransport {
         case "clips": return clips(query: query)
         case "channels/followed": return followedChannels(query: query)
         case "schedule": return schedule(query: query)
-        case "chat/emotes/global": return emotes()
-        case "chat/emotes": return json(["data": [Any]()])
+        case "chat/emotes/global": return json(["data": DemoEmotes.twitch(channelID: nil)])
+        case "chat/emotes": return json(["data": DemoEmotes.twitch(channelID: query.value("broadcaster_id"))])
         case "chat/badges/global", "chat/badges": return badges(route == "chat/badges/global")
         case "chat/settings":
             return json(["data": [[
@@ -335,25 +336,6 @@ enum DemoTransport {
             ]
         }
         return json(["data": ["segments": segments]])
-    }
-
-    private static func emotes() -> HTTPResponse {
-        let items: [[String: Any]] = DemoWorld.emoteNames.map { name in
-            [
-                "id": "demo-\(name)",
-                "name": name,
-                "images": [
-                    "url_1x": "https://\(DemoWorld.host)/emote/\(name)/1",
-                    "url_2x": "https://\(DemoWorld.host)/emote/\(name)/2",
-                    "url_4x": "https://\(DemoWorld.host)/emote/\(name)/4"
-                ],
-                "format": ["static"],
-                "scale": ["1.0", "2.0", "3.0"],
-                "theme_mode": ["dark"],
-                "emote_type": "globals"
-            ]
-        }
-        return json(["data": items])
     }
 
     private static func badges(_ global: Bool) -> HTTPResponse {

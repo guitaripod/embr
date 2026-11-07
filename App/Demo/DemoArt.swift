@@ -70,8 +70,8 @@ enum DemoArt {
         case "avatar":
             image = avatar(login: parts[1], size: 300)
         case "emote":
-            let scale = CGFloat(Int(parts.last ?? "1") ?? 1)
-            image = emote(name: parts[1], side: 28 * scale)
+            let scale = CGFloat(Int((parts.last ?? "1").prefix { $0.isNumber }) ?? 1)
+            image = emote(name: parts[1], side: 28 * max(1, scale))
         case "badge":
             image = badge(set: parts[1], side: 36)
         default:
@@ -162,6 +162,7 @@ enum DemoArt {
     }
 
     static func emote(name: String, side: CGFloat) -> UIImage {
+        if let look = DemoEmotes.look(for: name) { return emote(look, side: side) }
         var random = DemoRandom(seed: "emote-" + name)
         let hue = random.unit()
         let base = UIColor(hue: hue, saturation: 0.55, brightness: 0.98, alpha: 1)
@@ -192,6 +193,27 @@ enum DemoArt {
             }
             context.addPath(path)
             context.strokePath()
+        }
+    }
+
+    /// An emote drawn from a glyph filling the square, or a word in heavy type with a dark outline, the way text
+    /// emotes read on any chat background.
+    private static func emote(_ look: DemoEmotes.Look, side: CGFloat) -> UIImage {
+        render(CGSize(width: side, height: side)) { _ in
+            let text = look.glyph as NSString
+            var attributes: [NSAttributedString.Key: Any]
+            if look.isWord {
+                attributes = [
+                    .font: UIFont.systemFont(ofSize: side * 0.58, weight: .black),
+                    .foregroundColor: rgb(look.tint),
+                    .strokeColor: UIColor(white: 0.05, alpha: 1),
+                    .strokeWidth: -4.0
+                ]
+            } else {
+                attributes = [.font: UIFont.systemFont(ofSize: side * 0.8)]
+            }
+            let measured = text.size(withAttributes: attributes)
+            text.draw(at: CGPoint(x: (side - measured.width) / 2, y: (side - measured.height) / 2), withAttributes: attributes)
         }
     }
 
@@ -648,28 +670,91 @@ enum DemoArt {
         }
     }
 
+    /// The streamer's camera in the corner: a lit room with a ring light behind a stylised streamer in headphones,
+    /// varied by login so every channel has its own person and room.
     private static func drawFacecam(_ context: CGContext, size: CGSize, login: String, palette: DemoPalette) {
         var random = DemoRandom(seed: "cam-" + login)
         let unit = size.height / 360
         let frame = CGRect(x: 14 * unit, y: size.height - 14 * unit - 96 * unit, width: 128 * unit, height: 96 * unit)
+        let outline = UIBezierPath(roundedRect: frame, cornerRadius: 10 * unit).cgPath
         context.saveGState()
-        context.addPath(UIBezierPath(roundedRect: frame, cornerRadius: 10 * unit).cgPath)
+        context.addPath(outline)
         context.clip()
-        let wall = UIColor(hue: random.unit(), saturation: 0.3, brightness: 0.5, alpha: 1)
-        fill(context, rect: frame, colors: [wall.cgColor, mix(palette.sky, 0x000000, 0.3).cgColor])
+        let wallHue = random.unit()
+        fill(context, rect: frame, colors: [
+            UIColor(hue: wallHue, saturation: 0.35, brightness: 0.34, alpha: 1).cgColor,
+            UIColor(hue: wallHue, saturation: 0.45, brightness: 0.16, alpha: 1).cgColor
+        ], angle: .pi / 2)
+        for _ in 0..<4 {
+            let radius = random.range(5, 11) * unit
+            let center = CGPoint(x: frame.minX + random.range(0.05, 0.95) * frame.width, y: frame.minY + random.range(0.08, 0.45) * frame.height)
+            let light = UIColor(hue: random.pick([0.08, 0.12, 0.85, wallHue]), saturation: 0.6, brightness: 1, alpha: 0.32)
+            haze(context, center: center, radius: radius, color: light)
+        }
+        let head = CGRect(x: frame.midX - 19 * unit, y: frame.minY + 22 * unit, width: 38 * unit, height: 44 * unit)
+        haze(context, center: CGPoint(x: head.midX, y: head.midY - 2 * unit), radius: 46 * unit, color: UIColor(white: 1, alpha: 0.22))
+        let shirt = UIColor(hue: random.unit(), saturation: 0.55, brightness: 0.55, alpha: 1)
+        let shoulders = UIBezierPath(roundedRect: CGRect(x: frame.midX - 50 * unit, y: head.maxY + 4 * unit, width: 100 * unit, height: 60 * unit), cornerRadius: 30 * unit)
+        context.saveGState()
+        context.addPath(shoulders.cgPath)
+        context.clip()
+        fill(context, rect: shoulders.bounds, colors: [shirt.cgColor, shirt.withAlphaComponent(0.7).cgColor], angle: .pi / 2)
+        context.restoreGState()
         let skin = random.pick([0xf1c9a5, 0xd9a273, 0xa86f48, 0x7b4a2d, 0xf6d9c0] as [UInt32])
-        let shirt = UIColor(hue: random.unit(), saturation: 0.55, brightness: 0.6, alpha: 1)
-        context.setFillColor(shirt.cgColor)
-        context.fillEllipse(in: CGRect(x: frame.midX - 46 * unit, y: frame.maxY - 30 * unit, width: 92 * unit, height: 80 * unit))
-        context.setFillColor(rgb(skin).cgColor)
-        context.fillEllipse(in: CGRect(x: frame.midX - 21 * unit, y: frame.minY + 18 * unit, width: 42 * unit, height: 50 * unit))
-        context.setFillColor(mix(0x2b1d14, 0xd9b36a, random.unit()).cgColor)
-        context.fill(CGRect(x: frame.midX - 22 * unit, y: frame.minY + 15 * unit, width: 44 * unit, height: 14 * unit))
+        context.setFillColor(mix(skin, 0x000000, 0.18).cgColor)
+        context.fill(CGRect(x: head.midX - 8 * unit, y: head.maxY - 6 * unit, width: 16 * unit, height: 14 * unit))
+        context.saveGState()
+        context.addEllipse(in: head)
+        context.clip()
+        fill(context, rect: head, colors: [mix(skin, 0xffffff, 0.18).cgColor, mix(skin, 0x000000, 0.12).cgColor], angle: .pi / 3)
+        context.restoreGState()
+        let hair = mix(random.pick([0x2b1d14, 0x5a3825, 0xd9b36a, 0x1c1c22, 0xa0522d] as [UInt32]), 0x000000, 0.05)
+        context.setFillColor(hair.cgColor)
+        let crown = CGMutablePath()
+        crown.addArc(center: CGPoint(x: head.midX, y: head.minY + 16 * unit), radius: 21 * unit, startAngle: .pi * 1.02, endAngle: .pi * 1.98, clockwise: false)
+        crown.addQuadCurve(to: CGPoint(x: head.minX + 4 * unit, y: head.minY + 15 * unit), control: CGPoint(x: head.midX, y: head.minY + 4 * unit))
+        crown.closeSubpath()
+        context.addPath(crown)
+        context.fillPath()
+        context.setFillColor(UIColor(white: 0.12, alpha: 1).cgColor)
+        context.fillEllipse(in: CGRect(x: head.midX - 9 * unit, y: head.midY + 1 * unit, width: 4 * unit, height: 4 * unit))
+        context.fillEllipse(in: CGRect(x: head.midX + 5 * unit, y: head.midY + 1 * unit, width: 4 * unit, height: 4 * unit))
+        context.setStrokeColor(UIColor(white: 0.12, alpha: 0.8).cgColor)
+        context.setLineWidth(1.6 * unit)
+        context.setLineCap(.round)
+        context.addArc(center: CGPoint(x: head.midX, y: head.midY + 9 * unit), radius: 6 * unit, startAngle: 0.35, endAngle: .pi - 0.35, clockwise: false)
+        context.strokePath()
+        let band = rgb(palette.accent)
+        context.setStrokeColor(UIColor(white: 0.1, alpha: 1).cgColor)
+        context.setLineWidth(4 * unit)
+        context.addArc(center: CGPoint(x: head.midX, y: head.midY - 2 * unit), radius: 23 * unit, startAngle: .pi * 1.05, endAngle: .pi * 1.95, clockwise: false)
+        context.strokePath()
+        context.setFillColor(band.cgColor)
+        for side in [-1.0, 1.0] as [CGFloat] {
+            let cup = CGRect(x: head.midX + side * 22 * unit - 6 * unit, y: head.midY - 6 * unit, width: 12 * unit, height: 17 * unit)
+            context.addPath(UIBezierPath(roundedRect: cup, cornerRadius: 5 * unit).cgPath)
+            context.fillPath()
+        }
+        context.setStrokeColor(UIColor(white: 0.08, alpha: 1).cgColor)
+        context.setLineWidth(2.4 * unit)
+        context.move(to: CGPoint(x: frame.maxX + 2 * unit, y: frame.maxY - 18 * unit))
+        context.addLine(to: CGPoint(x: head.maxX + 10 * unit, y: head.maxY + 2 * unit))
+        context.strokePath()
+        context.setFillColor(UIColor(white: 0.16, alpha: 1).cgColor)
+        context.addPath(UIBezierPath(roundedRect: CGRect(x: head.maxX + 4 * unit, y: head.maxY - 8 * unit, width: 9 * unit, height: 15 * unit), cornerRadius: 4.5 * unit).cgPath)
+        context.fillPath()
         context.restoreGState()
         context.setStrokeColor(UIColor.white.withAlphaComponent(0.55).cgColor)
         context.setLineWidth(max(1, 1.5 * unit))
-        context.addPath(UIBezierPath(roundedRect: frame, cornerRadius: 10 * unit).cgPath)
+        context.addPath(outline)
         context.strokePath()
+    }
+
+    /// A radial light at the colour's own opacity, fading to nothing at the radius.
+    private static func haze(_ context: CGContext, center: CGPoint, radius: CGFloat, color: UIColor) {
+        let colors = [color.cgColor, color.withAlphaComponent(0).cgColor] as CFArray
+        guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
+        context.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: radius, options: [])
     }
 }
 #endif
