@@ -9,6 +9,14 @@ public struct HelixResponse<T: Decodable & Sendable>: Decodable, Sendable {
     }
 }
 
+public struct ModeratedChannelDTO: Decodable, Sendable {
+    public let broadcasterID: String
+
+    enum CodingKeys: String, CodingKey {
+        case broadcasterID = "broadcaster_id"
+    }
+}
+
 struct StreamDTO: Decodable, Sendable {
     let id: String
     let userID: String

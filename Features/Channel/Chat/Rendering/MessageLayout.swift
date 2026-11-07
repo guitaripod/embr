@@ -231,6 +231,8 @@ struct MessageLayout {
             return "📣"
         case .payItForward, .charityDonation, .bitsBadgeTier:
             return "✦"
+        case .moderation:
+            return "⛨"
         case .other:
             return "✦"
         }

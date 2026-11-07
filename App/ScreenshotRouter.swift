@@ -198,6 +198,13 @@ enum ScreenshotRouter {
                     (tabBar.selectedNavigationController?.viewControllers.first as? ChatsViewController)?.presentForScreenshot(sheet)
                 }
             }
+        case "modqueue":
+            ScreenshotHarness.channelPose = .chat
+            openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
+            after(5.0) {
+                let host = tabBar.selectedNavigationController?.topViewController
+                host.flatMap(chatController(in:))?.presentModerationQueueForScreenshot()
+            }
         case "highlights":
             tabBar.select(.settings)
             after(0.8) {

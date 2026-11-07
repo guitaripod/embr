@@ -57,6 +57,25 @@ public struct EventSubSubscriptionRequest: Encodable, Sendable, Equatable {
         ]
     }
 
+    /// What a moderator of the channel subscribes to besides chat: AutoMod's held messages and their outcome, the
+    /// moderation log and unban requests. Each needs the moderator scopes and fails for a viewer who is not a moderator
+    /// there.
+    public static func moderatorSubscriptions(broadcasterID: String, moderatorID: String, sessionID: String) -> [EventSubSubscriptionRequest] {
+        [
+            ("automod.message.hold", "2"),
+            ("automod.message.update", "2"),
+            ("channel.moderate", "2"),
+            ("channel.unban_request.create", "1"),
+        ].map { type, version in
+            EventSubSubscriptionRequest(
+                type: type,
+                version: version,
+                condition: ["broadcaster_user_id": broadcasterID, "moderator_user_id": moderatorID],
+                transport: Transport(sessionID: sessionID)
+            )
+        }
+    }
+
     private static func chat(type: String, broadcasterID: String, userID: String, sessionID: String) -> EventSubSubscriptionRequest {
         EventSubSubscriptionRequest(
             type: type,

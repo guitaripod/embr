@@ -32,6 +32,8 @@ final class ChatViewController: UIViewController {
     private lazy var guestBar = GuestChatBar()
     private let statusBar = ConnectionStatusBar()
     private let newMessagesPill = NewMessagesPill()
+    private let moderationBar = ModerationBar()
+    private var moderationBarHeight: NSLayoutConstraint?
     private let searchField = UISearchTextField()
     private let emptyLabel = UILabel()
 
@@ -123,6 +125,11 @@ final class ChatViewController: UIViewController {
     }
 
     #if DEBUG
+    /// Opens the moderator's queue, for a screenshot.
+    func presentModerationQueueForScreenshot() {
+        presentModerationQueue()
+    }
+
     /// Opens the card of whoever wrote the newest message, or of the named chatter, for a screenshot.
     func presentUserCardForScreenshot(login: String?) {
         let me = currentUserLogin?.lowercased()
@@ -286,12 +293,23 @@ final class ChatViewController: UIViewController {
         composer.delegate = self
         view.addSubview(composer)
 
+        moderationBar.translatesAutoresizingMaskIntoConstraints = false
+        moderationBar.isHidden = true
+        moderationBar.onOpen = { [weak self] in self?.presentModerationQueue() }
+        view.addSubview(moderationBar)
+        let barHeight = moderationBar.heightAnchor.constraint(equalToConstant: 0)
+        moderationBarHeight = barHeight
+
         view.keyboardLayoutGuide.usesBottomSafeArea = false
         NSLayoutConstraint.activate([
             composer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             composer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             composer.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: composer.topAnchor)
+            moderationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            moderationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            moderationBar.bottomAnchor.constraint(equalTo: composer.topAnchor),
+            barHeight,
+            collectionView.bottomAnchor.constraint(equalTo: moderationBar.topAnchor)
         ])
     }
 
@@ -353,7 +371,46 @@ final class ChatViewController: UIViewController {
                 MainActor.assumeIsolated { self?.statusBar.showNotice(notice) }
             }
             .store(in: &cancellables)
+        viewModel.moderationSubject
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] queue in
+                MainActor.assumeIsolated { self?.showModeration(queue) }
+            }
+            .store(in: &cancellables)
         viewModel.replay()
+        confirmModeratorStatus()
+    }
+
+    /// Turns on moderator actions where Twitch lists the viewer as a moderator, before they have said anything here.
+    private func confirmModeratorStatus() {
+        guard !canModerate, !isAnonymous, !isReadOnly else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            let channelID = await self.viewModel.channelID
+            if await ModerationAccess.shared.moderates(channelID) { self.canModerate = true }
+        }
+    }
+
+    private func showModeration(_ queue: ModerationQueue) {
+        guard !isAnonymous, !isReadOnly else { return }
+        let shows = !queue.isEmpty
+        moderationBar.show(held: queue.held.count, requests: queue.requests.count, logged: queue.log.count)
+        guard shows == moderationBar.isHidden else { return }
+        moderationBar.isHidden = !shows
+        moderationBarHeight?.constant = shows ? ModerationBar.height : 0
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    private func presentModerationQueue() {
+        Haptics.selection()
+        let queue = viewModel.moderation
+        let controller = ModerationQueueViewController(viewModel: viewModel, startingWithLog: queue.held.isEmpty && queue.requests.isEmpty)
+        let navigation = UINavigationController(rootViewController: controller)
+        if let sheet = navigation.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(navigation, animated: true)
     }
 
     private func apply(_ snapshot: ChatSnapshot) {
@@ -700,6 +757,59 @@ extension ChatViewController: ChatInputViewDelegate {
             .sorted { $0.key < $1.key }
             .prefix(20)
             .map { .mention(login: $0.key, displayName: $0.value) }
+    }
+}
+
+/// The slim bar above a moderator's composer: how many messages AutoMod holds and unban requests wait, or the log's
+/// length when nothing waits. Tapping it opens the queue.
+@MainActor
+private final class ModerationBar: UIControl {
+    static let height: CGFloat = 34
+    var onOpen: (() -> Void)?
+
+    private let icon = UIImageView(image: UIImage(systemName: "shield.lefthalf.filled"))
+    private let label = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = Theme.surface
+        clipsToBounds = true
+        icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .footnote, scale: .medium)
+        icon.tintColor = Theme.accent
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = Theme.primaryText
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.up"))
+        chevron.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .caption2, scale: .small)
+        chevron.tintColor = Theme.secondaryText
+        let row = UIStackView(arrangedSubviews: [icon, label, UIView(), chevron])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 8
+        row.isUserInteractionEnabled = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            row.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+        addAction(UIAction { [weak self] _ in self?.onOpen?() }, for: .primaryActionTriggered)
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    func show(held: Int, requests: Int, logged: Int) {
+        var parts: [String] = []
+        if held > 0 { parts.append(String(localized: "AutoMod: \(held) held")) }
+        if requests > 0 { parts.append(String(localized: "Unban requests: \(requests)")) }
+        label.text = parts.isEmpty ? String(localized: "Moderation log: \(logged)") : parts.joined(separator: " · ")
+        label.font = .preferredFont(forTextStyle: .footnote)
+        icon.tintColor = parts.isEmpty ? Theme.secondaryText : Theme.accent
+        accessibilityLabel = label.text
     }
 }
 

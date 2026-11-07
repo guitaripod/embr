@@ -12,6 +12,7 @@ enum ChatRoomEvent: Sendable {
     case roomState(RoomState)
     case connection(ConnectionStatus)
     case notice(SystemNotice)
+    case moderation(ModerationEvent)
 }
 
 actor ChatRoom {
@@ -124,6 +125,19 @@ actor ChatRoom {
         try await api.unbanUser(broadcasterID: channel.id, moderatorID: user.id, userID: userID)
     }
 
+    var channelID: String { channel.id }
+
+    /// Lets a message AutoMod held into chat, or keeps it out, as the signed-in moderator.
+    func resolveHeldMessage(_ messageID: String, allow: Bool) async throws {
+        guard let user = await auth.currentUser() else { throw APIError.unauthorized }
+        try await api.resolveHeldMessage(moderatorID: user.id, messageID: messageID, allow: allow)
+    }
+
+    func resolveUnbanRequest(_ requestID: String, approve: Bool) async throws {
+        guard let user = await auth.currentUser() else { throw APIError.unauthorized }
+        try await api.resolveUnbanRequest(broadcasterID: channel.id, moderatorID: user.id, requestID: requestID, approve: approve, note: nil)
+    }
+
     func lookupUser(login: String) async -> TwitchUser? {
         try? await api.user(login: login)
     }
@@ -214,7 +228,7 @@ actor ChatRoom {
 
     private func makeSource() -> ChatSource {
         #if DEBUG
-        if DemoWorld.isActive, case .live = mode { return DemoChatSource(channel: channel) }
+        if DemoWorld.isActive, case .live = mode { return DemoChatSource(channel: channel, moderates: DemoWorld.showsModeration) }
         #endif
         if case .vod(let videoID) = mode {
             return VODChatSource(channel: channel, videoID: videoID)
@@ -243,6 +257,8 @@ actor ChatRoom {
         case .notice(let notice):
             MidgarLog.info("chat notice: \(notice.text)", category: .chat)
             continuation?.yield(.notice(notice))
+        case .moderation(let event):
+            continuation?.yield(.moderation(event))
         }
     }
 

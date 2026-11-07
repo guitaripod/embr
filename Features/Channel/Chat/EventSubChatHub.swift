@@ -13,6 +13,7 @@ actor EventSubChatHub {
         let channel: ChannelInfo
         var listeners: [UUID: AsyncStream<ChatEvent>.Continuation] = [:]
         var subscriptionIDs: [String] = []
+        var moderationIDs: [String] = []
         var subscribed = false
         var subscribeTask: Task<Void, Never>?
         var attempt = 0
@@ -65,7 +66,7 @@ actor EventSubChatHub {
         if room.listeners.isEmpty {
             room.subscribeTask?.cancel()
             rooms[channelID] = nil
-            unsubscribe(room.subscriptionIDs, channel: room.channel)
+            unsubscribe(room.subscriptionIDs + room.moderationIDs, channel: room.channel)
             scheduleIdleClose()
         } else {
             rooms[channelID] = room
@@ -81,6 +82,28 @@ actor EventSubChatHub {
         MidgarLog.info("EventSub hub wake → reconnect", category: .eventsub)
         attempt = 0
         connect()
+    }
+
+    /// Adds or removes the moderator subscriptions of every open chat after Moderator Tools was turned on or off or
+    /// its scopes were granted.
+    func refreshModeration() async {
+        guard let sessionID else { return }
+        guard let token = try? await auth.validAccessToken(), let user = await auth.currentUser() else { return }
+        for channelID in rooms.keys {
+            guard let room = rooms[channelID], room.subscribed else { continue }
+            let applies = await ModerationAccess.shared.toolsApply(to: channelID)
+            if applies, room.moderationIDs.isEmpty {
+                let ids = await subscriber.createModeratorSubscriptions(broadcasterID: channelID, moderatorID: user.id, sessionID: sessionID, token: token)
+                guard self.sessionID == sessionID, rooms[channelID] != nil else {
+                    await subscriber.deleteSubscriptions(ids, token: token)
+                    continue
+                }
+                rooms[channelID]?.moderationIDs = ids
+            } else if !applies, !room.moderationIDs.isEmpty {
+                rooms[channelID]?.moderationIDs = []
+                await subscriber.deleteSubscriptions(room.moderationIDs, token: token)
+            }
+        }
     }
 
     private func add(_ channel: ChannelInfo, listener: UUID, continuation: AsyncStream<ChatEvent>.Continuation) {
@@ -111,6 +134,7 @@ actor EventSubChatHub {
         for id in rooms.keys {
             rooms[id]?.subscribed = false
             rooms[id]?.subscriptionIDs = []
+            rooms[id]?.moderationIDs = []
             rooms[id]?.subscribeTask?.cancel()
         }
         broadcast(.connection(attempt == 0 ? .connecting : .reconnecting(attempt: attempt)))
@@ -262,6 +286,15 @@ actor EventSubChatHub {
             rooms[channelID]?.attempt = 0
             rooms[channelID]?.send(.connection(.connected))
             MidgarLog.info("EventSub hub subscribed to \(channel.broadcasterLogin) (\(rooms.count) chat(s) on one connection)", category: .eventsub)
+            if await ModerationAccess.shared.toolsApply(to: channelID) {
+                let moderation = await subscriber.createModeratorSubscriptions(broadcasterID: channel.id, moderatorID: user.id, sessionID: sessionID, token: token)
+                guard self.sessionID == sessionID, rooms[channelID] != nil else {
+                    await subscriber.deleteSubscriptions(moderation, token: token)
+                    return
+                }
+                rooms[channelID]?.moderationIDs = moderation
+                MidgarLog.info("EventSub hub: moderator tools on in \(channel.broadcasterLogin) (\(moderation.count) subscription(s))", category: .eventsub)
+            }
         } catch {
             guard !Task.isCancelled, self.sessionID == sessionID, let room = rooms[channelID] else { return }
             let apiError = error as? APIError

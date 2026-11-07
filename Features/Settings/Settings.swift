@@ -47,6 +47,7 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var highlightUsers: [String]?
     var highlightSound: Bool?
     var highlightHaptic: Bool?
+    var moderatorTools: Bool?
 
     var accent: String?
     var palette: String?
@@ -136,6 +137,10 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var highlightHapticEnabled: Bool {
         highlightHaptic ?? true
+    }
+
+    var moderatorToolsEnabled: Bool {
+        moderatorTools ?? false
     }
 
     /// What stands out in chat for the signed-in viewer: mentions of them, their chosen words and their chosen users.

@@ -74,6 +74,14 @@ struct WorkerEndpointsTests {
         let items = components?.queryItems ?? []
         #expect(items.contains(URLQueryItem(name: "redirectURI", value: "embr://callback")))
         #expect(items.contains(URLQueryItem(name: "state", value: "xyz")))
+        #expect(!items.contains { $0.name == "scopes" })
+    }
+
+    @Test("loginURL asks for the moderator scopes only when told to")
+    func moderatorLoginURLRequest() {
+        let request = endpoints.loginURL(redirectURI: "embr://callback", state: "xyz", moderator: true)
+        let items = URLComponents(url: request.url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(items.contains(URLQueryItem(name: "scopes", value: "moderator")))
     }
 
     @Test("playbackLive builds the right GET path")

@@ -205,6 +205,8 @@ public enum NoticeKind: String, Sendable, Equatable, Codable {
     case announcement
     case bitsBadgeTier
     case charityDonation
+    /// A line of the moderation log, shown to the channel's moderators.
+    case moderation
     case other
 }
 

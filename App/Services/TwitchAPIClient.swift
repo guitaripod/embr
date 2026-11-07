@@ -187,6 +187,35 @@ final class TwitchAPIClient: TwitchAPIProviding {
         try expectNoContent(response)
     }
 
+    func resolveHeldMessage(moderatorID: String, messageID: String, allow: Bool) async throws {
+        let token = try await userToken()
+        let response = try await transport.send(factory.resolveHeldMessage(moderatorID: moderatorID, messageID: messageID, allow: allow, token: token))
+        try expectNoContent(response)
+    }
+
+    func resolveUnbanRequest(broadcasterID: String, moderatorID: String, requestID: String, approve: Bool, note: String?) async throws {
+        let token = try await userToken()
+        let response = try await transport.send(factory.resolveUnbanRequest(
+            broadcasterID: broadcasterID, moderatorID: moderatorID, requestID: requestID, approve: approve, note: note, token: token
+        ))
+        try expectNoContent(response)
+    }
+
+    func moderatedChannelIDs(userID: String) async throws -> Set<String> {
+        let token = try await userToken()
+        var ids = Set<String>()
+        var cursor: String?
+        for _ in 0..<10 {
+            let response = try await transport.send(factory.moderatedChannels(userID: userID, after: cursor, token: token))
+            guard response.isSuccess else { throw mappedError(response) }
+            let decoded = try TwitchJSON.decode(HelixResponse<ModeratedChannelDTO>.self, from: response.body)
+            ids.formUnion(decoded.data.map(\.broadcasterID))
+            cursor = decoded.pagination?.cursor
+            if cursor == nil || cursor?.isEmpty == true { break }
+        }
+        return ids
+    }
+
     private func userToken() async throws -> String {
         try await auth.validAccessToken()
     }

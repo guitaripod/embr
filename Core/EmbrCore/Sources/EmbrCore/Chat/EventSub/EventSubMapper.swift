@@ -70,6 +70,8 @@ public enum EventSubMapper {
         case "channel.chat.clear":
             _ = try TwitchJSON.decode(ChatClearEvent.self, from: eventData)
             return .clearChat
+        case let type where EventSubModeration.types.contains(type):
+            return .moderation(try EventSubModeration.event(subscriptionType: type, eventData: eventData, timestamp: timestamp))
         default:
             throw APIError.decoding("Unsupported chat subscription type: \(subscriptionType)")
         }

@@ -10,6 +10,8 @@ final class ChatViewModel {
     let catalogSubject = PassthroughSubject<EmoteCatalog, Never>()
     let noticeSubject = PassthroughSubject<SystemNotice, Never>()
     let activitySubject = PassthroughSubject<ChatActivity, Never>()
+    let moderationSubject = PassthroughSubject<ModerationQueue, Never>()
+    private(set) var moderation = ModerationQueue()
 
     private let room: ChatRoom
     private let reporter: ReportClient
@@ -154,6 +156,39 @@ final class ChatViewModel {
         moderate(String(localized: "time out")) { try await self.room.banUser(userID: userID, duration: duration, reason: nil) }
     }
 
+    /// Lets a held message into chat, or keeps it out; it leaves the queue at once and comes back if Twitch refuses.
+    func resolveHeld(_ held: HeldMessage, allow: Bool) {
+        moderation.held.removeAll { $0.id == held.id }
+        moderationSubject.send(moderation)
+        Task {
+            do {
+                try await room.resolveHeldMessage(held.id, allow: allow)
+            } catch {
+                moderation.held.insert(held, at: 0)
+                moderationSubject.send(moderation)
+                noticeSubject.send(SystemNotice(text: String(localized: "Couldn't resolve the held message — \(Self.describeCommandError(error))"), isError: true))
+            }
+        }
+    }
+
+    func resolveUnbanRequest(_ request: UnbanRequest, approve: Bool) {
+        moderation.requests.removeAll { $0.id == request.id }
+        moderationSubject.send(moderation)
+        Task {
+            do {
+                try await room.resolveUnbanRequest(request.id, approve: approve)
+            } catch {
+                moderation.requests.insert(request, at: 0)
+                moderationSubject.send(moderation)
+                noticeSubject.send(SystemNotice(text: String(localized: "Couldn't answer the unban request — \(Self.describeCommandError(error))"), isError: true))
+            }
+        }
+    }
+
+    var channelID: String {
+        get async { await room.channelID }
+    }
+
     func unbanUser(userID: String) {
         moderate(String(localized: "unban")) { try await self.room.unbanUser(userID: userID) }
     }
@@ -260,6 +295,7 @@ final class ChatViewModel {
     /// Sends a chat that is already running, as it stands, to a screen that starts showing it: the Chats tab moves
     /// one chat between screens without reconnecting it.
     func replay() {
+        if !moderation.isEmpty { moderationSubject.send(moderation) }
         if let lastConnection { connectionSubject.send(lastConnection) }
         if let lastRoomState { roomStateSubject.send(lastRoomState) }
         if let lastCatalog { catalogSubject.send(lastCatalog) }
@@ -348,7 +384,34 @@ final class ChatViewModel {
             connectionSubject.send(status)
         case .notice(let notice):
             noticeSubject.send(notice)
+        case .moderation(let event):
+            await handle(event)
         }
+    }
+
+    private static let logCap = 300
+
+    private func handle(_ event: ModerationEvent) async {
+        switch event {
+        case .held(let held):
+            guard !moderation.held.contains(where: { $0.id == held.id }) else { return }
+            moderation.held.insert(held, at: 0)
+        case .heldResolved(let messageID, _, _):
+            moderation.held.removeAll { $0.id == messageID }
+        case .unbanRequest(let request):
+            guard !moderation.requests.contains(where: { $0.id == request.id }) else { return }
+            moderation.requests.insert(request, at: 0)
+        case .action(let entry):
+            moderation.log.insert(entry, at: 0)
+            if moderation.log.count > Self.logCap { moderation.log.removeLast(moderation.log.count - Self.logCap) }
+            if entry.action.hasSuffix("unban_request") {
+                moderation.requests.removeAll { $0.user.displayName == entry.target || $0.user.login == entry.target?.lowercased() }
+            }
+            if let (snapshot, _) = await store.append([entry.chatRow(channelID: await room.channelID)]) {
+                snapshotSubject.send(snapshot)
+            }
+        }
+        moderationSubject.send(moderation)
     }
 }
 

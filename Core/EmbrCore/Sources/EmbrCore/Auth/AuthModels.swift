@@ -164,6 +164,14 @@ public enum WorkerAPI {
     }
 }
 
+extension AuthenticatedUser {
+    /// Whether the viewer granted what Moderator Tools needs: AutoMod, unban requests, the moderation log and the
+    /// channels they moderate.
+    public var hasModeratorScopes: Bool {
+        TwitchScopes.moderatorTools.allSatisfy(scopes.contains)
+    }
+}
+
 public enum TwitchScopes {
     public static let readChat = "user:read:chat"
     public static let writeChat = "user:write:chat"
@@ -176,6 +184,12 @@ public enum TwitchScopes {
     public static let moderatorManageChatMessages = "moderator:manage:chat_messages"
     public static let moderatorManageChatSettings = "moderator:manage:chat_settings"
     public static let moderatorManageAnnouncements = "moderator:manage:announcements"
+
+    /// What Moderator Tools needs on top of the viewer scopes; the worker asks for these with `scopes=moderator`.
+    public static let moderatorTools: [String] = [
+        "moderator:manage:automod", "moderator:manage:unban_requests", "moderator:read:moderators",
+        "moderator:read:vips", "user:read:moderated_channels",
+    ]
 
     public static let viewerDefault: [String] = [
         readChat, writeChat, readFollows, readBlocked, manageBlocked, manageChatColor

@@ -33,6 +33,13 @@ enum DemoWorld {
     static let userID = "90001"
     static let userLogin = "emberfan"
 
+    /// Whether the invented chat shows a moderator's queue and log, from `-screenshotModerator 1`.
+    static var showsModeration: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-screenshotModerator"), index + 1 < arguments.count else { return false }
+        return arguments[index + 1] == "1"
+    }
+
     static let isActive: Bool = {
         let environment = ProcessInfo.processInfo.environment
         return environment["EMBR_DEMO"] == "1" || ProcessInfo.processInfo.arguments.contains("-embrDemo")

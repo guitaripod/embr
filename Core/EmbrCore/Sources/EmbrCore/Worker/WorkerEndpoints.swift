@@ -7,10 +7,11 @@ public struct WorkerEndpoints: Sendable {
         self.baseURL = baseURL
     }
 
-    public func loginURL(redirectURI: String, state: String) -> HTTPRequest {
+    /// The Twitch sign-in link; `moderator` also asks for the scopes Moderator Tools needs.
+    public func loginURL(redirectURI: String, state: String, moderator: Bool = false) -> HTTPRequest {
         let url = QueryEncoder.url(
             path("/auth/login-url"),
-            items: [("redirectURI", redirectURI), ("state", state)]
+            items: [("redirectURI", redirectURI), ("state", state), ("scopes", moderator ? "moderator" : nil)]
         ) ?? baseURL.appendingPathComponent("auth/login-url")
         return HTTPRequest(method: .get, url: url)
     }

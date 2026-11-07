@@ -223,6 +223,33 @@ public struct HelixRequestFactory: Sendable {
         )
     }
 
+    public func resolveHeldMessage(moderatorID: String, messageID: String, allow: Bool, token: String) -> HTTPRequest {
+        post(
+            "moderation/automod/message",
+            items: [],
+            body: ["user_id": moderatorID, "msg_id": messageID, "action": allow ? "ALLOW" : "DENY"],
+            token: token
+        )
+    }
+
+    public func resolveUnbanRequest(broadcasterID: String, moderatorID: String, requestID: String, approve: Bool, note: String?, token: String) -> HTTPRequest {
+        HTTPRequest(
+            method: .patch,
+            url: makeURL("moderation/unban_requests", items: [
+                ("broadcaster_id", broadcasterID),
+                ("moderator_id", moderatorID),
+                ("unban_request_id", requestID),
+                ("status", approve ? "approved" : "denied"),
+                ("resolution_text", note.flatMap { $0.isEmpty ? nil : $0 }),
+            ]),
+            headers: headers(token: token)
+        )
+    }
+
+    public func moderatedChannels(userID: String, after: String?, token: String) -> HTTPRequest {
+        get("moderation/channels", items: [("user_id", userID), ("first", "100"), ("after", after)], token: token)
+    }
+
     private func get(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
         HTTPRequest(method: .get, url: makeURL(path, items: items), headers: headers(token: token))
     }

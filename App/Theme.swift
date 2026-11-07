@@ -64,6 +64,8 @@ enum Theme {
             return accent
         case .bitsBadgeTier:
             return UIColor(red: 0.61, green: 0.24, blue: 0.91, alpha: 1.0)
+        case .moderation:
+            return secondaryText
         case .payItForward, .charityDonation, .other:
             return accent
         }

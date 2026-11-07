@@ -76,6 +76,20 @@ enum DemoChat {
         ChatUser(id: "8\(String(format: "%04d", index))", login: chatter.login, displayName: chatter.name, color: ChatColor(hex: chatter.color))
     }
 
+    /// A moderator's view of the invented chat: two messages AutoMod holds, an unban request and a few log lines.
+    static func moderation(channelID: String) -> [ModerationEvent] {
+        let now = Date()
+        let user = { (login: String, name: String) in ChatUser(id: "u-\(login)", login: login, displayName: name) }
+        return [
+            .action(ModerationLogEntry(action: "timeout", moderator: "tobias_ward", target: "spam_bot_42", reason: "Spam", seconds: 600, messageText: nil, at: now.addingTimeInterval(-300))),
+            .action(ModerationLogEntry(action: "delete", moderator: "Dmitri_O", target: "loudmouth_9", reason: nil, seconds: nil, messageText: "buy followers at …", at: now.addingTimeInterval(-200))),
+            .action(ModerationLogEntry(action: "slow", moderator: "tobias_ward", target: nil, reason: nil, seconds: 30, messageText: nil, at: now.addingTimeInterval(-120))),
+            .held(HeldMessage(id: "held-1", author: user("grumpy_gus", "grumpy_gus"), text: "this streamer is so bad lmao", reason: "aggressive", heldAt: now.addingTimeInterval(-40))),
+            .held(HeldMessage(id: "held-2", author: user("link_larry", "LinkLarry"), text: "free skins at sk1ns-giveaway dot com", reason: "blocked term", heldAt: now.addingTimeInterval(-10))),
+            .unbanRequest(UnbanRequest(id: "req-1", user: user("sorry_sam", "SorrySam"), text: "I was out of line last week, sorry. Won't happen again.", createdAt: now.addingTimeInterval(-3600))),
+        ]
+    }
+
     static func messages(for channel: ChannelInfo, count: Int = 64) -> [ChatMessage] {
         var random = DemoRandom(seed: "chat-" + channel.broadcasterLogin)
         let motif = DemoWorld.game(id: channel.gameID)?.motif ?? .room
@@ -137,8 +151,11 @@ enum DemoChat {
 final class DemoChatSource: ChatSource {
     private let channel: ChannelInfo
 
-    init(channel: ChannelInfo) {
+    private let moderates: Bool
+
+    init(channel: ChannelInfo, moderates: Bool = false) {
         self.channel = channel
+        self.moderates = moderates
     }
 
     func start() -> AsyncStream<ChatEvent> {
@@ -148,6 +165,11 @@ final class DemoChatSource: ChatSource {
             continuation.yield(.roomState(RoomState()))
             for message in DemoChat.messages(for: channel) {
                 continuation.yield(.message(message))
+            }
+            if moderates {
+                for event in DemoChat.moderation(channelID: channel.id) {
+                    continuation.yield(.moderation(event))
+                }
             }
         }
     }

@@ -50,6 +50,29 @@ final class EventSubSubscriber: Sendable {
         return ids
     }
 
+    /// Subscribes the session to a moderated channel's AutoMod queue, moderation log and unban requests, each on a
+    /// best-effort basis, and returns the ids made.
+    func createModeratorSubscriptions(broadcasterID: String, moderatorID: String, sessionID: String, token: String) async -> [String] {
+        let requests = EventSubSubscriptionRequest.moderatorSubscriptions(broadcasterID: broadcasterID, moderatorID: moderatorID, sessionID: sessionID)
+        var ids: [String] = []
+        await withTaskGroup(of: String?.self) { group in
+            for request in requests {
+                group.addTask {
+                    do {
+                        return try await self.create(request, token: token)
+                    } catch {
+                        MidgarLog.notice("EventSub moderator subscribe \(request.type) failed: \(error)", category: .eventsub)
+                        return nil
+                    }
+                }
+            }
+            for await id in group {
+                if let id { ids.append(id) }
+            }
+        }
+        return ids
+    }
+
     /// Deletes subscriptions the session no longer needs. Failures are only logged: Twitch drops a session's
     /// subscriptions itself when the session closes.
     func deleteSubscriptions(_ ids: [String], token: String) async {

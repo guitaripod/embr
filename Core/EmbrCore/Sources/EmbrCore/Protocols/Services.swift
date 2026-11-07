@@ -23,6 +23,11 @@ public protocol TwitchAPIProviding: Sendable {
     func banUser(broadcasterID: String, moderatorID: String, userID: String, duration: Int?, reason: String?) async throws
     func unbanUser(broadcasterID: String, moderatorID: String, userID: String) async throws
     func deleteMessage(broadcasterID: String, moderatorID: String, messageID: String?) async throws
+    /// Lets a message AutoMod held into chat, or keeps it out.
+    func resolveHeldMessage(moderatorID: String, messageID: String, allow: Bool) async throws
+    func resolveUnbanRequest(broadcasterID: String, moderatorID: String, requestID: String, approve: Bool, note: String?) async throws
+    /// The ids of the channels the user moderates.
+    func moderatedChannelIDs(userID: String) async throws -> Set<String>
 }
 
 public protocol ChatSource: Sendable {

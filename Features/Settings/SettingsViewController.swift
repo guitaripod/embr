@@ -58,6 +58,7 @@ final class SettingsViewController: UIViewController {
         case filterObjectionableContent
         case mutedKeywords
         case blockedUsers
+        case moderatorTools
 
         case autoplay
         case backgroundAudio
@@ -241,7 +242,7 @@ final class SettingsViewController: UIViewController {
             + thirdPartyProviders.map(Row.thirdPartyEmotes),
             toSection: .chat
         )
-        snapshot.appendItems([.filterObjectionableContent, .mutedKeywords, .blockedUsers], toSection: .safety)
+        snapshot.appendItems([.filterObjectionableContent, .mutedKeywords, .blockedUsers, .moderatorTools], toSection: .safety)
         snapshot.appendItems(
             [.autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
             toSection: .video
@@ -286,6 +287,34 @@ final class SettingsViewController: UIViewController {
         collectionView.scrollToItem(at: IndexPath(item: 0, section: section), at: .centeredVertically, animated: false)
     }
     #endif
+
+    /// Turns Moderator Tools on or off. Turning it on first asks Twitch for the moderator scopes when the viewer has
+    /// not granted them, and leaves it off if they decline.
+    private func setModeratorTools(_ on: Bool) {
+        guard on else {
+            store.update { $0.moderatorTools = false }
+            Task { await EventSubChatHub.shared.refreshModeration() }
+            return
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            let user = await self.auth.currentUser()
+            if user?.hasModeratorScopes != true {
+                guard let anchor = self.view.window else { return }
+                do {
+                    _ = try await self.auth.login(presentationAnchor: anchor, moderator: true)
+                } catch {
+                    MidgarLog.notice("moderator sign-in failed: \(error)", category: .auth)
+                    self.reconfigureVisibleRows()
+                    return
+                }
+            }
+            await ModerationAccess.shared.forget()
+            self.store.update { $0.moderatorTools = true }
+            Haptics.notify(.success)
+            await EventSubChatHub.shared.refreshModeration()
+        }
+    }
 
     private func reconfigureVisibleRows() {
         var snapshot = dataSource.snapshot()
@@ -407,6 +436,12 @@ final class SettingsViewController: UIViewController {
             content.text = String(localized: "Blocked Users")
             cell.contentConfiguration = content
             cell.accessories = [.disclosureIndicator()]
+        case .moderatorTools:
+            content.secondaryText = String(localized: "AutoMod's held messages, unban requests and the moderation log in the channels you moderate.")
+            content.secondaryTextProperties.color = Theme.secondaryText
+            switchRow(cell, &content, title: String(localized: "Moderator Tools"), isOn: settings.moderatorToolsEnabled) { [weak self] _, on in
+                self?.setModeratorTools(on)
+            }
 
         case .autoplay:
             switchRow(cell, &content, title: String(localized: "Autoplay"), isOn: settings.autoplay) { store, on in
@@ -678,6 +713,7 @@ final class SettingsViewController: UIViewController {
         case .filterObjectionableContent: spec = ("eye.slash.fill", .systemRed)
         case .mutedKeywords: spec = ("character.bubble.fill", .systemOrange)
         case .blockedUsers: spec = ("hand.raised.fill", .systemRed)
+        case .moderatorTools: spec = ("shield.lefthalf.filled", .systemGreen)
         case .autoplay: spec = ("play.fill", .systemGreen)
         case .backgroundAudio: spec = ("speaker.wave.2.circle.fill", .systemPurple)
         case .chatDelaySeconds: spec = ("timer", .systemOrange)

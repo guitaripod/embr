@@ -8,6 +8,7 @@ public enum ChatEvent: Sendable, Equatable {
     case roomState(RoomState)
     case notice(SystemNotice)
     case connection(ConnectionStatus)
+    case moderation(ModerationEvent)
 }
 
 public struct SystemNotice: Sendable, Equatable {
