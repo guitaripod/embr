@@ -129,6 +129,7 @@ final class ChannelViewController: UIViewController {
     }()
 
     private let eventCard = ChannelEventCardView()
+    private var isChatComposing = false
     private lazy var eventsPoller = ChannelEventsPoller(login: channel.broadcasterLogin)
     private lazy var liveStatsPoller = LiveStatsPoller(userID: channel.id)
     private var dismissedEventID: String?
@@ -243,6 +244,13 @@ final class ChannelViewController: UIViewController {
         if let keyboard = ScreenshotRouter.option("Keyboard") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
                 self?.chatController?.raiseKeyboardForScreenshot(emotes: keyboard == "emotes")
+            }
+            let draft = ScreenshotRouter.option("Draft")
+            let replies = ScreenshotRouter.option("Reply") == "1"
+            if draft != nil || replies {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) { [weak self] in
+                    self?.chatController?.composeForScreenshot(draft: draft, reply: replies)
+                }
             }
         }
         let pose = ScreenshotHarness.channelPose
@@ -510,6 +518,12 @@ final class ChannelViewController: UIViewController {
         )
     }
 
+    /// With the video stacked above the chat, writing a message folds the stream details away so the chat keeps a
+    /// few lines in view above the keyboard.
+    private func composingCollapsesInfo(_ state: LayoutState) -> Bool {
+        isChatComposing && state.arrangement == .stacked
+    }
+
     private static func isVertical(_ fold: FoldRegion) -> Bool {
         if case .vertical = fold { return true }
         return false
@@ -593,7 +607,8 @@ final class ChannelViewController: UIViewController {
         navigationController?.setNavigationBarHidden(state.hidesNavigationBar, animated: true)
         videoController?.setBackButtonHidden(!state.showsOverlayBackButton)
         videoContainer.isHidden = !isVideoShown
-        infoView.isHidden = !state.showsInfo
+        infoView.isHidden = !state.showsInfo || composingCollapsesInfo(state)
+        infoView.alpha = infoView.isHidden ? 0 : 1
         if state.arrangement != .sideBySide { aboutView.isHidden = true }
         mainSpacer.isHidden = state.arrangement != .sideBySide
         mainColumn.isHidden = !isVideoShown && state.arrangement != .sideBySide
@@ -794,6 +809,7 @@ final class ChannelViewController: UIViewController {
     func toggleFullscreenChat() {
         guard isVideoFullscreen else { return }
         fullscreenChatHidden.toggle()
+        if fullscreenChatHidden { chatController?.endComposing() }
         chatOverlay.isUserInteractionEnabled = !fullscreenChatHidden
         Haptics.impact(.light)
         UIView.animate(withDuration: 0.25) {
@@ -814,11 +830,17 @@ final class ChannelViewController: UIViewController {
         videoContainer.addSubview(chatOverlay)
         chat.view.removeFromSuperview()
         chatOverlay.addSubview(chat.view)
+        let preferredWidth = chatOverlay.widthAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 0.34)
+        preferredWidth.priority = .defaultHigh
+        let roomyWidth = chatOverlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 300)
+        roomyWidth.priority = UILayoutPriority(999)
         NSLayoutConstraint.activate([
             chatOverlay.topAnchor.constraint(equalTo: videoContainer.topAnchor),
             chatOverlay.bottomAnchor.constraint(equalTo: videoContainer.bottomAnchor),
             chatOverlay.trailingAnchor.constraint(equalTo: videoContainer.safeAreaLayoutGuide.trailingAnchor),
-            chatOverlay.widthAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 0.34),
+            preferredWidth,
+            roomyWidth,
+            chatOverlay.widthAnchor.constraint(lessThanOrEqualTo: videoContainer.widthAnchor, multiplier: 0.45),
             chat.view.topAnchor.constraint(equalTo: chatOverlay.topAnchor),
             chat.view.leadingAnchor.constraint(equalTo: chatOverlay.leadingAnchor),
             chat.view.trailingAnchor.constraint(equalTo: chatOverlay.trailingAnchor),
@@ -939,6 +961,25 @@ extension ChannelViewController: ChatViewControllerDelegate {
 
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage) {
         controller.beginReply(to: message)
+    }
+
+    func chatViewController(_ controller: ChatViewController, isComposing: Bool) {
+        guard isComposing != isChatComposing else { return }
+        isChatComposing = isComposing
+        let state = currentLayout
+        let hidesInfo = !state.showsInfo || composingCollapsesInfo(state)
+        let changes = {
+            self.infoView.isHidden = hidesInfo
+            self.infoView.alpha = hidesInfo ? 0 : 1
+            self.eventCard.alpha = isComposing ? 0 : 1
+            self.view.layoutIfNeeded()
+        }
+        eventCard.isUserInteractionEnabled = !isComposing
+        guard !Motion.reduced else {
+            changes()
+            return
+        }
+        UIView.animate(withDuration: 0.42, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0, options: [.beginFromCurrentState, .allowUserInteraction], animations: changes)
     }
 
     func chatViewControllerDidRequestLogin(_ controller: ChatViewController) {
