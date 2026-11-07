@@ -1,29 +1,36 @@
 import UIKit
 import EmbrCore
 
+/// The line above a reply naming the message it answers, joined to the reply below by a curved connector that starts
+/// over the reply's first badge or name.
 final class ReplyPreviewView: UIView {
     private let hookLayer = CAShapeLayer()
     private let label = UILabel()
 
-    private let hookWidth: CGFloat = 12
-    private let hookInset: CGFloat = 4
+    private let hookX: CGFloat = 6
+    private let hookReach: CGFloat = 10
+    private let textGap: CGFloat = 6
+
+    #if os(tvOS)
+    private static let fontSize: CGFloat = 11
+    #else
+    private static let fontSize: CGFloat = 12
+    #endif
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         hookLayer.fillColor = UIColor.clear.cgColor
-        hookLayer.strokeColor = Theme.secondaryText.withAlphaComponent(0.6).cgColor
         hookLayer.lineWidth = 1.5
         hookLayer.lineCap = .round
+        hookLayer.lineJoin = .round
         layer.addSublayer(hookLayer)
 
-        label.font = .systemFont(ofSize: 11)
-        label.textColor = Theme.secondaryText
         label.lineBreakMode = .byTruncatingTail
         label.numberOfLines = 1
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: hookWidth + hookInset + 4),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: hookX + hookReach + textGap),
             label.trailingAnchor.constraint(equalTo: trailingAnchor),
             label.topAnchor.constraint(equalTo: topAnchor),
             label.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -37,14 +44,14 @@ final class ReplyPreviewView: UIView {
         let text = NSMutableAttributedString(
             string: "@\(reply.parentDisplayName) ",
             attributes: [
-                .font: UIFont.boldSystemFont(ofSize: 11),
+                .font: UIFont.systemFont(ofSize: Self.fontSize, weight: .semibold),
                 .foregroundColor: Theme.secondaryText,
             ]
         )
         text.append(NSAttributedString(
             string: reply.parentText,
             attributes: [
-                .font: UIFont.systemFont(ofSize: 11),
+                .font: UIFont.systemFont(ofSize: Self.fontSize),
                 .foregroundColor: Theme.secondaryText,
             ]
         ))
@@ -54,14 +61,18 @@ final class ReplyPreviewView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let path = UIBezierPath()
-        let bottom = bounds.height - hookInset
-        path.move(to: CGPoint(x: hookInset, y: bottom))
-        path.addLine(to: CGPoint(x: hookInset, y: bounds.midY))
-        path.addQuadCurve(
-            to: CGPoint(x: hookInset + hookWidth, y: hookInset),
-            controlPoint: CGPoint(x: hookInset, y: hookInset)
-        )
+        let mid = bounds.midY
+        let radius: CGFloat = 5
+        path.move(to: CGPoint(x: hookX, y: bounds.height + 2))
+        path.addLine(to: CGPoint(x: hookX, y: mid + radius))
+        path.addQuadCurve(to: CGPoint(x: hookX + radius, y: mid), controlPoint: CGPoint(x: hookX, y: mid))
+        path.addLine(to: CGPoint(x: hookX + hookReach, y: mid))
         hookLayer.path = path.cgPath
-        hookLayer.strokeColor = Theme.secondaryText.withAlphaComponent(0.6).cgColor
+        hookLayer.strokeColor = UIColor.tertiaryLabel.resolvedColor(with: traitCollection).cgColor
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        setNeedsLayout()
     }
 }

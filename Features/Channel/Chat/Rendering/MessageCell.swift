@@ -12,6 +12,11 @@ final class MessageCell: UICollectionViewCell {
     private let replyPreview = ReplyPreviewView()
     private let highlightView = UIView()
     private let highlightBar = UIView()
+    #if os(iOS)
+    private let replyIcon = UIImageView()
+    private var replyPan: UIPanGestureRecognizer!
+    private var replyArmed = false
+    #endif
 
     private var emoteViews: [SDAnimatedImageView] = []
     private var badgeViews: [UIImageView] = []
@@ -34,11 +39,12 @@ final class MessageCell: UICollectionViewCell {
         contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
 
         highlightView.isHidden = true
-        highlightView.layer.cornerRadius = 4
+        highlightView.layer.cornerRadius = ChatMetrics.cardRadius
+        highlightView.layer.cornerCurve = .continuous
+        highlightView.clipsToBounds = true
         contentView.addSubview(highlightView)
         highlightBar.isHidden = true
-        highlightBar.layer.cornerRadius = 1.5
-        contentView.addSubview(highlightBar)
+        highlightView.addSubview(highlightBar)
 
         textLabel.numberOfLines = 0
         textLabel.isUserInteractionEnabled = false
@@ -54,9 +60,9 @@ final class MessageCell: UICollectionViewCell {
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         contentView.addGestureRecognizer(tap)
 
-        let swipe = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeReply))
-        swipe.direction = .right
-        contentView.addGestureRecognizer(swipe)
+        #if os(iOS)
+        setUpSwipeToReply()
+        #endif
 
         isAccessibilityElement = true
         accessibilityTraits = .staticText
@@ -69,20 +75,71 @@ final class MessageCell: UICollectionViewCell {
         set {}
     }
 
-    @objc private func handleSwipeReply() {
-        guard onSwipeReply != nil else { return }
-        #if os(iOS)
-        Haptics.impact(.light)
-        #endif
-        UIView.animate(withDuration: 0.12, animations: {
-            self.contentView.transform = self.contentView.transform.concatenating(CGAffineTransform(translationX: 16, y: 0))
-        }, completion: { _ in
-            UIView.animate(withDuration: 0.18) {
-                self.contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
-            }
-        })
-        onSwipeReply?()
+
+    #if os(iOS)
+    private static let replyTravel: CGFloat = 72
+    private static let replyThreshold: CGFloat = 52
+
+    /// Swiping a message to the right drags it after the finger with a reply arrow growing in behind it; past the
+    /// threshold the arrow fills with a tick, and letting go there starts the reply.
+    private func setUpSwipeToReply() {
+        replyIcon.image = UIImage(systemName: "arrowshape.turn.up.left.circle.fill")
+        replyIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        replyIcon.tintColor = Theme.secondaryText
+        replyIcon.contentMode = .center
+        replyIcon.alpha = 0
+        replyIcon.transform = Self.iconTransform(progress: 0)
+        insertSubview(replyIcon, belowSubview: contentView)
+        replyPan = UIPanGestureRecognizer(target: self, action: #selector(handleReplyPan(_:)))
+        replyPan.delegate = self
+        contentView.addGestureRecognizer(replyPan)
     }
+
+    /// The cell is flipped with the inverted chat, so the arrow is flipped back as it scales in.
+    private static func iconTransform(progress: CGFloat) -> CGAffineTransform {
+        let scale = 0.5 + 0.5 * min(1, progress)
+        return CGAffineTransform(scaleX: scale, y: -scale)
+    }
+
+    private func setReplyOffset(_ offset: CGFloat) {
+        contentView.transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: offset, ty: 0)
+        let progress = offset / Self.replyThreshold
+        replyIcon.alpha = min(1, progress * 1.4)
+        replyIcon.transform = Self.iconTransform(progress: progress)
+    }
+
+    @objc private func handleReplyPan(_ recognizer: UIPanGestureRecognizer) {
+        let dx = max(0, recognizer.translation(in: self).x)
+        switch recognizer.state {
+        case .began:
+            Haptics.prepareImpact(.light)
+        case .changed:
+            let offset = dx < Self.replyThreshold ? dx : Self.replyThreshold + (dx - Self.replyThreshold) * 0.35
+            setReplyOffset(min(offset, Self.replyTravel))
+            let armed = dx >= Self.replyThreshold
+            if armed != replyArmed {
+                replyArmed = armed
+                replyIcon.tintColor = armed ? Theme.accent : Theme.secondaryText
+                if armed { Haptics.impact(.light) }
+            }
+        case .ended, .cancelled, .failed:
+            let fire = replyArmed && recognizer.state == .ended
+            replyArmed = false
+            let settle = {
+                self.setReplyOffset(0)
+            }
+            if Motion.reduced {
+                settle()
+            } else {
+                UIView.animate(withDuration: 0.42, delay: 0, usingSpringWithDamping: 0.78, initialSpringVelocity: 0, options: [.allowUserInteraction, .beginFromCurrentState], animations: settle)
+            }
+            replyIcon.tintColor = Theme.secondaryText
+            if fire { onSwipeReply?() }
+        default:
+            break
+        }
+    }
+    #endif
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard let laidOut, let message else { return }
@@ -124,18 +181,7 @@ final class MessageCell: UICollectionViewCell {
         self.animator = animator
         accessibilityLabel = Self.spokenText(for: message, highlight: laidOut.highlight)
 
-        let standsOut = laidOut.highlight != nil
-        let highlight = standsOut || laidOut.isHighlighted || laidOut.isAnnouncement || laidOut.isCheer
-        highlightView.isHidden = !highlight
-        highlightBar.isHidden = !standsOut
-        highlightBar.backgroundColor = Theme.accent
-        if standsOut {
-            highlightView.backgroundColor = Theme.mentionBackground
-        } else if laidOut.isCheer {
-            highlightView.backgroundColor = Theme.cheerHighlight
-        } else {
-            highlightView.backgroundColor = Theme.highlightedMessage
-        }
+        applyCard(for: laidOut)
 
         if message.moderation == .visible {
             textLabel.attributedText = laidOut.attributedText
@@ -162,6 +208,34 @@ final class MessageCell: UICollectionViewCell {
         configureBadges(laidOut.badgePlacements, images: images)
 
         setNeedsLayout()
+    }
+
+    /// A tinted card behind rows that stand out: mentions and highlight words in the accent with its bar, channel
+    /// notices in their own color with a bar of it, cheers and channel-point highlights as a plain tint.
+    private func applyCard(for laidOut: LaidOutMessage) {
+        let fill: UIColor?
+        let bar: UIColor?
+        if laidOut.highlight != nil {
+            fill = Theme.mentionBackground
+            bar = Theme.accent
+        } else if let notice = laidOut.notice {
+            let color = Theme.noticeColor(notice)
+            fill = color.withAlphaComponent(0.13)
+            bar = color
+        } else if laidOut.isCheer {
+            fill = Theme.cheerHighlight
+            bar = nil
+        } else if laidOut.isHighlighted || laidOut.isAnnouncement {
+            fill = Theme.highlightedMessage
+            bar = nil
+        } else {
+            fill = nil
+            bar = nil
+        }
+        highlightView.isHidden = fill == nil
+        highlightView.backgroundColor = fill
+        highlightBar.isHidden = bar == nil
+        highlightBar.backgroundColor = bar
     }
 
     /// What VoiceOver reads for a message: who wrote it and every word of it, with emotes
@@ -302,19 +376,29 @@ final class MessageCell: UICollectionViewCell {
         super.layoutSubviews()
         guard let laidOut else { return }
 
-        highlightView.frame = bounds.insetBy(dx: 2, dy: 0)
-        highlightBar.frame = CGRect(x: highlightView.frame.minX, y: highlightView.frame.minY + 2, width: 3, height: max(0, highlightView.frame.height - 4))
+        highlightView.frame = bounds.insetBy(dx: ChatMetrics.cardInset, dy: 1)
+        highlightBar.frame = CGRect(x: 0, y: 0, width: ChatMetrics.cardBar, height: highlightView.bounds.height)
+        #if os(iOS)
+        let iconSide: CGFloat = 26
+        replyIcon.bounds = CGRect(x: 0, y: 0, width: iconSide, height: iconSide)
+        replyIcon.center = CGPoint(x: ChatMetrics.edge + iconSide / 2, y: bounds.midY)
+        #endif
 
         if !replyPreview.isHidden {
-            replyPreview.frame = CGRect(x: laidOut.textOrigin.x, y: 2, width: bounds.width - laidOut.textOrigin.x - 8, height: laidOut.replyHeight)
+            replyPreview.frame = CGRect(
+                x: ChatMetrics.edge,
+                y: ChatMetrics.rowVertical - 2,
+                width: bounds.width - ChatMetrics.edge * 2,
+                height: laidOut.replyHeight
+            )
         }
 
         let room = RoomyLabel.room
         textLabel.frame = CGRect(
             x: laidOut.textOrigin.x,
             y: laidOut.textOrigin.y,
-            width: bounds.width - laidOut.textOrigin.x - 8,
-            height: laidOut.height - laidOut.textOrigin.y - 4
+            width: bounds.width - laidOut.textOrigin.x - ChatMetrics.edge,
+            height: laidOut.height - laidOut.textOrigin.y - ChatMetrics.rowVertical
         ).insetBy(dx: -room, dy: -room)
         #if os(tvOS)
         textCanvas.textInset = room
@@ -359,6 +443,10 @@ final class MessageCell: UICollectionViewCell {
         highlightView.isHidden = true
         highlightBar.isHidden = true
         contentView.alpha = 1
+        #if os(iOS)
+        replyIcon.alpha = 0
+        replyArmed = false
+        #endif
         laidOut = nil
         message = nil
         animator = nil
@@ -381,3 +469,15 @@ private final class RoomyLabel: UILabel {
         super.drawText(in: rect.insetBy(dx: Self.room, dy: Self.room))
     }
 }
+
+#if os(iOS)
+extension MessageCell: UIGestureRecognizerDelegate {
+    /// Only a rightward, mostly horizontal drag on a message that can be replied to; vertical drags stay with the chat.
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer === replyPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
+        guard onSwipeReply != nil else { return false }
+        let velocity = replyPan.velocity(in: self)
+        return velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.6
+    }
+}
+#endif

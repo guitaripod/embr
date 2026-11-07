@@ -31,6 +31,8 @@ struct LaidOutMessage: Sendable {
     let highlight: ChatHighlighter.Reason?
     let isAnnouncement: Bool
     let isCheer: Bool
+    /// The kind of a subscription, raid, announcement or other channel notice the row carries, drawn as a tinted card.
+    let notice: NoticeKind?
 
     init(
         height: CGFloat,
@@ -46,7 +48,8 @@ struct LaidOutMessage: Sendable {
         isHighlighted: Bool,
         highlight: ChatHighlighter.Reason? = nil,
         isAnnouncement: Bool = false,
-        isCheer: Bool = false
+        isCheer: Bool = false,
+        notice: NoticeKind? = nil
     ) {
         self.height = height
         self.width = width
@@ -62,6 +65,7 @@ struct LaidOutMessage: Sendable {
         self.highlight = highlight
         self.isAnnouncement = isAnnouncement
         self.isCheer = isCheer
+        self.notice = notice
     }
 }
 

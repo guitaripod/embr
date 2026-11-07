@@ -32,8 +32,8 @@ struct MessageLayout {
     private let showsSupporterNameEffects: Bool
     private let preview: Preview?
 
-    private let horizontalInset: CGFloat = 8
-    private let verticalInset: CGFloat = 4
+    private let horizontalInset = ChatMetrics.edge
+    private let verticalInset = ChatMetrics.rowVertical
     private let badgeSpacing: CGFloat = 3
     private let emoteSidePadding: CGFloat = 1
     private let replyLineHeight: CGFloat = 16
@@ -196,7 +196,8 @@ struct MessageLayout {
             isHighlighted: isHighlighted,
             highlight: highlighter.reason(for: message),
             isAnnouncement: message.notice?.kind == .announcement,
-            isCheer: cheerBits > 0
+            isCheer: cheerBits > 0,
+            notice: message.notice.map(\.kind).flatMap { $0 == .moderation ? nil : $0 }
         )
     }
 
