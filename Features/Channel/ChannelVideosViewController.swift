@@ -465,10 +465,15 @@ private final class MediaRowCell: UICollectionViewListCell {
     }
 
     static func relative(_ date: Date) -> String {
+        relativeFormatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    /// Made once: building a formatter for every video row costs more than formatting its date.
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
+        return formatter
+    }()
 }
 
 /// A video or clip as a card for the iPad grid: the thumbnail across the full width, title
