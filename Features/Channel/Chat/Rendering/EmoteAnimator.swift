@@ -1,22 +1,21 @@
 import UIKit
+import Combine
 import SDWebImage
 
+/// Plays the animated emotes on screen in chat. Each emote view animates itself; this starts and stops them together:
+/// paused during fast scrolls, and still while Animate Emotes is off or, on a phone, in Low Power Mode.
 @MainActor
 final class EmoteAnimator {
     static let shared = EmoteAnimator()
 
-    private var displayLink: CADisplayLink?
     private var registered: [ObjectIdentifier: WeakView] = [:]
+    private var cancellables = Set<AnyCancellable>()
+    private var allowed = EmoteAnimator.animationAllowed
 
     var isPaused: Bool = false {
         didSet {
             guard isPaused != oldValue else { return }
-            if isPaused {
-                stopAll()
-            } else {
-                resumeAll()
-            }
-            displayLink?.isPaused = isPaused
+            applyPlayback()
         }
     }
 
@@ -24,17 +23,30 @@ final class EmoteAnimator {
         weak var view: SDAnimatedImageView?
     }
 
-    init() {}
+    init() {
+        SettingsStore.shared.changes
+            .map(\.animateEmotes)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAllowed() }
+            .store(in: &cancellables)
+        #if os(iOS)
+        NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshAllowed() }
+            .store(in: &cancellables)
+        #endif
+    }
 
     func register(_ view: UIView, url: URL) {
         guard let animatedView = view as? SDAnimatedImageView else { return }
+        if registered.count > 64 { pruneReleased() }
         registered[ObjectIdentifier(animatedView)] = WeakView(view: animatedView)
-        if !isPaused {
+        if allowed, !isPaused {
             animatedView.startAnimating()
         } else {
             animatedView.stopAnimating()
         }
-        startIfNeeded()
     }
 
     func unregister(_ view: UIView) {
@@ -42,37 +54,32 @@ final class EmoteAnimator {
             animatedView.stopAnimating()
         }
         registered.removeValue(forKey: ObjectIdentifier(view))
-        if registered.isEmpty { stop() }
     }
 
-    private func startIfNeeded() {
-        guard displayLink == nil else { return }
-        let link = CADisplayLink(target: self, selector: #selector(tick))
-        link.preferredFrameRateRange = CAFrameRateRange(minimum: 5, maximum: 15, preferred: 10)
-        link.add(to: .main, forMode: .common)
-        link.isPaused = isPaused
-        displayLink = link
+    private static var animationAllowed: Bool {
+        #if os(iOS)
+        return SettingsStore.shared.current.animateEmotes && !ProcessInfo.processInfo.isLowPowerModeEnabled
+        #else
+        return SettingsStore.shared.current.animateEmotes
+        #endif
     }
 
-    private func stop() {
-        displayLink?.invalidate()
-        displayLink = nil
+    private func refreshAllowed() {
+        let now = Self.animationAllowed
+        guard now != allowed else { return }
+        allowed = now
+        applyPlayback()
     }
 
-    @objc private func tick() {
-        var deadKeys: [ObjectIdentifier] = []
-        for (key, weakView) in registered where weakView.view == nil {
-            deadKeys.append(key)
+    private func applyPlayback() {
+        let plays = allowed && !isPaused
+        for weakView in registered.values {
+            if plays { weakView.view?.startAnimating() } else { weakView.view?.stopAnimating() }
         }
-        for key in deadKeys { registered.removeValue(forKey: key) }
-        if registered.isEmpty { stop() }
     }
 
-    private func stopAll() {
-        for weakView in registered.values { weakView.view?.stopAnimating() }
-    }
-
-    private func resumeAll() {
-        for weakView in registered.values { weakView.view?.startAnimating() }
+    /// Cells unregister their views on reuse; this drops the entries of views that went away with their cell.
+    private func pruneReleased() {
+        registered = registered.filter { $0.value.view != nil }
     }
 }

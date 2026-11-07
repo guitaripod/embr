@@ -68,6 +68,12 @@ final class MessageCell: UICollectionViewCell {
         accessibilityTraits = .staticText
     }
 
+    /// Spoken text is put together only when VoiceOver asks, not for every cell a busy chat configures.
+    override var accessibilityLabel: String? {
+        get { message.map { Self.spokenText(for: $0, highlight: laidOut?.highlight) } }
+        set {}
+    }
+
     /// Built on demand because the owner assigns the callbacks after `configure`, and the
     /// set of actions depends on which of them it provided.
     override var accessibilityCustomActions: [UIAccessibilityCustomAction]? {
@@ -77,14 +83,18 @@ final class MessageCell: UICollectionViewCell {
 
 
     #if os(iOS)
+    /// Drawn once and shared by every cell, since cells are made by the dozen as a busy chat fills the screen.
+    private static let replyImage = UIImage(
+        systemName: "arrowshape.turn.up.left.circle.fill",
+        withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+    )
     private static let replyTravel: CGFloat = 72
     private static let replyThreshold: CGFloat = 52
 
     /// Swiping a message to the right drags it after the finger with a reply arrow growing in behind it; past the
     /// threshold the arrow fills with a tick, and letting go there starts the reply.
     private func setUpSwipeToReply() {
-        replyIcon.image = UIImage(systemName: "arrowshape.turn.up.left.circle.fill")
-        replyIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        replyIcon.image = Self.replyImage
         replyIcon.tintColor = Theme.secondaryText
         replyIcon.contentMode = .center
         replyIcon.alpha = 0
@@ -179,7 +189,6 @@ final class MessageCell: UICollectionViewCell {
         self.laidOut = laidOut
         self.message = message
         self.animator = animator
-        accessibilityLabel = Self.spokenText(for: message, highlight: laidOut.highlight)
 
         applyCard(for: laidOut)
 
@@ -293,24 +302,50 @@ final class MessageCell: UICollectionViewCell {
         return actions
     }
 
+    /// Emote and badge images by URL, in front of the image cache: a busy chat configures dozens of cells a second
+    /// showing the same few badges and emotes, and this lookup is the cheapest way to hand them over.
+    private static let imageMemo: NSCache<NSURL, UIImage> = {
+        let cache = NSCache<NSURL, UIImage>()
+        cache.countLimit = 256
+        cache.totalCostLimit = 16 * 1024 * 1024
+        return cache
+    }()
+
+    private static func cachedImage(_ url: URL, images: ImageLoading) -> UIImage? {
+        if let memo = imageMemo.object(forKey: url as NSURL) { return memo }
+        guard let image = images.cachedImage(for: url) else { return nil }
+        remember(image, for: url)
+        return image
+    }
+
+    private static func remember(_ image: UIImage, for url: URL) {
+        let pixels = image.size.width * image.scale * image.size.height * image.scale
+        imageMemo.setObject(image, forKey: url as NSURL, cost: Int(pixels) * 4)
+    }
+
+    private static func setImage(_ image: UIImage?, on view: UIImageView) {
+        if view.image !== image { view.image = image }
+    }
+
     private func configureEmotes(_ placements: [LaidOutMessage.EmotePlacement], images: ImageLoading, animator: EmoteAnimator) {
         ensureEmoteViews(count: placements.count)
         for (index, placement) in placements.enumerated() {
             let view = emoteViews[index]
-            view.isHidden = false
+            if view.isHidden { view.isHidden = false }
             let emote = placement.emote
             let url = emote.images.url(preferring: .x2)
-            if let url, let cached = images.cachedImage(for: url) {
-                view.image = cached
+            if let url, let cached = Self.cachedImage(url, images: images) {
+                Self.setImage(cached, on: view)
                 if emote.isAnimated {
                     animator.register(view, url: url)
                     registeredEmoteViews.append(view)
                 }
                 continue
             }
-            view.image = nil
+            Self.setImage(nil, on: view)
             let task = Task { [weak self, weak view, weak animator] in
                 let image = await images.emoteImage(for: emote, scale: .x2)
+                if let image, let url { Self.remember(image, for: url) }
                 guard !Task.isCancelled, let view else { return }
                 view.image = image
                 guard emote.isAnimated, let animator else { return }
@@ -321,7 +356,7 @@ final class MessageCell: UICollectionViewCell {
             }
             emoteLoadTasks.append(task)
         }
-        for index in placements.count..<emoteViews.count {
+        for index in placements.count..<emoteViews.count where !emoteViews[index].isHidden {
             emoteViews[index].isHidden = true
             emoteViews[index].image = nil
         }
@@ -331,21 +366,23 @@ final class MessageCell: UICollectionViewCell {
         ensureBadgeViews(count: placements.count)
         for (index, placement) in placements.enumerated() {
             let view = badgeViews[index]
-            view.isHidden = false
+            if view.isHidden { view.isHidden = false }
             let badge = placement.badge
-            if let url = badge.images.url(preferring: .x2), let cached = images.cachedImage(for: url) {
-                view.image = cached
+            let url = badge.images.url(preferring: .x2)
+            if let url, let cached = Self.cachedImage(url, images: images) {
+                Self.setImage(cached, on: view)
                 continue
             }
-            view.image = nil
+            Self.setImage(nil, on: view)
             let task = Task { [weak view] in
                 let image = await images.badgeImage(for: badge, scale: .x2)
+                if let image, let url { Self.remember(image, for: url) }
                 guard !Task.isCancelled, let view else { return }
                 view.image = image
             }
             badgeLoadTasks.append(task)
         }
-        for index in placements.count..<badgeViews.count {
+        for index in placements.count..<badgeViews.count where !badgeViews[index].isHidden {
             badgeViews[index].isHidden = true
             badgeViews[index].image = nil
         }
@@ -425,23 +462,6 @@ final class MessageCell: UICollectionViewCell {
 
         for view in registeredEmoteViews { animator?.unregister(view) }
         registeredEmoteViews.removeAll(keepingCapacity: true)
-
-        for view in emoteViews {
-            view.sd_cancelCurrentImageLoad()
-            view.image = nil
-            view.isHidden = true
-        }
-        for view in badgeViews {
-            view.image = nil
-            view.isHidden = true
-        }
-        textLabel.attributedText = nil
-        #if os(tvOS)
-        textCanvas.attributedText = nil
-        #endif
-        replyPreview.isHidden = true
-        highlightView.isHidden = true
-        highlightBar.isHidden = true
         contentView.alpha = 1
         #if os(iOS)
         replyIcon.alpha = 0
@@ -455,7 +475,6 @@ final class MessageCell: UICollectionViewCell {
         onTapLink = nil
         onSwipeReply = nil
         onShowActions = nil
-        accessibilityLabel = nil
         contentView.transform = CGAffineTransform(scaleX: 1, y: -1)
     }
 }

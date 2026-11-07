@@ -35,6 +35,11 @@ actor ChatRoom {
     private var continuation: AsyncStream<ChatRoomEvent>.Continuation?
     private var consumeTask: Task<Void, Never>?
     private var flushTask: Task<Void, Never>?
+    /// A chat moving faster than anyone reads is drawn a little less often, in larger batches: the screen holds about a
+    /// batch's worth of rows, so fewer, larger batches mean fewer rows laid out only to scroll straight past.
+    private let busyFlushInterval: UInt64 = 320_000_000
+    private static let busyBatch = 12
+    private var lastBatchSize = 0
     private var setupTask: Task<Void, Never>?
     private var pending: [ChatMessage] = []
     private var pendingPlayback: TimeInterval?
@@ -242,9 +247,12 @@ actor ChatRoom {
         switch event {
         case .message(let message):
             pending.append(message)
+            scheduleFlush()
         case .deleteMessage(let messageID):
+            flush()
             continuation?.yield(.delete(messageID: messageID))
         case .clearUserMessages(let userID, _):
+            flush()
             continuation?.yield(.clearUser(userID: userID))
         case .clearChat:
             pending.removeAll()
@@ -284,19 +292,31 @@ actor ChatRoom {
     }
 
     private func startFlushing() {
-        let interval = flushInterval
+        scheduleFlush()
+    }
+
+    /// Messages go up in batches at most every 200 ms, and the timer runs only while some are waiting, so a quiet chat
+    /// does not wake the CPU five times a second.
+    private func scheduleFlush() {
+        guard flushTask == nil, !pending.isEmpty else { return }
+        let interval = lastBatchSize > Self.busyBatch ? busyFlushInterval : flushInterval
         flushTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: interval)
-                if Task.isCancelled { return }
-                await self?.flush()
-            }
+            try? await Task.sleep(nanoseconds: interval)
+            guard !Task.isCancelled else { return }
+            await self?.finishScheduledFlush()
         }
     }
 
+    private func finishScheduledFlush() {
+        flushTask = nil
+        flush()
+    }
+
+    /// Sends what is waiting now; a deletion or a cleared user follows the messages it may concern.
     private func flush() {
         guard !pending.isEmpty else { return }
         let batch = pending
+        lastBatchSize = batch.count
         pending.removeAll(keepingCapacity: true)
         continuation?.yield(.messages(batch))
     }

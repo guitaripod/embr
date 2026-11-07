@@ -13,6 +13,7 @@ final class EmoteKeyboardView: UIView {
     private let images: ImageLoading
     private var sections: [(section: EmoteSection, emotes: [Emote])] = []
     private var recents: [Emote] = []
+    private var groups: [(EmoteSection, [Emote])] = []
     private var catalog = EmoteCatalog()
 
     private let chipsScroll = UIScrollView()
@@ -111,15 +112,20 @@ final class EmoteKeyboardView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    /// Takes the chat's emotes. The catalog is sorted into sections only when it changed, not every time the keyboard
+    /// opens, and the recent row is checked again in the background.
     func setCatalog(_ catalog: EmoteCatalog) {
-        self.catalog = catalog
-        rebuild()
+        if catalog != self.catalog || groups.isEmpty {
+            self.catalog = catalog
+            groups = Self.groups(catalog)
+            rebuild()
+        }
         loadRecents()
     }
 
     private func rebuild() {
         let previous = sections.map(\.section)
-        sections = Self.buildSections(catalog, recents: recents)
+        sections = buildSections()
         applySnapshot()
         if sections.map(\.section) != previous { rebuildChips() }
         selectChip(topSection())
@@ -138,28 +144,37 @@ final class EmoteKeyboardView: UIView {
             let records = await DatabaseManager.shared.recentEmotes()
             var seen = Set<String>()
             let resolved = records.compactMap { catalog.lookup($0.name) }.filter { seen.insert($0.id).inserted }
-            guard let self else { return }
+            guard let self, resolved.map(\.id) != self.recents.map(\.id) else { return }
             self.recents = resolved
             self.rebuild()
         }
     }
 
-    private static func buildSections(_ catalog: EmoteCatalog, recents: [Emote]) -> [(EmoteSection, [Emote])] {
-        let recentIDs = Set(recents.map(\.id))
-        var result: [(EmoteSection, [Emote])] = baseSections(catalog, excluding: recentIDs)
+    /// The recent row first, then the sorted groups without the emotes the recent row already shows.
+    private func buildSections() -> [(section: EmoteSection, emotes: [Emote])] {
+        var result: [(section: EmoteSection, emotes: [Emote])] = []
         if !recents.isEmpty {
-            result.insert((EmoteSection(title: String(localized: "Recent")), recents), at: 0)
+            result.append((EmoteSection(title: String(localized: "Recent")), recents))
+        }
+        let recentIDs = Set(recents.map(\.id))
+        for (section, emotes) in groups {
+            let kept = recentIDs.isEmpty ? emotes : emotes.filter { !recentIDs.contains($0.id) }
+            if !kept.isEmpty { result.append((section, kept)) }
         }
         return result
     }
 
-    private static func baseSections(_ catalog: EmoteCatalog, excluding: Set<String>) -> [(EmoteSection, [Emote])] {
+    /// The catalog in sections: the channel's Twitch emotes, each third-party provider, then Twitch's globals, each
+    /// sorted by name once with its sort key computed once per emote.
+    private static func groups(_ catalog: EmoteCatalog) -> [(EmoteSection, [Emote])] {
         let channel = Array(catalog.channel.values)
         let global = Array(catalog.global.values)
-        var usedIDs = excluding
+        var usedIDs = Set<String>()
         func take(_ emotes: [Emote]) -> [Emote] {
             emotes
-                .sorted { $0.name.lowercased() < $1.name.lowercased() }
+                .map { (key: $0.name.lowercased(), emote: $0) }
+                .sorted { $0.key < $1.key }
+                .map(\.emote)
                 .filter { usedIDs.insert($0.id).inserted }
         }
 

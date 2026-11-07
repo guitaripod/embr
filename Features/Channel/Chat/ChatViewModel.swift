@@ -21,6 +21,9 @@ final class ChatViewModel {
     private var consumeTask: Task<Void, Never>?
     private var replyParentID: String?
     private var cancellables = Set<AnyCancellable>()
+    private var pendingWidth: CGFloat?
+    private var widthTask: Task<Void, Never>?
+    private var moderationSnapshotTask: Task<Void, Never>?
     private var lastCatalog: EmoteCatalog?
     private var lastRoomState: RoomState?
     private var lastConnection: ConnectionStatus?
@@ -336,11 +339,31 @@ final class ChatViewModel {
         Task { await room.setPlayback(seconds: seconds) }
     }
 
+    /// Lays the chat out at a new width. A window being resized or a divider dragged reports many widths while a
+    /// layout runs; only the latest of those is laid out next, the ones in between are skipped.
     func updateWidth(_ width: CGFloat) {
-        Task {
-            if let snapshot = await store.updateWidth(width) {
-                snapshotSubject.send(snapshot)
+        pendingWidth = width
+        guard widthTask == nil else { return }
+        widthTask = Task { [weak self] in
+            guard let self else { return }
+            while let width = self.pendingWidth {
+                self.pendingWidth = nil
+                if let snapshot = await self.store.updateWidth(width) {
+                    self.snapshotSubject.send(snapshot)
+                }
             }
+            self.widthTask = nil
+        }
+    }
+
+    /// Deletions and timeouts arrive in waves while moderators purge a raid; the chat is redrawn once per wave.
+    private func sendModerationSnapshotSoon() {
+        guard moderationSnapshotTask == nil else { return }
+        moderationSnapshotTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard let self else { return }
+            self.moderationSnapshotTask = nil
+            self.snapshotSubject.send(await self.store.snapshot())
         }
     }
 
@@ -382,12 +405,12 @@ final class ChatViewModel {
                 snapshotSubject.send(snapshot)
             }
         case .delete(let messageID):
-            if let snapshot = await store.applyModeration(.deleted, messageID: messageID) {
-                snapshotSubject.send(snapshot)
+            if await store.applyModeration(.deleted, messageID: messageID) != nil {
+                sendModerationSnapshotSoon()
             }
         case .clearUser(let userID):
-            if let snapshot = await store.clearUser(userID) {
-                snapshotSubject.send(snapshot)
+            if await store.clearUser(userID) != nil {
+                sendModerationSnapshotSoon()
             }
         case .clearChat:
             if let snapshot = await store.clearChat() {
@@ -439,6 +462,10 @@ private actor MessageStore {
     private var pausedNewCount = 0
     private var frozenRows: [ChatRow] = []
     private var searchQuery = ""
+    private var searchMatchIDs: [String] = []
+    private var searchScannedThrough: String?
+    private var searchLayouts: [String: LaidOutMessage] = [:]
+    private var layoutFloor = 0
 
     private var catalog = EmoteCatalog()
     private var badges = BadgeCatalog()
@@ -453,7 +480,13 @@ private actor MessageStore {
 
     private let capacity = 5000
     private let trimFraction = 0.2
-    private let liveWindow = 500
+    /// How many of the newest messages the live chat hands the list each batch, enough to fill a tall iPad several times
+    /// over; reading back pauses the chat with a deeper window to scroll through.
+    private let liveWindow = 200
+    private let pausedWindow = 1000
+    /// Only this many of the newest messages keep their layout; older ones are laid out again if a search or a
+    /// user's history brings them back, so a long session does not hold thousands of attributed strings.
+    private var layoutWindow: Int { pausedWindow }
     private let opened = Date().addingTimeInterval(-5)
 
     init(settings: Settings, currentUserLogin: String?, filter: ContentFilter) {
@@ -488,6 +521,7 @@ private actor MessageStore {
         frozenRows.removeAll { filter.shouldHide($0.message.plainText) }
         guard rows.count != before else { return nil }
         rebuildIndex()
+        layOutWindow()
         return currentSnapshot()
     }
 
@@ -513,9 +547,10 @@ private actor MessageStore {
             pausedNewCount = 0
             frozenRows = []
             searchQuery = ""
+            searchLayouts = [:]
             return liveSnapshot()
         }
-        frozenRows = Array(rows.suffix(liveWindow))
+        frozenRows = Array(rows.suffix(pausedWindow))
         return frozenSnapshot()
     }
 
@@ -528,6 +563,7 @@ private actor MessageStore {
         frozenRows.removeAll { ids.contains($0.message.author.id) }
         guard rows.count != before else { return nil }
         rebuildIndex()
+        layOutWindow()
         return currentSnapshot()
     }
 
@@ -537,7 +573,10 @@ private actor MessageStore {
         let before = rows.count
         rows.removeAll { $0.message.author.id == userID }
         frozenRows.removeAll { $0.message.author.id == userID }
-        if rows.count != before { rebuildIndex() }
+        if rows.count != before {
+            rebuildIndex()
+            layOutWindow()
+        }
         return currentSnapshot()
     }
 
@@ -560,11 +599,13 @@ private actor MessageStore {
                 rows.append(row)
                 if message.timestamp >= opened {
                     added += 1
-                    if highlighter.reason(for: message) != nil { highlights.append(row) }
+                    let reason = row.laidOut.map(\.highlight) ?? highlighter.reason(for: message)
+                    if reason != nil { highlights.append(row) }
                 }
             }
         }
         trimIfNeeded()
+        releaseOldLayouts()
         let snapshot: ChatSnapshot
         if paused {
             pausedNewCount += added
@@ -574,6 +615,11 @@ private actor MessageStore {
         }
         let activity = ChatActivity(added: added, highlights: highlights)
         return (ChatSnapshot(rows: snapshot.rows, isPaused: snapshot.isPaused, newCount: snapshot.newCount, alerts: highlights.count), activity)
+    }
+
+    /// The chat as it stands now.
+    func snapshot() -> ChatSnapshot {
+        currentSnapshot()
     }
 
     /// The chat as it stands, for a screen that starts showing it; nil until anything arrived.
@@ -671,14 +717,62 @@ private actor MessageStore {
     /// empty query goes back to the chat as it was paused.
     func search(_ query: String) -> ChatSnapshot {
         searchQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        searchMatchIDs = []
+        searchScannedThrough = nil
+        searchLayouts = [:]
         return currentSnapshot()
     }
 
+    /// The messages matching the query. Each message is checked once: later calls only look at what arrived since,
+    /// and drop matches that were trimmed or blocked away.
     private func searchMatches() -> [ChatRow] {
-        rows.filter { row in
-            row.message.author.displayName.lowercased().contains(searchQuery)
-                || row.message.author.login.lowercased().contains(searchQuery)
-                || row.message.plainText.lowercased().contains(searchQuery)
+        let start: Int
+        if let last = searchScannedThrough, let position = index[last] {
+            start = position + 1
+        } else {
+            start = 0
+            searchMatchIDs = []
+        }
+        if start < rows.count {
+            for row in rows[start...] where matchesSearch(row) { searchMatchIDs.append(row.id) }
+        }
+        searchScannedThrough = rows.last?.id
+        searchMatchIDs.removeAll { index[$0] == nil }
+        return searchMatchIDs.compactMap { id in index[id].map { withLayout(rows[$0]) } }
+    }
+
+    private func matchesSearch(_ row: ChatRow) -> Bool {
+        row.message.author.displayName.lowercased().contains(searchQuery)
+            || row.message.author.login.lowercased().contains(searchQuery)
+            || row.message.plainText.lowercased().contains(searchQuery)
+    }
+
+    /// A row ready to draw: older rows that gave up their layout get one again, kept for as long as the search that
+    /// found them, so new batches arriving under a search do not lay the same matches out again.
+    private func withLayout(_ row: ChatRow) -> ChatRow {
+        guard row.laidOut == nil, let layout else { return row }
+        if let cached = searchLayouts[row.id] { return ChatRow(message: row.message, laidOut: cached) }
+        let laidOut = layout.layout(row.message)
+        searchLayouts[row.id] = laidOut
+        return ChatRow(message: row.message, laidOut: laidOut)
+    }
+
+    /// Frees the layouts of messages that slid out of the window the chat can show without a search.
+    private func releaseOldLayouts() {
+        let target = max(0, rows.count - layoutWindow)
+        guard target > layoutFloor else { return }
+        for position in layoutFloor..<target { rows[position].laidOut = nil }
+        layoutFloor = target
+    }
+
+    /// Lays out any message inside the window that has no layout, as after blocked messages were removed and older
+    /// ones moved into it.
+    private func layOutWindow() {
+        guard let layout else { return }
+        let start = max(0, rows.count - layoutWindow)
+        layoutFloor = start
+        for position in start..<rows.count where rows[position].laidOut == nil {
+            rows[position].laidOut = layout.layout(rows[position].message)
         }
     }
 
@@ -690,9 +784,12 @@ private actor MessageStore {
     private func rebuildLayout() {
         guard width > 0 else { return }
         layout = MessageLayout(width: width, settings: settings, catalog: catalog, badges: badges, currentUserLogin: currentUserLogin)
+        searchLayouts = [:]
+        let start = max(0, rows.count - layoutWindow)
         for position in rows.indices {
-            rows[position] = ChatRow(message: rows[position].message, laidOut: layout?.layout(rows[position].message))
+            rows[position].laidOut = position >= start ? layout?.layout(rows[position].message) : nil
         }
+        layoutFloor = start
         for position in frozenRows.indices {
             frozenRows[position] = ChatRow(message: frozenRows[position].message, laidOut: layout?.layout(frozenRows[position].message))
         }
@@ -702,6 +799,7 @@ private actor MessageStore {
         guard rows.count > capacity else { return }
         let drop = Int(Double(capacity) * trimFraction)
         rows.removeFirst(drop)
+        layoutFloor = max(0, layoutFloor - drop)
         rebuildIndex()
     }
 

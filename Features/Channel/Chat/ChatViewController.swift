@@ -35,7 +35,9 @@ final class ChatViewController: UIViewController {
     private let animator = EmoteAnimator.shared
 
     private var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Int, ChatRow>!
+    private var dataSource: UICollectionViewDiffableDataSource<Int, String>!
+    private var rowsByID: [String: ChatRow] = [:]
+    private var appliedRows: [ChatRow] = []
     private lazy var composer = ChatInputView(images: images)
     private lazy var guestBar = GuestChatBar()
     private let statusBar = ConnectionStatusBar()
@@ -51,7 +53,10 @@ final class ChatViewController: UIViewController {
     private var lastContentOffsetY: CGFloat = 0
     private var fastScroll = false
 
-    private var catalog = EmoteCatalog()
+    private var catalog = EmoteCatalog() {
+        didSet { emoteIndex = Self.suggestionIndex(for: catalog) }
+    }
+    private var emoteIndex: [(key: String, emote: Emote)] = []
     private var chatterIndex: [String: String] = [:]
     private static let chatterIndexCap = 2000
     private var lastLayoutWidth: CGFloat = 0
@@ -152,7 +157,7 @@ final class ChatViewController: UIViewController {
     /// Opens the card of whoever wrote the newest message, or of the named chatter, for a screenshot.
     func presentUserCardForScreenshot(login: String?) {
         let me = currentUserLogin?.lowercased()
-        let pick = dataSource.snapshot().itemIdentifiers.first { row in
+        let pick = appliedRows.reversed().first { row in
             let author = row.message.author.login.lowercased()
             return login.map { author == $0.lowercased() } ?? (author != me)
         }
@@ -163,7 +168,7 @@ final class ChatViewController: UIViewController {
 
     /// Types a draft and starts a reply to the newest message, for a screenshot of the composer at work.
     func composeForScreenshot(draft: String?, reply: Bool) {
-        if reply, let row = dataSource.snapshot().itemIdentifiers.first(where: { $0.message.notice == nil }) {
+        if reply, let row = appliedRows.last(where: { $0.message.notice == nil }) {
             beginReply(to: row.message)
         }
         if let draft { composer.typeForScreenshot(draft) }
@@ -231,8 +236,8 @@ final class ChatViewController: UIViewController {
     }
 
     private func setUpDataSource() {
-        let registration = UICollectionView.CellRegistration<MessageCell, ChatRow> { [weak self] cell, _, row in
-            guard let self else { return }
+        let registration = UICollectionView.CellRegistration<MessageCell, String> { [weak self] cell, _, id in
+            guard let self, let row = self.rowsByID[id] else { return }
             if let laidOut = row.laidOut {
                 cell.configure(with: laidOut, message: row.message, images: self.images, animator: self.animator)
             }
@@ -258,8 +263,8 @@ final class ChatViewController: UIViewController {
                 self.presentMessageActions(for: row.message, sourceRect: sourceRect)
             }
         }
-        dataSource = UICollectionViewDiffableDataSource<Int, ChatRow>(collectionView: collectionView) { collectionView, indexPath, row in
-            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: row)
+        dataSource = UICollectionViewDiffableDataSource<Int, String>(collectionView: collectionView) { collectionView, indexPath, id in
+            collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: id)
         }
     }
 
@@ -462,17 +467,50 @@ final class ChatViewController: UIViewController {
                 ? String(localized: "No messages match “\(query)”")
                 : isReadOnly ? String(localized: "Loading chat replay…") : String(localized: "Waiting for messages…")
         }
+        if snapshot.relayout || snapshot.rows != appliedRows {
+            applyRows(snapshot)
+        }
+
+        if snapshot.isPaused, snapshot.newCount > 0 {
+            newMessagesPill.setCount(snapshot.newCount)
+            newMessagesPill.setShown(true)
+        } else {
+            newMessagesPill.setShown(false)
+        }
+        if snapshot.alerts > 0 { alertHighlight() }
+    }
+
+    /// Hands the rows to the list by id, the cheapest thing for the diffable data source to compare five times a second.
+    /// Only messages that arrived since the last batch feed the mention index and the moderator check, and a message
+    /// whose moderation changed is redrawn in place.
+    private func applyRows(_ snapshot: ChatSnapshot) {
+        var fresh = Self.rowsAdded(to: appliedRows, in: snapshot.rows)
         if chatterIndex.count > Self.chatterIndexCap * 2 {
             chatterIndex.removeAll(keepingCapacity: true)
+            fresh = snapshot.rows[...]
         }
-        for row in snapshot.rows {
+        for row in fresh {
             chatterIndex[row.message.author.login.lowercased()] = row.message.author.displayName
         }
-        detectModeratorIfNeeded(snapshot.rows)
+        detectModeratorIfNeeded(fresh)
 
-        var diff = NSDiffableDataSourceSnapshot<Int, ChatRow>()
+        var changed: [String] = []
+        var next: [String: ChatRow] = [:]
+        next.reserveCapacity(snapshot.rows.count)
+        for row in snapshot.rows {
+            if let old = rowsByID[row.id], old.message.moderation != row.message.moderation { changed.append(row.id) }
+            next[row.id] = row
+        }
+        rowsByID = next
+        appliedRows = snapshot.rows
+
+        var diff = NSDiffableDataSourceSnapshot<Int, String>()
         diff.appendSections([0])
-        diff.appendItems(snapshot.rows.reversed(), toSection: 0)
+        diff.appendItems(snapshot.rows.reversed().map(\.id), toSection: 0)
+        if !snapshot.relayout, !changed.isEmpty {
+            let present = Set(dataSource.snapshot().itemIdentifiers)
+            diff.reconfigureItems(changed.filter { present.contains($0) })
+        }
         let shouldStickToBottom = !snapshot.isPaused
         let finish = { [weak self] in
             guard let self, shouldStickToBottom, !self.collectionView.isTracking, !self.collectionView.isDecelerating else { return }
@@ -483,14 +521,12 @@ final class ChatViewController: UIViewController {
         } else {
             dataSource.apply(diff, animatingDifferences: false, completion: finish)
         }
+    }
 
-        if snapshot.isPaused, snapshot.newCount > 0 {
-            newMessagesPill.setCount(snapshot.newCount)
-            newMessagesPill.setShown(true)
-        } else {
-            newMessagesPill.setShown(false)
-        }
-        if snapshot.alerts > 0 { alertHighlight() }
+    /// The rows after the newest one already shown; all of them when the list was replaced.
+    private static func rowsAdded(to previous: [ChatRow], in rows: [ChatRow]) -> ArraySlice<ChatRow> {
+        guard let newest = previous.last?.id, let index = rows.lastIndex(where: { $0.id == newest }) else { return rows[...] }
+        return rows[rows.index(after: index)...]
     }
 
     /// A haptic and, when the viewer asked for it, a short sound for a message that stands out for them: only while
@@ -554,7 +590,7 @@ final class ChatViewController: UIViewController {
     /// Enables moderator actions once the logged-in user is seen wearing a
     /// moderator/broadcaster badge in this channel — avoids showing mod controls
     /// to regular viewers without needing an extra API scope.
-    private func detectModeratorIfNeeded(_ rows: [ChatRow]) {
+    private func detectModeratorIfNeeded(_ rows: ArraySlice<ChatRow>) {
         guard !canModerate, !isAnonymous, !isReadOnly, let me = currentUserLogin?.lowercased() else { return }
         let isMod = rows.contains { row in
             row.message.author.login.lowercased() == me
@@ -581,7 +617,7 @@ final class ChatViewController: UIViewController {
         guard recognizer.state == .began else { return }
         let point = recognizer.location(in: collectionView)
         guard let indexPath = collectionView.indexPathForItem(at: point),
-              let row = dataSource.itemIdentifier(for: indexPath) else { return }
+              let id = dataSource.itemIdentifier(for: indexPath), let row = rowsByID[id] else { return }
         Haptics.impact(.medium)
         let sourceRect = collectionView.layoutAttributesForItem(at: indexPath)
             .map { collectionView.convert($0.frame, to: view) }
@@ -600,7 +636,7 @@ extension ChatViewController: UIGestureRecognizerDelegate {
 extension ChatViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = collectionView.bounds.width
-        guard let row = dataSource.itemIdentifier(for: indexPath), let laidOut = row.laidOut else {
+        guard let id = dataSource.itemIdentifier(for: indexPath), let laidOut = rowsByID[id]?.laidOut else {
             return CGSize(width: width, height: 1)
         }
         return CGSize(width: width, height: laidOut.height)
@@ -870,18 +906,29 @@ extension ChatViewController: ChatInputViewDelegate {
         }
     }
 
+    /// Every emote's lowercased name, shortest first, built once per catalog so a keystroke only scans it.
+    private static func suggestionIndex(for catalog: EmoteCatalog) -> [(key: String, emote: Emote)] {
+        var seen = Set<String>()
+        return (Array(catalog.channel.values) + Array(catalog.global.values))
+            .filter { seen.insert($0.name).inserted }
+            .map { (key: $0.name.lowercased(), emote: $0) }
+            .sorted { $0.key.count != $1.key.count ? $0.key.count < $1.key.count : $0.key < $1.key }
+    }
+
+    /// Names starting with the query first, then names containing it, shortest first, twenty at most.
     private func emoteSuggestions(matching query: String) -> [AutocompleteSuggestion] {
         let lowered = query.lowercased()
-        let pool = Array(catalog.channel.values) + Array(catalog.global.values)
-        let matches = pool.filter { $0.name.lowercased().contains(lowered) }
-            .sorted { lhs, rhs in
-                let lp = lhs.name.lowercased().hasPrefix(lowered)
-                let rp = rhs.name.lowercased().hasPrefix(lowered)
-                if lp != rp { return lp }
-                return lhs.name.count < rhs.name.count
+        var prefixed: [Emote] = []
+        var containing: [Emote] = []
+        for entry in emoteIndex where entry.key.contains(lowered) {
+            if entry.key.hasPrefix(lowered) {
+                prefixed.append(entry.emote)
+                if prefixed.count == 20 { break }
+            } else if containing.count < 20 {
+                containing.append(entry.emote)
             }
-            .prefix(20)
-        return matches.map { .emote($0) }
+        }
+        return (prefixed + containing).prefix(20).map { .emote($0) }
     }
 
     private func mentionSuggestions(matching query: String) -> [AutocompleteSuggestion] {
