@@ -100,7 +100,7 @@ final class LiveSidebarModel {
             }
             for id in missing {
                 guard let url = self.avatarURLs[id],
-                      let image = await self.images.image(for: url, targetScale: 3) else {
+                      let image = await self.images.avatarImage(for: url, side: Self.avatarSide, scale: 3) else {
                     self.requestedAvatars.remove(id)
                     continue
                 }

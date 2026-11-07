@@ -130,11 +130,11 @@ final class StreamCardCell: UICollectionViewCell {
     private func loadAvatar(_ url: URL?) {
         avatarTask?.cancel()
         guard let url else { avatar.image = nil; return }
-        if let cached = images.cachedImage(for: url) { avatar.image = cached; return }
-        let targetID = currentStreamID
         let scale = displayScale
+        if let cached = images.cachedAvatar(for: url, side: 36, scale: scale) { avatar.image = cached; return }
+        let targetID = currentStreamID
         avatarTask = Task { [weak self] in
-            let image = await self?.images.image(for: url, targetScale: scale)
+            let image = await self?.images.avatarImage(for: url, side: 36, scale: scale)
             guard let self, !Task.isCancelled, self.currentStreamID == targetID else { return }
             self.avatar.image = image
         }

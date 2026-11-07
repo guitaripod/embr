@@ -50,15 +50,15 @@ final class RecentChannelCell: UICollectionViewCell {
         accessibilityLabel = channel.displayName
         avatar.image = nil
         guard let url = avatarURL else { return }
-        if let cached = images.cachedImage(for: url) {
+        let scale = traitCollection.displayScale
+        if let cached = images.cachedAvatar(for: url, side: 56, scale: scale) {
             avatar.image = cached
             return
         }
         let target = channel.id
-        let scale = traitCollection.displayScale
         imageTask?.cancel()
         imageTask = Task { [weak self] in
-            let image = await self?.images.image(for: url, targetScale: scale)
+            let image = await self?.images.avatarImage(for: url, side: 56, scale: scale)
             guard let self, !Task.isCancelled, self.currentID == target else { return }
             self.avatar.image = image
         }
