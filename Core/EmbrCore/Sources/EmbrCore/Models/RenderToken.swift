@@ -58,7 +58,10 @@ public enum MessageTokenizer {
         return tokens
     }
 
+    /// A link needs a dot in its host, so the common word without one is turned away before any lowercasing or URL
+    /// parsing.
     static func detectLink(_ word: String) -> URL? {
+        guard word.utf8.contains(UInt8(ascii: ".")) else { return nil }
         let lowered = word.lowercased()
         let hasScheme = lowered.hasPrefix("http://") || lowered.hasPrefix("https://")
         let candidate = hasScheme ? word : "https://\(word)"
@@ -73,9 +76,10 @@ public enum MessageTokenizer {
         guard let dotIndex = word.firstIndex(of: "."), dotIndex != word.startIndex else { return false }
         let afterDot = word.index(after: dotIndex)
         guard afterDot < word.endIndex else { return false }
-        let knownTLDs = [".com", ".tv", ".gg", ".io", ".net", ".org", ".co", ".dev", ".app", ".live", ".me", ".gl"]
         return knownTLDs.contains(where: { lowered.contains($0) })
     }
+
+    private static let knownTLDs = [".com", ".tv", ".gg", ".io", ".net", ".org", ".co", ".dev", ".app", ".live", ".me", ".gl"]
 
     private static func coalesce(_ tokens: [RenderToken]) -> [RenderToken] {
         var result: [RenderToken] = []
@@ -95,22 +99,25 @@ enum WordSegment: Equatable {
     case whitespace(String)
 }
 
+/// Splits text into runs of words and whitespace by walking the string in place, without copying it into an array of
+/// characters or growing each run a character at a time.
 final class WordScanner {
-    private let scalars: [Character]
-    private var index = 0
+    private let string: String
+    private var index: String.Index
 
     init(_ string: String) {
-        self.scalars = Array(string)
+        self.string = string
+        self.index = string.startIndex
     }
 
     func next() -> WordSegment? {
-        guard index < scalars.count else { return nil }
-        let isSpace = scalars[index].isWhitespace
-        var buffer = ""
-        while index < scalars.count, scalars[index].isWhitespace == isSpace {
-            buffer.append(scalars[index])
-            index += 1
+        guard index < string.endIndex else { return nil }
+        let isSpace = string[index].isWhitespace
+        let start = index
+        while index < string.endIndex, string[index].isWhitespace == isSpace {
+            string.formIndex(after: &index)
         }
-        return isSpace ? .whitespace(buffer) : .word(buffer)
+        let run = String(string[start..<index])
+        return isSpace ? .whitespace(run) : .word(run)
     }
 }
