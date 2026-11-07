@@ -23,6 +23,13 @@ final class ChatsViewController: UIViewController {
     private let columns = UIStackView()
     private let emptyState = UIStackView()
     private var controllers: [String: ChatViewController] = [:]
+    private lazy var composerAccessoryView: ChatComposerAccessoryView = {
+        let accessory = ChatComposerAccessoryView()
+        accessory.onCompose = { [weak self] emotes in self?.frontChat?.focusComposer(emotes: emotes) }
+        return accessory
+    }()
+    private var composerAccessory: AnyObject?
+    private var isOnScreen = false
     private var controllerSessions: [String: ChatsModel.Session] = [:]
     private var columnViews: [String: ChatColumnView] = [:]
     private var recent: [String] = []
@@ -69,14 +76,62 @@ final class ChatsViewController: UIViewController {
         render()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        isOnScreen = true
+        updateComposerAccessory(animated: animated)
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         model.setVisible(Set(shown))
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        isOnScreen = false
+        updateComposerAccessory(animated: animated)
+    }
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         model.setVisible([])
+    }
+
+    /// On a phone the chat in front writes from the tab bar itself: its composer folds into the tab bar's accessory,
+    /// in the same glass, and opens above the keyboard when tapped. Wider layouts keep the composer in each column.
+    private var foldsComposerIntoTabBar: Bool {
+        guard #available(iOS 26.0, *) else { return false }
+        return OrientationCoordinator.isPhone && tabBarController != nil
+    }
+
+    private var frontChat: ChatViewController? {
+        shown.first.flatMap { controllers[$0] }
+    }
+
+    /// Shows the folded composer while this tab is on screen with a chat open, and takes it away otherwise, since
+    /// the accessory belongs to the whole tab bar.
+    private func updateComposerAccessory(animated: Bool) {
+        guard #available(iOS 26.0, *), let tabBarController else { return }
+        let wanted = foldsComposerIntoTabBar && isOnScreen && frontChat != nil
+        if wanted {
+            refreshComposerAccessory()
+            if composerAccessory == nil || tabBarController.bottomAccessory !== composerAccessory {
+                let accessory = UITabAccessory(contentView: composerAccessoryView)
+                composerAccessory = accessory
+                tabBarController.setBottomAccessory(accessory, animated: animated)
+            }
+        } else if let accessory = composerAccessory {
+            composerAccessory = nil
+            if tabBarController.bottomAccessory === accessory {
+                tabBarController.setBottomAccessory(nil, animated: animated)
+            }
+        }
+    }
+
+    private func refreshComposerAccessory() {
+        guard let chat = frontChat else { return }
+        composerAccessoryView.show(placeholder: chat.composerPlaceholder, draft: chat.composerDraft, canCompose: chat.canCompose)
     }
 
     override func viewDidLayoutSubviews() {
@@ -213,6 +268,7 @@ final class ChatsViewController: UIViewController {
             column.setShowsHeader(shown.count > 1)
             column.setTitle(model.entries.first { $0.id == id }?.name ?? id)
         }
+        updateComposerAccessory(animated: true)
         setHidden(emptyState, !ids.isEmpty)
         setHidden(columns, ids.isEmpty)
         setHidden(strip, ids.isEmpty && model.mentions.isEmpty)
@@ -331,6 +387,13 @@ final class ChatsViewController: UIViewController {
                 broadcasterLogin: session.entry.login
             )
             chat.delegate = self
+            if foldsComposerIntoTabBar {
+                chat.setComposerDock(.tabAccessory)
+                chat.onComposerSummaryChanged = { [weak self, weak chat] in
+                    guard let self, let chat, chat === self.frontChat else { return }
+                    self.refreshComposerAccessory()
+                }
+            }
             controllers[id] = chat
             controllerSessions[id] = session
             return chat
@@ -348,7 +411,16 @@ final class ChatsViewController: UIViewController {
     #if DEBUG
     /// Opens the picker or Mentions over the tab, for a screenshot.
     func presentForScreenshot(_ sheet: String) {
-        sheet == "mentions" ? presentMentions() : presentPicker()
+        switch sheet {
+        case "mentions": presentMentions()
+        case "compose": frontChat?.focusComposer()
+        case "emotes": frontChat?.focusComposer(emotes: true)
+        case "draft":
+            frontChat?.focusComposer()
+            frontChat?.composeForScreenshot(draft: "see you all at the finals tonight", reply: false)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.frontChat?.endComposing() }
+        default: presentPicker()
+        }
     }
     #endif
 

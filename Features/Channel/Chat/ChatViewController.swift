@@ -32,6 +32,20 @@ final class ChatViewController: UIViewController {
         didSet { composerIfLoaded?.isExemptFromSlowMode = canModerate }
     }
     private var composerIfLoaded: ChatInputView?
+
+    /// Where the composer sits: in the chat, or folded into the tab bar's accessory while the viewer is not writing,
+    /// opening above the keyboard when they start.
+    enum ComposerDock {
+        case inline
+        case tabAccessory
+    }
+
+    private(set) var composerDock: ComposerDock = .inline
+    /// Told when what the folded composer shows changed: the placeholder, an unsent draft, or signing in.
+    var onComposerSummaryChanged: (() -> Void)?
+    private var composerOpen = false
+    private var dockedBottom: NSLayoutConstraint?
+    private var foldedBottom: NSLayoutConstraint?
     private let animator = EmoteAnimator.shared
 
     private var collectionView: UICollectionView!
@@ -330,6 +344,11 @@ final class ChatViewController: UIViewController {
         composer.onEditingChanged = { [weak self] editing in
             guard let self else { return }
             if editing, self.isPaused { self.jumpToLatest() }
+            if self.composerDock == .tabAccessory, self.composerOpen != editing {
+                self.composerOpen = editing
+                self.applyComposerPlacement(animated: true)
+                if !editing { self.onComposerSummaryChanged?() }
+            }
             self.delegate?.chatViewController(self, isComposing: editing)
         }
         composer.onEmoteKeyboardChanged = { [weak self] showing in
@@ -346,16 +365,87 @@ final class ChatViewController: UIViewController {
         moderationBarHeight = barHeight
 
         view.keyboardLayoutGuide.usesBottomSafeArea = false
+        let docked = moderationBar.bottomAnchor.constraint(equalTo: composer.topAnchor)
+        dockedBottom = docked
+        foldedBottom = moderationBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         NSLayoutConstraint.activate([
             composer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             composer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             composer.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
             moderationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             moderationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            moderationBar.bottomAnchor.constraint(equalTo: composer.topAnchor),
+            docked,
             barHeight,
             collectionView.bottomAnchor.constraint(equalTo: moderationBar.topAnchor)
         ])
+        applyComposerPlacement(animated: false)
+    }
+
+    /// Whether the viewer can write here, as opposed to watching a replay or reading signed out.
+    var canCompose: Bool {
+        !isAnonymous && !isReadOnly
+    }
+
+    var composerPlaceholder: String {
+        canCompose ? composer.placeholderText : String(localized: "Log in to chat")
+    }
+
+    var composerDraft: String {
+        canCompose ? composer.draftText : ""
+    }
+
+    func setComposerDock(_ dock: ComposerDock) {
+        guard dock != composerDock else { return }
+        composerDock = dock
+        guard isViewLoaded else { return }
+        applyComposerPlacement(animated: false)
+    }
+
+    /// Opens the composer above the keyboard, on the emote keyboard when asked; signed out it asks to log in instead.
+    func focusComposer(emotes: Bool = false) {
+        guard canCompose else {
+            if isAnonymous { delegate?.chatViewControllerDidRequestLogin(self) }
+            return
+        }
+        if composerDock == .tabAccessory, !composerOpen {
+            composerOpen = true
+            applyComposerPlacement(animated: true)
+        }
+        if emotes {
+            composer.beginWithEmotes()
+        } else {
+            _ = composer.becomeFirstResponder()
+        }
+    }
+
+    /// Folded, the composer and the sign-in bar give the chat's bottom edge to the tab bar's accessory; open, the
+    /// composer rides the keyboard and the chat ends at its top.
+    private func applyComposerPlacement(animated: Bool) {
+        guard !isReadOnly else { return }
+        let folded = composerDock == .tabAccessory && !composerOpen
+        if isAnonymous {
+            let hidesBar = composerDock == .tabAccessory
+            guestBar.isHidden = hidesBar
+            dockedBottom?.isActive = !hidesBar
+            foldedBottom?.isActive = hidesBar
+            return
+        }
+        dockedBottom?.isActive = !folded
+        foldedBottom?.isActive = folded
+        if !folded { composer.isHidden = false }
+        let changes = {
+            self.composer.alpha = folded ? 0 : 1
+            self.view.layoutIfNeeded()
+        }
+        let finish = { (_: Bool) in
+            if self.composerDock == .tabAccessory, !self.composerOpen { self.composer.isHidden = true }
+        }
+        guard animated, view.window != nil, !Motion.reduced else {
+            changes()
+            finish(true)
+            return
+        }
+        UIView.animate(withDuration: 0.3, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut], animations: changes, completion: finish)
     }
 
     private func setUpGuestBar() {
@@ -365,12 +455,16 @@ final class ChatViewController: UIViewController {
             self.delegate?.chatViewControllerDidRequestLogin(self)
         }
         view.addSubview(guestBar)
+        let aboveBar = collectionView.bottomAnchor.constraint(equalTo: guestBar.topAnchor)
+        dockedBottom = aboveBar
+        foldedBottom = collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         NSLayoutConstraint.activate([
             guestBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             guestBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             guestBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: guestBar.topAnchor)
+            aboveBar
         ])
+        applyComposerPlacement(animated: false)
     }
 
     private func bind() {
@@ -394,7 +488,10 @@ final class ChatViewController: UIViewController {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.statusBar.update(roomState: state)
-                    if !self.isAnonymous { self.composer.setRoomState(state) }
+                    if !self.isAnonymous {
+                        self.composer.setRoomState(state)
+                        self.onComposerSummaryChanged?()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -560,7 +657,7 @@ final class ChatViewController: UIViewController {
         card.onMention = { [weak self] user in
             guard let self else { return }
             self.composer.insertMention(user.login)
-            _ = self.composer.becomeFirstResponder()
+            self.focusComposer()
         }
         card.onOpenProfile = { [weak self] user in
             guard let self else { return }
@@ -577,7 +674,7 @@ final class ChatViewController: UIViewController {
             guard let self else { return }
             EmoteUsage.record(emote)
             self.composer.insertEmote(emote.name)
-            _ = self.composer.becomeFirstResponder()
+            self.focusComposer()
         } : nil)
         present(card, animated: true)
     }
@@ -809,7 +906,7 @@ extension ChatViewController: ChatInputViewDelegate {
         viewModel.setReply(parentID: message.id)
         composer.showReply(displayName: message.author.displayName, text: message.plainText)
         DispatchQueue.main.async { [weak self] in
-            _ = self?.composer.becomeFirstResponder()
+            self?.focusComposer()
         }
     }
 

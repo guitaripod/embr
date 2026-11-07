@@ -234,6 +234,21 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         setArrangedHidden(replyPreview, true)
     }
 
+    /// The unsent message, for showing it where the composer folds away to.
+    var draftText: String {
+        textView.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// What the empty field says, room modes included.
+    var placeholderText: String {
+        textView.placeholder
+    }
+
+    /// Opens the composer straight onto the emote keyboard.
+    func beginWithEmotes() {
+        showEmoteKeyboard()
+    }
+
     @discardableResult
     override func becomeFirstResponder() -> Bool {
         textView.becomeFirstResponder()
