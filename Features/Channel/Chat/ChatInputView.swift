@@ -41,6 +41,21 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
     private let sendButton = SendButton()
     private var fieldCap: NSLayoutConstraint!
     private var lastFieldHeight: CGFloat = 0
+    private let barGlass = Glass.view()
+    private let floatingGlass = Glass.view(cornerRadius: 1)
+    private var containerEdges: (top: NSLayoutConstraint, leading: NSLayoutConstraint, trailing: NSLayoutConstraint, bottom: NSLayoutConstraint)!
+    private var fieldMinHeight: NSLayoutConstraint!
+    private var emoteSize: (width: NSLayoutConstraint, height: NSLayoutConstraint, trailing: NSLayoutConstraint, bottom: NSLayoutConstraint)!
+    private var statusLeading: NSLayoutConstraint!
+
+    /// The composer's look: a bar across the bottom of the chat, or the same floating glass capsule as the folded
+    /// composer in the tab bar, so opening it keeps its shape.
+    enum Style: Equatable {
+        case bar
+        case floating(horizontalInset: CGFloat, height: CGFloat)
+    }
+
+    private(set) var style: Style = .bar
     private var lastFieldWidth: CGFloat = 0
     private var lastLandscape: Bool?
 
@@ -173,10 +188,22 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         showEmoteKeyboard()
     }
 
+    /// Taps the emote or send button the way a finger does, from the point at its center, and says whether the
+    /// tap reached it.
+    func tapForTesting(_ control: String) -> Bool {
+        let target: UIControl = control == "send" ? sendButton : emoteButton
+        let center = target.convert(CGPoint(x: target.bounds.midX, y: target.bounds.midY), to: nil)
+        guard let hit = window?.hitTest(center, with: nil), hit === target || hit.isDescendant(of: target) else { return false }
+        target.sendActions(for: .primaryActionTriggered)
+        return true
+    }
+
     /// Types a draft into the field, for a screenshot of the composer at work.
     func typeForScreenshot(_ text: String) {
         textView.insertEmoteName(text)
+        textView.deleteBackward()
         refreshAutocomplete()
+        updateFieldHeight()
     }
     #endif
 
@@ -266,14 +293,15 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
     private func setUp() {
         backgroundColor = Glass.isAvailable ? .clear : Theme.surface
 
-        let glass = Glass.view()
-        addSubview(glass)
+        addSubview(barGlass)
         NSLayoutConstraint.activate([
-            glass.topAnchor.constraint(equalTo: topAnchor),
-            glass.bottomAnchor.constraint(equalTo: bottomAnchor),
-            glass.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glass.trailingAnchor.constraint(equalTo: trailingAnchor)
+            barGlass.topAnchor.constraint(equalTo: topAnchor),
+            barGlass.bottomAnchor.constraint(equalTo: bottomAnchor),
+            barGlass.leadingAnchor.constraint(equalTo: leadingAnchor),
+            barGlass.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
+        floatingGlass.isHidden = true
+        addSubview(floatingGlass)
 
         container.translatesAutoresizingMaskIntoConstraints = false
         container.axis = .vertical
@@ -291,10 +319,11 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
         statusRow.addSubview(statusLabel)
         statusRow.isHidden = true
+        statusLeading = statusLabel.leadingAnchor.constraint(equalTo: statusRow.leadingAnchor, constant: ChatMetrics.edge + ChatMetrics.fieldTextInsets.left)
         NSLayoutConstraint.activate([
             statusLabel.topAnchor.constraint(equalTo: statusRow.topAnchor, constant: 6),
             statusLabel.bottomAnchor.constraint(equalTo: statusRow.bottomAnchor),
-            statusLabel.leadingAnchor.constraint(equalTo: statusRow.leadingAnchor, constant: ChatMetrics.edge + ChatMetrics.fieldTextInsets.left),
+            statusLeading,
             statusLabel.trailingAnchor.constraint(equalTo: statusRow.trailingAnchor, constant: -ChatMetrics.edge)
         ])
 
@@ -311,11 +340,18 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         container.addArrangedSubview(statusRow)
         container.addArrangedSubview(inputRow)
 
-        NSLayoutConstraint.activate([
+        containerEdges = (
             container.topAnchor.constraint(equalTo: topAnchor),
-            container.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
             container.leadingAnchor.constraint(equalTo: leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: trailingAnchor)
+            container.trailingAnchor.constraint(equalTo: trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor)
+        )
+        NSLayoutConstraint.activate([
+            containerEdges.top, containerEdges.leading, containerEdges.trailing, containerEdges.bottom,
+            floatingGlass.topAnchor.constraint(equalTo: container.topAnchor),
+            floatingGlass.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            floatingGlass.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            floatingGlass.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
 
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(swipedDown))
@@ -374,17 +410,80 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
 
         fieldCap = textView.heightAnchor.constraint(equalToConstant: ChatMetrics.fieldMaxHeight)
         let emoteSide = ChatMetrics.field - 4
+        fieldMinHeight = textView.heightAnchor.constraint(greaterThanOrEqualToConstant: ChatMetrics.field)
+        emoteSize = (
+            emoteButton.widthAnchor.constraint(equalToConstant: emoteSide),
+            emoteButton.heightAnchor.constraint(equalToConstant: emoteSide),
+            emoteButton.trailingAnchor.constraint(equalTo: field.trailingAnchor, constant: -2),
+            emoteButton.bottomAnchor.constraint(equalTo: field.bottomAnchor, constant: -2)
+        )
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: field.topAnchor),
             textView.bottomAnchor.constraint(equalTo: field.bottomAnchor),
             textView.leadingAnchor.constraint(equalTo: field.leadingAnchor),
             textView.trailingAnchor.constraint(equalTo: field.trailingAnchor),
-            textView.heightAnchor.constraint(greaterThanOrEqualToConstant: ChatMetrics.field),
-            emoteButton.trailingAnchor.constraint(equalTo: field.trailingAnchor, constant: -2),
-            emoteButton.bottomAnchor.constraint(equalTo: field.bottomAnchor, constant: -2),
-            emoteButton.widthAnchor.constraint(equalToConstant: emoteSide),
-            emoteButton.heightAnchor.constraint(equalToConstant: emoteSide)
+            fieldMinHeight,
+            emoteSize.trailing, emoteSize.bottom, emoteSize.width, emoteSize.height
         ])
+    }
+
+    /// Switches between the bar and the floating capsule. Floating, the glass hugs the composer's content with the
+    /// folded composer's side insets and height: no field fill, the text where the placeholder sat in the tab bar, the
+    /// emote button where it sat, and a send button that joins them only once there is something to send.
+    func setStyle(_ next: Style) {
+        guard next != style else { return }
+        style = next
+        switch next {
+        case .bar:
+            barGlass.isHidden = false
+            floatingGlass.isHidden = true
+            backgroundColor = Glass.isAvailable ? .clear : Theme.surface
+            containerEdges.top.constant = 0
+            containerEdges.leading.constant = 0
+            containerEdges.trailing.constant = 0
+            containerEdges.bottom.constant = 0
+            let sendInset = (ChatMetrics.field - ChatMetrics.sendDiameter) / 2
+            inputRow.spacing = ChatMetrics.rowSpacing - sendInset
+            inputRow.directionalLayoutMargins = NSDirectionalEdgeInsets(
+                top: ChatMetrics.composerVertical, leading: ChatMetrics.edge,
+                bottom: ChatMetrics.composerVertical, trailing: ChatMetrics.edge - sendInset
+            )
+            field.backgroundColor = .tertiarySystemFill
+            textView.setTextInsets(ChatMetrics.fieldTextInsets)
+            fieldMinHeight.constant = ChatMetrics.field
+            emoteSize.width.constant = ChatMetrics.field - 4
+            emoteSize.height.constant = ChatMetrics.field - 4
+            emoteSize.trailing.constant = -2
+            emoteSize.bottom.constant = -2
+            statusLeading.constant = ChatMetrics.edge + ChatMetrics.fieldTextInsets.left
+            replyPreview.setLeadingInset(ChatMetrics.edge)
+            autocomplete.setLeadingInset(ChatMetrics.edge)
+        case .floating(let inset, let height):
+            barGlass.isHidden = true
+            floatingGlass.isHidden = false
+            backgroundColor = .clear
+            floatingGlass.layer.cornerRadius = height / 2
+            containerEdges.top.constant = ChatMetrics.rowSpacing
+            containerEdges.leading.constant = inset
+            containerEdges.trailing.constant = -inset
+            containerEdges.bottom.constant = -ChatMetrics.rowSpacing
+            let vertical = (height - ChatMetrics.field) / 2
+            inputRow.spacing = 0
+            inputRow.directionalLayoutMargins = NSDirectionalEdgeInsets(top: vertical, leading: 0, bottom: vertical, trailing: 6)
+            field.backgroundColor = .clear
+            textView.setTextInsets(UIEdgeInsets(top: 10, left: 18, bottom: 10, right: 44))
+            fieldMinHeight.constant = ChatMetrics.field
+            emoteSize.width.constant = 44
+            emoteSize.height.constant = ChatMetrics.field
+            emoteSize.trailing.constant = 0
+            emoteSize.bottom.constant = 0
+            statusLeading.constant = 18
+            replyPreview.setLeadingInset(18)
+            autocomplete.setLeadingInset(14)
+        }
+        lastFieldHeight = 0
+        updateSendState()
+        setNeedsLayout()
     }
 
     /// The tap that focuses the field from its padding leaves the emote button's own taps alone.
@@ -523,6 +622,16 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         } else {
             sendButton.setMode(.empty)
         }
+        updateSendVisibility()
+    }
+
+    /// Floating, the send button stays out of the capsule until there is something to send, matching the folded
+    /// composer; in the bar it always holds its place.
+    private func updateSendVisibility() {
+        let hides: Bool
+        if case .floating = style { hides = draft.isEmpty && sendButton.mode != .sending } else { hides = false }
+        guard sendButton.isHidden != hides else { return }
+        setArrangedHidden(sendButton, hides)
     }
 
     /// One line under the field's text edge for whatever needs saying: why a message failed, how close the draft is

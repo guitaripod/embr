@@ -42,6 +42,12 @@ final class EmoteAutocompleteView: UIView {
         onSelect = handler
     }
 
+    /// Lines the first chip up with the composer's text.
+    func setLeadingInset(_ inset: CGFloat) {
+        stack.directionalLayoutMargins.leading = inset
+        stack.directionalLayoutMargins.trailing = inset
+    }
+
     /// What Tab or a tap on the first chip would insert.
     var firstSuggestion: AutocompleteSuggestion? {
         suggestions.first

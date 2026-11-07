@@ -3,7 +3,7 @@ import UIKit
 /// The composer's send button: a filled accent circle with an arrow once there is something to send, a quiet gray
 /// one before, a spinner while the message goes out, and the seconds left while slow mode holds the next message.
 @MainActor
-final class SendButton: UIControl {
+final class SendButton: UIButton {
     enum Mode: Equatable {
         case empty
         case ready
@@ -112,7 +112,7 @@ final class SendButton: UIControl {
 
 /// The emote button inside the composer field: a smiley that turns into a keyboard while the emote keyboard is up.
 @MainActor
-final class EmoteToggleButton: UIControl {
+final class EmoteToggleButton: UIButton {
     private let icon = UIImageView()
 
     override init(frame: CGRect) {
@@ -163,6 +163,12 @@ final class ReplyComposerBar: UIView {
     private let titleLabel = UILabel()
     private let bodyLabel = UILabel()
     private let cancelButton = UIButton(type: .system)
+    private let row = UIStackView()
+
+    /// Lines the strip's accent bar up with the composer's text, which sits further in when the composer floats.
+    func setLeadingInset(_ inset: CGFloat) {
+        row.directionalLayoutMargins.leading = inset
+    }
 
     init() {
         super.init(frame: .zero)
@@ -208,7 +214,7 @@ final class ReplyComposerBar: UIView {
         }, for: .touchUpInside)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
 
-        let row = UIStackView(arrangedSubviews: [bar, labels, cancelButton])
+        [bar, labels, cancelButton].forEach(row.addArrangedSubview)
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 10

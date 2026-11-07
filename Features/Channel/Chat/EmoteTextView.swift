@@ -21,6 +21,8 @@ final class EmoteTextView: UITextView, UITextViewDelegate {
     private var waitingAttachments: [String: [EmoteTextAttachment]] = [:]
     private let placeholderLabel = UILabel()
     private var pendingRetokenize = false
+    private var placeholderLeading: NSLayoutConstraint!
+    private var placeholderTop: NSLayoutConstraint!
     private var pendingRedraw = false
 
     init(images: ImageLoading) {
@@ -50,10 +52,12 @@ final class EmoteTextView: UITextView, UITextViewDelegate {
         placeholderLabel.isAccessibilityElement = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(placeholderLabel)
+        placeholderLeading = placeholderLabel.leadingAnchor.constraint(equalTo: frameLayoutGuide.leadingAnchor, constant: ChatMetrics.fieldTextInsets.left)
+        placeholderTop = placeholderLabel.topAnchor.constraint(equalTo: frameLayoutGuide.topAnchor, constant: ChatMetrics.fieldTextInsets.top)
         NSLayoutConstraint.activate([
-            placeholderLabel.leadingAnchor.constraint(equalTo: frameLayoutGuide.leadingAnchor, constant: ChatMetrics.fieldTextInsets.left),
+            placeholderLeading,
             placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: frameLayoutGuide.trailingAnchor, constant: -ChatMetrics.fieldTextInsets.right),
-            placeholderLabel.topAnchor.constraint(equalTo: frameLayoutGuide.topAnchor, constant: ChatMetrics.fieldTextInsets.top)
+            placeholderTop
         ])
     }
 
@@ -63,6 +67,13 @@ final class EmoteTextView: UITextView, UITextViewDelegate {
     /// Body text a little larger than chat's, following Dynamic Type up to a size the bar can still hold.
     static var composerFont: UIFont {
         UIFontMetrics(forTextStyle: .body).scaledFont(for: .systemFont(ofSize: 16), maximumPointSize: 24)
+    }
+
+    /// Moves the text and the placeholder together, for the composer's bar and floating looks.
+    func setTextInsets(_ insets: UIEdgeInsets) {
+        textContainerInset = insets
+        placeholderLeading.constant = insets.left
+        placeholderTop.constant = insets.top
     }
 
     var placeholder: String = "" {

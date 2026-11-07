@@ -44,6 +44,7 @@ final class ChatViewController: UIViewController {
     /// Told when what the folded composer shows changed: the placeholder, an unsent draft, or signing in.
     var onComposerSummaryChanged: (() -> Void)?
     private var composerOpen = false
+    private var floatingGeometry: (inset: CGFloat, height: CGFloat) = (20, 48)
     private var dockedBottom: NSLayoutConstraint?
     private var foldedBottom: NSLayoutConstraint?
     private let animator = EmoteAnimator.shared
@@ -178,6 +179,11 @@ final class ChatViewController: UIViewController {
         guard let row = pick else { return }
         canModerate = canModerate || ScreenshotHarness.moderates
         presentUserCard(for: row.message.author, message: row.message)
+    }
+
+    /// Taps a composer button through hit-testing, for checking it responds.
+    func tapComposerForTesting(_ control: String) -> Bool {
+        composer.tapForTesting(control)
     }
 
     /// Types a draft and starts a reply to the newest message, for a screenshot of the composer at work.
@@ -365,6 +371,7 @@ final class ChatViewController: UIViewController {
         moderationBarHeight = barHeight
 
         view.keyboardLayoutGuide.usesBottomSafeArea = false
+        applyComposerStyle()
         let docked = moderationBar.bottomAnchor.constraint(equalTo: composer.topAnchor)
         dockedBottom = docked
         foldedBottom = moderationBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
@@ -398,7 +405,26 @@ final class ChatViewController: UIViewController {
         guard dock != composerDock else { return }
         composerDock = dock
         guard isViewLoaded else { return }
+        applyComposerStyle()
         applyComposerPlacement(animated: false)
+    }
+
+    /// The folded composer's side inset and height in this chat's coordinates, so the open composer floats as the same
+    /// capsule.
+    func setFloatingComposerGeometry(horizontalInset: CGFloat, height: CGFloat) {
+        let next = (inset: horizontalInset.rounded(), height: height.rounded())
+        guard next != floatingGeometry else { return }
+        floatingGeometry = next
+        guard isViewLoaded else { return }
+        applyComposerStyle()
+    }
+
+    private func applyComposerStyle() {
+        guard canCompose else { return }
+        switch composerDock {
+        case .inline: composer.setStyle(.bar)
+        case .tabAccessory: composer.setStyle(.floating(horizontalInset: floatingGeometry.inset, height: floatingGeometry.height))
+        }
     }
 
     /// Opens the composer above the keyboard, on the emote keyboard when asked; signed out it asks to log in instead.
@@ -870,6 +896,7 @@ extension ChatViewController: ChatInputViewDelegate {
                 input.sendFailed(Self.describe(error))
                 MidgarLog.notice("Chat send failed: \(error)", category: .chat)
             }
+            self.onComposerSummaryChanged?()
         }
     }
 

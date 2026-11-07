@@ -25,7 +25,10 @@ final class ChatsViewController: UIViewController {
     private var controllers: [String: ChatViewController] = [:]
     private lazy var composerAccessoryView: ChatComposerAccessoryView = {
         let accessory = ChatComposerAccessoryView()
-        accessory.onCompose = { [weak self] emotes in self?.frontChat?.focusComposer(emotes: emotes) }
+        accessory.onCompose = { [weak self] emotes in
+            self?.syncFloatingComposer()
+            self?.frontChat?.focusComposer(emotes: emotes)
+        }
         return accessory
     }()
     private var composerAccessory: AnyObject?
@@ -129,6 +132,16 @@ final class ChatsViewController: UIViewController {
         }
     }
 
+    /// Hands the folded composer's frame to the chat in front, so its open composer floats in the same place and
+    /// shape.
+    private func syncFloatingComposer() {
+        guard let chat = frontChat, chat.isViewLoaded, composerAccessoryView.window != nil else { return }
+        let frame = composerAccessoryView.convert(composerAccessoryView.bounds, to: chat.view)
+        guard frame.width > 0, frame.height > 0 else { return }
+        let inset = max(0, min(frame.minX, chat.view.bounds.width - frame.maxX))
+        chat.setFloatingComposerGeometry(horizontalInset: inset, height: frame.height)
+    }
+
     private func refreshComposerAccessory() {
         guard let chat = frontChat else { return }
         composerAccessoryView.show(placeholder: chat.composerPlaceholder, draft: chat.composerDraft, canCompose: chat.canCompose)
@@ -136,6 +149,7 @@ final class ChatsViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        syncFloatingComposer()
         let fits = columnCapacity
         if fits != lastCapacity {
             lastCapacity = fits
@@ -415,6 +429,23 @@ final class ChatsViewController: UIViewController {
         case "mentions": presentMentions()
         case "compose": frontChat?.focusComposer()
         case "emotes": frontChat?.focusComposer(emotes: true)
+        case "typing", "multiline", "reply", "auto", "emotetap", "sendtap":
+            frontChat?.focusComposer()
+            let drafts = [
+                "typing": "gg that was clean",
+                "multiline": "that last fight was unreal, the timing on the parry and then the swap into the shield build right before the boss phase change",
+                "auto": "that was so cozy",
+                "sendtap": "see you all tomorrow",
+            ]
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                guard let chat = self?.frontChat else { return }
+                chat.composeForScreenshot(draft: drafts[sheet], reply: sheet == "reply")
+                guard sheet == "emotetap" || sheet == "sendtap" else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    let tapped = chat.tapComposerForTesting(sheet == "sendtap" ? "send" : "emote")
+                    MidgarLog.info("chats: composer \(sheet) reached its button: \(tapped)", category: .chat)
+                }
+            }
         case "tap":
             let tapped = composerAccessoryView.tapFieldForTesting()
             MidgarLog.info("chats: folded composer tap reached the field: \(tapped)", category: .chat)
@@ -507,6 +538,16 @@ extension ChatsViewController: UICollectionViewDelegate {
 }
 
 extension ChatsViewController: ChatViewControllerDelegate {
+    /// While the chat in front writes above the keyboard, the folded copy in the tab bar steps aside, so a hardware
+    /// keyboard, which leaves the tab bar on screen, never shows two composers.
+    func chatViewController(_ controller: ChatViewController, isComposing: Bool) {
+        guard controller === frontChat else { return }
+        composerAccessoryView.isUserInteractionEnabled = !isComposing
+        UIView.animate(withDuration: 0.2) {
+            self.composerAccessoryView.alpha = isComposing ? 0 : 1
+        }
+    }
+
     func chatViewController(_ controller: ChatViewController, didTapUsername user: ChatUser) {
         present(ProfileSheetViewController(login: user.login, navigator: navigationController), animated: true)
     }
