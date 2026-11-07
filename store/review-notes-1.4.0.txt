@@ -14,7 +14,6 @@ NO LOGIN is needed for browsing, search, watching, reading live chat and VOD cha
 WHAT'S NEW IN 1.4.0
 
 1) FOUNDING SUPPORTER (in-app purchase com.guitaripod.embr.supporter, non-consumable): Settings > Become a Founding Supporter. A one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven app icons, and a flame badge in the buyer's chosen color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying: the screen and its chat preview change as you tap. It unlocks no content and no features; watching, chat and everything else stay free. Restore Purchase is on the same screen. Bought while logged in with Twitch, the badge shows beside your name in chat within seconds; bought logged out, it shows after Log In with Twitch.
-2) iCLOUD FAVORITES: starred channels sync between iPhone, iPad and Apple TV through the person's own iCloud.
-3) APPLE TV: the same app now runs on Apple TV as a universal purchase (separate tvOS version with its own notes).
+2) iCLOUD FAVORITES: starred channels sync between the person's iPhone and iPad through their own iCloud.
 
 The app supports iPhone and iPad: on iPad, video and chat sit side by side in wide windows and stack in narrow ones.
