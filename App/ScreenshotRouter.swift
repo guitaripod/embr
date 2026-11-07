@@ -185,9 +185,13 @@ enum ScreenshotRouter {
             }
         case "chats":
             let logins = option("Chats")?.split(separator: ",").map(String.init) ?? ["lumenfox", "pixelpilgrim", "northerncrane"]
-            ChatsModel.shared.seedForScreenshots(logins.compactMap { login in
-                DemoWorld.channel(login: login).map { ChatsModel.Entry(id: $0.id, login: $0.login, name: $0.name) }
-            })
+            if DemoWorld.isActive {
+                ChatsModel.shared.seedForScreenshots(logins.compactMap { login in
+                    DemoWorld.channel(login: login).map { ChatsModel.Entry(id: $0.id, login: $0.login, name: $0.name) }
+                })
+            } else {
+                Task { await seedLiveChats(count: Int(option("ChatCount") ?? "") ?? 3) }
+            }
             tabBar.select(.chats)
             if let sheet = option("Sheet") {
                 after(8.0) {
@@ -239,6 +243,12 @@ enum ScreenshotRouter {
                 MidgarLog.notice("screenshot rotation refused: \(error.localizedDescription)", category: .app)
             }
         }
+    }
+
+    /// Opens the chats of the busiest live channels in memory only, to try several real chats on one connection.
+    private static func seedLiveChats(count: Int) async {
+        let streams = (try? await AppContainer.shared.api.topStreams(after: nil, first: count).items) ?? []
+        ChatsModel.shared.seedForScreenshots(streams.map { ChatsModel.Entry(id: $0.userID, login: $0.userLogin, name: $0.userName) })
     }
 
     /// Stars the given channels in memory only, resolving their ids live.
