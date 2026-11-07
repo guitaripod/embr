@@ -224,6 +224,12 @@ enum ScreenshotRouter {
             ]
             ScreenshotHarness.channelPose = poses[route] ?? .normal
             openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
+            if let seconds = option("TurnBack").flatMap(Double.init) {
+                let turn = option("TurnAt").flatMap(Double.init) ?? 4
+                requestLandscape(from: tabBar, after: turn)
+                requestPortrait(from: tabBar, after: turn + seconds)
+                after(turn + seconds + 2) { snapshotWindow(of: tabBar, named: "turnback") }
+            }
         default: break
         }
     }
@@ -237,9 +243,19 @@ enum ScreenshotRouter {
         return nil
     }
 
+    /// Opens a channel by login; `top` opens the busiest live Just Chatting channel, or the busiest of any.
     private static func openChannel(_ login: String?, deepLinks: DeepLinkRouter, tabBar: RootTabBarController) {
-        guard let login, let url = URL(string: "embr://channel/\(login)") else { return }
-        Task { await deepLinks.handle(url, from: tabBar) }
+        guard let login else { return }
+        Task {
+            var target = login
+            if login == "top" {
+                let streams = (try? await AppContainer.shared.api.topStreams(after: nil, first: 40).items) ?? []
+                guard let pick = streams.first(where: { $0.gameName == "Just Chatting" }) ?? streams.first else { return }
+                target = pick.userLogin
+            }
+            guard let url = URL(string: "embr://channel/\(target)") else { return }
+            await deepLinks.handle(url, from: tabBar)
+        }
     }
 
     private static func after(_ seconds: Double, _ work: @escaping @MainActor () -> Void) {
@@ -254,6 +270,28 @@ enum ScreenshotRouter {
             guard let scene = tabBar?.view.window?.windowScene else { return }
             OrientationCoordinator.phoneMask = [.portrait, .landscapeLeft, .landscapeRight]
             OrientationCoordinator.rotate(scene, to: .landscapeRight) { error in
+                MidgarLog.notice("screenshot rotation refused: \(error.localizedDescription)", category: .app)
+            }
+        }
+    }
+
+    /// Draws the window into Library/Logs/<name>.png, where `devicectl ... copy from` reaches it on a phone that no
+    /// screenshot tool can.
+    private static func snapshotWindow(of tabBar: RootTabBarController, named name: String) {
+        guard let window = tabBar.view.window,
+              let logs = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?.appending(path: "Logs") else { return }
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        try? image.pngData()?.write(to: logs.appending(path: "\(name).png"))
+        MidgarLog.info("snapshot \(name): \(window.bounds.size)", category: .app)
+    }
+
+    /// Turns the window back upright, for checking what a trip to landscape leaves behind.
+    static func requestPortrait(from tabBar: RootTabBarController, after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak tabBar] in
+            guard let scene = tabBar?.view.window?.windowScene else { return }
+            OrientationCoordinator.rotate(scene, to: .portrait) { error in
                 MidgarLog.notice("screenshot rotation refused: \(error.localizedDescription)", category: .app)
             }
         }
