@@ -1,9 +1,75 @@
 import UIKit
 import MidgarKit
 
-/// The Support and About pages' actions: tips, sharing the app and its logs, the source code and support email. Each
-/// presents from the page the row was tapped on, which is the one on screen.
+/// The Support and About pages and their actions: tips, sharing the app and its logs, the source code and support email.
+/// Each action presents from the page the row was tapped on, which is the one on screen.
 extension SettingsViewController {
+    func supportSections() -> [SettingsSection] {
+        let tipsFooter = TipJarStore.shared.hasTipped
+            ? String(localized: "Thank you for supporting Embr. Tips unlock nothing — every feature is free for everyone.")
+            : String(localized: "Embr is free and independent. Tips unlock nothing; they just help keep the app going.")
+        return [
+            SettingsSection(id: "support.tips", header: String(localized: "Tips"), footer: tipsFooter, items: tipItems()),
+            SettingsSection(id: "support.share", items: [
+                SettingsItem(id: "rateApp", title: String(localized: "Rate Embr"), kind: .action(role: .accent) { _, _ in
+                    UIApplication.shared.open(AppStoreLinks.writeReview)
+                }),
+                SettingsItem(id: "shareApp", title: String(localized: "Share Embr"), kind: .action(role: .accent) { [weak self] presenter, source in
+                    self?.shareApp(from: presenter, source: source)
+                }),
+            ]),
+            SettingsSection(id: "support.help", header: String(localized: "Help"), items: [
+                SettingsItem(id: "contactSupport", title: String(localized: "Contact Support"), keywords: [String(localized: "Email")], kind: .action(role: .accent) { [weak self] presenter, _ in
+                    self?.openSupportEmail(from: presenter)
+                }),
+                SettingsItem(id: "shareLogs", title: String(localized: "Share Diagnostic Logs"), kind: .action(role: .accent) { [weak self] presenter, source in
+                    self?.shareLogs(from: presenter, source: source)
+                }),
+            ]),
+        ]
+    }
+
+    /// One row per tip once the App Store has answered, or a single status row while it is loading or unreachable.
+    private func tipItems() -> [SettingsItem] {
+        var ids: [String] = []
+        #if DEBUG
+        if ScreenshotHarness.previewTips { ids = TipJarStore.productIDs }
+        #endif
+        let tips = TipJarStore.shared
+        if ids.isEmpty, tips.state == .loaded { ids = tips.products.map(\.id) }
+        guard ids.isEmpty else {
+            return ids.map { id in
+                let (name, price) = tipLabels(for: id)
+                return SettingsItem(id: "tip.\(id)", title: name, keywords: [String(localized: "Tip")], kind: .price(price) { [weak self] presenter, _ in
+                    self?.leaveTip(id, from: presenter)
+                })
+            }
+        }
+        if tips.state == .unavailable {
+            return [SettingsItem(id: "tips.status", title: String(localized: "Tips Unavailable"), subtitle: String(localized: "Couldn't reach the App Store. Tap to try again."), kind: .action(role: .normal) { _, _ in
+                TipJarStore.shared.retry()
+            })]
+        }
+        return [SettingsItem(id: "tips.status", title: String(localized: "Loading Tips…"), kind: .loading)]
+    }
+
+    func aboutSections() -> [SettingsSection] {
+        [
+            SettingsSection(id: "about.app", footer: String(localized: "Embr is an independent, open-source Twitch client. Not affiliated with Twitch."), items: [
+                SettingsItem(id: "version", title: String(localized: "Version"), kind: .value(Self.versionString)),
+                SettingsItem(id: "github", title: String(localized: "GitHub"), keywords: [String(localized: "Source Code")], kind: .link(value: nil) { [weak self] presenter in
+                    self?.openGitHub(from: presenter)
+                }),
+                SettingsItem(id: "termsOfUse", title: String(localized: "Terms of Use"), kind: .link(value: nil) { [weak self] presenter in
+                    self?.push(LegalViewController(title: LegalText.termsTitle, body: LegalText.terms), from: presenter)
+                }),
+                SettingsItem(id: "privacyPolicy", title: String(localized: "Privacy Policy"), kind: .link(value: nil) { [weak self] presenter in
+                    self?.push(LegalViewController(title: LegalText.privacyTitle, body: LegalText.privacy), from: presenter)
+                }),
+            ]),
+        ]
+    }
+
     /// The App Store's own localized name and price for a tip. The DEBUG screenshot preview
     /// substitutes fixed US-priced rows because a simulator launched by `simctl` has no
     /// StoreKit configuration to answer from.
