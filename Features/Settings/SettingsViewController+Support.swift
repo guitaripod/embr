@@ -1,8 +1,8 @@
 import UIKit
-import SafariServices
 import MidgarKit
 
-/// The About and Support section's actions: tips, sharing the app and its logs, the source code and support email.
+/// The Support and About pages' actions: tips, sharing the app and its logs, the source code and support email. Each
+/// presents from the page the row was tapped on, which is the one on screen.
 extension SettingsViewController {
     /// The App Store's own localized name and price for a tip. The DEBUG screenshot preview
     /// substitutes fixed US-priced rows because a simulator launched by `simctl` has no
@@ -28,54 +28,46 @@ extension SettingsViewController {
         MidgarVersionInfo().display
     }
 
-    func openGitHub() {
+    func openGitHub(from presenter: UIViewController) {
         guard let url = URL(string: "https://github.com/guitaripod/embr") else { return }
-        if store.current.openLinksInApp {
-            let safari = SFSafariViewController(url: url)
-            safari.preferredControlTintColor = Theme.accent
-            present(safari, animated: true)
-        } else {
-            UIApplication.shared.open(url)
-        }
+        presenter.openWebLink(url)
     }
 
-    func shareLogs(from sourceView: UIView?) {
+    func shareLogs(from presenter: UIViewController, source sourceView: UIView?) {
         let urls = MidgarLog.logFileURLs
         guard !urls.isEmpty else {
             let alert = UIAlertController(title: String(localized: "No Logs Yet"), message: String(localized: "Diagnostic logs will appear here after you use the app."), preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
-            present(alert, animated: true)
+            presenter.present(alert, animated: true)
             return
         }
-        let activity = UIActivityViewController(activityItems: urls, applicationActivities: nil)
-        if let popover = activity.popoverPresentationController {
-            popover.sourceView = sourceView ?? view
-            popover.sourceRect = (sourceView ?? view).bounds
-        }
-        present(activity, animated: true)
+        present(UIActivityViewController(activityItems: urls, applicationActivities: nil), from: presenter, source: sourceView)
     }
 
-    func shareApp(from sourceView: UIView?) {
-        let activity = UIActivityViewController(activityItems: AppStoreLinks.shareItems, applicationActivities: nil)
-        if let popover = activity.popoverPresentationController {
-            popover.sourceView = sourceView ?? view
-            popover.sourceRect = (sourceView ?? view).bounds
-        }
-        present(activity, animated: true)
+    func shareApp(from presenter: UIViewController, source sourceView: UIView?) {
+        present(UIActivityViewController(activityItems: AppStoreLinks.shareItems, applicationActivities: nil), from: presenter, source: sourceView)
     }
 
-    func leaveTip(_ id: String) {
+    private func present(_ activity: UIActivityViewController, from presenter: UIViewController, source sourceView: UIView?) {
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = sourceView ?? presenter.view
+            popover.sourceRect = (sourceView ?? presenter.view).bounds
+        }
+        presenter.present(activity, animated: true)
+    }
+
+    func leaveTip(_ id: String, from presenter: UIViewController) {
         guard let product = TipJarStore.shared.product(id: id) else { return }
-        collectionView.isUserInteractionEnabled = false
-        Task { [weak self] in
-            let outcome = await TipJarStore.shared.purchase(product, in: self?.view.window?.windowScene)
-            guard let self else { return }
-            self.collectionView.isUserInteractionEnabled = true
-            self.presentTipOutcome(outcome)
+        presenter.view.isUserInteractionEnabled = false
+        Task { [weak self, weak presenter] in
+            let outcome = await TipJarStore.shared.purchase(product, in: presenter?.view.window?.windowScene)
+            guard let self, let presenter else { return }
+            presenter.view.isUserInteractionEnabled = true
+            self.presentTipOutcome(outcome, from: presenter)
         }
     }
 
-    private func presentTipOutcome(_ outcome: TipJarStore.Outcome) {
+    private func presentTipOutcome(_ outcome: TipJarStore.Outcome, from presenter: UIViewController) {
         let title: String
         let message: String
         switch outcome {
@@ -95,26 +87,26 @@ extension SettingsViewController {
         }
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
-        present(alert, animated: true)
+        presenter.present(alert, animated: true)
     }
 
-    func openSupportEmail() {
+    func openSupportEmail(from presenter: UIViewController) {
         let subject = String(localized: "Embr Support (\(Self.versionString))")
         var components = URLComponents()
         components.scheme = "mailto"
         components.path = LegalText.supportEmail
         components.queryItems = [URLQueryItem(name: "subject", value: subject)]
         guard let url = components.url else {
-            presentSupportFallback()
+            presentSupportFallback(from: presenter)
             return
         }
-        UIApplication.shared.open(url) { [weak self] success in
-            guard !success else { return }
-            self?.presentSupportFallback()
+        UIApplication.shared.open(url) { [weak self, weak presenter] success in
+            guard !success, let presenter else { return }
+            self?.presentSupportFallback(from: presenter)
         }
     }
 
-    private func presentSupportFallback() {
+    private func presentSupportFallback(from presenter: UIViewController) {
         UIPasteboard.general.string = LegalText.supportEmail
         let alert = UIAlertController(
             title: String(localized: "Contact Support"),
@@ -122,6 +114,6 @@ extension SettingsViewController {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
-        present(alert, animated: true)
+        presenter.present(alert, animated: true)
     }
 }

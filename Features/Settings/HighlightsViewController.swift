@@ -36,7 +36,7 @@ final class HighlightsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.background
+        view.backgroundColor = Theme.groupedBackground
         navigationItem.largeTitleDisplayMode = .never
         setUpCollectionView()
         setUpDataSource()
@@ -45,7 +45,7 @@ final class HighlightsViewController: UIViewController {
 
     private func setUpCollectionView() {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        config.backgroundColor = Theme.background
+        config.backgroundColor = Theme.groupedBackground
         config.headerMode = .supplementary
         config.footerMode = .supplementary
         config.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
@@ -60,7 +60,7 @@ final class HighlightsViewController: UIViewController {
             }
         }
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: StreamListLayout.readableList(using: config))
-        collectionView.backgroundColor = Theme.background
+        collectionView.backgroundColor = Theme.groupedBackground
         collectionView.delegate = self
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(collectionView)

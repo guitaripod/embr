@@ -51,7 +51,10 @@ final class SliderRowView: UIView, UIContentView {
         titleLabel.font = .preferredFont(forTextStyle: .body)
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = Theme.primaryText
+        titleLabel.numberOfLines = 0
+        titleLabel.isAccessibilityElement = false
 
+        valueLabel.isAccessibilityElement = false
         valueLabel.font = .preferredFont(forTextStyle: .subheadline)
         valueLabel.adjustsFontForContentSizeCategory = true
         valueLabel.textColor = Theme.secondaryText
@@ -89,6 +92,7 @@ final class SliderRowView: UIView, UIContentView {
 
     private func apply(_ config: SliderRowConfiguration) {
         iconView.image = config.icon
+        iconView.isHidden = config.icon == nil
         titleLabel.text = config.title
         slider.minimumValue = Float(config.range.lowerBound)
         slider.maximumValue = Float(config.range.upperBound)
@@ -104,10 +108,13 @@ final class SliderRowView: UIView, UIContentView {
         return min(max(stepped, current.range.lowerBound), current.range.upperBound)
     }
 
+    /// Shows the value as the thumb moves and saves it once the finger lifts; a change with no finger on the slider,
+    /// as VoiceOver and Switch Control make, is saved at once.
     @objc private func sliderChanged() {
         let formatted = current.format(snappedValue())
         valueLabel.text = formatted
         slider.accessibilityValue = formatted
+        if !slider.isTracking { sliderCommitted() }
     }
 
     @objc private func sliderCommitted() {
@@ -167,9 +174,9 @@ final class StepperRowView: UIView, UIContentView {
         titleLabel.font = .preferredFont(forTextStyle: .body)
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.textColor = Theme.primaryText
-        titleLabel.numberOfLines = 1
+        titleLabel.numberOfLines = 0
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.isAccessibilityElement = false
 
         valueLabel.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: .monospacedDigitSystemFont(ofSize: 17, weight: .semibold))
         valueLabel.adjustsFontForContentSizeCategory = true
@@ -222,6 +229,7 @@ final class StepperRowView: UIView, UIContentView {
 
     private func apply(_ config: StepperRowConfiguration) {
         iconView.image = config.icon
+        iconView.isHidden = config.icon == nil
         titleLabel.text = config.title
         valueLabel.text = config.format(liveValue)
         minusButton.accessibilityLabel = String(localized: "Decrease \(config.title)")

@@ -22,10 +22,38 @@ enum Theme {
         return themed
     }
 
+    /// Behind a grouped list's rows: the system's grouped gray, so white rows stand out in light mode as in Settings,
+    /// or the theme's page color when a supporter picked a theme.
+    static let groupedBackground = UIColor { traits in
+        #if os(iOS)
+        if traits.supporterTheme == .standard {
+            return UIColor.systemGroupedBackground.resolvedColor(with: traits)
+        }
+        #endif
+        return traits.supporterTheme.palette(dark: traits.userInterfaceStyle == .dark).background.resolvedColor(with: traits)
+    }
+
     /// A grouped list row's background in the theme's colors.
     static func groupedRowBackground() -> UIBackgroundConfiguration {
         var background = UIBackgroundConfiguration.listCell()
         background.backgroundColor = groupedRow
+        return background
+    }
+
+    /// A pressed or selected grouped list row: the system's own gray, or the theme's raised card color.
+    static let groupedRowPressed = UIColor { traits in
+        #if os(iOS)
+        if traits.supporterTheme == .standard {
+            return UIColor.systemGray4.resolvedColor(with: traits)
+        }
+        #endif
+        return traits.supporterTheme.palette(dark: traits.userInterfaceStyle == .dark).surfaceElevated.resolvedColor(with: traits)
+    }
+
+    /// A grouped list row's background for its state, darkening while it is pressed or selected as Settings' rows do.
+    static func groupedRowBackground(for state: UICellConfigurationState) -> UIBackgroundConfiguration {
+        var background = groupedRowBackground()
+        if state.isHighlighted || state.isSelected { background.backgroundColor = groupedRowPressed }
         return background
     }
 

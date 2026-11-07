@@ -95,7 +95,14 @@ enum ScreenshotRouter {
             tabBar.selectedNavigationController?.pushViewController(
                 TopViewController(mode: .game(category), api: AppContainer.shared.api), animated: false)
         case "search": tabBar.select(.search)
-        case "settings": tabBar.select(.settings)
+        case "settings":
+            tabBar.select(.settings)
+            if let page = option("SettingsPage") {
+                after(0.6) {
+                    let settings = tabBar.settingsNavigationController.viewControllers.first as? SettingsViewController
+                    settings?.showPageForScreenshot(page, query: ScreenshotHarness.searchQuery)
+                }
+            }
         case "support":
             ScreenshotHarness.previewTips = true
             tabBar.select(.settings)

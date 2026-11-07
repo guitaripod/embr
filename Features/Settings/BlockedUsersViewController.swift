@@ -19,7 +19,7 @@ final class BlockedUsersViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.background
+        view.backgroundColor = Theme.groupedBackground
         navigationItem.largeTitleDisplayMode = .never
         setUpCollectionView()
         setUpEmptyLabel()
@@ -33,7 +33,7 @@ final class BlockedUsersViewController: UIViewController {
 
     private func setUpCollectionView() {
         var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        config.backgroundColor = Theme.background
+        config.backgroundColor = Theme.groupedBackground
         config.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
             guard let self, let userID = self.dataSource.itemIdentifier(for: indexPath) else { return nil }
             let unblock = UIContextualAction(style: .destructive, title: String(localized: "Unblock")) { [weak self] _, _, completion in
@@ -44,7 +44,7 @@ final class BlockedUsersViewController: UIViewController {
         }
         let layout = StreamListLayout.readableList(using: config)
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = Theme.background
+        collectionView.backgroundColor = Theme.groupedBackground
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([

@@ -1,574 +1,298 @@
 import UIKit
 import Combine
-import AuthenticationServices
-import SafariServices
 import EmbrCore
 import MidgarKit
 
+/// Embr's settings, laid out as the system Settings app: the Twitch account card on top, Founding Supporter, then one
+/// row per area opening its own page, a search across every setting, and the More Apps card at the bottom.
 @MainActor
-final class SettingsViewController: UIViewController {
-    private enum Section: Int, CaseIterable {
-        case midgar
-        case general
-        case home
-        case chat
-        case safety
-        case video
-        case account
-        case support
-        case about
-
-        var title: String {
-            switch self {
-            case .midgar: return ""
-            case .general: return String(localized: "General")
-            case .home: return String(localized: "Home")
-            case .chat: return String(localized: "Chat")
-            case .safety: return String(localized: "Safety & Moderation")
-            case .video: return String(localized: "Video")
-            case .account: return String(localized: "Account")
-            case .support: return String(localized: "Support Embr")
-            case .about: return String(localized: "About")
-            }
-        }
-    }
-
-    private enum Row: Hashable {
-        case midgarEntry
-
-        case theme
-        case openLinksInApp
-        case haptics
-
-        case showRecentlyWatched
-        case favoritesOnlyTop
-        case startTab
-        case clearWatchHistory
-
-        case showTimestamps
-        case compactChat
-        case messageScale
-        case fontSizeDelta
-        case highlights
-        case recentMessagesBackfill
-        case animateEmotes
-        case supporterNameEffects
-        case thirdPartyEmotes(EmoteProvider)
-
-        case filterObjectionableContent
-        case mutedKeywords
-        case blockedUsers
-        case moderatorTools
-
-        case autoplay
-        case backgroundAudio
-        case chatDelaySeconds
-        case autoSyncChatDelay
-        case keepScreenAwake
-
-        case accountStatus
-        case accountAction
-        case deleteAccount
-
-        case supporter
-        case rateApp
-        case shareApp
-        case tip(String)
-        case tipsStatus
-
-        case version
-        case github
-        case termsOfUse
-        case privacyPolicy
-        case contactSupport
-        case shareLogs
-    }
-
+final class SettingsViewController: SettingsPageViewController {
     let store: SettingsStore
     private let auth: AuthService
-    private(set) var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Section, Row>!
-    private var cancellables = Set<AnyCancellable>()
+    private let refresh: PassthroughSubject<Void, Never>
+    private let pageChanges: AnyPublisher<Void, Never>
     private var authState: AuthState = .anonymous
-
-    private let thirdPartyProviders: [EmoteProvider] = [.sevenTV, .betterTTV, .frankerFaceZ]
+    private var avatar: UIImage?
+    private var avatarUserID: String?
+    private var enablingModeratorTools = false
+    private var observers = Set<AnyCancellable>()
 
     init(store: SettingsStore = .shared, auth: AuthService = .shared) {
         self.store = store
         self.auth = auth
-        super.init(nibName: nil, bundle: nil)
-        title = String(localized: "Settings")
+        let refresh = PassthroughSubject<Void, Never>()
+        self.refresh = refresh
+        let changes = store.changes.map { _ in () }
+            .merge(with: refresh, TipJarStore.shared.changes, SupporterStore.shared.changes)
+            .eraseToAnyPublisher()
+        self.pageChanges = changes
+        super.init(title: String(localized: "Settings"), changes: changes) { page in
+            (page as? SettingsViewController)?.rootSections() ?? []
+        }
+        navigationItem.largeTitleDisplayMode = .always
         tabBarItem = UITabBarItem(
             title: String(localized: "Settings"),
             image: UIImage(systemName: "gearshape"),
             selectedImage: UIImage(systemName: "gearshape.fill")
         )
+        searchEntries = { [weak self] in self?.allSearchEntries() ?? [] }
     }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.background
-        configureCollectionView()
-        configureDataSource()
-        bind()
-        applySnapshot()
-    }
-
-    private func configureCollectionView() {
-        var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        config.headerMode = .supplementary
-        config.footerMode = .supplementary
-        let layout = StreamListLayout.readableList { section in
-            section == Section.midgar.rawValue ? Self.entryListConfiguration() : config
-        }
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = Theme.background
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.delegate = self
-        view.addSubview(collectionView)
-        NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-    }
-
-    /// The portal card sits alone above every section, so its list has no header, footer,
-    /// separator or grouped background of its own.
-    private static func entryListConfiguration() -> UICollectionLayoutListConfiguration {
-        var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        config.headerMode = .none
-        config.footerMode = .none
-        config.showsSeparators = false
-        config.backgroundColor = .clear
-        return config
-    }
-
-    private func configureDataSource() {
-        let cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Row> { [weak self] cell, _, row in
-            self?.configure(cell, for: row)
-        }
-        let entryRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Row> { cell, _, _ in
-            cell.backgroundConfiguration = .clear()
-            guard !cell.contentView.subviews.contains(where: { $0 is MidgarEntryView }) else { return }
-            MidgarEntryView(config: EmbrMidgar.shared.portalConfig).embed(in: cell.contentView, verticalInset: 8)
-        }
-        dataSource = UICollectionViewDiffableDataSource<Section, Row>(collectionView: collectionView) { collectionView, indexPath, row in
-            let registration = row == .midgarEntry ? entryRegistration : cellRegistration
-            return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: row)
-        }
-
-        let headerRegistration = UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
-            elementKind: UICollectionView.elementKindSectionHeader
-        ) { header, _, indexPath in
-            guard let section = Section(rawValue: indexPath.section) else { return }
-            var content = UIListContentConfiguration.header()
-            content.text = section.title
-            header.contentConfiguration = content
-        }
-        let footerRegistration = UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
-            elementKind: UICollectionView.elementKindSectionFooter
-        ) { footer, _, indexPath in
-            guard let section = Section(rawValue: indexPath.section), let text = Self.footerText(for: section) else {
-                footer.contentConfiguration = nil
-                return
-            }
-            var content = UIListContentConfiguration.footer()
-            content.text = text
-            footer.contentConfiguration = content
-        }
-        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            let registration = kind == UICollectionView.elementKindSectionFooter ? footerRegistration : headerRegistration
-            return collectionView.dequeueConfiguredReusableSupplementary(using: registration, for: indexPath)
-        }
-    }
-
-    private static func footerText(for section: Section) -> String? {
-        switch section {
-        case .midgar: return nil
-        case .general: return String(localized: "Appearance, link handling, and haptic feedback across the app.")
-        case .home: return String(localized: "Choose where Embr opens, what the Top tab shows, and what it remembers.")
-        case .chat: return String(localized: "Readability, message size, and which emote sets load in chat.")
-        case .safety: return String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review.")
-        case .video: return String(localized: "Stream quality, autoplay, and how chat stays in sync with the video.")
-        case .account: return String(localized: "Sign in with Twitch to follow channels and join chat.")
-        case .support:
-            return TipJarStore.shared.hasTipped
-                ? String(localized: "Thank you for supporting Embr. Tips unlock nothing — every feature is free for everyone.")
-                : String(localized: "Embr is free and independent. Tips unlock nothing; they just help keep the app going.")
-        case .about: return String(localized: "Embr is an independent, open-source Twitch client. Not affiliated with Twitch.")
-        }
-    }
-
-    private func bind() {
-        store.changes
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.reconfigureVisibleRows()
-            }
-            .store(in: &cancellables)
-
         auth.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                self?.authState = state
-                self?.reconfigureAccountRows()
+                guard let self else { return }
+                self.authState = state
+                self.loadAvatar()
+                self.refresh.send()
             }
-            .store(in: &cancellables)
-
-        TipJarStore.shared.changes
-            .merge(with: SupporterStore.shared.changes)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.reloadSupportSection()
-            }
-            .store(in: &cancellables)
+            .store(in: &observers)
         TipJarStore.shared.loadProducts()
     }
 
-    private func applySnapshot() {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Row>()
-        snapshot.appendSections(Section.allCases)
-        snapshot.appendItems([.midgarEntry], toSection: .midgar)
-        snapshot.appendItems([.theme, .openLinksInApp, .haptics], toSection: .general)
-        snapshot.appendItems([.showRecentlyWatched, .favoritesOnlyTop, .startTab, .clearWatchHistory], toSection: .home)
-        snapshot.appendItems(
-            [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
-             .highlights, .recentMessagesBackfill, .animateEmotes, .supporterNameEffects]
-            + thirdPartyProviders.map(Row.thirdPartyEmotes),
-            toSection: .chat
-        )
-        snapshot.appendItems([.filterObjectionableContent, .mutedKeywords, .blockedUsers, .moderatorTools], toSection: .safety)
-        snapshot.appendItems(
-            [.autoplay, .backgroundAudio, .chatDelaySeconds, .autoSyncChatDelay, .keepScreenAwake],
-            toSection: .video
-        )
-        snapshot.appendItems(accountRows(), toSection: .account)
-        snapshot.appendItems(supportRows(), toSection: .support)
-        snapshot.appendItems([.version, .github, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs], toSection: .about)
-        dataSource.apply(snapshot, animatingDifferences: false)
-    }
-
-    /// Rate and Share always; then one row per tip once the App Store has answered, or a
-    /// single status row while it is loading or unreachable.
-    private func supportRows() -> [Row] {
-        var rows: [Row] = [.supporter, .rateApp, .shareApp]
-        #if DEBUG
-        if ScreenshotHarness.previewTips {
-            return rows + TipJarStore.productIDs.map(Row.tip)
-        }
-        #endif
-        let store = TipJarStore.shared
-        if store.state == .loaded {
-            rows += store.products.map { Row.tip($0.id) }
-        } else {
-            rows.append(.tipsStatus)
-        }
-        return rows
-    }
-
-    private func reloadSupportSection() {
-        var snapshot = dataSource.snapshot()
-        snapshot.deleteItems(snapshot.itemIdentifiers(inSection: .support))
-        snapshot.appendItems(supportRows(), toSection: .support)
-        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .support))
-        snapshot.reloadSections([.support])
-        dataSource.apply(snapshot, animatingDifferences: false)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadAvatar()
     }
 
     #if DEBUG
     func showSupportForScreenshot() {
-        applySnapshot()
-        guard let section = dataSource.snapshot().indexOfSection(.support) else { return }
-        collectionView.scrollToItem(at: IndexPath(item: 0, section: section), at: .centeredVertically, animated: false)
+        navigationController?.pushViewController(makePage(Page.support), animated: false)
+    }
+
+    /// Opens one page for a screenshot, by its name in `Page`, or searches the root for `query`.
+    func showPageForScreenshot(_ name: String, query: String?) {
+        if let page = Page.allCases.first(where: { "\($0)" == name }) {
+            navigationController?.pushViewController(makePage(page), animated: false)
+        } else if let query, let search = navigationItem.searchController {
+            search.isActive = true
+            search.searchBar.text = query
+        }
     }
     #endif
 
-    /// Turns Moderator Tools on or off. Turning it on first asks Twitch for the moderator scopes when the viewer has
-    /// not granted them, and leaves it off if they decline.
-    private func setModeratorTools(_ on: Bool) {
-        guard on else {
-            store.update { $0.moderatorTools = false }
-            Task { await EventSubChatHub.shared.refreshModeration() }
-            return
+    /// The areas with a page of their own, in the order they appear.
+    private enum Page: CaseIterable {
+        case general, home, chat, video, safety, support, about, account
+
+        var title: String {
+            switch self {
+            case .general: String(localized: "General")
+            case .home: String(localized: "Home")
+            case .chat: String(localized: "Chat")
+            case .video: String(localized: "Video")
+            case .safety: String(localized: "Safety & Moderation")
+            case .support: String(localized: "Support Embr")
+            case .about: String(localized: "About")
+            case .account: String(localized: "Account")
+            }
         }
-        Task { [weak self] in
+
+        var icon: SettingsIcon {
+            switch self {
+            case .general: SettingsIcon(symbol: "gearshape.fill", color: .systemGray)
+            case .home: SettingsIcon(symbol: "house.fill", color: .systemBlue)
+            case .chat: SettingsIcon(symbol: "bubble.left.and.bubble.right.fill", color: .systemPurple)
+            case .video: SettingsIcon(symbol: "play.rectangle.fill", color: .systemRed)
+            case .safety: SettingsIcon(symbol: "hand.raised.fill", color: .systemIndigo)
+            case .support: SettingsIcon(symbol: "heart.fill", color: .systemPink)
+            case .about: SettingsIcon(symbol: "info.circle.fill", color: .systemGray)
+            case .account: SettingsIcon(symbol: "person.crop.circle.fill", color: .systemPurple)
+            }
+        }
+    }
+
+    private func sections(for page: Page) -> [SettingsSection] {
+        switch page {
+        case .general: generalSections()
+        case .home: homeSections()
+        case .chat: chatSections()
+        case .video: videoSections()
+        case .safety: safetySections()
+        case .support: supportSections()
+        case .about: aboutSections()
+        case .account: accountSections()
+        }
+    }
+
+    private func makePage(_ page: Page) -> SettingsPageViewController {
+        let controller = SettingsPageViewController(title: page.title, changes: pageChanges) { [weak self] _ in
+            self?.sections(for: page) ?? []
+        }
+        controller.navigationItem.largeTitleDisplayMode = .never
+        return controller
+    }
+
+    private func pageLink(_ page: Page, value: String? = nil) -> SettingsItem {
+        SettingsItem(id: "page.\(page)", title: page.title, icon: page.icon, kind: .link(value: value) { [weak self] presenter in
             guard let self else { return }
-            let user = await self.auth.currentUser()
-            if user?.hasModeratorScopes != true {
-                guard let anchor = self.view.window else { return }
-                do {
-                    _ = try await self.auth.login(presentationAnchor: anchor, moderator: true)
-                } catch {
-                    MidgarLog.notice("moderator sign-in failed: \(error)", category: .auth)
-                    self.reconfigureVisibleRows()
-                    return
-                }
-            }
-            await ModerationAccess.shared.forget()
-            self.store.update { $0.moderatorTools = true }
-            Haptics.notify(.success)
-            await EventSubChatHub.shared.refreshModeration()
+            presenter.navigationController?.pushViewController(self.makePage(page), animated: true)
+        })
+    }
+
+    private func push(_ controller: UIViewController, from presenter: UIViewController) {
+        presenter.navigationController?.pushViewController(controller, animated: true)
+    }
+
+    private func rootSections() -> [SettingsSection] {
+        [
+            SettingsSection(id: "root.account", items: [accountCard()]),
+            SettingsSection(id: "root.more", items: [moreAppsCard()]),
+            SettingsSection(id: "root.supporter", items: [supporterItem()]),
+            SettingsSection(id: "root.app", items: [pageLink(.general), pageLink(.home), pageLink(.chat), pageLink(.video)]),
+            SettingsSection(id: "root.safety", items: [pageLink(.safety)]),
+            SettingsSection(id: "root.embr", items: [pageLink(.support), pageLink(.about)]),
+        ]
+    }
+
+    private func accountCard() -> SettingsItem {
+        switch authState {
+        case let .authenticated(user):
+            return SettingsItem(id: "account.card", title: user.displayName, keywords: [String(localized: "Account"), "Twitch"], kind: .profile(
+                name: user.displayName,
+                detail: String(localized: "Twitch Account · @\(user.login)"),
+                avatar: avatar
+            ) { [weak self] presenter in
+                guard let self else { return }
+                self.push(self.makePage(.account), from: presenter)
+            })
+        case .anonymous:
+            return SettingsItem(id: "account.card", title: String(localized: "Log In with Twitch"), keywords: [String(localized: "Account"), "Twitch"], kind: .profile(
+                name: String(localized: "Log In with Twitch"),
+                detail: String(localized: "Follow channels, join chat and get live alerts."),
+                avatar: nil
+            ) { [weak self] presenter in
+                self?.login(from: presenter)
+            })
         }
     }
 
-    private func reconfigureVisibleRows() {
-        var snapshot = dataSource.snapshot()
-        snapshot.reconfigureItems(snapshot.itemIdentifiers)
-        dataSource.apply(snapshot, animatingDifferences: false)
+    private func supporterItem() -> SettingsItem {
+        let supporter = SupporterStore.shared
+        let title = supporter.isSupporter
+            ? supporter.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
+            : String(localized: "Become a Founding Supporter")
+        let subtitle = supporter.isSupporter
+            ? String(localized: "Your themes, icons, chat font and badge.")
+            : String(localized: "Themes, app icons, chat fonts and a badge everyone sees.")
+        return SettingsItem(
+            id: "supporter", title: title, subtitle: subtitle,
+            icon: SettingsIcon(symbol: "flame.fill", color: .systemOrange),
+            keywords: [String(localized: "Themes"), String(localized: "App Icon")],
+            kind: .link(value: nil) { [weak self] presenter in
+                self?.push(SupporterViewController(), from: presenter)
+            }
+        )
     }
 
-    private func reconfigureAccountRows() {
-        var snapshot = dataSource.snapshot()
-        snapshot.deleteItems(snapshot.itemIdentifiers(inSection: .account))
-        snapshot.appendItems(accountRows(), toSection: .account)
-        snapshot.reconfigureItems([.accountStatus, .accountAction])
-        dataSource.apply(snapshot, animatingDifferences: false)
+    private func moreAppsCard() -> SettingsItem {
+        SettingsItem(id: "moreApps", title: String(localized: "More Apps"), kind: .custom {
+            let container = UIView()
+            MidgarEntryView(config: EmbrMidgar.shared.portalConfig).embed(in: container, verticalInset: 8)
+            return container
+        })
     }
 
-    private func configure(_ cell: UICollectionViewListCell, for row: Row) {
-        cell.backgroundConfiguration = Theme.groupedRowBackground()
-        var content = cell.defaultContentConfiguration()
+    private func generalSections() -> [SettingsSection] {
         let settings = store.current
-        let tile = Self.iconImage(for: row)
-        content.image = tile
-        content.imageProperties.maximumSize = CGSize(width: 29, height: 29)
-        content.imageProperties.reservedLayoutSize = CGSize(width: 29, height: 29)
-        content.imageToTextPadding = 12
+        let themes: [(String, Settings.ThemePreference)] = [
+            (String(localized: "System"), .system), (String(localized: "Light"), .light), (String(localized: "Dark"), .dark),
+        ]
+        return [
+            SettingsSection(id: "general.look", items: [
+                SettingsItem(id: "theme", title: String(localized: "Theme"), keywords: [String(localized: "Dark"), String(localized: "Light")], kind: .menu(
+                    value: themes.first { $0.1 == settings.theme }?.0 ?? "",
+                    choices: themes.map { title, theme in
+                        SettingsChoice(title: title, isSelected: theme == settings.theme) { [weak self] in self?.store.update { $0.theme = theme } }
+                    }
+                )),
+            ]),
+            SettingsSection(id: "general.behavior", footer: String(localized: "Web links open inside Embr, or in your browser when this is off."), items: [
+                toggle("openLinksInApp", String(localized: "Open Links In App"), settings.openLinksInApp, keywords: ["Safari"]) { $0.openLinksInApp = $1 },
+                toggle("haptics", String(localized: "Haptics"), settings.hapticsEnabled, keywords: [String(localized: "Vibration")]) { $0.hapticsEnabled = $1 },
+            ]),
+        ]
+    }
 
-        switch row {
-        case .midgarEntry:
-            break
-        case .theme:
-            content.text = String(localized: "Theme")
-            cell.contentConfiguration = content
-            cell.accessories = [.customView(configuration: .init(customView: themeButton(selected: settings.theme), placement: .trailing()))]
-
-        case .openLinksInApp:
-            switchRow(cell, &content, title: String(localized: "Open Links In App"), isOn: settings.openLinksInApp) { store, on in
-                store.update { $0.openLinksInApp = on }
-            }
-        case .haptics:
-            switchRow(cell, &content, title: String(localized: "Haptics"), isOn: settings.hapticsEnabled) { store, on in
-                store.update { $0.hapticsEnabled = on }
-            }
-
-        case .showRecentlyWatched:
-            switchRow(cell, &content, title: String(localized: "Show Recently Watched"), isOn: settings.showsRecentlyWatchedEnabled) { store, on in
-                store.update { $0.showsRecentlyWatched = on }
-            }
-        case .favoritesOnlyTop:
-            switchRow(cell, &content, title: String(localized: "Only Favorites in Top"), isOn: settings.favoritesOnlyTopEnabled) { store, on in
-                store.update { $0.favoritesOnlyTop = on }
-            }
-        case .startTab:
-            content.text = String(localized: "Open Embr On")
-            cell.contentConfiguration = content
-            cell.accessories = [.customView(configuration: .init(customView: startTabButton(selected: settings.startTabPreference), placement: .trailing()))]
-        case .clearWatchHistory:
-            content.text = String(localized: "Clear Recently Watched")
-            content.textProperties.color = .systemRed
-            cell.contentConfiguration = content
-            cell.accessories = []
-
-        case .showTimestamps:
-            switchRow(cell, &content, title: String(localized: "Show Timestamps"), isOn: settings.showTimestamps) { store, on in
-                store.update { $0.showTimestamps = on }
-            }
-        case .compactChat:
-            switchRow(cell, &content, title: String(localized: "Compact Chat"), isOn: settings.compactChat) { store, on in
-                store.update { $0.compactChat = on }
-            }
-        case .supporterNameEffects:
-            switchRow(cell, &content, title: String(localized: "Supporter Name Colors"), isOn: settings.supporterNameEffectsEnabled) { store, on in
-                store.update { $0.supporterNameEffects = on }
-            }
-        case .messageScale:
-            sliderRow(
-                cell, icon: tile,
-                title: String(localized: "Message Scale"),
-                value: settings.messageScale, range: 0.75...1.5, step: 0.05,
-                format: { String(format: "%.2fx", $0) }
-            ) { store, value in
-                store.update { $0.messageScale = value }
-            }
-        case .fontSizeDelta:
-            stepperRow(
-                cell, icon: tile,
-                title: String(localized: "Font Size Adjustment"),
-                value: Double(settings.fontSizeDelta), range: -4...8, step: 1,
-                format: { $0 >= 0 ? "+\(Int($0))" : "\(Int($0))" }
-            ) { store, value in
-                store.update { $0.fontSizeDelta = Int(value.rounded()) }
-            }
-        case .highlights:
-            content.text = String(localized: "Highlights")
-            content.secondaryText = Self.highlightSummary(settings)
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .recentMessagesBackfill:
-            switchRow(cell, &content, title: String(localized: "Backfill Recent Messages"), isOn: settings.recentMessagesBackfill) { store, on in
-                store.update { $0.recentMessagesBackfill = on }
-            }
-        case .animateEmotes:
-            switchRow(cell, &content, title: String(localized: "Animate Emotes"), isOn: settings.animateEmotes) { store, on in
-                store.update { $0.animateEmotes = on }
-            }
-        case let .thirdPartyEmotes(provider):
-            switchRow(cell, &content, title: String(localized: "\(provider.displayName) Emotes"), isOn: settings.thirdPartyEmotesEnabled(provider)) { store, on in
-                store.update { $0.showThirdPartyEmotes[provider] = on }
-            }
-        case .filterObjectionableContent:
-            switchRow(cell, &content, title: String(localized: "Filter Objectionable Content"), isOn: settings.objectionableFilterEnabled) { store, on in
-                store.update { $0.filterObjectionableContent = on }
-            }
-        case .mutedKeywords:
-            content.text = String(localized: "Muted Keywords")
-            let count = settings.mutedKeywordList.count
-            content.secondaryText = count == 0 ? String(localized: "None") : (count == 1 ? String(localized: "1 word") : String(localized: "\(count) words"))
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .blockedUsers:
-            content.text = String(localized: "Blocked Users")
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .moderatorTools:
-            content.secondaryText = String(localized: "AutoMod's held messages, unban requests and the moderation log in the channels you moderate.")
-            content.secondaryTextProperties.color = Theme.secondaryText
-            switchRow(cell, &content, title: String(localized: "Moderator Tools"), isOn: settings.moderatorToolsEnabled) { [weak self] _, on in
-                self?.setModeratorTools(on)
-            }
-
-        case .autoplay:
-            switchRow(cell, &content, title: String(localized: "Autoplay"), isOn: settings.autoplay) { store, on in
-                store.update { $0.autoplay = on }
-            }
-        case .backgroundAudio:
-            switchRow(cell, &content, title: String(localized: "Background Audio"), isOn: settings.backgroundAudio ?? true) { store, on in
-                store.update { $0.backgroundAudio = on }
-            }
-        case .chatDelaySeconds:
-            sliderRow(
-                cell, icon: tile,
-                title: String(localized: "Chat Delay"),
-                value: settings.chatDelaySeconds, range: 0...10, step: 0.5,
-                format: { String(format: "%.1fs", $0) }
-            ) { store, value in
-                store.update { $0.chatDelaySeconds = value }
-            }
-        case .autoSyncChatDelay:
-            switchRow(cell, &content, title: String(localized: "Auto-Sync Chat Delay"), isOn: settings.autoSyncChatDelay) { store, on in
-                store.update { $0.autoSyncChatDelay = on }
-            }
-        case .keepScreenAwake:
-            switchRow(cell, &content, title: String(localized: "Keep Screen Awake"), isOn: settings.keepScreenAwake) { store, on in
-                store.update { $0.keepScreenAwake = on }
-            }
-
-        case .accountStatus:
-            switch authState {
-            case let .authenticated(user):
-                content.text = user.displayName
-                content.secondaryText = "@\(user.login)"
-            case .anonymous:
-                content.text = String(localized: "Not Logged In")
-                content.secondaryText = String(localized: "Browsing anonymously")
-            }
-            cell.contentConfiguration = content
-            cell.accessories = []
-        case .accountAction:
-            switch authState {
-            case .authenticated:
-                content.text = String(localized: "Log Out")
-                content.textProperties.color = .systemRed
-            case .anonymous:
-                content.text = String(localized: "Log In with Twitch")
-                content.textProperties.color = Theme.accent
-            }
-            cell.contentConfiguration = content
-            cell.accessories = []
-
-        case .deleteAccount:
-            content.text = String(localized: "Delete Account")
-            content.textProperties.color = .systemRed
-            cell.contentConfiguration = content
-            cell.accessories = []
-
-        case .supporter:
-            let supporter = SupporterStore.shared
-            if supporter.isSupporter {
-                content.text = supporter.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
-                content.secondaryText = String(localized: "Your themes, icons, chat font and badge.")
-            } else {
-                content.text = String(localized: "Become a Founding Supporter")
-                content.secondaryText = String(localized: "Themes, app icons, chat fonts and a badge everyone sees.")
-            }
-            content.secondaryTextProperties.color = .secondaryLabel
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .rateApp:
-            content.text = String(localized: "Rate Embr")
-            content.textProperties.color = Theme.accent
-            cell.contentConfiguration = content
-            cell.accessories = []
-        case .shareApp:
-            content.text = String(localized: "Share Embr")
-            content.textProperties.color = Theme.accent
-            cell.contentConfiguration = content
-            cell.accessories = []
-        case let .tip(id):
-            let (name, price) = tipLabels(for: id)
-            content.text = name
-            cell.contentConfiguration = content
-            cell.accessories = price.map { [.label(text: $0, options: .init(tintColor: Theme.accent, font: .preferredFont(forTextStyle: .body)))] } ?? []
-        case .tipsStatus:
-            switch TipJarStore.shared.state {
-            case .unavailable:
-                content.text = String(localized: "Tips Unavailable")
-                content.secondaryText = String(localized: "Couldn't reach the App Store. Tap to try again.")
-                cell.accessories = []
-            case .idle, .loading, .loaded:
-                content.text = String(localized: "Loading Tips…")
-                let spinner = UIActivityIndicatorView(style: .medium)
-                spinner.startAnimating()
-                cell.accessories = [.customView(configuration: .init(customView: spinner, placement: .trailing()))]
-            }
-            content.textProperties.color = Theme.secondaryText
-            cell.contentConfiguration = content
-
-        case .version:
-            content.text = String(localized: "Version")
-            content.secondaryText = Self.versionString
-            cell.contentConfiguration = content
-            cell.accessories = []
-        case .github:
-            content.text = String(localized: "GitHub")
-            content.textProperties.color = Theme.link
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .termsOfUse:
-            content.text = String(localized: "Terms of Use")
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .privacyPolicy:
-            content.text = String(localized: "Privacy Policy")
-            cell.contentConfiguration = content
-            cell.accessories = [.disclosureIndicator()]
-        case .contactSupport:
-            content.text = String(localized: "Contact Support")
-            content.textProperties.color = Theme.accent
-            cell.contentConfiguration = content
-            cell.accessories = []
-        case .shareLogs:
-            content.text = String(localized: "Share Diagnostic Logs")
-            content.textProperties.color = Theme.accent
-            cell.contentConfiguration = content
-            cell.accessories = []
+    private static func title(for tab: Settings.StartTab) -> String {
+        switch tab {
+        case .following: String(localized: "Following")
+        case .favorites: String(localized: "Favorites")
+        case .top: String(localized: "Top")
         }
+    }
+
+    /// A switch row that writes one setting.
+    private func toggle(_ id: String, _ title: String, _ isOn: Bool, keywords: [String] = [], set: @escaping (inout Settings, Bool) -> Void) -> SettingsItem {
+        SettingsItem(id: id, title: title, keywords: keywords, kind: .toggle(isOn: isOn) { [weak self] on in
+            self?.store.update { set(&$0, on) }
+        })
+    }
+
+    private func homeSections() -> [SettingsSection] {
+        let settings = store.current
+        return [
+            SettingsSection(id: "home.lists", footer: String(localized: "Choose where Embr opens, what the Top tab shows, and what it remembers."), items: [
+                SettingsItem(id: "startTab", title: String(localized: "Open Embr On"), kind: .menu(
+                    value: Self.title(for: settings.startTabPreference),
+                    choices: Settings.StartTab.allCases.map { tab in
+                        SettingsChoice(title: Self.title(for: tab), isSelected: tab == settings.startTabPreference) { [weak self] in self?.store.update { $0.startTab = tab } }
+                    }
+                )),
+                toggle("showRecentlyWatched", String(localized: "Show Recently Watched"), settings.showsRecentlyWatchedEnabled) { $0.showsRecentlyWatched = $1 },
+                toggle("favoritesOnlyTop", String(localized: "Only Favorites in Top"), settings.favoritesOnlyTopEnabled) { $0.favoritesOnlyTop = $1 },
+            ]),
+            SettingsSection(id: "home.history", items: [
+                SettingsItem(id: "clearWatchHistory", title: String(localized: "Clear Recently Watched"), kind: .action(role: .destructive) { [weak self] presenter, _ in
+                    self?.confirmClearWatchHistory(from: presenter)
+                }),
+            ]),
+        ]
+    }
+
+    private func confirmClearWatchHistory(from presenter: UIViewController) {
+        let alert = UIAlertController(
+            title: String(localized: "Clear Recently Watched?"),
+            message: String(localized: "This removes every channel from Recently Watched. Your favorites are not affected."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Clear"), style: .destructive) { _ in
+            WatchHistoryStore.shared.clear()
+            Haptics.notify(.success)
+        })
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        presenter.present(alert, animated: true)
+    }
+
+    private func chatSections() -> [SettingsSection] {
+        let settings = store.current
+        let providers: [EmoteProvider] = [.sevenTV, .betterTTV, .frankerFaceZ]
+        return [
+            SettingsSection(id: "chat.text", header: String(localized: "Text"), items: [
+                SettingsItem(id: "messageScale", title: String(localized: "Message Scale"), keywords: [String(localized: "Size")], kind: .slider(
+                    value: settings.messageScale, range: 0.75...1.5, step: 0.05, format: { String(format: "%.2fx", $0) }
+                ) { [weak self] value in self?.store.update { $0.messageScale = value } }),
+                SettingsItem(id: "fontSizeDelta", title: String(localized: "Font Size Adjustment"), keywords: [String(localized: "Size")], kind: .stepper(
+                    value: Double(settings.fontSizeDelta), range: -4...8, step: 1, format: { $0 >= 0 ? "+\(Int($0))" : "\(Int($0))" }
+                ) { [weak self] value in self?.store.update { $0.fontSizeDelta = Int(value.rounded()) } }),
+            ]),
+            SettingsSection(id: "chat.messages", header: String(localized: "Messages"), footer: String(localized: "Backfill shows the messages sent just before you joined, loaded from recent-messages.robotty.de."), items: [
+                toggle("showTimestamps", String(localized: "Show Timestamps"), settings.showTimestamps) { $0.showTimestamps = $1 },
+                toggle("compactChat", String(localized: "Compact Chat"), settings.compactChat) { $0.compactChat = $1 },
+                toggle("recentMessagesBackfill", String(localized: "Backfill Recent Messages"), settings.recentMessagesBackfill) { $0.recentMessagesBackfill = $1 },
+                toggle("supporterNameEffects", String(localized: "Supporter Name Colors"), settings.supporterNameEffectsEnabled) { $0.supporterNameEffects = $1 },
+                SettingsItem(id: "highlights", title: String(localized: "Highlights"), keywords: [String(localized: "Mentions")], kind: .link(value: Self.highlightSummary(settings)) { [weak self] presenter in
+                    self?.push(HighlightsViewController(), from: presenter)
+                }),
+            ]),
+            SettingsSection(id: "chat.emotes", header: String(localized: "Emotes"), items: [
+                toggle("animateEmotes", String(localized: "Animate Emotes"), settings.animateEmotes) { $0.animateEmotes = $1 },
+            ] + providers.map { provider in
+                toggle("emotes.\(provider.displayName)", String(localized: "\(provider.displayName) Emotes"), settings.thirdPartyEmotesEnabled(provider)) { $0.showThirdPartyEmotes[provider] = $1 }
+            }),
+        ]
     }
 
     /// The Highlights row's value: how many words and people stand out besides mentions, or Off when nothing does.
@@ -578,338 +302,301 @@ final class SettingsViewController: UIViewController {
         return settings.highlightMentions ? String(localized: "Mentions") : String(localized: "Off")
     }
 
-    private func switchRow(
-        _ cell: UICollectionViewListCell,
-        _ content: inout UIListContentConfiguration,
-        title: String,
-        isOn: Bool,
-        action: @escaping (SettingsStore, Bool) -> Void
-    ) {
-        content.text = title
-        cell.contentConfiguration = content
-        let toggle = UISwitch()
-        toggle.isOn = isOn
-        toggle.onTintColor = Theme.accent
-        toggle.accessibilityLabel = title
-        toggle.addAction(UIAction { [weak self] act in
-            guard let self, let sw = act.sender as? UISwitch else { return }
-            action(self.store, sw.isOn)
-        }, for: .valueChanged)
-        cell.accessories = [.customView(configuration: .init(customView: toggle, placement: .trailing()))]
+    private func videoSections() -> [SettingsSection] {
+        let settings = store.current
+        return [
+            SettingsSection(id: "video.playback", footer: String(localized: "Background Audio keeps a stream playing when you leave Embr or lock your iPhone."), items: [
+                toggle("backgroundAudio", String(localized: "Background Audio"), settings.backgroundAudio ?? true) { $0.backgroundAudio = $1 },
+                toggle("keepScreenAwake", String(localized: "Keep Screen Awake"), settings.keepScreenAwake) { $0.keepScreenAwake = $1 },
+            ]),
+        ]
     }
 
-    private func sliderRow(
-        _ cell: UICollectionViewListCell,
-        icon: UIImage,
-        title: String,
-        value: Double,
-        range: ClosedRange<Double>,
-        step: Double,
-        format: @escaping (Double) -> String,
-        action: @escaping (SettingsStore, Double) -> Void
-    ) {
-        cell.accessories = []
-        cell.contentConfiguration = SliderRowConfiguration(
-            icon: icon,
-            title: title,
-            value: value,
-            range: range,
-            step: step,
-            format: format,
-            commit: { [weak self] snapped in
-                guard let self else { return }
-                action(self.store, snapped)
-            }
-        )
+    private func safetySections() -> [SettingsSection] {
+        let settings = store.current
+        let muted = settings.mutedKeywordList.count
+        return [
+            SettingsSection(id: "safety.filter", footer: String(localized: "Hide objectionable messages, mute specific words, and manage users you've blocked. Blocked and reported users are hidden instantly and sent to the developer for review."), items: [
+                toggle("filterObjectionableContent", String(localized: "Filter Objectionable Content"), settings.objectionableFilterEnabled) { $0.filterObjectionableContent = $1 },
+                SettingsItem(id: "mutedKeywords", title: String(localized: "Muted Keywords"), kind: .link(
+                    value: muted == 0 ? String(localized: "None") : (muted == 1 ? String(localized: "1 word") : String(localized: "\(muted) words"))
+                ) { [weak self] presenter in self?.push(MutedKeywordsViewController(), from: presenter) }),
+                SettingsItem(id: "blockedUsers", title: String(localized: "Blocked Users"), kind: .link(value: nil) { [weak self] presenter in
+                    self?.push(BlockedUsersViewController(), from: presenter)
+                }),
+            ]),
+            SettingsSection(id: "safety.moderation", header: String(localized: "Moderation"), footer: String(localized: "AutoMod's held messages, unban requests and the moderation log in the channels you moderate."), items: [
+                SettingsItem(id: "moderatorTools", title: String(localized: "Moderator Tools"), keywords: ["AutoMod"], kind: .toggle(isOn: settings.moderatorToolsEnabled || enablingModeratorTools) { [weak self] on in
+                    self?.setModeratorTools(on)
+                }),
+            ]),
+        ]
     }
 
-    private func stepperRow(
-        _ cell: UICollectionViewListCell,
-        icon: UIImage,
-        title: String,
-        value: Double,
-        range: ClosedRange<Double>,
-        step: Double,
-        format: @escaping (Double) -> String,
-        action: @escaping (SettingsStore, Double) -> Void
-    ) {
-        cell.accessories = []
-        cell.contentConfiguration = StepperRowConfiguration(
-            icon: icon,
-            title: title,
-            value: value,
-            range: range,
-            step: step,
-            format: format,
-            commit: { [weak self] value in
-                guard let self else { return }
-                action(self.store, value)
-            }
-        )
-    }
-
-    private func themeButton(selected: Settings.ThemePreference) -> UIButton {
-        let options: [(String, Settings.ThemePreference)] = [(String(localized: "System"), .system), (String(localized: "Light"), .light), (String(localized: "Dark"), .dark)]
-        var configuration = UIButton.Configuration.plain()
-        configuration.baseForegroundColor = Theme.secondaryText
-        let button = UIButton(configuration: configuration)
-        button.menu = UIMenu(children: options.map { title, preference in
-            UIAction(title: title, state: preference == selected ? .on : .off) { [weak self] _ in
-                self?.store.update { $0.theme = preference }
-            }
-        })
-        button.showsMenuAsPrimaryAction = true
-        button.changesSelectionAsPrimaryAction = true
-        return button
-    }
-
-    private static func title(for tab: Settings.StartTab) -> String {
-        switch tab {
-        case .following: return String(localized: "Following")
-        case .favorites: return String(localized: "Favorites")
-        case .top: return String(localized: "Top")
+    /// Turns Moderator Tools on or off. Turning it on first asks Twitch for the moderator scopes when the viewer has
+    /// not granted them, and leaves it off if they decline.
+    private func setModeratorTools(_ on: Bool) {
+        guard on else {
+            enablingModeratorTools = false
+            store.update { $0.moderatorTools = false }
+            refresh.send()
+            Task { await EventSubChatHub.shared.refreshModeration() }
+            return
         }
-    }
-
-    private func startTabButton(selected: Settings.StartTab) -> UIButton {
-        let options: [(String, Settings.StartTab)] = Settings.StartTab.allCases.map { (Self.title(for: $0), $0) }
-        var configuration = UIButton.Configuration.plain()
-        configuration.baseForegroundColor = Theme.secondaryText
-        configuration.title = Self.title(for: selected)
-        configuration.image = UIImage(systemName: "chevron.up.chevron.down")
-        configuration.imagePlacement = .trailing
-        configuration.imagePadding = 6
-        let button = UIButton(configuration: configuration)
-        button.menu = UIMenu(children: options.map { title, tab in
-            UIAction(title: title, state: tab == selected ? .on : .off) { [weak self] _ in
-                self?.store.update { $0.startTab = tab }
-            }
-        })
-        button.showsMenuAsPrimaryAction = true
-        button.changesSelectionAsPrimaryAction = true
-        return button
-    }
-
-    private static func iconImage(for row: Row) -> UIImage {
-        let spec: (String, UIColor)
-        switch row {
-        case .midgarEntry: spec = ("circle.hexagongrid.fill", Theme.accent)
-        case .theme: spec = ("circle.lefthalf.filled", .systemIndigo)
-        case .openLinksInApp: spec = ("safari.fill", .systemBlue)
-        case .haptics: spec = ("hand.tap.fill", .systemPink)
-        case .showRecentlyWatched: spec = ("clock.arrow.circlepath", .systemTeal)
-        case .favoritesOnlyTop: spec = ("star.fill", .systemYellow)
-        case .startTab: spec = ("rectangle.on.rectangle", .systemIndigo)
-        case .clearWatchHistory: spec = ("clock.badge.xmark", .systemRed)
-        case .showTimestamps: spec = ("clock.fill", .systemGray)
-        case .compactChat: spec = ("rectangle.compress.vertical", .systemTeal)
-        case .supporterNameEffects: spec = ("flame.fill", .systemOrange)
-        case .messageScale: spec = ("textformat.size", .systemIndigo)
-        case .fontSizeDelta: spec = ("character.cursor.ibeam", .systemIndigo)
-        case .highlights: spec = ("highlighter", Theme.accent)
-        case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
-        case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
-        case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
-        case .filterObjectionableContent: spec = ("eye.slash.fill", .systemRed)
-        case .mutedKeywords: spec = ("character.bubble.fill", .systemOrange)
-        case .blockedUsers: spec = ("hand.raised.fill", .systemRed)
-        case .moderatorTools: spec = ("shield.lefthalf.filled", .systemGreen)
-        case .autoplay: spec = ("play.fill", .systemGreen)
-        case .backgroundAudio: spec = ("speaker.wave.2.circle.fill", .systemPurple)
-        case .chatDelaySeconds: spec = ("timer", .systemOrange)
-        case .autoSyncChatDelay: spec = ("arrow.triangle.2.circlepath", .systemTeal)
-        case .keepScreenAwake: spec = ("sun.max.fill", .systemYellow)
-        case .accountStatus: spec = ("person.crop.circle.fill", Theme.accent)
-        case .accountAction: spec = ("rectangle.portrait.and.arrow.right", .systemRed)
-        case .deleteAccount: spec = ("person.crop.circle.badge.xmark", .systemRed)
-        case .supporter: spec = ("flame.fill", Theme.accent)
-        case .rateApp: spec = ("star.fill", .systemYellow)
-        case .shareApp: spec = ("square.and.arrow.up.fill", .systemGreen)
-        case let .tip(id): spec = (Self.tipSymbol(for: id), .systemOrange)
-        case .tipsStatus: spec = ("flame.fill", .systemOrange)
-        case .version: spec = ("info.circle.fill", .systemGray)
-        case .github: spec = ("chevron.left.forwardslash.chevron.right", .label)
-        case .termsOfUse: spec = ("doc.text.fill", .systemGray)
-        case .privacyPolicy: spec = ("hand.raised.fill", .systemBlue)
-        case .contactSupport: spec = ("envelope.fill", Theme.accent)
-        case .shareLogs: spec = ("square.and.arrow.up", .systemBlue)
-        }
-        return iconTile(spec.0, spec.1)
-    }
-
-    private static func iconTile(_ symbol: String, _ color: UIColor) -> UIImage {
-        let size = CGSize(width: 29, height: 29)
-        return UIGraphicsImageRenderer(size: size).image { ctx in
-            let rect = CGRect(origin: .zero, size: size)
-            color.setFill()
-            UIBezierPath(roundedRect: rect, cornerRadius: 7).fill()
-            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
-            guard let symbolImage = UIImage(systemName: symbol, withConfiguration: config)?
-                .withTintColor(.white, renderingMode: .alwaysOriginal) else { return }
-            let s = symbolImage.size
-            symbolImage.draw(in: CGRect(x: (size.width - s.width) / 2, y: (size.height - s.height) / 2, width: s.width, height: s.height))
-        }
-    }
-
-    private static func tipSymbol(for id: String) -> String {
-        switch TipJarStore.productIDs.firstIndex(of: id) {
-        case 0: return "flame"
-        case 1: return "flame.fill"
-        default: return "flame.circle.fill"
-        }
-    }
-
-    private func performAccountAction() {
-        switch authState {
-        case .authenticated:
-            confirmLogout()
-        case .anonymous:
-            login()
-        }
-    }
-
-    private func confirmClearWatchHistory() {
-        let alert = UIAlertController(
-            title: String(localized: "Clear Recently Watched?"),
-            message: String(localized: "This removes every channel from Recently Watched. Your favorites are not affected."),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: String(localized: "Clear"), style: .destructive) { _ in
-            WatchHistoryStore.shared.clear()
-        })
-        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        present(alert, animated: true)
-    }
-
-    private func confirmLogout() {
-        let alert = UIAlertController(title: String(localized: "Log Out?"), message: String(localized: "You'll return to browsing as a guest."), preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: String(localized: "Log Out"), style: .destructive) { [weak self] _ in
-            guard let self else { return }
-            Task { await self.auth.logout() }
-        })
-        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
-        }
-        present(alert, animated: true)
-    }
-
-    private func accountRows() -> [Row] {
-        switch authState {
-        case .authenticated: return [.accountStatus, .accountAction, .deleteAccount]
-        case .anonymous: return [.accountStatus, .accountAction]
-        }
-    }
-
-    private func confirmDeleteAccount() {
-        let alert = UIAlertController(
-            title: String(localized: "Delete Account?"),
-            message: String(localized: "This signs you out and revokes Embr's access to your Twitch account. Your favorites, settings, watch history and caches on this device are erased, and Embr returns to first launch. This can't be undone."),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: String(localized: "Delete Account"), style: .destructive) { [weak self] _ in
-            self?.performAccountDeletion()
-        })
-        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        present(alert, animated: true)
-    }
-
-    private func performAccountDeletion() {
-        view.isUserInteractionEnabled = false
+        enablingModeratorTools = true
         Task { [weak self] in
             guard let self else { return }
-            do {
-                try await self.auth.deleteAccount()
-                self.view.isUserInteractionEnabled = true
-                (self.view.window?.windowScene?.delegate as? SceneDelegate)?.restartToFirstRun()
-            } catch {
-                MidgarLog.notice("account deletion failed: \(error)", category: .auth)
-                self.view.isUserInteractionEnabled = true
-                self.presentDeletionFailure()
+            let user = await self.auth.currentUser()
+            guard self.enablingModeratorTools else { return }
+            if user?.hasModeratorScopes != true {
+                do {
+                    guard let anchor = self.navigationController?.view.window ?? self.view.window else { throw CancellationError() }
+                    _ = try await self.auth.login(presentationAnchor: anchor, moderator: true)
+                } catch {
+                    MidgarLog.notice("moderator sign-in failed: \(error)", category: .auth)
+                    self.enablingModeratorTools = false
+                    self.refresh.send()
+                    return
+                }
             }
+            guard self.enablingModeratorTools else { return }
+            await ModerationAccess.shared.forget()
+            guard self.enablingModeratorTools else { return }
+            self.enablingModeratorTools = false
+            self.store.update { $0.moderatorTools = true }
+            Haptics.notify(.success)
+            await EventSubChatHub.shared.refreshModeration()
         }
     }
 
-    private func presentDeletionFailure() {
-        let alert = UIAlertController(
-            title: String(localized: "Couldn't Delete Account"),
-            message: String(localized: "Embr couldn't reach Twitch to revoke its access. Check your connection and try again. Nothing on this device was erased."),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
-        present(alert, animated: true)
+    private func supportSections() -> [SettingsSection] {
+        let tipsFooter = TipJarStore.shared.hasTipped
+            ? String(localized: "Thank you for supporting Embr. Tips unlock nothing — every feature is free for everyone.")
+            : String(localized: "Embr is free and independent. Tips unlock nothing; they just help keep the app going.")
+        return [
+            SettingsSection(id: "support.tips", header: String(localized: "Tips"), footer: tipsFooter, items: tipItems()),
+            SettingsSection(id: "support.share", items: [
+                SettingsItem(id: "rateApp", title: String(localized: "Rate Embr"), kind: .action(role: .accent) { _, _ in
+                    UIApplication.shared.open(AppStoreLinks.writeReview)
+                }),
+                SettingsItem(id: "shareApp", title: String(localized: "Share Embr"), kind: .action(role: .accent) { [weak self] presenter, source in
+                    self?.shareApp(from: presenter, source: source)
+                }),
+            ]),
+            SettingsSection(id: "support.help", header: String(localized: "Help"), items: [
+                SettingsItem(id: "contactSupport", title: String(localized: "Contact Support"), keywords: [String(localized: "Email")], kind: .action(role: .accent) { [weak self] presenter, _ in
+                    self?.openSupportEmail(from: presenter)
+                }),
+                SettingsItem(id: "shareLogs", title: String(localized: "Share Diagnostic Logs"), kind: .action(role: .accent) { [weak self] presenter, source in
+                    self?.shareLogs(from: presenter, source: source)
+                }),
+            ]),
+        ]
     }
 
-    private func login() {
-        guard let anchor = view.window else { return }
+    /// One row per tip once the App Store has answered, or a single status row while it is loading or unreachable.
+    private func tipItems() -> [SettingsItem] {
+        var ids: [String] = []
+        #if DEBUG
+        if ScreenshotHarness.previewTips { ids = TipJarStore.productIDs }
+        #endif
+        let tips = TipJarStore.shared
+        if ids.isEmpty, tips.state == .loaded { ids = tips.products.map(\.id) }
+        guard ids.isEmpty else {
+            return ids.map { id in
+                let (name, price) = tipLabels(for: id)
+                return SettingsItem(id: "tip.\(id)", title: name, keywords: [String(localized: "Tip")], kind: .price(price) { [weak self] presenter, _ in
+                    self?.leaveTip(id, from: presenter)
+                })
+            }
+        }
+        if tips.state == .unavailable {
+            return [SettingsItem(id: "tips.status", title: String(localized: "Tips Unavailable"), subtitle: String(localized: "Couldn't reach the App Store. Tap to try again."), kind: .action(role: .normal) { _, _ in
+                TipJarStore.shared.retry()
+            })]
+        }
+        return [SettingsItem(id: "tips.status", title: String(localized: "Loading Tips…"), kind: .loading)]
+    }
+
+    private func aboutSections() -> [SettingsSection] {
+        [
+            SettingsSection(id: "about.app", footer: String(localized: "Embr is an independent, open-source Twitch client. Not affiliated with Twitch."), items: [
+                SettingsItem(id: "version", title: String(localized: "Version"), kind: .value(Self.versionString)),
+                SettingsItem(id: "github", title: String(localized: "GitHub"), keywords: [String(localized: "Source Code")], kind: .link(value: nil) { [weak self] presenter in
+                    self?.openGitHub(from: presenter)
+                }),
+                SettingsItem(id: "termsOfUse", title: String(localized: "Terms of Use"), kind: .link(value: nil) { [weak self] presenter in
+                    self?.push(LegalViewController(title: LegalText.termsTitle, body: LegalText.terms), from: presenter)
+                }),
+                SettingsItem(id: "privacyPolicy", title: String(localized: "Privacy Policy"), kind: .link(value: nil) { [weak self] presenter in
+                    self?.push(LegalViewController(title: LegalText.privacyTitle, body: LegalText.privacy), from: presenter)
+                }),
+            ]),
+        ]
+    }
+
+    private func accountSections() -> [SettingsSection] {
+        guard case let .authenticated(user) = authState else {
+            return [SettingsSection(id: "account.signedOut", footer: String(localized: "Sign in with Twitch to follow channels and join chat."), items: [
+                SettingsItem(id: "account.login", title: String(localized: "Log In with Twitch"), kind: .action(role: .accent) { [weak self] presenter, _ in
+                    self?.login(from: presenter)
+                }),
+            ])]
+        }
+        return [
+            SettingsSection(id: "account.info", items: [
+                SettingsItem(id: "account.name", title: String(localized: "Name"), kind: .value(user.displayName)),
+                SettingsItem(id: "account.login", title: String(localized: "Username"), kind: .value("@\(user.login)")),
+            ]),
+            SettingsSection(id: "account.session", items: [
+                SettingsItem(id: "account.logout", title: String(localized: "Log Out"), kind: .action(role: .destructive) { [weak self] presenter, source in
+                    self?.confirmLogout(from: presenter, source: source)
+                }),
+            ]),
+            SettingsSection(id: "account.delete", footer: String(localized: "Signs you out, revokes Embr's access to your Twitch account and erases everything Embr keeps on this device."), items: [
+                SettingsItem(id: "account.deleteAccount", title: String(localized: "Delete Account"), kind: .action(role: .destructive) { [weak self] presenter, _ in
+                    self?.confirmDeleteAccount(from: presenter)
+                }),
+            ]),
+        ]
+    }
+
+    /// The account card's picture: the viewer's Twitch avatar, looked up once per signed-in viewer and again on the
+    /// next visit when the lookup failed.
+    private func loadAvatar() {
+        guard case let .authenticated(user) = authState else {
+            avatar = nil
+            avatarUserID = nil
+            return
+        }
+        guard avatarUserID != user.id else { return }
+        avatarUserID = user.id
+        avatar = nil
+        let scale = traitCollection.displayScale
         Task { [weak self] in
+            let url = try? await AppContainer.shared.api.users(ids: [user.id]).first?.profileImageURL
+            let image = if let url { await ImageLoader.shared.avatarImage(for: url, side: 60, scale: scale) } else { UIImage?.none }
+            guard let self, self.avatarUserID == user.id else { return }
+            guard let image else {
+                self.avatarUserID = nil
+                return
+            }
+            self.avatar = image
+            self.refresh.send()
+        }
+    }
+
+    private func login(from presenter: UIViewController) {
+        guard let anchor = presenter.view.window else { return }
+        Task { [weak self, weak presenter] in
             guard let self else { return }
             do {
                 _ = try await self.auth.login(presentationAnchor: anchor)
-                LiveAlertsPrompt.offerAfterSignIn(from: self)
+                guard let presenter else { return }
+                LiveAlertsPrompt.offerAfterSignIn(from: presenter)
             } catch {
                 MidgarLog.notice("login failed: \(error)", category: .auth)
             }
         }
     }
-}
 
-extension SettingsViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
-        switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .accountAction, .deleteAccount, .mutedKeywords, .highlights, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
-             .supporter, .rateApp, .shareApp, .tip, .clearWatchHistory:
-            return true
-        case .tipsStatus:
-            return TipJarStore.shared.state == .unavailable
-        default:
-            return false
+    private func confirmLogout(from presenter: UIViewController, source: UIView?) {
+        let alert = UIAlertController(title: String(localized: "Log Out?"), message: String(localized: "You'll return to browsing as a guest."), preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: String(localized: "Log Out"), style: .destructive) { [weak self, weak presenter] _ in
+            guard let self else { return }
+            Task { await self.auth.logout() }
+            presenter?.navigationController?.popToRootViewController(animated: true)
+        })
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = source ?? presenter.view
+            popover.sourceRect = (source ?? presenter.view).bounds
+        }
+        presenter.present(alert, animated: true)
+    }
+
+    private func confirmDeleteAccount(from presenter: UIViewController) {
+        let alert = UIAlertController(
+            title: String(localized: "Delete Account?"),
+            message: String(localized: "This signs you out and revokes Embr's access to your Twitch account. Your favorites, settings, watch history and caches on this device are erased, and Embr returns to first launch. This can't be undone."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Delete Account"), style: .destructive) { [weak self, weak presenter] _ in
+            guard let presenter else { return }
+            self?.performAccountDeletion(from: presenter)
+        })
+        alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
+        presenter.present(alert, animated: true)
+    }
+
+    /// Deletes the account with Settings held in place, so neither Back nor a swipe can leave the page mid-request,
+    /// then restarts at first launch or explains the failure on whatever Settings shows.
+    private func performAccountDeletion(from presenter: UIViewController) {
+        let window = presenter.view.window
+        let navigation = presenter.navigationController
+        navigation?.view.isUserInteractionEnabled = false
+        navigation?.isModalInPresentation = true
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.auth.deleteAccount()
+                navigation?.view.isUserInteractionEnabled = true
+                navigation?.isModalInPresentation = false
+                (window?.windowScene?.delegate as? SceneDelegate)?.restartToFirstRun()
+            } catch {
+                MidgarLog.notice("account deletion failed: \(error)", category: .auth)
+                navigation?.view.isUserInteractionEnabled = true
+                navigation?.isModalInPresentation = false
+                let host = navigation?.topViewController ?? presenter
+                let alert = UIAlertController(
+                    title: String(localized: "Couldn't Delete Account"),
+                    message: String(localized: "Embr couldn't reach Twitch to revoke its access. Check your connection and try again. Nothing on this device was erased."),
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
+                host.present(alert, animated: true)
+            }
         }
     }
 
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        defer { collectionView.deselectItem(at: indexPath, animated: true) }
-        guard let row = dataSource.itemIdentifier(for: indexPath) else { return }
-        switch row {
-        case .github:
-            openGitHub()
-        case .accountAction:
-            performAccountAction()
-        case .deleteAccount:
-            confirmDeleteAccount()
-        case .clearWatchHistory:
-            confirmClearWatchHistory()
-        case .mutedKeywords:
-            navigationController?.pushViewController(MutedKeywordsViewController(), animated: true)
-        case .highlights:
-            navigationController?.pushViewController(HighlightsViewController(), animated: true)
-        case .blockedUsers:
-            navigationController?.pushViewController(BlockedUsersViewController(), animated: true)
-        case .termsOfUse:
-            navigationController?.pushViewController(
-                LegalViewController(title: LegalText.termsTitle, body: LegalText.terms), animated: true
-            )
-        case .privacyPolicy:
-            navigationController?.pushViewController(
-                LegalViewController(title: LegalText.privacyTitle, body: LegalText.privacy), animated: true
-            )
-        case .contactSupport:
-            openSupportEmail()
-        case .shareLogs:
-            shareLogs(from: collectionView.cellForItem(at: indexPath))
-        case .supporter:
-            navigationController?.pushViewController(SupporterViewController(), animated: true)
-        case .rateApp:
-            UIApplication.shared.open(AppStoreLinks.writeReview)
-        case .shareApp:
-            shareApp(from: collectionView.cellForItem(at: indexPath))
-        case let .tip(id):
-            leaveTip(id)
-        case .tipsStatus:
-            TipJarStore.shared.retry()
-        default:
-            break
+    /// Every setting on every page, each opening its page and flashing its row; the root's own rows open in place.
+    private func allSearchEntries() -> [SearchEntry] {
+        var entries: [SearchEntry] = []
+        for section in rootSections() {
+            for item in section.items where Self.isSearchable(item) {
+                entries.append(SearchEntry(item: item, path: String(localized: "Settings")) { [weak self] presenter in
+                    self?.openRootItem(item, from: presenter)
+                })
+            }
+        }
+        for page in Page.allCases where page != .account || authState != .anonymous {
+            for section in sections(for: page) {
+                for item in section.items where Self.isSearchable(item) {
+                    var shown = item
+                    if shown.icon == nil { shown.icon = page.icon }
+                    entries.append(SearchEntry(item: shown, path: page.title) { [weak self] presenter in
+                        guard let self else { return }
+                        let controller = self.makePage(page)
+                        controller.highlight(item.id)
+                        presenter.navigationController?.pushViewController(controller, animated: true)
+                    })
+                }
+            }
+        }
+        return entries
+    }
+
+    private static func isSearchable(_ item: SettingsItem) -> Bool {
+        switch item.kind {
+        case .custom, .loading: false
+        default: true
+        }
+    }
+
+    private func openRootItem(_ item: SettingsItem, from presenter: UIViewController) {
+        switch item.kind {
+        case .link(_, let open), .profile(_, _, _, let open): open(presenter)
+        default: break
         }
     }
 }
