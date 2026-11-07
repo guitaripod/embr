@@ -43,6 +43,11 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var filterObjectionableContent: Bool?
     var mutedKeywords: [String]?
 
+    var highlightWords: [String]?
+    var highlightUsers: [String]?
+    var highlightSound: Bool?
+    var highlightHaptic: Bool?
+
     var accent: String?
     var palette: String?
     var chatFont: String?
@@ -115,6 +120,27 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var mutedKeywordList: [String] {
         mutedKeywords ?? []
+    }
+
+    var highlightWordList: [String] {
+        highlightWords ?? []
+    }
+
+    var highlightUserList: [String] {
+        highlightUsers ?? []
+    }
+
+    var highlightSoundEnabled: Bool {
+        highlightSound ?? false
+    }
+
+    var highlightHapticEnabled: Bool {
+        highlightHaptic ?? true
+    }
+
+    /// What stands out in chat for the signed-in viewer: mentions of them, their chosen words and their chosen users.
+    func makeHighlighter(login: String?) -> ChatHighlighter {
+        ChatHighlighter(login: login, mentions: highlightMentions, words: highlightWordList, users: highlightUserList)
     }
 
     var tvChatVisibleEnabled: Bool {

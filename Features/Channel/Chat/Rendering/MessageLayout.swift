@@ -28,7 +28,7 @@ struct MessageLayout {
     private let timestampFont: UIFont
     private let emoteScale: EmoteScale
     private let lineSpacing: CGFloat
-    private let currentUserLogin: String?
+    private let highlighter: ChatHighlighter
     private let showsSupporterNameEffects: Bool
     private let preview: Preview?
 
@@ -47,7 +47,7 @@ struct MessageLayout {
         self.showsTimestamps = resolved.chatShowsTimestamps
         self.emoteScale = resolved.chatPreferredEmoteScale
         self.lineSpacing = resolved.chatLineSpacing
-        self.currentUserLogin = currentUserLogin
+        self.highlighter = settings.makeHighlighter(login: currentUserLogin)
         self.showsSupporterNameEffects = preview != nil || resolved.chatShowsSupporterNameEffects
         self.preview = preview
         let typeface = preview?.font ?? resolved.chatMessageFont
@@ -123,7 +123,6 @@ struct MessageLayout {
         let tokens = MessageTokenizer.tokens(for: message, catalog: catalog)
         var emoteTokens: [(emote: Emote, attributedIndex: Int)] = []
         var links: [LaidOutMessage.LinkSpan] = []
-        var mentionsCurrentUser = false
 
         for token in tokens {
             switch token {
@@ -133,9 +132,6 @@ struct MessageLayout {
                     .foregroundColor: bodyColor,
                 ]))
             case .mention(let ref):
-                if let login = currentUserLogin, ref.displayName.lowercased() == login.lowercased() {
-                    mentionsCurrentUser = true
-                }
                 attributed.append(NSAttributedString(string: "@\(ref.displayName)", attributes: [
                     .font: usernameFont,
                     .foregroundColor: Theme.accent,
@@ -158,10 +154,6 @@ struct MessageLayout {
                 emoteTokens.append((emote, index))
                 attributed.append(emotePlaceholder(for: emote))
             }
-        }
-
-        if !mentionsCurrentUser, let login = currentUserLogin {
-            mentionsCurrentUser = message.plainText.lowercased().contains("@" + login.lowercased())
         }
 
         let paragraph = NSMutableParagraphStyle()
@@ -202,7 +194,7 @@ struct MessageLayout {
             textWidth: textWidth,
             replyHeight: replyHeight,
             isHighlighted: isHighlighted,
-            mentionsCurrentUser: mentionsCurrentUser,
+            highlight: highlighter.reason(for: message),
             isAnnouncement: message.notice?.kind == .announcement,
             isCheer: cheerBits > 0
         )

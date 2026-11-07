@@ -28,7 +28,7 @@ struct LaidOutMessage: Sendable {
     let textWidth: CGFloat
     let replyHeight: CGFloat
     let isHighlighted: Bool
-    let mentionsCurrentUser: Bool
+    let highlight: ChatHighlighter.Reason?
     let isAnnouncement: Bool
     let isCheer: Bool
 
@@ -44,7 +44,7 @@ struct LaidOutMessage: Sendable {
         textWidth: CGFloat = 0,
         replyHeight: CGFloat,
         isHighlighted: Bool,
-        mentionsCurrentUser: Bool = false,
+        highlight: ChatHighlighter.Reason? = nil,
         isAnnouncement: Bool = false,
         isCheer: Bool = false
     ) {
@@ -59,7 +59,7 @@ struct LaidOutMessage: Sendable {
         self.textWidth = textWidth
         self.replyHeight = replyHeight
         self.isHighlighted = isHighlighted
-        self.mentionsCurrentUser = mentionsCurrentUser
+        self.highlight = highlight
         self.isAnnouncement = isAnnouncement
         self.isCheer = isCheer
     }

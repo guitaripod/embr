@@ -49,7 +49,7 @@ final class SettingsViewController: UIViewController {
         case compactChat
         case messageScale
         case fontSizeDelta
-        case highlightMentions
+        case highlights
         case recentMessagesBackfill
         case animateEmotes
         case supporterNameEffects
@@ -237,7 +237,7 @@ final class SettingsViewController: UIViewController {
         snapshot.appendItems([.showRecentlyWatched, .favoritesOnlyTop, .startTab, .clearWatchHistory], toSection: .home)
         snapshot.appendItems(
             [.showTimestamps, .compactChat, .messageScale, .fontSizeDelta,
-             .highlightMentions, .recentMessagesBackfill, .animateEmotes, .supporterNameEffects]
+             .highlights, .recentMessagesBackfill, .animateEmotes, .supporterNameEffects]
             + thirdPartyProviders.map(Row.thirdPartyEmotes),
             toSection: .chat
         )
@@ -376,10 +376,11 @@ final class SettingsViewController: UIViewController {
             ) { store, value in
                 store.update { $0.fontSizeDelta = Int(value.rounded()) }
             }
-        case .highlightMentions:
-            switchRow(cell, &content, title: String(localized: "Highlight Mentions"), isOn: settings.highlightMentions) { store, on in
-                store.update { $0.highlightMentions = on }
-            }
+        case .highlights:
+            content.text = String(localized: "Highlights")
+            content.secondaryText = Self.highlightSummary(settings)
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
         case .recentMessagesBackfill:
             switchRow(cell, &content, title: String(localized: "Backfill Recent Messages"), isOn: settings.recentMessagesBackfill) { store, on in
                 store.update { $0.recentMessagesBackfill = on }
@@ -535,6 +536,13 @@ final class SettingsViewController: UIViewController {
         }
     }
 
+    /// The Highlights row's value: how many words and people stand out besides mentions, or Off when nothing does.
+    private static func highlightSummary(_ settings: Settings) -> String {
+        let extra = settings.highlightWordList.count + settings.highlightUserList.count
+        if extra > 0 { return extra.formatted() }
+        return settings.highlightMentions ? String(localized: "Mentions") : String(localized: "Off")
+    }
+
     private func switchRow(
         _ cell: UICollectionViewListCell,
         _ content: inout UIListContentConfiguration,
@@ -663,7 +671,7 @@ final class SettingsViewController: UIViewController {
         case .supporterNameEffects: spec = ("flame.fill", .systemOrange)
         case .messageScale: spec = ("textformat.size", .systemIndigo)
         case .fontSizeDelta: spec = ("character.cursor.ibeam", .systemIndigo)
-        case .highlightMentions: spec = ("at", Theme.accent)
+        case .highlights: spec = ("highlighter", Theme.accent)
         case .recentMessagesBackfill: spec = ("arrow.counterclockwise", .systemTeal)
         case .animateEmotes: spec = ("face.smiling.fill", .systemOrange)
         case .thirdPartyEmotes: spec = ("puzzlepiece.extension.fill", .systemGreen)
@@ -865,7 +873,7 @@ final class SettingsViewController: UIViewController {
 extension SettingsViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
         switch dataSource.itemIdentifier(for: indexPath) {
-        case .github, .accountAction, .deleteAccount, .mutedKeywords, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
+        case .github, .accountAction, .deleteAccount, .mutedKeywords, .highlights, .blockedUsers, .termsOfUse, .privacyPolicy, .contactSupport, .shareLogs,
              .supporter, .rateApp, .shareApp, .tip, .clearWatchHistory:
             return true
         case .tipsStatus:
@@ -889,6 +897,8 @@ extension SettingsViewController: UICollectionViewDelegate {
             confirmClearWatchHistory()
         case .mutedKeywords:
             navigationController?.pushViewController(MutedKeywordsViewController(), animated: true)
+        case .highlights:
+            navigationController?.pushViewController(HighlightsViewController(), animated: true)
         case .blockedUsers:
             navigationController?.pushViewController(BlockedUsersViewController(), animated: true)
         case .termsOfUse:

@@ -1,4 +1,5 @@
 import UIKit
+import AudioToolbox
 import Combine
 import EmbrCore
 import MidgarCore
@@ -43,6 +44,7 @@ final class ChatViewController: UIViewController {
     private var chatterIndex: [String: String] = [:]
     private static let chatterIndexCap = 2000
     private var lastLayoutWidth: CGFloat = 0
+    private var lastHighlightAlert = Date.distantPast
 
     init(
         viewModel: ChatViewModel,
@@ -121,6 +123,18 @@ final class ChatViewController: UIViewController {
     }
 
     #if DEBUG
+    /// Opens the card of whoever wrote the newest message, or of the named chatter, for a screenshot.
+    func presentUserCardForScreenshot(login: String?) {
+        let me = currentUserLogin?.lowercased()
+        let pick = dataSource.snapshot().itemIdentifiers.first { row in
+            let author = row.message.author.login.lowercased()
+            return login.map { author == $0.lowercased() } ?? (author != me)
+        }
+        guard let row = pick else { return }
+        canModerate = canModerate || ScreenshotHarness.moderates
+        presentUserCard(for: row.message.author, message: row.message)
+    }
+
     /// Brings up the system keyboard, or the emote keyboard, for a screenshot of the composer.
     func raiseKeyboardForScreenshot(emotes: Bool) {
         guard !isAnonymous else { return }
@@ -188,8 +202,7 @@ final class ChatViewController: UIViewController {
                 cell.configure(with: laidOut, message: row.message, images: self.images, animator: self.animator)
             }
             cell.onTapUser = { [weak self] user in
-                guard let self else { return }
-                self.delegate?.chatViewController(self, didTapUsername: user)
+                self?.presentUserCard(for: user, message: row.message)
             }
             cell.onTapEmote = { [weak self] emote in
                 guard let self else { return }
@@ -373,6 +386,47 @@ final class ChatViewController: UIViewController {
         } else {
             newMessagesPill.isHidden = true
         }
+        if snapshot.alerts > 0 { alertHighlight() }
+    }
+
+    /// A haptic and, when the viewer asked for it, a short sound for a message that stands out for them: only while
+    /// this chat is on screen and Embr is in front, and at most once every two seconds in a busy chat.
+    private func alertHighlight() {
+        guard view.window != nil, UIApplication.shared.applicationState == .active,
+              Date().timeIntervalSince(lastHighlightAlert) > 2 else { return }
+        lastHighlightAlert = Date()
+        let settings = SettingsStore.shared.current
+        if settings.highlightHapticEnabled { Haptics.notify(.warning) }
+        if settings.highlightSoundEnabled { AudioServicesPlaySystemSound(Self.highlightSound) }
+    }
+
+    private static let highlightSound: SystemSoundID = 1057
+
+    /// Opens a chatter's card for their name in a message, or from the message's actions.
+    func presentUserCard(for user: ChatUser, message: ChatMessage?) {
+        Haptics.selection()
+        let isSelf = user.login.lowercased() == currentUserLogin?.lowercased()
+        let card = ChatUserCardViewController(
+            context: ChatUserCardViewController.Context(
+                user: user,
+                message: message,
+                channelLogin: broadcasterLogin,
+                canChat: !isAnonymous && !isReadOnly,
+                canModerate: canModerate && user.login.lowercased() != broadcasterLogin?.lowercased(),
+                isSelf: isSelf
+            ),
+            viewModel: viewModel
+        )
+        card.onMention = { [weak self] user in
+            guard let self else { return }
+            self.composer.insertMention(user.login)
+            _ = self.composer.becomeFirstResponder()
+        }
+        card.onOpenProfile = { [weak self] user in
+            guard let self else { return }
+            self.delegate?.chatViewController(self, didTapUsername: user)
+        }
+        present(card, animated: true)
     }
 
     private func scrollToLatest(animated: Bool) {
@@ -479,8 +533,7 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
             })
         }
         sheet.addAction(UIAlertAction(title: String(localized: "View Profile"), style: .default) { [weak self] _ in
-            guard let self else { return }
-            self.delegate?.chatViewController(self, didTapUsername: message.author)
+            self?.presentUserCard(for: message.author, message: message)
         })
         sheet.addAction(UIAlertAction(title: String(localized: "Copy Message"), style: .default) { _ in
             UIPasteboard.general.string = message.plainText
@@ -521,34 +574,17 @@ extension ChatViewController: UICollectionViewDelegateFlowLayout {
         present(sheet, animated: true)
     }
 
-    private static let reportReasons = [
-        "Spam", "Harassment or bullying", "Hateful conduct", "Violence or threats", "Other"
-    ]
-
-    /// A report reason is both the sheet button title and the value submitted to the
-    /// developer review endpoint, so the canonical English value stays on the wire while
-    /// only the presented title is localized.
-    private static func reportReasonTitle(_ reason: String) -> String {
-        switch reason {
-        case "Spam": return String(localized: "Spam")
-        case "Harassment or bullying": return String(localized: "Harassment or bullying")
-        case "Hateful conduct": return String(localized: "Hateful conduct")
-        case "Violence or threats": return String(localized: "Violence or threats")
-        default: return String(localized: "Other")
-        }
-    }
-
     private func presentReportReasons(for message: ChatMessage, sourceRect: CGRect) {
         let sheet = UIAlertController(
             title: String(localized: "Report @\(message.author.login)"),
             message: String(localized: "Reports are reviewed and this user will be hidden from your chat."),
             preferredStyle: .actionSheet
         )
-        for reason in Self.reportReasons {
-            sheet.addAction(UIAlertAction(title: Self.reportReasonTitle(reason), style: .destructive) { [weak self] _ in
+        for reason in ChatReportReason.allCases {
+            sheet.addAction(UIAlertAction(title: reason.title, style: .destructive) { [weak self] _ in
                 guard let self else { return }
                 Haptics.notify(.success)
-                self.viewModel.report(message: message, reason: reason, channelLogin: self.broadcasterLogin)
+                self.viewModel.report(message: message, reason: reason.rawValue, channelLogin: self.broadcasterLogin)
             })
         }
         sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))

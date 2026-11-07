@@ -11,6 +11,7 @@ final class MessageCell: UICollectionViewCell {
     #endif
     private let replyPreview = ReplyPreviewView()
     private let highlightView = UIView()
+    private let highlightBar = UIView()
 
     private var emoteViews: [SDAnimatedImageView] = []
     private var badgeViews: [UIImageView] = []
@@ -35,6 +36,9 @@ final class MessageCell: UICollectionViewCell {
         highlightView.isHidden = true
         highlightView.layer.cornerRadius = 4
         contentView.addSubview(highlightView)
+        highlightBar.isHidden = true
+        highlightBar.layer.cornerRadius = 1.5
+        contentView.addSubview(highlightBar)
 
         textLabel.numberOfLines = 0
         textLabel.isUserInteractionEnabled = false
@@ -118,11 +122,14 @@ final class MessageCell: UICollectionViewCell {
         self.laidOut = laidOut
         self.message = message
         self.animator = animator
-        accessibilityLabel = Self.spokenText(for: message, mentionsCurrentUser: laidOut.mentionsCurrentUser)
+        accessibilityLabel = Self.spokenText(for: message, highlight: laidOut.highlight)
 
-        let highlight = laidOut.mentionsCurrentUser || laidOut.isHighlighted || laidOut.isAnnouncement || laidOut.isCheer
+        let standsOut = laidOut.highlight != nil
+        let highlight = standsOut || laidOut.isHighlighted || laidOut.isAnnouncement || laidOut.isCheer
         highlightView.isHidden = !highlight
-        if laidOut.mentionsCurrentUser {
+        highlightBar.isHidden = !standsOut
+        highlightBar.backgroundColor = Theme.accent
+        if standsOut {
             highlightView.backgroundColor = Theme.mentionBackground
         } else if laidOut.isCheer {
             highlightView.backgroundColor = Theme.cheerHighlight
@@ -159,7 +166,7 @@ final class MessageCell: UICollectionViewCell {
 
     /// What VoiceOver reads for a message: who wrote it and every word of it, with emotes
     /// spoken by their names (the text the sender typed) instead of skipped as images.
-    private static func spokenText(for message: ChatMessage, mentionsCurrentUser: Bool) -> String {
+    private static func spokenText(for message: ChatMessage, highlight: ChatHighlighter.Reason?) -> String {
         var parts: [String] = []
         if let notice = message.notice {
             parts.append(notice.systemMessage)
@@ -172,8 +179,10 @@ final class MessageCell: UICollectionViewCell {
             let name = message.author.displayName
             parts.append(message.isAction ? "\(name) \(text)" : "\(name): \(text)")
         }
-        if mentionsCurrentUser {
-            parts.append(String(localized: "Mentions you"))
+        switch highlight {
+        case .mention: parts.append(String(localized: "Mentions you"))
+        case .word, .user: parts.append(String(localized: "Highlighted"))
+        case nil: break
         }
         switch message.moderation {
         case .visible: break
@@ -294,6 +303,7 @@ final class MessageCell: UICollectionViewCell {
         guard let laidOut else { return }
 
         highlightView.frame = bounds.insetBy(dx: 2, dy: 0)
+        highlightBar.frame = CGRect(x: highlightView.frame.minX, y: highlightView.frame.minY + 2, width: 3, height: max(0, highlightView.frame.height - 4))
 
         if !replyPreview.isHidden {
             replyPreview.frame = CGRect(x: laidOut.textOrigin.x, y: 2, width: bounds.width - laidOut.textOrigin.x - 8, height: laidOut.replyHeight)
@@ -347,6 +357,7 @@ final class MessageCell: UICollectionViewCell {
         #endif
         replyPreview.isHidden = true
         highlightView.isHidden = true
+        highlightBar.isHidden = true
         contentView.alpha = 1
         laidOut = nil
         message = nil

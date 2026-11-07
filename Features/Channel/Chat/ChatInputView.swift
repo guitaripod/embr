@@ -99,6 +99,11 @@ final class ChatInputView: UIView {
         refreshAutocomplete()
     }
 
+    func insertMention(_ login: String) {
+        textView.insertEmoteName("@\(login)")
+        refreshAutocomplete()
+    }
+
     private func handleBackspace() {
         textView.deleteBackward()
         refreshAutocomplete()

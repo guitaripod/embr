@@ -33,6 +33,7 @@ enum ScreenshotRouter {
             }
         }
         ScreenshotHarness.searchQuery = option("Query")
+        ScreenshotHarness.moderates = option("Moderator") == "1"
         ScreenshotHarness.hidesStatusBar = option("StatusBar") == "hidden"
         tabBar.setNeedsStatusBarAppearanceUpdate()
         ScreenshotHarness.skippedLogins = Set(option("Skip")?.lowercased().split(separator: ",").map(String.init) ?? [])
@@ -57,7 +58,13 @@ enum ScreenshotRouter {
     /// Everything a demo capture shows besides the live-looking lists: the starred channels, the
     /// recently watched row and a clean slate for the settings a previous capture may have changed.
     private static func seedDemoState() {
-        SettingsStore.shared.update { $0.chatOnly = false }
+        let highlights = option("Highlights") == "1"
+        SettingsStore.shared.update {
+            $0.chatOnly = false
+            $0.highlightMentions = true
+            $0.highlightWords = highlights ? ["clip", "song"] : nil
+            $0.highlightUsers = highlights ? ["tobias_ward"] : nil
+        }
         UserDefaults.standard.removeObject(forKey: "channel.chatColumnWidth")
         let favoriteLogins = option("Favorites")?.split(separator: ",").map(String.init) ?? DemoWorld.favoriteLogins
         FavoritesStore.shared.seedForScreenshots(favoriteLogins.compactMap { login in
@@ -169,6 +176,18 @@ enum ScreenshotRouter {
                 let host = tabBar.selectedNavigationController?.topViewController
                 host?.present(ProfileSheetViewController(login: login, navigator: tabBar.selectedNavigationController), animated: false)
             }
+        case "usercard":
+            ScreenshotHarness.channelPose = .chat
+            openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
+            after(5.0) {
+                let host = tabBar.selectedNavigationController?.topViewController
+                host.flatMap(chatController(in:))?.presentUserCardForScreenshot(login: option("Profile"))
+            }
+        case "highlights":
+            tabBar.select(.settings)
+            after(0.8) {
+                tabBar.selectedNavigationController?.pushViewController(HighlightsViewController(), animated: false)
+            }
         case "channel", "channelaudio", "channelchat", "channelfull", "channelfullchat":
             let poses: [String: ScreenshotHarness.ChannelPose] = [
                 "channelaudio": .audio, "channelchat": .chat,
@@ -178,6 +197,15 @@ enum ScreenshotRouter {
             openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
         default: break
         }
+    }
+
+    /// The chat inside a screen, however deep the screen nests it.
+    private static func chatController(in controller: UIViewController) -> ChatViewController? {
+        if let chat = controller as? ChatViewController { return chat }
+        for child in controller.children {
+            if let chat = chatController(in: child) { return chat }
+        }
+        return nil
     }
 
     private static func openChannel(_ login: String?, deepLinks: DeepLinkRouter, tabBar: RootTabBarController) {

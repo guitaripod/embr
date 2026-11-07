@@ -150,6 +150,15 @@ final class ChatViewModel {
         moderate(String(localized: "time out")) { try await self.room.banUser(userID: userID, duration: duration, reason: nil) }
     }
 
+    func unbanUser(userID: String) {
+        moderate(String(localized: "unban")) { try await self.room.unbanUser(userID: userID) }
+    }
+
+    /// What one chatter said while this chat was open, laid out at the width of their card.
+    func history(of user: ChatUser, width: CGFloat) async -> [ChatRow] {
+        await store.history(of: user, width: width)
+    }
+
     private func moderate(_ label: String, _ op: @escaping () async throws -> Void) {
         Task {
             do { try await op() }
@@ -342,6 +351,7 @@ private actor MessageStore {
     private let capacity = 5000
     private let trimFraction = 0.2
     private let liveWindow = 500
+    private let opened = Date().addingTimeInterval(-5)
 
     init(settings: Settings, currentUserLogin: String?, filter: ContentFilter) {
         self.settings = settings
@@ -433,22 +443,28 @@ private actor MessageStore {
     func append(_ messages: [ChatMessage]) -> ChatSnapshot? {
         guard !messages.isEmpty else { return nil }
         var added = 0
+        var alerts = 0
         for message in messages {
             if isSuppressed(message) { continue }
+            let row = makeRow(message)
             if let existing = index[message.id] {
-                rows[existing] = makeRow(message)
+                rows[existing] = row
             } else {
                 index[message.id] = rows.count
-                rows.append(makeRow(message))
+                rows.append(row)
                 added += 1
+                if row.laidOut?.highlight != nil, message.timestamp >= opened { alerts += 1 }
             }
         }
         trimIfNeeded()
+        let snapshot: ChatSnapshot
         if paused {
             pausedNewCount += added
-            return frozenSnapshot()
+            snapshot = frozenSnapshot()
+        } else {
+            snapshot = liveSnapshot()
         }
-        return liveSnapshot()
+        return ChatSnapshot(rows: snapshot.rows, isPaused: snapshot.isPaused, newCount: snapshot.newCount, alerts: alerts)
     }
 
     /// Merges gap-backfill messages after a reconnect: skips ids already buffered and anything
@@ -523,6 +539,16 @@ private actor MessageStore {
             }
         }
         return currentSnapshot()
+    }
+
+    func history(of user: ChatUser, width: CGFloat) -> [ChatRow] {
+        guard width > 0 else { return [] }
+        let layout = MessageLayout(width: width, settings: settings, catalog: catalog, badges: badges, currentUserLogin: currentUserLogin)
+        let login = user.login.lowercased()
+        return rows
+            .filter { user.id.isEmpty ? $0.message.author.login.lowercased() == login : $0.message.author.id == user.id }
+            .suffix(200)
+            .map { ChatRow(message: $0.message, laidOut: layout.layout($0.message)) }
     }
 
     func search(_ query: String) -> ChatSnapshot {

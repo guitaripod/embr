@@ -35,11 +35,15 @@ struct ChatSnapshot: Sendable {
     /// Set when the rows were laid out again at a new width: a diffable data source keeps the old
     /// value of a row it already holds, so the list has to be reloaded to show the new layout.
     let relayout: Bool
+    /// How many of the messages that just arrived stand out for this viewer (a mention, a chosen word or user), for
+    /// the sound and haptic. History loaded on opening never counts.
+    let alerts: Int
 
-    init(rows: [ChatRow], isPaused: Bool, newCount: Int, relayout: Bool = false) {
+    init(rows: [ChatRow], isPaused: Bool, newCount: Int, relayout: Bool = false, alerts: Int = 0) {
         self.rows = rows
         self.isPaused = isPaused
         self.newCount = newCount
         self.relayout = relayout
+        self.alerts = alerts
     }
 }

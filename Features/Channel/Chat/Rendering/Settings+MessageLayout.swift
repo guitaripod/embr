@@ -60,6 +60,9 @@ struct ChatLayoutKey: Equatable, Sendable {
     let font: SupporterChatFont
     let supporterNameEffects: Bool
     let supporters: Int
+    let highlightMentions: Bool
+    let highlightWords: [String]
+    let highlightUsers: [String]
 }
 
 extension Settings {
@@ -71,7 +74,10 @@ extension Settings {
             emoteScale: chatPreferredEmoteScale,
             font: chatMessageFont,
             supporterNameEffects: chatShowsSupporterNameEffects,
-            supporters: SupporterDirectory.shared.revision
+            supporters: SupporterDirectory.shared.revision,
+            highlightMentions: highlightMentions,
+            highlightWords: highlightWordList,
+            highlightUsers: highlightUserList
         )
     }
 }
