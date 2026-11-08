@@ -8,7 +8,10 @@ localization: an existing placement (a new version copies its predecessor's) is 
 one is created. A locale without its own file shows the primary locale's. Every placement is read back and must be
 active.
 
-Usage: python3 scripts/asc-creative.py <marketing-version>
+A run that stops part way (the asset library can take minutes to process a large image; raise ASC_UPLOAD_TIMEOUT)
+picks up again with the locale it stopped at as the second argument.
+
+Usage: python3 scripts/asc-creative.py <marketing-version> [first-locale]
 """
 import json
 import os
@@ -43,14 +46,17 @@ def source_file(locale):
 
 
 def main():
-    if len(sys.argv) != 2:
-        sys.exit("usage: asc-creative.py <marketing-version>")
+    if len(sys.argv) not in (2, 3):
+        sys.exit("usage: asc-creative.py <marketing-version> [first-locale]")
+    first = sys.argv[2] if len(sys.argv) == 3 else ""
     version = version_id(sys.argv[1])
     localizations = {row["attributes"]["locale"]: row["id"]
                      for row in asc("localizations", "list", "--version", version).get("data", [])}
     uploaded = {}
     failed = []
     for locale, localization in sorted(localizations.items()):
+        if locale < first:
+            continue
         for kind, placement_type in KINDS.items():
             path = source_file(locale)
             if path is None:
