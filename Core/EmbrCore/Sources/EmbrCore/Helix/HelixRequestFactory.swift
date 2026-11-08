@@ -250,33 +250,33 @@ public struct HelixRequestFactory: Sendable {
         get("moderation/channels", items: [("user_id", userID), ("first", "100"), ("after", after)], token: token)
     }
 
-    private func get(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
+    func get(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
         HTTPRequest(method: .get, url: makeURL(path, items: items), headers: headers(token: token))
     }
 
-    private func post(_ path: String, items: [(String, String?)], body: [String: String], token: String?) -> HTTPRequest {
+    func post(_ path: String, items: [(String, String?)], body: [String: String], token: String?) -> HTTPRequest {
         var requestHeaders = headers(token: token)
         requestHeaders["Content-Type"] = "application/json"
         let data = try? TwitchJSON.encoder.encode(body)
         return HTTPRequest(method: .post, url: makeURL(path, items: items), headers: requestHeaders, body: data)
     }
 
-    private func post(_ path: String, items: [(String, String?)], jsonBody: JSONObject, token: String?) -> HTTPRequest {
+    func post(_ path: String, items: [(String, String?)], jsonBody: JSONObject, token: String?) -> HTTPRequest {
         var requestHeaders = headers(token: token)
         requestHeaders["Content-Type"] = "application/json"
         return HTTPRequest(method: .post, url: makeURL(path, items: items), headers: requestHeaders, body: jsonBody.encoded())
     }
 
-    private func delete(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
+    func delete(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
         HTTPRequest(method: .delete, url: makeURL(path, items: items), headers: headers(token: token))
     }
 
-    private func makeURL(_ path: String, items: [(String, String?)]) -> URL {
+    func makeURL(_ path: String, items: [(String, String?)]) -> URL {
         let base = baseURL.appendingPathComponent(path)
         return QueryEncoder.url(base.absoluteString, items: items) ?? base
     }
 
-    private func headers(token: String?) -> [String: String] {
+    func headers(token: String?) -> [String: String] {
         var result = ["Client-Id": clientID]
         if let token { result["Authorization"] = "Bearer \(token)" }
         return result
