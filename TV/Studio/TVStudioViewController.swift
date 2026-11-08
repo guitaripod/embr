@@ -294,7 +294,7 @@ final class TVStudioViewController: UIViewController {
         shieldButton.configuration?.title = snapshot.shieldMode
             ? String(localized: "Shield Mode On", comment: "Studio status line button")
             : String(localized: "Shield Mode", comment: "Studio status line button")
-        sampleRibbon.isHidden = !snapshot.isSample
+        sampleRibbon.isHidden = !snapshot.isSample || posesAsLive
         let isLive = snapshot.isLive || snapshot.isSample
         offline.isHidden = isLive
         chatWall.isHidden = !isLive
@@ -325,8 +325,17 @@ final class TVStudioViewController: UIViewController {
         tallyLabel.text = "·  " + parts.joined(separator: " · ")
     }
 
+    /// A DEBUG App Store capture poses the sample as a real live channel.
+    private var posesAsLive: Bool {
+        #if DEBUG
+        TVScreenshotRoute.storeCapture
+        #else
+        false
+        #endif
+    }
+
     private func renderStatus() {
-        if session.snapshot.isSample {
+        if session.snapshot.isSample, !posesAsLive {
             statusDot.backgroundColor = StudioPalette.emberLight
             statusLabel.text = String(localized: "Sample stream: nothing here is real", comment: "Studio status line")
             return
@@ -543,6 +552,21 @@ final class TVStudioViewController: UIViewController {
 
     #if DEBUG
     /// Puts the sample stream at one moment for a screenshot.
+    /// Fills the alert feed with the half hour before the moment, so a store capture shows a stream in full swing.
+    func seedHistoryForScreenshot() {
+        let now = Date()
+        let history: [(TimeInterval, StudioEvent)] = [
+            (-1500, .subscription(StudioSubscription(id: "shot-sub-1", userID: "sample-fernwick", userName: "fernwick", kind: .resub(months: 14), tier: .one, isPrime: false, message: "still the comfiest stream"))),
+            (-1140, .cheer(StudioCheer(id: "shot-cheer", userID: "sample-quill", userName: "quillandmoss", bits: 500, message: "Cheer500 for the lighthouse fund"))),
+            (-840, .redemption(StudioRedemption(id: "shot-redeem", userID: "sample-pebble", userName: "pebblecat", rewardTitle: "Pick the next colour", cost: 2000, input: "teal"))),
+            (-420, .subscription(StudioSubscription(id: "shot-sub-2", userID: "sample-kite", userName: "kitebright", kind: .new, tier: .one, isPrime: true, message: ""))),
+            (-180, .follow(StudioFollow(userID: "sample-driftwood", userName: "driftwooddan", followedAt: now.addingTimeInterval(-180)))),
+        ]
+        for (offset, event) in history {
+            session.apply(event, at: now.addingTimeInterval(offset))
+        }
+    }
+
     func showMomentForScreenshot(_ moment: String) {
         let now = Date()
         switch moment {

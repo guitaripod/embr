@@ -208,6 +208,10 @@ final class TVStudioRootViewController: UIViewController, TVStudioCoordinating {
     func showMomentForScreenshot(_ moment: String) {
         studio?.showMomentForScreenshot(moment)
     }
+
+    func seedHistoryForScreenshot() {
+        studio?.seedHistoryForScreenshot()
+    }
     #endif
 }
 
