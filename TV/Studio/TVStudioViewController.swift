@@ -52,7 +52,7 @@ final class TVStudioViewController: UIViewController {
         liveMoment = StudioLiveMomentView(scale: .tv)
         adClock = StudioAdClockView(scale: .tv)
         modCard = TVStudioModerationCard(scale: .tv)
-        feed = StudioAlertFeedView(scale: .tv, limit: 6)
+        feed = StudioAlertFeedView(scale: .tv, limit: 6, fitsWholeRows: true)
         quickButton = StudioButton.make(title: String(localized: "Quick Message", comment: "Studio status line button"), scale: .tv, symbol: "text.bubble")
         modesButton = StudioButton.make(title: String(localized: "Chat Modes", comment: "Studio status line button"), scale: .tv, symbol: "slider.horizontal.3")
         shieldButton = StudioButton.make(title: String(localized: "Shield Mode", comment: "Studio status line button"), scale: .tv, symbol: "shield")
@@ -132,7 +132,6 @@ final class TVStudioViewController: UIViewController {
         rail.addArrangedSubview(adClock)
         rail.addArrangedSubview(modCard)
         rail.addArrangedSubview(feed)
-        feed.setContentHuggingPriority(.defaultLow, for: .vertical)
 
         statusDot.layer.cornerRadius = 8
         statusDot.backgroundColor = StudioPalette.good

@@ -553,16 +553,19 @@ final class StudioAlertFeedView: UIView {
     private let stack = UIStackView()
     private let empty = UILabel()
     private let limit: Int
+    private let fitsWholeRows: Bool
+    private var rows: [StudioAlertRowView] = []
     private var shownIDs: [String] = []
 
-    init(scale: StudioScale, limit: Int) {
+    /// `fitsWholeRows` is for a feed given a fixed height rather than a scroll view: it lays its rows out by hand, never
+    /// asks for more height than it is given, and shows only the rows that fit whole.
+    init(scale: StudioScale, limit: Int, fitsWholeRows: Bool = false) {
         self.scale = scale
         self.limit = limit
+        self.fitsWholeRows = fitsWholeRows
         super.init(frame: .zero)
         stack.axis = .vertical
         stack.spacing = scale.spacing * 0.7
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
         empty.text = String(localized: "Follows, subs, raids and cheers show up here.", comment: "Studio alert feed, empty")
         empty.font = scale.font(scale.caption, style: .footnote)
         empty.textColor = StudioPalette.muted
@@ -571,43 +574,88 @@ final class StudioAlertFeedView: UIView {
         addSubview(empty)
         clipsToBounds = true
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
             empty.topAnchor.constraint(equalTo: topAnchor, constant: scale.spacing),
             empty.leadingAnchor.constraint(equalTo: leadingAnchor, constant: scale.padding),
             empty.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -scale.padding),
         ])
+        if fitsWholeRows {
+            setContentHuggingPriority(.fittingSizeLevel, for: .vertical)
+            setContentCompressionResistancePriority(.fittingSizeLevel, for: .vertical)
+        } else {
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.topAnchor.constraint(equalTo: topAnchor),
+                stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+                stack.trailingAnchor.constraint(equalTo: trailingAnchor),
+                stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
+            ])
+        }
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if fitsWholeRows { layOutWholeRows() }
+    }
+
+    /// Places the rows top down by hand and hides every row from the first one the bottom edge would cut. Bounds and
+    /// center rather than frame, so the newest row's slide-in transform survives a layout pass.
+    private func layOutWholeRows() {
+        var top: CGFloat = 0
+        var fits = true
+        for row in rows {
+            let height = row.systemLayoutSizeFitting(
+                CGSize(width: bounds.width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+            fits = fits && top + height <= bounds.height + 0.5
+            row.isHidden = !fits
+            row.bounds = CGRect(x: 0, y: 0, width: bounds.width, height: height)
+            row.center = CGPoint(x: bounds.midX, y: top + height / 2)
+            top += height + stack.spacing
+        }
+    }
 
     func show(_ items: [StudioFeedItem], now: Date) {
         let visible = Array(items.prefix(limit))
         empty.isHidden = !visible.isEmpty
         let ids = visible.map { "\($0.id)-\($0.moreFollowers.count)" }
         guard ids != shownIDs else {
-            for (row, item) in zip(stack.arrangedSubviews.compactMap { $0 as? StudioAlertRowView }, visible) {
+            for (row, item) in zip(rows, visible) {
                 row.updateTime(item.at, now: now)
             }
             return
         }
         let animate = !shownIDs.isEmpty && !UIAccessibility.isReduceMotionEnabled
         shownIDs = ids
-        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (index, item) in visible.enumerated() {
+        rows.forEach { $0.removeFromSuperview() }
+        rows = visible.map { item in
             let row = StudioAlertRowView(scale: scale)
             row.show(item, now: now)
-            stack.addArrangedSubview(row)
-            if animate, index == 0 {
-                row.alpha = 0
-                row.transform = CGAffineTransform(translationX: 0, y: -12)
-                UIView.animate(withDuration: 0.3) {
-                    row.alpha = 1
-                    row.transform = .identity
-                }
+            return row
+        }
+        for row in rows {
+            if fitsWholeRows {
+                row.translatesAutoresizingMaskIntoConstraints = true
+                addSubview(row)
+            } else {
+                stack.addArrangedSubview(row)
+            }
+        }
+        if fitsWholeRows {
+            setNeedsLayout()
+            layoutIfNeeded()
+        }
+        if animate, let newest = rows.first {
+            newest.alpha = 0
+            newest.transform = CGAffineTransform(translationX: 0, y: -12)
+            UIView.animate(withDuration: 0.3) {
+                newest.alpha = 1
+                newest.transform = .identity
             }
         }
     }
