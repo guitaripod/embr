@@ -31,7 +31,6 @@ final class ChannelVideosViewController: UIViewController {
     private var loadingVods = false
     private var loadingClips = false
     private var loadingSchedule = false
-    private var resolvingClip = false
 
     private var showingClips: Bool { segmented.selectedSegmentIndex == 1 }
     private var showingSchedule: Bool { segmented.selectedSegmentIndex == 2 }
@@ -243,7 +242,7 @@ final class ChannelVideosViewController: UIViewController {
                     self.clipCursor = page.cursor
                     self.clipHasMore = page.cursor != nil
                     let known = Set(self.clips.map(\.id))
-                    self.clips.append(contentsOf: page.items.filter { !known.contains($0.id) })
+                    self.clips.append(contentsOf: HiddenClips().visible(page.items).filter { !known.contains($0.id) })
                 } else {
                     let page = try await self.api.videos(userID: self.broadcasterID, after: self.vodCursor, first: 20)
                     self.vodCursor = page.cursor
@@ -302,30 +301,9 @@ extension ChannelVideosViewController: UICollectionViewDelegate {
     }
 
     private func playClip(_ clip: Clip) {
-        guard !resolvingClip else { return }
-        resolvingClip = true
-        let startedSpinner = !spinner.isAnimating
-        if startedSpinner { spinner.startAnimating() }
-        Task { [weak self] in
-            guard let self else { return }
-            defer {
-                self.resolvingClip = false
-                if startedSpinner { self.spinner.stopAnimating() }
-            }
-            do {
-                let url = try await PlaybackResolver.shared.resolveClip(slug: clip.id)
-                self.navigationController?.pushViewController(VideoViewController(source: .clip(url: url)), animated: true)
-            } catch {
-                MidgarLog.notice("clip resolve \(clip.id) failed: \(error)", category: .playback)
-                if let mp4 = MediaRowCell.clipMP4(from: clip.thumbnailURL) {
-                    self.navigationController?.pushViewController(VideoViewController(source: .clip(url: mp4)), animated: true)
-                } else {
-                    let alert = UIAlertController(title: String(localized: "Clip Unavailable"), message: String(localized: "This clip can't be played right now."), preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
-                    self.present(alert, animated: true)
-                }
-            }
-        }
+        guard let index = clips.firstIndex(of: clip) else { return }
+        let pager = ClipPager(api: api, broadcasterID: broadcasterID, cursor: clipCursor, hasMore: clipHasMore)
+        present(ClipFeedViewController(clips: clips, startIndex: index, pager: pager), animated: true)
     }
 }
 
@@ -338,7 +316,7 @@ extension ChannelVideosViewController: UICollectionViewDataSourcePrefetching {
 }
 
 @MainActor
-private final class MediaRowCell: UICollectionViewListCell {
+final class MediaRowCell: UICollectionViewListCell {
     private let thumbnail = UIImageView()
     private let durationBadge = PaddedBadge()
     private let titleLabel = UILabel()
@@ -440,12 +418,6 @@ private final class MediaRowCell: UICollectionViewListCell {
         return URL(string: template
             .replacingOccurrences(of: "%{width}", with: String(width))
             .replacingOccurrences(of: "%{height}", with: String(height)))
-    }
-
-    static func clipMP4(from thumbnail: URL?) -> URL? {
-        guard let raw = thumbnail?.absoluteString,
-              let range = raw.range(of: "-preview-[0-9]+x[0-9]+\\.jpg", options: .regularExpression) else { return nil }
-        return URL(string: raw.replacingCharacters(in: range, with: ".mp4"))
     }
 
     static func duration(_ seconds: Double) -> String {

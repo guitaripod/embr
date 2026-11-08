@@ -133,6 +133,16 @@ enum ScreenshotRouter {
                     after(0.4) { videos.selectSegmentForScreenshot(segment) }
                 }
             }
+        case "clips":
+            guard let channel else { return }
+            Task {
+                guard let user = try? await AppContainer.shared.api.user(login: channel),
+                      let page = try? await AppContainer.shared.api.clips(broadcasterID: user.id, after: nil, first: 20),
+                      !page.items.isEmpty else { return }
+                let start = option("Index").flatMap(Int.init) ?? 0
+                let pager = ClipPager(api: AppContainer.shared.api, broadcasterID: user.id, cursor: page.cursor, hasMore: page.cursor != nil)
+                tabBar.present(ClipFeedViewController(clips: page.items, startIndex: start, pager: pager), animated: false)
+            }
         case "vod":
             guard let channel else { return }
             let info = DemoWorld.channel(login: channel)
