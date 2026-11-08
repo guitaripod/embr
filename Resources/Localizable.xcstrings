@@ -28167,70 +28167,6 @@
         }
       }
     },
-    "5 November 2026": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5. November 2026"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 de noviembre de 2026"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 novembre 2026"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 novembre 2026"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026年11月5日"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026년 11월 5일"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 de novembro de 2026"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 listopada 2026"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026年11月5日"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2026年11月5日"
-          }
-        }
-      }
-    },
     "1 minute": {
       "localizations": {
         "de": {
@@ -56873,6 +56809,266 @@
           "stringUnit": {
             "state": "translated",
             "value": "觀眾"
+          }
+        }
+      }
+    },
+    "8 November 2026": {
+      "comment": "Date the legal text was last updated",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8. November 2026"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 de noviembre de 2026"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 novembre 2026"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 novembre 2026"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年11月8日"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026년 11월 8일"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 listopada 2026"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 de novembro de 2026"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年11月8日"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2026年11月8日"
+          }
+        }
+      }
+    },
+    "Embr Studio\nEmbr Studio shows your own Twitch channel, or one you moderate, through Twitch's official API with the permissions you grant when you sign in. What you do in Studio, such as running or snoozing an ad, posting a message, pinning, changing chat modes, turning on Shield Mode, timing out or banning someone, is done on Twitch as you, under Twitch's terms.": {
+      "comment": "Terms of Use section about Embr Studio; the first line is the section title",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio zeigt deinen eigenen Twitch-Kanal oder einen, den du moderierst, über die offizielle Twitch-API mit den Berechtigungen, die du beim Anmelden erteilst. Was du in Studio tust, etwa eine Werbung starten oder verschieben, eine Nachricht senden, anheften, Chat-Modi ändern, Shield Mode aktivieren, jemanden timeouten oder sperren, geschieht auf Twitch in deinem Namen und unter den Nutzungsbedingungen von Twitch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio muestra tu propio canal de Twitch, o uno que moderes, a través de la API oficial de Twitch con los permisos que concedes al iniciar sesión. Lo que haces en Studio, como emitir o aplazar un anuncio, publicar un mensaje, fijar, cambiar los modos del chat, activar Shield Mode, expulsar temporalmente o bloquear a alguien, se realiza en Twitch en tu nombre y según las condiciones de Twitch."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio affiche votre propre chaîne Twitch, ou une chaîne que vous modérez, via l'API officielle de Twitch, avec les autorisations que vous accordez lors de la connexion. Ce que vous faites dans Studio, comme lancer ou reporter une publicité, publier un message, épingler, modifier les modes du chat, activer Shield Mode, exclure temporairement ou bannir quelqu'un, est effectué sur Twitch en votre nom et selon les conditions de Twitch."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio mostra il tuo canale Twitch, o uno che modera, tramite l'API ufficiale di Twitch, con le autorizzazioni che concedi al momento dell'accesso. Ciò che fai in Studio, come avviare o posticipare una pubblicità, inviare un messaggio, fissare, cambiare le modalità della chat, attivare Shield Mode, mettere in timeout o bannare qualcuno, viene eseguito su Twitch a tuo nome e nel rispetto dei termini di Twitch."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studioは、サインイン時に許可した権限を使い、Twitchの公式APIを通じて、あなた自身のTwitchチャンネルや、あなたがモデレーターを務めるチャンネルを表示します。Studioでの操作（広告の開始や延期、メッセージの投稿、ピン留め、チャットモードの変更、Shield Modeの有効化、ユーザーのタイムアウトやBANなど）は、あなたの名義でTwitch上で行われ、Twitchの利用規約に従います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio는 로그인할 때 허용한 권한으로 Twitch 공식 API를 통해 본인의 Twitch 채널 또는 본인이 모더레이터로 관리하는 채널을 보여줍니다. 광고 실행 또는 연기, 메시지 게시, 고정, 채팅 모드 변경, Shield Mode 켜기, 사용자 타임아웃 또는 차단 등 Studio에서 하는 작업은 모두 본인의 이름으로 Twitch에서 이루어지며 Twitch 이용 약관을 따릅니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio pokazuje Twój własny kanał Twitch lub kanał, który moderujesz, za pośrednictwem oficjalnego API Twitcha, z uprawnieniami, które przyznasz podczas logowania. To, co robisz w Studio, na przykład uruchamiasz lub odkładasz reklamę, wysyłasz wiadomość, przypinasz ją, zmieniasz tryby czatu, włączasz Shield Mode, wyciszasz lub banujesz kogoś, odbywa się na Twitchu w Twoim imieniu i zgodnie z warunkami Twitcha."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nO Embr Studio mostra o seu próprio canal da Twitch, ou um que você modera, por meio da API oficial da Twitch, com as permissões que você concede ao entrar. O que você faz no Studio, como veicular ou adiar um anúncio, enviar uma mensagem, fixar, alterar os modos do chat, ativar o Shield Mode, aplicar timeout ou banir alguém, é feito na Twitch em seu nome e de acordo com os termos da Twitch."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio 通过 Twitch 官方 API，以你登录时授予的权限，显示你自己的 Twitch 频道，或你担任管理员的频道。你在 Studio 中所做的操作，例如播放或推迟广告、发送消息、置顶、更改聊天模式、开启 Shield Mode、禁言或封禁某人，都会以你的身份在 Twitch 上完成，并遵守 Twitch 的条款。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio\nEmbr Studio 透過 Twitch 官方 API，以你登入時授予的權限，顯示你自己的 Twitch 頻道，或你擔任版主的頻道。你在 Studio 中進行的操作，例如播放或延後廣告、發送訊息、釘選、變更聊天模式、開啟 Shield Mode、暫停或封鎖某人，都會以你的身分在 Twitch 上執行，並遵守 Twitch 的條款。"
+          }
+        }
+      }
+    },
+    "Purchases and subscriptions\nTips, Founding Supporter and Studio Pro are optional and sold through Apple In-App Purchase. Studio Pro is a monthly or yearly auto-renewing subscription, or a one-time lifetime purchase. Payment is charged to your Apple Account when you confirm. A subscription renews at the same price unless it is cancelled at least 24 hours before the period ends; manage or cancel it in your Apple Account's subscription settings. The free Pro week needs no purchase and never turns into a subscription. Refunds are handled by Apple.": {
+      "comment": "Terms of Use section about purchases and the Studio Pro subscription; the first line is the section title",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe und Abonnements\nTrinkgelder, Gründungsunterstützer und Studio Pro sind optional und werden über den Apple In-App-Kauf verkauft. Studio Pro ist ein monatliches oder jährliches, automatisch verlängerndes Abonnement oder ein einmaliger lebenslanger Kauf. Die Zahlung wird bei deiner Bestätigung deinem Apple Account belastet. Ein Abonnement verlängert sich zum selben Preis, sofern es nicht mindestens 24 Stunden vor Ende des Zeitraums gekündigt wird; verwalte oder kündige es in den Abo-Einstellungen deines Apple Account. Die kostenlose Pro-Woche erfordert keinen Kauf und wird niemals zu einem Abonnement. Rückerstattungen übernimmt Apple."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compras y suscripciones\nLas propinas, Miembro fundador y Studio Pro son opcionales y se venden mediante compras dentro de la app de Apple. Studio Pro es una suscripción mensual o anual de renovación automática, o una compra única de por vida. El pago se carga a tu cuenta de Apple al confirmar. Una suscripción se renueva al mismo precio a menos que se cancele al menos 24 horas antes de que termine el periodo; gestiónala o cancélala en los ajustes de suscripciones de tu cuenta de Apple. La semana Pro gratuita no requiere compra y nunca se convierte en suscripción. Los reembolsos los gestiona Apple."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achats et abonnements\nLes pourboires, Membre fondateur et Studio Pro sont facultatifs et vendus via les achats intégrés Apple. Studio Pro est un abonnement mensuel ou annuel à renouvellement automatique, ou un achat unique à vie. Le paiement est débité de votre identifiant Apple lors de la confirmation. Un abonnement se renouvelle au même prix, sauf s'il est résilié au moins 24 heures avant la fin de la période ; gérez-le ou résiliez-le dans les réglages d'abonnement de votre identifiant Apple. La semaine Pro gratuite ne nécessite aucun achat et ne se transforme jamais en abonnement. Les remboursements sont gérés par Apple."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisti e abbonamenti\nLe mance, Sostenitore fondatore e Studio Pro sono facoltativi e venduti tramite acquisti in-app Apple. Studio Pro è un abbonamento mensile o annuale con rinnovo automatico, oppure un acquisto unico a vita. Il pagamento viene addebitato sul tuo Account Apple alla conferma. Un abbonamento si rinnova allo stesso prezzo, a meno che non venga annullato almeno 24 ore prima della fine del periodo; gestiscilo o annullalo nelle impostazioni degli abbonamenti del tuo Account Apple. La settimana Pro gratuita non richiede acquisti e non diventa mai un abbonamento. I rimborsi sono gestiti da Apple."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入とサブスクリプション\nチップ、創設サポーター、Studio Proは任意で、Appleのアプリ内課金を通じて販売されます。Studio Proは月額または年額で自動更新されるサブスクリプション、または一度きりのライフタイム購入です。お支払いは確定時にApple アカウントに請求されます。サブスクリプションは、期間終了の少なくとも24時間前に解約しない限り、同じ価格で更新されます。Apple アカウントのサブスクリプション設定で管理・解約できます。無料のPro週間は購入を必要とせず、サブスクリプションに切り替わることはありません。返金はAppleが行います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매 및 구독\n팁, 창립 후원자, Studio Pro는 선택 사항이며 Apple 앱 내 구입을 통해 판매됩니다. Studio Pro는 월간 또는 연간 자동 갱신 구독이거나 한 번 결제하는 평생 구매입니다. 결제는 확인 시 Apple 계정에 청구됩니다. 구독은 기간이 끝나기 최소 24시간 전에 취소하지 않으면 같은 가격으로 갱신됩니다. Apple 계정의 구독 설정에서 관리하거나 취소할 수 있습니다. 무료 Pro 주간은 구매가 필요 없으며 구독으로 전환되지 않습니다. 환불은 Apple이 처리합니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakupy i subskrypcje\nNapiwki, Założycielski Wspierający i Studio Pro są opcjonalne i sprzedawane za pośrednictwem zakupów w aplikacji Apple. Studio Pro to subskrypcja miesięczna lub roczna z automatycznym odnawianiem albo jednorazowy zakup dożywotni. Płatność zostanie obciążona na Twoje konto Apple po potwierdzeniu. Subskrypcja odnawia się w tej samej cenie, chyba że zostanie anulowana co najmniej 24 godziny przed końcem okresu; zarządzaj nią lub ją anuluj w ustawieniach subskrypcji konta Apple. Bezpłatny tydzień Pro nie wymaga zakupu i nigdy nie przechodzi w subskrypcję. Zwrotami zajmuje się Apple."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compras e assinaturas\nAs gorjetas, o Apoiador Fundador e o Studio Pro são opcionais e vendidos por meio de compras no app da Apple. O Studio Pro é uma assinatura mensal ou anual com renovação automática, ou uma compra vitalícia única. O pagamento é cobrado na sua Conta Apple quando você confirma. Uma assinatura é renovada pelo mesmo preço, a menos que seja cancelada pelo menos 24 horas antes do fim do período; gerencie ou cancele nas configurações de assinatura da sua Conta Apple. A semana Pro gratuita não exige compra e nunca se transforma em assinatura. Os reembolsos são feitos pela Apple."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "购买和订阅\n打赏、创始支持者 和 Studio Pro 均为可选项，通过 Apple 应用内购买销售。Studio Pro 为按月或按年自动续订的订阅，或一次性买断的终身购买。确认后，费用将从你的 Apple 账户扣除。除非你在订阅周期结束前至少 24 小时取消，否则订阅将以相同价格续订；请在你的 Apple 账户订阅设置中管理或取消。免费的 Pro 周无需购买，也绝不会转为订阅。退款由 Apple 处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購買與訂閱\n打賞、創始支持者 與 Studio Pro 皆為選用項目，透過 Apple App 內購買販售。Studio Pro 為按月或按年自動續訂的訂閱，或一次性買斷的終身購買。確認時，費用會從你的 Apple 帳戶扣除。除非你在訂閱期間結束前至少 24 小時取消，否則訂閱會以相同價格續訂；請在你的 Apple 帳戶訂閱設定中管理或取消。免費的 Pro 週無需購買，也絕不會轉為訂閱。退款由 Apple 處理。"
+          }
+        }
+      }
+    },
+    "Embr Studio and Studio Pro\nStudio reads your own channel's events, chat and ad schedule straight from Twitch with the permissions you grant, and sends the actions you choose to Twitch as you; none of it passes through Midgar's servers. Recaps and Studio's settings stay on your device, and your quick messages are kept in your own iCloud account. A Studio Pro purchase record, renewals included, is handled like a tip's.": {
+      "comment": "Privacy policy section about Embr Studio and Studio Pro; the first line is the section title",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio und Studio Pro\nStudio liest Ereignisse, Chat und Werbeplan deines eigenen Kanals direkt von Twitch, mit den Berechtigungen, die du erteilst, und sendet die Aktionen, die du auswählst, in deinem Namen an Twitch; nichts davon läuft über die Server von Midgar. Rückblicke und Studio-Einstellungen bleiben auf deinem Gerät, und deine Schnellnachrichten werden in deinem eigenen iCloud-Konto gespeichert. Ein Studio-Pro-Kaufnachweis, einschließlich Verlängerungen, wird wie der eines Trinkgelds behandelt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio y Studio Pro\nStudio lee los eventos, el chat y la programación de anuncios de tu propio canal directamente desde Twitch, con los permisos que concedes, y envía a Twitch, en tu nombre, las acciones que eliges; nada de ello pasa por los servidores de Midgar. Los resúmenes y los ajustes de Studio permanecen en tu dispositivo, y tus mensajes rápidos se guardan en tu propia cuenta de iCloud. El registro de compra de Studio Pro, incluidas las renovaciones, se trata igual que el de una propina."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio et Studio Pro\nStudio lit directement sur Twitch les événements, le chat et le calendrier publicitaire de votre propre chaîne, avec les autorisations que vous accordez, et envoie à Twitch, en votre nom, les actions que vous choisissez ; rien de cela ne transite par les serveurs de Midgar. Les récapitulatifs et les réglages de Studio restent sur votre appareil, et vos messages rapides sont conservés dans votre compte iCloud. Un justificatif d'achat de Studio Pro, renouvellements compris, est traité comme celui d'un pourboire."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio e Studio Pro\nStudio legge direttamente da Twitch gli eventi, la chat e il calendario pubblicitario del tuo canale, con le autorizzazioni che concedi, e invia a Twitch, a tuo nome, le azioni che scegli; nulla di tutto questo passa dai server di Midgar. I riepiloghi e le impostazioni di Studio restano sul tuo dispositivo, mentre i messaggi rapidi sono conservati nel tuo account iCloud. Il registro degli acquisti di Studio Pro, rinnovi inclusi, è trattato come quello di una mancia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio と Studio Pro\nStudioは、許可された権限を使ってあなたのチャンネルのイベント、チャット、広告スケジュールをTwitchから直接読み取り、あなたが選んだ操作をあなたの名義でTwitchに送信します。これらはMidgarのサーバーを経由しません。レカップとStudioの設定はお使いのデバイスに保存され、クイックメッセージはあなた自身のiCloudアカウントに保存されます。Studio Proの購入記録（更新を含む）は、チップと同じように扱われます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio 및 Studio Pro\nStudio는 허용한 권한으로 Twitch에서 본인 채널의 이벤트, 채팅, 광고 일정을 직접 읽고, 선택한 작업을 본인 명의로 Twitch에 보냅니다. 이 과정은 Midgar 서버를 거치지 않습니다. 리캡과 Studio 설정은 기기에 저장되며, 빠른 메시지는 본인의 iCloud 계정에 보관됩니다. Studio Pro 구매 기록(갱신 포함)은 팁과 같은 방식으로 처리됩니다."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio i Studio Pro\nStudio odczytuje zdarzenia, czat i harmonogram reklam Twojego kanału bezpośrednio z Twitcha, z uprawnieniami, które przyznasz, i wysyła wybrane przez Ciebie działania do Twitcha w Twoim imieniu; żadne z tych danych nie przechodzi przez serwery Midgar. Podsumowania i ustawienia Studio pozostają na Twoim urządzeniu, a szybkie wiadomości są przechowywane na Twoim koncie iCloud. Zapis zakupu Studio Pro, łącznie z odnowieniami, jest traktowany tak samo jak zapis napiwku."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio e Studio Pro\nO Studio lê os eventos, o chat e a programação de anúncios do seu próprio canal diretamente da Twitch, com as permissões que você concede, e envia à Twitch, em seu nome, as ações que você escolhe; nada disso passa pelos servidores da Midgar. Os resumos e as configurações do Studio ficam no seu dispositivo, e suas mensagens rápidas são guardadas na sua própria conta do iCloud. O registro de compra do Studio Pro, incluindo as renovações, é tratado da mesma forma que o de uma gorjeta."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio 和 Studio Pro\nStudio 通过 Twitch 读取你自己频道的事件、聊天和广告计划，使用你授予的权限，并以你的身份将你选择的操作发送给 Twitch；这些数据都不经过 Midgar 的服务器。回顾和 Studio 设置保存在你的设备上，快捷消息保存在你自己的 iCloud 账户中。Studio Pro 的购买记录（包括续订）与打赏的处理方式相同。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr Studio 與 Studio Pro\nStudio 透過 Twitch 讀取你自己頻道的事件、聊天與廣告排程，使用你授予的權限，並以你的身分將你選擇的操作傳送給 Twitch；這些資料都不會經過 Midgar 的伺服器。回顧與 Studio 設定保存在你的裝置上，快速訊息則保存在你自己的 iCloud 帳戶中。Studio Pro 的購買紀錄（包括續訂）與打賞的處理方式相同。"
           }
         }
       }

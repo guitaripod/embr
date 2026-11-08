@@ -2,7 +2,7 @@ import Foundation
 
 enum LegalText {
     static let supportEmail = "marcus@midgarcorp.cc"
-    static let lastUpdated = String(localized: "5 November 2026")
+    static let lastUpdated = String(localized: "8 November 2026")
 
     static let termsURL = URL(string: "https://midgarcorp.cc/legal/embr/terms")!
 
@@ -11,7 +11,12 @@ enum LegalText {
     static let termsTitle = String(localized: "Terms of Use")
     static let privacyTitle = String(localized: "Privacy Policy")
 
-    static let terms = String(localized: """
+    /// The terms shown in the app, one localized section at a time.
+    static var terms: String {
+        [termsBasics, termsStudio, termsPurchases].joined(separator: "\n\n")
+    }
+
+    private static let termsBasics = String(localized: """
     Embr is an independent, open-source client for watching Twitch streams and chat. It is not \
     affiliated with, endorsed by, or sponsored by Twitch Interactive, Inc. By using Embr you agree \
     to these terms and to Twitch's own Terms of Service and Community Guidelines.
@@ -34,6 +39,24 @@ enum LegalText {
     and may change at any time.
     """)
 
+    private static let termsStudio = String(localized: """
+    Embr Studio
+    Embr Studio shows your own Twitch channel, or one you moderate, through Twitch's official API with \
+    the permissions you grant when you sign in. What you do in Studio, such as running or snoozing an \
+    ad, posting a message, pinning, changing chat modes, turning on Shield Mode, timing out or banning \
+    someone, is done on Twitch as you, under Twitch's terms.
+    """)
+
+    private static let termsPurchases = String(localized: """
+    Purchases and subscriptions
+    Tips, Founding Supporter and Studio Pro are optional and sold through Apple In-App Purchase. Studio \
+    Pro is a monthly or yearly auto-renewing subscription, or a one-time lifetime purchase. Payment is \
+    charged to your Apple Account when you confirm. A subscription renews at the same price unless it \
+    is cancelled at least 24 hours before the period ends; manage or cancel it in your Apple Account's \
+    subscription settings. The free Pro week needs no purchase and never turns into a subscription. \
+    Refunds are handled by Apple.
+    """)
+
     /// The privacy policy shown in the app, one localized section at a time.
     static var privacy: String {
         [
@@ -42,6 +65,7 @@ enum LegalText {
             privacyMidgarID,
             privacyTips,
             privacySupporter,
+            privacyStudio,
             privacyMoreApps,
             privacyTwitchSignIn,
             privacyReports,
@@ -85,6 +109,14 @@ enum LegalText {
     stored with the purchase, your founding number and the badge color and name style you pick, so a \
     flame badge can appear beside your name in chat. Those are published to everyone using Embr so \
     their app can show them. Your Twitch token is used to confirm the account and is not kept.
+    """)
+
+    private static let privacyStudio = String(localized: """
+    Embr Studio and Studio Pro
+    Studio reads your own channel's events, chat and ad schedule straight from Twitch with the \
+    permissions you grant, and sends the actions you choose to Twitch as you; none of it passes through \
+    Midgar's servers. Recaps and Studio's settings stay on your device, and your quick messages are kept \
+    in your own iCloud account. A Studio Pro purchase record, renewals included, is handled like a tip's.
     """)
 
     private static let privacyMoreApps = String(localized: """
