@@ -279,13 +279,12 @@ final class StudioViewController: UIViewController {
             }
             offlineLabel.text = lines.joined(separator: "\n\n")
         }
-        chatController.view.alpha = live ? 1 : 0.25
+        chatController.view.isHidden = !live
         if shownLive != live {
             shownLive = live
             updateAwake()
             if live { pro.noteLiveStream(role: snapshot.role, isSample: snapshot.isSample) }
         }
-        navigationItem.rightBarButtonItem?.menu = makeMenu()
     }
 
     private func updateAwake() {
@@ -298,13 +297,18 @@ final class StudioViewController: UIViewController {
         StudioChimes.shared.play(sound, volume: settings.current.soundVolume)
     }
 
+    /// The menu is built each time it opens, so the once-a-second render never replaces a menu someone has open.
     private func makeMenu() -> UIMenu {
+        UIMenu(children: [UIDeferredMenuElement.uncached { [weak self] completion in
+            completion(self?.menuItems() ?? [])
+        }])
+    }
+
+    private func menuItems() -> [UIMenuElement] {
         let snapshot = session.snapshot
         var items: [UIMenuElement] = []
         let quick = settings.quickMessages.enumerated().map { index, text in
-            UIAction(title: text, attributes: !hasPro && index > 0 ? [.disabled] : []) { [weak self] _ in
-                self?.perform({ [weak self] in _ = try await self?.session.chat.send(text) }, success: String(localized: "Sent to chat", comment: "Studio toast"))
-            }
+            quickMessageAction(text, locked: !hasPro && index > 0)
         }
         items.append(UIMenu(title: String(localized: "Quick Message", comment: "Studio menu"), image: UIImage(systemName: "text.bubble"), children: quick))
         if snapshot.can(.moderation) {
@@ -318,7 +322,17 @@ final class StudioViewController: UIViewController {
         items.append(UIAction(title: String(localized: "Studio Settings", comment: "Studio menu"), image: UIImage(systemName: "gearshape")) { [weak self] _ in
             self?.navigationController?.pushViewController(StudioSettingsViewController(), animated: true)
         })
-        return UIMenu(children: items)
+        return items
+    }
+
+    /// A quick message beyond the first shows a lock without Studio Pro and opens the paywall instead of sending.
+    private func quickMessageAction(_ text: String, locked: Bool) -> UIAction {
+        if locked {
+            return UIAction(title: text, subtitle: String(localized: "Studio Pro", comment: "Studio quick message locked"), image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPro() }
+        }
+        return UIAction(title: text) { [weak self] _ in
+            self?.perform({ [weak self] in _ = try await self?.session.chat.send(text) }, success: String(localized: "Sent to chat", comment: "Studio toast"))
+        }
     }
 
     private func showToast(_ text: String) {
