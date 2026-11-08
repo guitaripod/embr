@@ -75,6 +75,31 @@ struct StudioAppTests {
         #expect(store.hasPro)
     }
 
+    @Test func studioCountsAgreeWithTheirNumber() {
+        let one = 1, three = 3
+        #expect(String(localized: "\(one) raids") == "1 raid")
+        #expect(String(localized: "\(three) raids") == "3 raids")
+        #expect(String(localized: "This stream: +\(one) followers") == "This stream: +1 follower")
+        #expect(String(localized: "\(one) snoozes left") == "1 snooze left")
+        #expect(String(localized: "\(one) days left") == "1 day left")
+        #expect(String(localized: "\("ana") gifted \(one) subs") == "ana gifted 1 sub")
+        #expect(String(localized: "\("ana") gifted \(three) subs") == "ana gifted 3 subs")
+        #expect(String(localized: "Last stream: \("40") peak viewers, +\(one) followers, \("2") subs and gifts.") == "Last stream: 40 peak viewers, +1 follower, 2 subs and gifts.")
+    }
+
+    @Test func germanStudioCountsAgreeWithTheirNumber() throws {
+        let path = try #require(Bundle.main.path(forResource: "de", ofType: "lproj"))
+        let german = try #require(Bundle(path: path))
+        let locale = Locale(identifier: "de")
+        func format(_ key: String, _ arguments: CVarArg...) -> String {
+            String(format: german.localizedString(forKey: key, value: nil, table: nil), locale: locale, arguments: arguments)
+        }
+        #expect(format("%lld raids", 1) == "1 Raid")
+        #expect(format("%lld raids", 4) == "4 Raids")
+        #expect(format("%@ gifted %lld subs", "ana", 1) == "ana hat 1 Abo verschenkt")
+        #expect(format("%@ gifted %lld subs", "ana", 5) == "ana hat 5 Abos verschenkt")
+    }
+
     @Test func everyStudioProductGrantsTheStudioEntitlement() {
         for id in StudioProStore.productIDs {
             #expect(EmbrMidgar.entitlementsByProduct[id] == StudioProStore.entitlement)

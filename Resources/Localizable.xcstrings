@@ -37339,25 +37339,113 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ hat %lld Abos verschenkt"
+            "value": "%1$@ hat %#@subs@ verschenkt"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg Abo"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg Abos"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ regaló %lld suscripciones"
+            "value": "%1$@ regaló %#@subs@"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg suscripción"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg suscripciones"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ a offert %lld abonnements"
+            "value": "%1$@ a offert %#@subs@"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg abonnement"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg abonnements"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ ha regalato %lld abbonamenti"
+            "value": "%1$@ ha regalato %#@subs@"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg abbonamento"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg abbonamenti"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -37381,7 +37469,29 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ presenteou %lld inscrições"
+            "value": "%1$@ presenteou %#@subs@"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inscrição"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg inscrições"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -37394,6 +37504,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 贈送了 %lld 份訂閱"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ gifted %#@subs@"
+          },
+          "substitutions": {
+            "subs": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg sub"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg subs"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -38312,21 +38450,57 @@
       "comment": "Studio status line tally",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Werbungen"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Werbepause"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Werbepausen"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld anuncios"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anuncio"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anuncios"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld publicités"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld publicité"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld publicités"
+                }
+              }
+            }
           }
         },
         "it": {
@@ -38354,9 +38528,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld anúncios"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anúncio"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld anúncios"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -38370,6 +38556,24 @@
             "state": "translated",
             "value": "%lld 則廣告"
           }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ad break"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld ad breaks"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -38377,27 +38581,75 @@
       "comment": "Studio Pro week",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "noch %lld Tage"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "noch %lld Tag"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "noch %lld Tage"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quedan %lld días"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Queda %lld día"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quedan %lld días"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld jours restants"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld jour restant"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld jours restants"
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld giorni rimasti"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld giorno rimasto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld giorni rimasti"
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -38419,9 +38671,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "faltam %lld dias"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "falta %lld dia"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "faltam %lld dias"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -38434,6 +38698,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "剩 %lld 天"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days left"
+                }
+              }
+            }
           }
         }
       }
@@ -38637,21 +38919,57 @@
       "comment": "Studio status line tally",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Raids"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Raid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Raids"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld incursiones"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld incursión"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld incursiones"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld raids"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raids"
+                }
+              }
+            }
           }
         },
         "it": {
@@ -38679,9 +38997,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld raids"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raids"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -38694,6 +39024,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 次突襲"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raid"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld raids"
+                }
+              }
+            }
           }
         }
       }
@@ -38897,27 +39245,75 @@
       "comment": "Studio ad clock",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Verschiebungen übrig"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Verschiebung übrig"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Verschiebungen übrig"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quedan %lld aplazamientos"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Queda %lld aplazamiento"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Quedan %lld aplazamientos"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld reports restants"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld report restant"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld reports restants"
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld posticipi rimasti"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld posticipo rimasto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld posticipi rimasti"
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -38939,9 +39335,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld adiamentos restantes"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld adiamento restante"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld adiamentos restantes"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -38955,6 +39363,24 @@
             "state": "translated",
             "value": "剩 %lld 次延後"
           }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld snooze left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld snoozes left"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -38962,27 +39388,75 @@
       "comment": "Studio status line tally",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Abos"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Abo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Abos"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld suscripciones"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld suscripción"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld suscripciones"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld abonnements"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld abonnement"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld abonnements"
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld abbonamenti"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld abbonamento"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld abbonamenti"
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -39004,9 +39478,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld inscrições"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld inscrição"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld inscrições"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -39019,6 +39505,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 份訂閱"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sub"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld subs"
+                }
+              }
+            }
           }
         }
       }
@@ -44033,13 +44537,57 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Último directo: %@ espectadores máximos, +%lld seguidores, %@ suscripciones y regalos."
+            "value": "Último directo: %1$@ espectadores máximos, +%#@followers@, %3$@ suscripciones y regalos."
+          },
+          "substitutions": {
+            "followers": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg seguidor"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg seguidores"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dernier live : %@ spectateurs au pic, +%lld followers, %@ abonnements et cadeaux."
+            "value": "Dernier live : %1$@ spectateurs au pic, +%#@followers@, %3$@ abonnements et cadeaux."
+          },
+          "substitutions": {
+            "followers": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg follower"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg followers"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "it": {
@@ -44063,13 +44611,35 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ostatnia transmisja: szczyt %@ widzów, +%lld obserwujących, %@ subskrypcji i prezentów."
+            "value": "Ostatnia transmisja: szczyt widzów %@, nowi obserwujący: %lld, subskrypcje i prezenty: %@."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Última transmissão: pico de %@ espectadores, +%lld seguidores, %@ inscrições e presentes."
+            "value": "Última transmissão: pico de %1$@ espectadores, +%#@followers@, %3$@ inscrições e presentes."
+          },
+          "substitutions": {
+            "followers": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg seguidor"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg seguidores"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -44082,6 +44652,34 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次直播：最高 %@ 位觀眾，新增 %lld 位追蹤者，%@ 份訂閱與贈送。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last stream: %1$@ peak viewers, +%#@followers@, %3$@ subs and gifts."
+          },
+          "substitutions": {
+            "followers": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg follower"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg followers"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -51820,27 +52418,75 @@
       "comment": "Studio Pro settings row",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Studio Pro Testwoche · noch %lld Tage"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Studio Pro Testwoche · noch %lld Tag"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Studio Pro Testwoche · noch %lld Tage"
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semana de Studio Pro · quedan %lld días"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semana de Studio Pro · queda %lld día"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semana de Studio Pro · quedan %lld días"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semaine gratuite de Studio Pro · %lld jours restants"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semaine gratuite de Studio Pro · %lld jour restant"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semaine gratuite de Studio Pro · %lld jours restants"
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Settimana di Studio Pro · %lld giorni rimasti"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Settimana di Studio Pro · %lld giorno rimasto"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Settimana di Studio Pro · %lld giorni rimasti"
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -51862,9 +52508,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semana do Studio Pro · faltam %lld dias"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semana do Studio Pro · falta %lld dia"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Semana do Studio Pro · faltam %lld dias"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -51877,6 +52535,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Studio Pro 試用週 · 剩 %lld 天"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Studio Pro week · %lld day left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Studio Pro week · %lld days left"
+                }
+              }
+            }
           }
         }
       }
@@ -53189,15 +53865,39 @@
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este directo: +%lld seguidores"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este directo: +%lld seguidor"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Este directo: +%lld seguidores"
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ce live : +%lld followers"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ce live : +%lld follower"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ce live : +%lld followers"
+                }
+              }
+            }
           }
         },
         "it": {
@@ -53219,15 +53919,51 @@
           }
         },
         "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ta transmisja: +%lld obserwujących"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta transmisja: +%lld obserwujący"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta transmisja: +%lld obserwujący"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta transmisja: +%lld obserwujących"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta transmisja: +%lld obserwujących"
+                }
+              }
+            }
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta transmissão: +%lld seguidores"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Esta transmissão: +%lld seguidor"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Esta transmissão: +%lld seguidores"
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -53240,6 +53976,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "本次直播：新增 %lld 位追蹤者"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This stream: +%lld follower"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This stream: +%lld followers"
+                }
+              }
+            }
           }
         }
       }
@@ -56232,27 +56986,75 @@
       "comment": "Paywall status",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine kostenlose Woche hat noch %lld Tage. Am Ende wird nichts berechnet."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Deine kostenlose Woche hat noch %lld Tag. Am Ende wird nichts berechnet."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Deine kostenlose Woche hat noch %lld Tage. Am Ende wird nichts berechnet."
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu semana gratis tiene %lld días restantes. No se cobra nada cuando termina."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A tu semana gratis le queda %lld día. No se cobra nada cuando termina."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A tu semana gratis le quedan %lld días. No se cobra nada cuando termina."
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Votre semaine gratuite a encore %lld jours. Rien n'est facturé à la fin."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Votre semaine gratuite a encore %lld jour. Rien n'est facturé à la fin."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Votre semaine gratuite a encore %lld jours. Rien n'est facturé à la fin."
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La tua settimana gratuita ha %lld giorni rimasti. Non viene addebitato nulla alla scadenza."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Alla tua settimana gratuita resta %lld giorno. Non viene addebitato nulla alla scadenza."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Alla tua settimana gratuita restano %lld giorni. Non viene addebitato nulla alla scadenza."
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -56274,9 +57076,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sua semana gratuita tem %lld dias restantes. Nada é cobrado quando terminar."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Falta %lld dia para sua semana gratuita acabar. Nada é cobrado quando terminar."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Faltam %lld dias para sua semana gratuita acabar. Nada é cobrado quando terminar."
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -56290,6 +57104,24 @@
             "state": "translated",
             "value": "你的免費試用週還剩 %lld 天。試用結束時不會收費。"
           }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your free week has %lld day left. Nothing is charged when it ends."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your free week has %lld days left. Nothing is charged when it ends."
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -56297,27 +57129,75 @@
       "comment": "Studio Pro settings",
       "localizations": {
         "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine kostenlose Woche Studio Pro hat noch %lld Tage. Am Ende wird nichts berechnet."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Deine kostenlose Woche Studio Pro hat noch %lld Tag. Am Ende wird nichts berechnet."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Deine kostenlose Woche Studio Pro hat noch %lld Tage. Am Ende wird nichts berechnet."
+                }
+              }
+            }
           }
         },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu semana gratis de Studio Pro tiene %lld días restantes. No se cobra nada cuando termina."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A tu semana gratis de Studio Pro le queda %lld día. No se cobra nada cuando termina."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A tu semana gratis de Studio Pro le quedan %lld días. No se cobra nada cuando termina."
+                }
+              }
+            }
           }
         },
         "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Votre semaine gratuite de Studio Pro a encore %lld jours. Rien n'est facturé à la fin."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Votre semaine gratuite de Studio Pro a encore %lld jour. Rien n'est facturé à la fin."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Votre semaine gratuite de Studio Pro a encore %lld jours. Rien n'est facturé à la fin."
+                }
+              }
+            }
           }
         },
         "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La tua settimana gratuita di Studio Pro ha %lld giorni rimasti. Non viene addebitato nulla alla scadenza."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Alla tua settimana gratuita di Studio Pro resta %lld giorno. Non viene addebitato nulla alla scadenza."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Alla tua settimana gratuita di Studio Pro restano %lld giorni. Non viene addebitato nulla alla scadenza."
+                }
+              }
+            }
           }
         },
         "ja": {
@@ -56339,9 +57219,21 @@
           }
         },
         "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sua semana gratuita do Studio Pro tem %lld dias restantes. Nada é cobrado quando ela terminar."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Falta %lld dia para sua semana gratuita do Studio Pro acabar. Nada é cobrado quando ela terminar."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Faltam %lld dias para sua semana gratuita do Studio Pro acabar. Nada é cobrado quando ela terminar."
+                }
+              }
+            }
           }
         },
         "zh-Hans": {
@@ -56354,6 +57246,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Studio Pro 的免費試用週還剩 %lld 天。試用結束時不會收費。"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your free week of Studio Pro has %lld day left. Nothing is charged when it ends."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your free week of Studio Pro has %lld days left. Nothing is charged when it ends."
+                }
+              }
+            }
           }
         }
       }
