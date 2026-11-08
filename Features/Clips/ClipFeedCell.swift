@@ -236,11 +236,11 @@ final class ClipFeedCell: UICollectionViewCell {
         shareButton.addAction(UIAction { [weak self] _ in
             guard let self, let clip = self.clip else { return }
             self.delegate?.clipCellDidTapShare(self, clip: clip)
-        }, for: .primaryActionTriggered)
+        }, for: .touchUpInside)
         moreButton.addAction(UIAction { [weak self] _ in
             guard let self, let clip = self.clip else { return }
             self.delegate?.clipCellDidTapMore(self, clip: clip)
-        }, for: .primaryActionTriggered)
+        }, for: .touchUpInside)
 
         let info = UIStackView(arrangedSubviews: [channelLabel, titleLabel, metaLabel])
         info.axis = .vertical
@@ -427,5 +427,11 @@ final class ClipRailButton: UIControl {
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.6 : 1 }
+    }
+
+    /// A plain control fires only touch events, so VoiceOver's activation sends the same tap.
+    override func accessibilityActivate() -> Bool {
+        sendActions(for: .touchUpInside)
+        return true
     }
 }

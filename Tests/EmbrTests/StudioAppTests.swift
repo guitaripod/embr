@@ -1,6 +1,7 @@
 import EmbrCore
 import Foundation
 import Testing
+import UIKit
 
 @testable import Embr
 
@@ -100,11 +101,31 @@ struct StudioAppTests {
         #expect(format("%@ gifted %lld subs", "ana", 5) == "ana hat 5 Abos verschenkt")
     }
 
+    @Test func tappingAPlanOnThePaywallSelectsIt() throws {
+        let paywall = StudioProViewController()
+        paywall.loadViewIfNeeded()
+        let plans = paywall.view.descendants(of: StudioPlanView.self)
+        try #require(plans.count == 3)
+        #expect(plans[0].accessibilityTraits.contains(.selected))
+        plans[1].sendActions(for: .touchUpInside)
+        #expect(plans[1].accessibilityTraits.contains(.selected))
+        #expect(!plans[0].accessibilityTraits.contains(.selected))
+        #expect(plans[2].accessibilityActivate())
+        #expect(plans[2].accessibilityTraits.contains(.selected))
+    }
+
     @Test func everyStudioProductGrantsTheStudioEntitlement() {
         for id in StudioProStore.productIDs {
             #expect(EmbrMidgar.entitlementsByProduct[id] == StudioProStore.entitlement)
         }
         #expect(EmbrMidgar.entitlementsByProduct[SupporterAPI.productID] == SupporterStore.entitlement)
         #expect(Set(EmbrMidgar.productIDs).isSuperset(of: StudioProStore.productIDs))
+    }
+}
+
+extension UIView {
+    /// Every view of the given type under this one, in depth-first order.
+    func descendants<T: UIView>(of type: T.Type) -> [T] {
+        subviews.flatMap { ($0 as? T).map { [$0] } ?? [] + $0.descendants(of: type) }
     }
 }

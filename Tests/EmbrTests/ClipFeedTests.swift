@@ -1,6 +1,7 @@
 import EmbrCore
 import Foundation
 import Testing
+import UIKit
 
 @testable import Embr
 
@@ -68,5 +69,31 @@ struct ClipFeedTests {
         let visible = hidden.visible([Self.clip("a"), Self.clip("b"), Self.clip("c")])
         #expect(visible.map(\.id) == ["a", "c"])
         #expect(hidden.ids == ["b"])
+    }
+}
+
+@MainActor
+struct ClipFeedCellTests {
+    private final class Recorder: ClipFeedCellDelegate {
+        var taps: [String] = []
+        func clipCellDidTogglePlayback(_ cell: ClipFeedCell) { taps.append("toggle") }
+        func clipCellDidTapShare(_ cell: ClipFeedCell, clip: Clip) { taps.append("share \(clip.id)") }
+        func clipCellDidTapMore(_ cell: ClipFeedCell, clip: Clip) { taps.append("more \(clip.id)") }
+        func clipCellDidRequestRetry(_ cell: ClipFeedCell, clip: Clip) { taps.append("retry") }
+        func clipCell(_ cell: ClipFeedCell, didScrubTo fraction: Double, clip: Clip) {}
+        func clipCell(_ cell: ClipFeedCell, scrollBy direction: UIAccessibilityScrollDirection) -> Bool { false }
+    }
+
+    @Test func tappingShareAndMoreReachesTheFeed() throws {
+        let cell = ClipFeedCell(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let recorder = Recorder()
+        cell.delegate = recorder
+        let clip = Clip(id: "Calm", broadcasterID: "1", broadcasterName: "Someone", creatorName: "clipper", title: "A clip", viewCount: 10, createdAt: Date(timeIntervalSince1970: 0), thumbnailURL: nil)
+        cell.configure(with: clip, images: ImageLoader.shared, hidesTitle: false)
+        let rail = cell.contentView.descendants(of: ClipRailButton.self)
+        try #require(rail.count == 2)
+        rail[0].sendActions(for: .touchUpInside)
+        #expect(rail[1].accessibilityActivate())
+        #expect(recorder.taps == ["share Calm", "more Calm"])
     }
 }

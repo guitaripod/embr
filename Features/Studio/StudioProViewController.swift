@@ -62,7 +62,7 @@ final class StudioProViewController: UIViewController {
                 self?.selected = id
                 Haptics.selection()
                 self?.refresh()
-            }, for: .primaryActionTriggered)
+            }, for: .touchUpInside)
             planViews[id] = plan
             plans.addArrangedSubview(plan)
         }
@@ -270,6 +270,16 @@ final class StudioPlanView: UIControl {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.7 : 1 }
+    }
+
+    /// A plain control fires only touch events, so VoiceOver's activation sends the same tap.
+    override func accessibilityActivate() -> Bool {
+        sendActions(for: .touchUpInside)
+        return true
+    }
 
     func show(title: String, price: String, badge text: String?, selected: Bool) {
         titleLabel.text = title
