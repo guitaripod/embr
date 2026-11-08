@@ -276,6 +276,32 @@ final class StudioSession {
         }
     }
 
+    #if DEBUG
+    func seedAdForScreenshot(nextIn seconds: TimeInterval) {
+        let now = Date()
+        snapshot.adClock.apply(AdSchedule(nextAdAt: now.addingTimeInterval(seconds), lastAdAt: now.addingTimeInterval(-1500), duration: 90, prerollFreeSeconds: 0, snoozeCount: 2, snoozeRefreshAt: now.addingTimeInterval(1200), fetchedAt: now))
+        publish()
+    }
+
+    func showOfflineForScreenshot() {
+        let now = Date()
+        var recap = SessionTally(startedAt: now.addingTimeInterval(-(3 * 3600 + 27 * 60) - 7200))
+        recap.followers = 38
+        recap.subscriptions = 9
+        recap.giftedSubscriptions = 13
+        recap.bits = 1_840
+        recap.adBreaks = 3
+        recap.adSeconds = 450
+        recap.record(viewers: 214)
+        recap.end(at: now.addingTimeInterval(-7200))
+        snapshot.isSample = false
+        snapshot.isLive = false
+        snapshot.recap = recap
+        snapshot.nextStream = ScheduleSegment(id: "shot", startTime: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: now.addingTimeInterval(86_400)) ?? now, endTime: nil, title: "Watercolour night: harbour at dusk", categoryName: "Art", isRecurring: true, canceledUntil: nil)
+        publish()
+    }
+    #endif
+
     private func listen() {
         signalTask?.cancel()
         listener = UUID()
@@ -412,7 +438,7 @@ final class StudioSession {
         snapshot.viewers = snapshot.viewerHistory.last
         snapshot.followerTotal = 1_284
         snapshot.adClock.apply(StudioSample.schedule(now: now))
-        snapshot.goal = StudioGoal(id: "sample-goal", kind: "follow", description: "1,300 followers", current: 1_284, target: 1_300, ended: false, achieved: false)
+        snapshot.goal = StudioGoal(id: "sample-goal", kind: "follow", description: "", current: 1_284, target: 1_300, ended: false, achieved: false)
         snapshot.recap = nil
     }
 

@@ -15,12 +15,13 @@ extension Settings: MessageLayoutSettings {
         #endif
     }
 
-    /// Chat on a TV is read from the couch: the three sizes of the Apple TV's chat menu, in points on the 1080p canvas.
+    /// Studio's chat on a TV is read from across the room: four sizes, in points on the 1080p canvas.
     var tvChatFontSize: CGFloat {
         switch tvChatTextSizePreference {
-        case .small: 22
-        case .medium: 26
-        case .large: 31
+        case .small: 28
+        case .medium: 34
+        case .large: 40
+        case .extraLarge: 48
         }
     }
 

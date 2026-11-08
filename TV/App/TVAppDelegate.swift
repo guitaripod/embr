@@ -11,7 +11,6 @@ final class TVAppDelegate: UIResponder, UIApplicationDelegate {
         EmbrMidgar.configureLogging()
         #if DEBUG
         DemoWorld.resetLaunchState()
-        TVScreenshotRoute.seedDemo()
         #endif
         _ = AppContainer.shared
         EmbrMidgar.shared.start()
@@ -20,8 +19,6 @@ final class TVAppDelegate: UIResponder, UIApplicationDelegate {
         TipJarStore.shared.start()
         SupporterStore.shared.start()
         StudioProStore.shared.start()
-        FavoritesSync.shared.start()
-        Task { await TVLiveDirectory.shared.refresh() }
         MidgarLog.info("tv app launched", category: .app)
         return true
     }

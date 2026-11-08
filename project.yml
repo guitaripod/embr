@@ -176,6 +176,8 @@ targets:
           - "FollowedLiveService.swift"
           - "LiveSidebarModel.swift"
       - path: App/Demo
+        excludes:
+          - "DemoVideoPlayer.swift"
       - path: App/AppContainer.swift
       - path: App/EmbrMidgar.swift
       - path: App/LogCategories.swift
@@ -196,9 +198,6 @@ targets:
       - path: Features/Channel/Chat/VODChatSource.swift
       - path: Features/Channel/Chat/Network
       - path: Features/Channel/Chat/Rendering
-      - path: Features/Channel/Video/HLSVideoPlayer.swift
-      - path: Features/Channel/Video/VideoPlaying.swift
-      - path: Features/Channel/Video/Network
       - path: Features/Legal/LegalText.swift
       - path: Resources/Localizable.xcstrings
       - path: Resources/PrivacyInfo.xcprivacy
@@ -219,9 +218,6 @@ targets:
         product: MidgarPortal
       - package: MidgarKit
         product: MidgarUI
-      - target: EmbrTopShelf
-        embed: true
-        codeSign: true
     entitlements:
       path: TV/EmbrTV.entitlements
       properties:
@@ -380,7 +376,6 @@ schemes:
     build:
       targets:
         EmbrTV: all
-        EmbrTopShelf: all
         EmbrTVUITests: [test]
     run:
       config: Debug

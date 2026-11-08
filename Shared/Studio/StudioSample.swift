@@ -176,6 +176,7 @@ final class StudioSampleChatSource: ChatSource {
                         badges: []
                     )))
                     sequence += 1
+                    guard sequence > 14 else { continue }
                     let pause = 0.8 + Double((sequence * 37) % 9) / 10
                     try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000))
                 }

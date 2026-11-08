@@ -7,6 +7,10 @@ import MidgarCore
 /// with the code filled in) or type the code at twitch.tv/activate, approve, and the TV signs itself in. A code that
 /// runs out is replaced on screen without a press.
 final class TVSignInViewController: UIViewController {
+    /// Called once the TV is signed in, instead of the screen closing itself.
+    var onSignedIn: (() -> Void)?
+
+    private let scopes: [String]
     private let titleLabel = UILabel()
     private let stepsLabel = UILabel()
     private let codeLabel = UILabel()
@@ -19,6 +23,14 @@ final class TVSignInViewController: UIViewController {
 
     private let transport = AppContainer.shared.transport
     private let clientID = Configuration.current.twitchClientID
+
+    init(scopes: [String] = DeviceAuthorization.scopes) {
+        self.scopes = scopes
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,10 +51,10 @@ final class TVSignInViewController: UIViewController {
         footnoteLabel.font = TVFont.cardSubtitle
         footnoteLabel.textColor = Theme.secondaryText
         footnoteLabel.numberOfLines = 0
-        footnoteLabel.text = String(localized: "Embr can then show the channels you follow and chat as you. It never sees your password.")
+        footnoteLabel.text = String(localized: "Twitch asks you to approve exactly the permissions you chose. Embr never sees your password.", comment: "Studio sign-in footnote")
 
         doneButton.configuration?.title = String(localized: "Not Now")
-        doneButton.addAction(UIAction { [weak self] _ in self?.dismiss(animated: true) }, for: .primaryActionTriggered)
+        doneButton.addAction(UIAction { [weak self] _ in self?.close() }, for: .primaryActionTriggered)
 
         let text = UIStackView(arrangedSubviews: [titleLabel, stepsLabel, codeLabel, footnoteLabel, doneButton])
         text.axis = .vertical
@@ -113,9 +125,12 @@ final class TVSignInViewController: UIViewController {
             switch await poll(start) {
             case .signedIn(let user):
                 showSignedIn(user)
-                await TVLiveDirectory.shared.refresh()
                 try? await Task.sleep(for: .seconds(1.5))
-                dismiss(animated: true)
+                if let onSignedIn {
+                    onSignedIn()
+                } else {
+                    dismiss(animated: true)
+                }
                 return
             case .expired:
                 continue
@@ -137,7 +152,7 @@ final class TVSignInViewController: UIViewController {
 
     private func requestCode() async -> DeviceAuthorization.Start? {
         do {
-            let response = try await transport.send(DeviceAuthorization.startRequest(clientID: clientID))
+            let response = try await transport.send(DeviceAuthorization.startRequest(clientID: clientID, scopes: scopes))
             return try DeviceAuthorization.decodeStart(response)
         } catch {
             MidgarLog.notice("tv sign-in: device code request failed: \(error)", category: .auth)
@@ -151,7 +166,7 @@ final class TVSignInViewController: UIViewController {
         while Date() < deadline {
             try? await Task.sleep(for: .seconds(interval))
             guard !Task.isCancelled else { return .cancelled }
-            let request = DeviceAuthorization.tokenRequest(clientID: clientID, deviceCode: start.deviceCode)
+            let request = DeviceAuthorization.tokenRequest(clientID: clientID, deviceCode: start.deviceCode, scopes: scopes)
             guard let response = try? await transport.send(request) else { continue }
             switch DeviceAuthorization.pollResult(response) {
             case .authorized(let token):
@@ -194,7 +209,7 @@ final class TVSignInViewController: UIViewController {
 
     private func showSignedIn(_ user: AuthenticatedUser) {
         titleLabel.text = String(localized: "Signed in as \(user.login)")
-        stepsLabel.text = String(localized: "Your followed channels are on their way.")
+        stepsLabel.text = String(localized: "Opening Studio…", comment: "Studio sign-in done")
         codeLabel.text = "✓"
         UIAccessibility.post(notification: .announcement, argument: titleLabel.text)
     }
@@ -202,6 +217,14 @@ final class TVSignInViewController: UIViewController {
     private func showFailure(_ message: String) {
         spinner.stopAnimating()
         stepsLabel.text = message
+    }
+
+    private func close() {
+        if let navigation = navigationController, navigation.viewControllers.first !== self {
+            navigation.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
 
     private static func qrCode(for url: URL) -> UIImage? {

@@ -68,6 +68,7 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
         case small
         case medium
         case large
+        case extraLarge
     }
 
     static let `default` = Settings(
