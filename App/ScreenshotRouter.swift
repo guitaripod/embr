@@ -147,6 +147,7 @@ enum ScreenshotRouter {
                 tabBar.settingsNavigationController.pushViewController(StudioSettingsViewController(), animated: false)
             }
         case "studiopro":
+            ScreenshotHarness.previewStudioPrices = true
             tabBar.present(UINavigationController(rootViewController: StudioProViewController()), animated: false)
         case "clips":
             guard let channel else { return }

@@ -131,19 +131,18 @@ final class StudioProViewController: UIViewController {
     }
 
     private func refresh() {
-        let saving = pro.yearlySavingPercent
+        let saving = yearlySaving
         for (id, view) in planViews {
-            let product = pro.product(id)
-            let price = product?.displayPrice ?? "…"
+            let shown = price(of: id) ?? "…"
             switch id {
             case StudioProStore.yearlyID:
-                view.show(title: String(localized: "Yearly", comment: "Paywall plan"), price: String(localized: "\(price) a year", comment: "Paywall plan price"), badge: saving.map { String(localized: "Save \($0)%", comment: "Paywall plan saving") }, selected: selected == id)
+                view.show(title: String(localized: "Yearly", comment: "Paywall plan"), price: String(localized: "\(shown) a year", comment: "Paywall plan price"), badge: saving.map { String(localized: "Save \($0)%", comment: "Paywall plan saving") }, selected: selected == id)
             case StudioProStore.monthlyID:
-                view.show(title: String(localized: "Monthly", comment: "Paywall plan"), price: String(localized: "\(price) a month", comment: "Paywall plan price"), badge: nil, selected: selected == id)
+                view.show(title: String(localized: "Monthly", comment: "Paywall plan"), price: String(localized: "\(shown) a month", comment: "Paywall plan price"), badge: nil, selected: selected == id)
             default:
-                view.show(title: String(localized: "Lifetime", comment: "Paywall plan"), price: String(localized: "\(price) once", comment: "Paywall plan price"), badge: String(localized: "Pay once", comment: "Paywall plan badge"), selected: selected == id)
+                view.show(title: String(localized: "Lifetime", comment: "Paywall plan"), price: String(localized: "\(shown) once", comment: "Paywall plan price"), badge: String(localized: "Pay once", comment: "Paywall plan badge"), selected: selected == id)
             }
-            view.isEnabled = product != nil
+            view.isEnabled = price(of: id) != nil
         }
         if pro.isSubscriber {
             buyButton.configuration?.title = String(localized: "Studio Pro Is Yours", comment: "Paywall button")
@@ -155,14 +154,34 @@ final class StudioProViewController: UIViewController {
             ? String(localized: "Buy Studio Pro", comment: "Paywall button")
             : String(localized: "Subscribe", comment: "Paywall button")
         buyButton.configuration?.showsActivityIndicator = buying
-        buyButton.isEnabled = pro.product(selected) != nil && !buying
+        buyButton.isEnabled = price(of: selected) != nil && !buying
         if case .active(let ends) = pro.weekPhase() {
             status.text = String(localized: "Your free week has \(StudioProWeek.daysLeft(until: ends, now: Date())) days left. Nothing is charged when it ends.", comment: "Paywall status")
-        } else if pro.productsUnavailable {
+        } else if pro.productsUnavailable, !previewsPrices {
             status.text = String(localized: "The App Store can't be reached right now.", comment: "Paywall status")
         } else {
             status.text = nil
         }
+    }
+
+    /// A plan's price from the App Store, or the US price App Store Connect lists while previewing.
+    private func price(of id: String) -> String? {
+        if let product = pro.product(id) { return product.displayPrice }
+        guard previewsPrices else { return nil }
+        return [StudioProStore.yearlyID: "$29.99", StudioProStore.monthlyID: "$3.99", StudioProStore.lifetimeID: "$79.99"][id]
+    }
+
+    private var yearlySaving: Int? {
+        pro.yearlySavingPercent ?? (previewsPrices ? 37 : nil)
+    }
+
+    /// A DEBUG screenshot run launched by `simctl` has no StoreKit to answer from, so it previews the listed prices.
+    private var previewsPrices: Bool {
+        #if DEBUG
+        ScreenshotHarness.previewStudioPrices
+        #else
+        false
+        #endif
     }
 
     private func buy() {

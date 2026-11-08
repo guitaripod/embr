@@ -21,6 +21,8 @@ enum ScreenshotHarness {
     static var searchQuery: String?
     static var seededFollow = false
     static var previewTips = false
+    /// Shows Studio Pro's US prices on the paywall, which a simulator launched by `simctl` cannot load from StoreKit.
+    static var previewStudioPrices = false
     /// Shows a chat's moderator actions, for a capture of the user card in a channel the demo viewer does not moderate.
     static var moderates = false
     /// Store panels on iPad are shot without the status bar, which iPadOS draws over the
