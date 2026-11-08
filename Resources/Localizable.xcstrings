@@ -41930,71 +41930,6 @@
         }
       }
     },
-    "Chat, alerts, moderating your own channel and the sample stream stay free. One purchase covers Embr on iPhone, iPad and Apple TV.": {
-      "comment": "Paywall footnote",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat, Alarme, die Moderation deines eigenen Kanals und der Beispiel-Stream bleiben kostenlos. Ein Kauf gilt für Embr auf iPhone, iPad und Apple TV."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El chat, las alertas, la moderación de tu propio canal y el directo de muestra siguen siendo gratis. Una sola compra cubre Embr en iPhone, iPad y Apple TV."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le chat, les alertes, la modération de votre chaîne et le flux de démonstration restent gratuits. Un seul achat couvre Embr sur iPhone, iPad et Apple TV."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat, avvisi, moderazione del tuo canale e la diretta di prova restano gratuiti. Un solo acquisto copre Embr su iPhone, iPad e Apple TV."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "チャット、アラート、自分のチャンネルのモデレート、サンプル配信は無料のままです。1 回の購入で iPhone、iPad、Apple TV の Embr すべてに適用されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "채팅, 알림, 내 채널 관리와 샘플 스트림은 계속 무료예요. 한 번 구입하면 iPhone, iPad, Apple TV의 Embr에서 모두 사용할 수 있어요."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Czat, alerty, moderacja własnego kanału i przykładowa transmisja pozostają darmowe. Jeden zakup obejmuje Embr na iPhone, iPad i Apple TV."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chat, alertas, moderação do seu próprio canal e a transmissão de exemplo continuam gratuitos. Uma compra cobre o Embr no iPhone, iPad e Apple TV."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天、提醒、管理你自己的频道以及示例直播均免费。一次购买即可在 iPhone、iPad 和 Apple TV 上使用 Embr。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天、提醒、管理你自己的頻道，以及範例直播都是免費的。一次購買即可涵蓋 iPhone、iPad 和 Apple TV 上的 Embr。"
-          }
-        }
-      }
-    },
     "Cheerer goal": {
       "comment": "Studio goal label",
       "localizations": {
@@ -57979,6 +57914,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "Embr Studio 與 Studio Pro\nStudio 透過 Twitch 讀取你自己頻道的事件、聊天與廣告排程，使用你授予的權限，並以你的身分將你選擇的操作傳送給 Twitch；這些資料都不會經過 Midgar 的伺服器。回顧與 Studio 設定保存在你的裝置上，快速訊息則保存在你自己的 iCloud 帳戶中。Studio Pro 的購買紀錄（包括續訂）與打賞的處理方式相同。"
+          }
+        }
+      }
+    },
+    "Chat, alerts, moderating your own channel and the sample stream stay free. Studio Pro works on iPhone, iPad and Apple TV with the same Apple Account.": {
+      "comment": "Paywall footnote",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat, Alarme, die Moderation deines eigenen Kanals und der Beispiel-Stream bleiben kostenlos. Studio Pro funktioniert auf iPhone, iPad und Apple TV mit demselben Apple-Account."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El chat, las alertas, la moderación de tu propio canal y el directo de muestra siguen siendo gratis. Studio Pro funciona en iPhone, iPad y Apple TV con la misma cuenta de Apple."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le chat, les alertes, la modération de votre chaîne et le flux de démonstration restent gratuits. Studio Pro fonctionne sur iPhone, iPad et Apple TV avec le même identifiant Apple."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat, avvisi, moderazione del tuo canale e la diretta di prova restano gratuiti. Studio Pro funziona su iPhone, iPad e Apple TV con lo stesso Account Apple."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャット、アラート、自分のチャンネルのモデレート、サンプル配信は無料のままです。Studio Pro は、同じ Apple アカウントで iPhone、iPad、Apple TV に対応しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "채팅, 알림, 내 채널 관리와 샘플 스트림은 계속 무료예요. Studio Pro는 같은 Apple 계정으로 iPhone, iPad, Apple TV에서 사용할 수 있어요."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czat, alerty, moderacja własnego kanału i przykładowa transmisja pozostają darmowe. Studio Pro działa na iPhone, iPad i Apple TV przy tym samym koncie Apple."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat, alertas, moderação do seu próprio canal e a transmissão de exemplo continuam gratuitos. O Studio Pro funciona no iPhone, iPad e Apple TV com a mesma Conta Apple."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天、提醒、管理你自己的频道以及示例直播均免费。使用同一个 Apple 账户，即可在 iPhone、iPad 和 Apple TV 上使用 Studio Pro。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "聊天、提醒、管理你自己的頻道，以及範例直播都是免費的。使用同一個 Apple 帳號，即可在 iPhone、iPad 和 Apple TV 上使用 Studio Pro。"
           }
         }
       }

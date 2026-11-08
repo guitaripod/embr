@@ -53,7 +53,7 @@ final class TVStudioProViewController: UIViewController {
         points.axis = .vertical
         points.spacing = 22
         let foot = UILabel()
-        foot.text = String(localized: "Chat, alerts, moderating your own channel and the sample stream stay free. One purchase covers Embr on iPhone, iPad and Apple TV.", comment: "Paywall footnote")
+        foot.text = String(localized: "Chat, alerts, moderating your own channel and the sample stream stay free. Studio Pro works on iPhone, iPad and Apple TV with the same Apple Account.", comment: "Paywall footnote")
         foot.font = .systemFont(ofSize: 24)
         foot.textColor = StudioPalette.muted
         foot.numberOfLines = 0
