@@ -7,11 +7,13 @@ public struct WorkerEndpoints: Sendable {
         self.baseURL = baseURL
     }
 
-    /// The Twitch sign-in link; `moderator` also asks for the scopes Moderator Tools needs.
-    public func loginURL(redirectURI: String, state: String, moderator: Bool = false) -> HTTPRequest {
+    /// The Twitch sign-in link; `moderator` also asks for the scopes Moderator Tools needs, and `scopes` asks for an
+    /// explicit list on top of the viewer's (Embr Studio's chosen features), taking the place of `moderator`.
+    public func loginURL(redirectURI: String, state: String, moderator: Bool = false, scopes: [String]? = nil) -> HTTPRequest {
+        let asked = scopes.map { $0.joined(separator: " ") } ?? (moderator ? "moderator" : nil)
         let url = QueryEncoder.url(
             path("/auth/login-url"),
-            items: [("redirectURI", redirectURI), ("state", state), ("scopes", moderator ? "moderator" : nil)]
+            items: [("redirectURI", redirectURI), ("state", state), ("scopes", asked)]
         ) ?? baseURL.appendingPathComponent("auth/login-url")
         return HTTPRequest(method: .get, url: url)
     }

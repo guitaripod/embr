@@ -188,6 +188,9 @@ final class StudioOnAirStripView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
+    /// An iPhone's strip keeps only what fits: the viewer count with an eye, no sparkline or category.
+    private var isCompact: Bool { scale.title < StudioScale.pad.title }
+
     func show(_ snapshot: StudioSession.Snapshot, showsViewers: Bool) {
         let prefix = snapshot.role == .moderator ? String(localized: "Moderating ", comment: "Studio, before the channel name in moderator mode") : ""
         nameLabel.text = prefix + snapshot.channel.broadcasterName
@@ -202,7 +205,14 @@ final class StudioOnAirStripView: UIView {
         statsStack.isHidden = !snapshot.isLive || viewers == nil || !showsViewers
         sparkline.show(snapshot.viewerHistory)
         categoryLabel.text = snapshot.category
-        categoryLabel.isHidden = snapshot.category.isEmpty
+        categoryLabel.isHidden = snapshot.category.isEmpty || isCompact
+        sparkline.isHidden = isCompact
+        viewersCaption.isHidden = isCompact
+        if isCompact, let viewers {
+            let text = NSMutableAttributedString(attachment: NSTextAttachment(image: UIImage(systemName: "eye.fill")?.withTintColor(StudioPalette.muted, renderingMode: .alwaysOriginal) ?? UIImage()))
+            text.append(NSAttributedString(string: " " + viewers.formatted()))
+            viewersLabel.attributedText = text
+        }
         if let goal = snapshot.goal {
             goalRow.isHidden = false
             let what = goal.description.isEmpty ? Self.goalName(goal.kind) : goal.description

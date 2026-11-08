@@ -16,8 +16,8 @@ final class WorkerAuthClient: Sendable {
         self.endpoints = endpoints
     }
 
-    func loginURL(redirectURI: String, state: String, moderator: Bool = false) async throws -> URL {
-        let response = try await send(endpoints.loginURL(redirectURI: redirectURI, state: state, moderator: moderator))
+    func loginURL(redirectURI: String, state: String, moderator: Bool = false, scopes: [String]? = nil) async throws -> URL {
+        let response = try await send(endpoints.loginURL(redirectURI: redirectURI, state: state, moderator: moderator, scopes: scopes))
         let payload = try decode(LoginURLResponse.self, from: response.body)
         guard let url = URL(string: payload.url) else {
             throw APIError.decoding("login-url returned an invalid URL")

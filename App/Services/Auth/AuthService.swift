@@ -187,8 +187,8 @@ actor AuthService: AuthControlling {
 
     #if os(iOS)
     @MainActor
-    func login(presentationAnchor: ASPresentationAnchor, moderator: Bool = false) async throws -> AuthenticatedUser {
-        let request = try await prepareLogin(moderator: moderator)
+    func login(presentationAnchor: ASPresentationAnchor, moderator: Bool = false, scopes: [String]? = nil) async throws -> AuthenticatedUser {
+        let request = try await prepareLogin(moderator: moderator, scopes: scopes)
         let coordinator = TwitchLoginCoordinator(anchor: presentationAnchor)
         let callbackURL = try await coordinator.authorize(
             authorizeURL: request.authorizeURL,
@@ -236,10 +236,10 @@ actor AuthService: AuthControlling {
         let state: String
     }
 
-    private func prepareLogin(moderator: Bool) async throws -> LoginRequest {
+    private func prepareLogin(moderator: Bool, scopes: [String]?) async throws -> LoginRequest {
         let state = UUID().uuidString
         let scheme = callbackScheme
-        let authorizeURL = try await worker.loginURL(redirectURI: redirectURI, state: state, moderator: moderator)
+        let authorizeURL = try await worker.loginURL(redirectURI: redirectURI, state: state, moderator: moderator, scopes: scopes)
         return LoginRequest(authorizeURL: authorizeURL, redirectURI: redirectURI, scheme: scheme, state: state)
     }
 

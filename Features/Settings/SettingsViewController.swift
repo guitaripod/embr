@@ -140,7 +140,7 @@ final class SettingsViewController: SettingsPageViewController {
         [
             SettingsSection(id: "root.account", items: [accountCard()]),
             SettingsSection(id: "root.more", items: [moreAppsCard()]),
-            SettingsSection(id: "root.supporter", items: [supporterItem()]),
+            SettingsSection(id: "root.supporter", items: [supporterItem(), studioItem()]),
             SettingsSection(id: "root.app", items: [pageLink(.general), pageLink(.home), pageLink(.chat), pageLink(.video)]),
             SettingsSection(id: "root.safety", items: [pageLink(.safety)]),
             SettingsSection(id: "root.embr", items: [pageLink(.support), pageLink(.about)]),
@@ -183,6 +183,18 @@ final class SettingsViewController: SettingsPageViewController {
             keywords: [String(localized: "Themes"), String(localized: "App Icon")],
             kind: .link(value: nil) { [weak self] presenter in
                 self?.push(SupporterViewController(), from: presenter)
+            }
+        )
+    }
+
+    private func studioItem() -> SettingsItem {
+        SettingsItem(
+            id: "studio", title: String(localized: "Embr Studio", comment: "Settings row"),
+            subtitle: String(localized: "For streamers: your chat, alerts and ad breaks on one screen.", comment: "Settings row"),
+            icon: SettingsIcon(symbol: "sparkles.tv.fill", color: StudioPalette.ember),
+            keywords: [String(localized: "Streamer"), String(localized: "Ads"), String(localized: "Alerts"), "Studio Pro"],
+            kind: .link(value: nil) { [weak self] presenter in
+                self?.push(StudioSettingsViewController(), from: presenter)
             }
         )
     }

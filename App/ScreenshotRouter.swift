@@ -133,6 +133,21 @@ enum ScreenshotRouter {
                     after(0.4) { videos.selectSegmentForScreenshot(segment) }
                 }
             }
+        case "studio":
+            StudioLauncher.openSample(from: tabBar)
+            if let moment = option("StudioMoment") {
+                after(2.5) {
+                    let navigation = tabBar.presentedViewController as? UINavigationController
+                    (navigation?.viewControllers.first as? StudioViewController)?.showMomentForScreenshot(moment)
+                }
+            }
+        case "studiosettings":
+            tabBar.select(.settings)
+            after(0.6) {
+                tabBar.settingsNavigationController.pushViewController(StudioSettingsViewController(), animated: false)
+            }
+        case "studiopro":
+            tabBar.present(UINavigationController(rootViewController: StudioProViewController()), animated: false)
         case "clips":
             guard let channel else { return }
             Task {
