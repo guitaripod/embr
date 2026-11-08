@@ -26,5 +26,5 @@ if ! xcodebuild -project Embr.xcodeproj -scheme EmbrTV -destination "$DESTINATIO
   grep -E "error:|actor-isolated|Sendable" "$LOG" >&2 || true
   exit 1
 fi
-grep -E "warning: .*/(TV|Shared|ShelfShared|TopShelf)/" "$LOG" | sort -u || true
+grep -E "warning: .*/(TV|Shared)/" "$LOG" | sort -u || true
 echo "==> BUILD SUCCEEDED"

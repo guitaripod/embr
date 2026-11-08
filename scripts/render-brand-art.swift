@@ -241,7 +241,7 @@ func tvIcon(width: Int, height: Int, scale: Int, folder: String) {
          output.appendingPathComponent("\(folder)/front\(suffix).png"))
 }
 
-/// The Top Shelf picture shown while nothing the viewer follows is live: the flame, the name and a line.
+/// The Top Shelf picture behind the app icon: the flame, the name and what Embr Studio is.
 func topShelf(width: Int, height: Int, scale: Int, name: String) {
     let w = width * scale, h = height * scale
     let size = CGSize(width: w, height: h)
@@ -257,7 +257,7 @@ func topShelf(width: Int, height: Int, scale: Int, name: String) {
             .foregroundColor: NSColor.white,
             .kern: -CGFloat(h) * 0.004,
         ])
-        let line = NSAttributedString(string: "Live streams, chat and emotes", attributes: [
+        let line = NSAttributedString(string: "Studio: the control room for your stream", attributes: [
             .font: NSFont.systemFont(ofSize: CGFloat(h) * 0.058, weight: .medium),
             .foregroundColor: NSColor(white: 1, alpha: 0.62),
         ])

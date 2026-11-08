@@ -160,32 +160,6 @@ import Testing
     }
 }
 
-@Suite struct ShelfPlannerTests {
-    private func stream(_ id: String, viewers: Int) -> LiveStream {
-        LiveStream(
-            id: "s\(id)", userID: id, userLogin: "login\(id)", userName: "Name \(id)", gameID: "g", gameName: "Game",
-            title: "Title", viewerCount: viewers, startedAt: Date(timeIntervalSince1970: 0), language: "en",
-            thumbnailURLTemplate: "https://example.com/{width}x{height}.jpg"
-        )
-    }
-
-    @Test func favoritesComeFirstThenTheBusiestAndEachChannelOnce() {
-        let entries = ShelfPlanner.entries(
-            live: [stream("a", viewers: 900), stream("b", viewers: 10), stream("c", viewers: 500), stream("b", viewers: 10)],
-            favoriteIDs: ["b"]
-        )
-
-        #expect(entries.map(\.stream.userID) == ["b", "a", "c"])
-        #expect(entries.map(\.isFavorite) == [true, false, false])
-    }
-
-    @Test func theShelfIsCapped() {
-        let streams = (0..<30).map { stream("\($0)", viewers: $0) }
-
-        #expect(ShelfPlanner.entries(live: streams, favoriteIDs: []).count == ShelfPlanner.limit)
-    }
-}
-
 @Suite struct SupporterAPITests {
     private let endpoints = WorkerEndpoints(baseURL: URL(string: "https://api.example.com/v1/embr")!)
 

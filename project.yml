@@ -169,7 +169,6 @@ targets:
           - "Info.plist"
           - "EmbrTV.entitlements"
       - path: Shared
-      - path: ShelfShared
       - path: App/Services
         excludes:
           - "Auth/TwitchLoginCoordinator.swift"
@@ -224,7 +223,6 @@ targets:
         keychain-access-groups:
           - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
           - $(AppIdentifierPrefix)cc.midgarcorp.shared
-          - $(AppIdentifierPrefix)com.guitaripod.embr.shelf
         com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
         com.apple.developer.user-management:
           - runs-as-current-user
@@ -279,7 +277,6 @@ targets:
           - CFBundleURLName: com.guitaripod.embr
             CFBundleURLSchemes:
               - embr
-        EmbrShelfKeychainGroup: $(AppIdentifierPrefix)com.guitaripod.embr.shelf
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
 
@@ -299,66 +296,6 @@ targets:
         DEVELOPMENT_TEAM: P4DQK6SRKR
         CODE_SIGN_STYLE: Automatic
         TEST_TARGET_NAME: EmbrTV
-
-  EmbrTopShelf:
-    type: tv-app-extension
-    platform: tvOS
-    deploymentTarget: "18.0"
-    sources:
-      - path: TopShelf
-        excludes:
-          - "Info.plist"
-          - "EmbrTopShelf.entitlements"
-      - path: ShelfShared
-      - path: App/Secrets.swift
-      - path: Resources/Localizable.xcstrings
-    dependencies:
-      - package: EmbrCore
-        product: EmbrCore
-      - package: MidgarKit
-        product: MidgarCore
-    entitlements:
-      path: TopShelf/EmbrTopShelf.entitlements
-      properties:
-        keychain-access-groups:
-          - $(AppIdentifierPrefix)com.guitaripod.embr.shelf
-        com.apple.developer.user-management:
-          - runs-as-current-user
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.guitaripod.embr.topshelf
-        PRODUCT_NAME: EmbrTopShelf
-        PRODUCT_MODULE_NAME: EmbrTopShelf
-        MARKETING_VERSION: "1.4.0"
-        CURRENT_PROJECT_VERSION: "25"
-        SWIFT_VERSION: "6.0"
-        SWIFT_STRICT_CONCURRENCY: complete
-        SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION: YES
-        TARGETED_DEVICE_FAMILY: "3"
-        DEVELOPMENT_TEAM: P4DQK6SRKR
-        CODE_SIGN_STYLE: Automatic
-        GENERATE_INFOPLIST_FILE: NO
-        APPLICATION_EXTENSION_API_ONLY: YES
-      configs:
-        Debug:
-          CODE_SIGN_STYLE[sdk=appletvos*]: Manual
-          CODE_SIGN_IDENTITY[sdk=appletvos*]: "Apple Development"
-          PROVISIONING_PROFILE_SPECIFIER[sdk=appletvos*]: "Embr Top Shelf Development"
-        Release:
-          CODE_SIGN_STYLE: Manual
-          CODE_SIGN_IDENTITY: "Apple Distribution"
-          PROVISIONING_PROFILE_SPECIFIER: "Embr Top Shelf App Store"
-          DEVELOPMENT_TEAM: P4DQK6SRKR
-    info:
-      path: TopShelf/Info.plist
-      properties:
-        CFBundleDisplayName: Embr
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        EmbrShelfKeychainGroup: $(AppIdentifierPrefix)com.guitaripod.embr.shelf
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.tv-top-shelf
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ContentProvider
 
 schemes:
   Embr:
