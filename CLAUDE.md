@@ -92,7 +92,7 @@ Worker secrets: `wrangler secret put TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET` 
 
 ## Logging — agents read this
 
-`MidgarLog` (MidgarCore) mirrors os_log AND `Library/Logs/embr.log` (rotates at 2 MB, three archives kept). Categories: `app, auth, api, eventsub, chat, emote, playback, persistence, tips` (Embr's, in `LogCategories.swift`) plus MidgarCore's `account, commerce, network, portal, ui`. To pull from a device, use the `ios-device-logs` skill / `devicectl ... copy from --source Library/Logs/embr.log`.
+`MidgarLog` (MidgarCore) mirrors os_log AND `Library/Logs/embr.log` (rotates at 2 MB, three archives kept). Categories: `app, auth, api, eventsub, chat, emote, playback, persistence, tips, studio` (Embr's, in `LogCategories.swift`) plus MidgarCore's `account, commerce, network, portal, ui`. To pull from a device, use the `ios-device-logs` skill / `devicectl ... copy from --source Library/Logs/embr.log`.
 
 ## Secrets / config
 

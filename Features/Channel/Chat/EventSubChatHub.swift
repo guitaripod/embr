@@ -5,13 +5,29 @@ import MidgarCore
 /// One EventSub WebSocket for every chat the signed-in viewer has open. Twitch allows a user three WebSocket
 /// connections with subscriptions, so chats share this one: a channel's subscriptions are made on the shared session
 /// when its first listener joins, its events go to that channel's listeners only, and its subscriptions are deleted
-/// when the last listener leaves. The socket closes a little after the last chat does.
+/// when the last listener leaves. The socket closes a little after the last chat does. Embr Studio adds its own
+/// subscriptions (follows, ads, hype trains and the rest) to a channel's room on the same connection.
 actor EventSubChatHub {
+    /// What a Studio listener hears: its channel's Studio events, and a subscription Twitch took away.
+    enum StudioSignal: Sendable {
+        case event(StudioEvent)
+        case revoked(subscriptionType: String, reason: String)
+    }
+
+    private struct StudioInterest {
+        let role: StudioRole
+        let features: Set<StudioFeature>
+    }
+
     static let shared = EventSubChatHub()
 
     private struct Room {
         let channel: ChannelInfo
         var listeners: [UUID: AsyncStream<ChatEvent>.Continuation] = [:]
+        var studioListeners: [UUID: AsyncStream<StudioSignal>.Continuation] = [:]
+        var studio: StudioInterest?
+        var studioIDs: [String] = []
+        var studioTask: Task<Void, Never>?
         var subscriptionIDs: [String] = []
         var moderationIDs: [String] = []
         var staleIDs: [String] = []
@@ -25,6 +41,12 @@ actor EventSubChatHub {
         func send(_ event: ChatEvent) {
             for listener in listeners.values { listener.yield(event) }
         }
+
+        func sendStudio(_ signal: StudioSignal) {
+            for listener in studioListeners.values { listener.yield(signal) }
+        }
+
+        var isEmpty: Bool { listeners.isEmpty && studioListeners.isEmpty }
     }
 
     private let auth: AuthControlling
@@ -68,13 +90,64 @@ actor EventSubChatHub {
     func leave(channelID: String, listener: UUID) {
         guard var room = rooms[channelID], let continuation = room.listeners.removeValue(forKey: listener) else { return }
         continuation.finish()
-        if room.listeners.isEmpty {
-            room.subscribeTask?.cancel()
-            rooms[channelID] = nil
-            unsubscribe(room.subscriptionIDs + room.moderationIDs + room.staleIDs, channel: room.channel)
-            scheduleIdleClose()
+        rooms[channelID] = room
+        closeIfEmpty(channelID)
+    }
+
+    /// The channel's Studio events for one listener: the hub adds Studio's subscriptions for `role` and the features
+    /// the token carries to the channel's room, beside its chat. A chat listener for the same channel is expected (the
+    /// Studio screen shows chat), but the room opens without one.
+    nonisolated func joinStudio(_ channel: ChannelInfo, role: StudioRole, features: Set<StudioFeature>, listener: UUID) -> AsyncStream<StudioSignal> {
+        AsyncStream { continuation in
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.leaveStudio(channelID: channel.id, listener: listener) }
+            }
+            Task { await self.addStudio(channel, interest: StudioInterest(role: role, features: features), listener: listener, continuation: continuation) }
+        }
+    }
+
+    func leaveStudio(channelID: String, listener: UUID) {
+        guard var room = rooms[channelID], let continuation = room.studioListeners.removeValue(forKey: listener) else { return }
+        continuation.finish()
+        if room.studioListeners.isEmpty {
+            room.studio = nil
+            room.studioTask?.cancel()
+            let ids = room.studioIDs
+            room.studioIDs = []
+            rooms[channelID] = room
+            unsubscribe(ids, channel: room.channel)
         } else {
             rooms[channelID] = room
+        }
+        closeIfEmpty(channelID)
+    }
+
+    private func closeIfEmpty(_ channelID: String) {
+        guard let room = rooms[channelID], room.isEmpty else { return }
+        room.subscribeTask?.cancel()
+        room.studioTask?.cancel()
+        rooms[channelID] = nil
+        unsubscribe(room.subscriptionIDs + room.moderationIDs + room.studioIDs + room.staleIDs, channel: room.channel)
+        scheduleIdleClose()
+    }
+
+    private func addStudio(_ channel: ChannelInfo, interest: StudioInterest, listener: UUID, continuation: AsyncStream<StudioSignal>.Continuation) {
+        idleTask?.cancel()
+        idleTask = nil
+        if rooms[channel.id] == nil {
+            rooms[channel.id] = Room(channel: channel)
+            if sessionID != nil, !gaveUp {
+                subscribe(channel.id)
+            } else if sockets.isEmpty || gaveUp {
+                attempt = 0
+                connect()
+            }
+        }
+        rooms[channel.id]?.studioListeners[listener] = continuation
+        let changed = rooms[channel.id]?.studio.map { $0.role != interest.role || $0.features != interest.features } ?? true
+        rooms[channel.id]?.studio = interest
+        if changed, rooms[channel.id]?.subscribed == true {
+            syncStudio(channel.id, replacing: true)
         }
     }
 
@@ -203,6 +276,12 @@ actor EventSubChatHub {
         case .notification(let subscriptionType, let broadcasterID, let event):
             lastKeepalive = Date()
             guard let broadcasterID, let room = rooms[broadcasterID] else { return }
+            if !room.studioListeners.isEmpty, StudioEventDecoder.reads(subscriptionType) {
+                for studioEvent in StudioEventDecoder.events(subscriptionType: subscriptionType, eventData: event) {
+                    room.sendStudio(.event(studioEvent))
+                }
+            }
+            guard !StudioEventDecoder.studioTypes.contains(subscriptionType), !room.listeners.isEmpty else { return }
             do {
                 let chatEvent = try EventSubMapper.chatEvent(subscriptionType: subscriptionType, eventData: event, timestamp: Date())
                 room.send(chatEvent)
@@ -222,6 +301,10 @@ actor EventSubChatHub {
         case .revocation(let reason, let subscriptionType, let broadcasterID):
             MidgarLog.notice("EventSub revocation \(subscriptionType ?? "?") for \(broadcasterID ?? "?"): \(reason)", category: .eventsub)
             guard let broadcasterID, let room = rooms[broadcasterID] else { return }
+            if let subscriptionType, StudioEventDecoder.studioTypes.contains(subscriptionType) {
+                room.sendStudio(.revoked(subscriptionType: subscriptionType, reason: reason))
+                return
+            }
             if let subscriptionType, EventSubSubscriptionRequest.isModeratorType(subscriptionType) {
                 dropModeration(broadcasterID)
             } else if Self.isPermanentRevocation(reason) {
@@ -257,9 +340,10 @@ actor EventSubChatHub {
         nextRoomGeneration += 1
         let generation = nextRoomGeneration
         room.generation = generation
-        room.staleIDs += room.subscriptionIDs + room.moderationIDs
+        room.staleIDs += room.subscriptionIDs + room.moderationIDs + room.studioIDs
         room.subscriptionIDs = []
         room.moderationIDs = []
+        room.studioIDs = []
         room.subscribed = false
         room.stopped = false
         room.subscribeTask = Task { [weak self] in
@@ -305,6 +389,7 @@ actor EventSubChatHub {
             rooms[channelID]?.send(.connection(.connected))
             MidgarLog.info("EventSub hub subscribed to \(channel.broadcasterLogin) (\(rooms.count) chat(s) on one connection)", category: .eventsub)
             syncModeration(channelID)
+            syncStudio(channelID, replacing: false)
         } catch {
             guard !Task.isCancelled, isCurrent(channelID, sessionID: sessionID, generation: generation), let room = rooms[channelID] else { return }
             let apiError = error as? APIError
@@ -366,6 +451,42 @@ actor EventSubChatHub {
         }
     }
 
+    /// Makes the room's Studio subscriptions match its Studio listeners: creates them for the role and features asked
+    /// for, after deleting the old ones when the ask changed, and deletes them when no Studio listener is left.
+    private func syncStudio(_ channelID: String, replacing: Bool) {
+        guard var room = rooms[channelID] else { return }
+        room.studioTask?.cancel()
+        let old = replacing ? room.studioIDs : []
+        if replacing { room.studioIDs = [] }
+        let generation = room.generation
+        room.studioTask = Task { [weak self] in
+            await self?.reconcileStudio(channelID, generation: generation, deleting: old)
+        }
+        rooms[channelID] = room
+    }
+
+    private func reconcileStudio(_ channelID: String, generation: Int, deleting old: [String]) async {
+        guard let sessionID, let room = rooms[channelID], room.subscribed, room.generation == generation else { return }
+        guard let token = try? await auth.validAccessToken(), let user = await auth.currentUser() else { return }
+        if !old.isEmpty { await subscriber.deleteSubscriptions(old, token: token) }
+        guard isCurrent(channelID, sessionID: sessionID, generation: generation), let room = rooms[channelID],
+              let interest = room.studio, room.studioIDs.isEmpty else { return }
+        let requests = StudioSubscriptionPlan.requests(
+            role: interest.role,
+            features: interest.features,
+            broadcasterID: channelID,
+            userID: user.id,
+            sessionID: sessionID
+        )
+        let ids = await subscriber.createBestEffort(requests, token: token)
+        guard !Task.isCancelled, isCurrent(channelID, sessionID: sessionID, generation: generation), rooms[channelID]?.studio != nil else {
+            await subscriber.deleteSubscriptions(ids, token: token)
+            return
+        }
+        rooms[channelID]?.studioIDs = ids
+        MidgarLog.info("EventSub hub: Studio on in \(room.channel.broadcasterLogin) (\(ids.count) of \(requests.count) subscription(s))", category: .eventsub)
+    }
+
     /// Lets go of a chat's moderator subscriptions after Twitch revoked one, as it does when the viewer stops
     /// moderating there, and forgets which channels they moderate so the next check asks again.
     private func dropModeration(_ channelID: String) {
@@ -382,6 +503,8 @@ actor EventSubChatHub {
             rooms[id]?.subscribed = false
             rooms[id]?.subscriptionIDs = []
             rooms[id]?.moderationIDs = []
+            rooms[id]?.studioIDs = []
+            rooms[id]?.studioTask?.cancel()
             rooms[id]?.staleIDs = []
         }
     }

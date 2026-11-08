@@ -19,6 +19,8 @@ actor ChatRoom {
     enum Mode: Sendable, Equatable {
         case live
         case vod(videoID: String)
+        /// Studio's sample stream: invented chat, no network at all.
+        case sample
     }
 
     private let channel: ChannelInfo
@@ -162,6 +164,12 @@ actor ChatRoom {
     }
 
     private func setup() async {
+        if case .sample = mode {
+            continuation?.yield(.catalog(EmoteCatalog(), BadgeCatalog()))
+            startFlushing()
+            consumeSource()
+            return
+        }
         await loadCatalog()
         guard !stopped else { return }
         if case .live = mode {
@@ -242,6 +250,9 @@ actor ChatRoom {
         #endif
         if case .vod(let videoID) = mode {
             return VODChatSource(channel: channel, videoID: videoID)
+        }
+        if case .sample = mode {
+            return StudioSampleChatSource(channel: channel)
         }
         return loggedIn
             ? EventSubChatSource(channel: channel)

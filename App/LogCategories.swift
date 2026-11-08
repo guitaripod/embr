@@ -10,4 +10,5 @@ extension MidgarLog.Category {
     static let playback = MidgarLog.Category("playback")
     static let persistence = MidgarLog.Category("persistence")
     static let tips = MidgarLog.Category("tips")
+    static let studio = MidgarLog.Category("studio")
 }

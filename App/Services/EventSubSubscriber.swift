@@ -73,6 +73,28 @@ final class EventSubSubscriber: Sendable {
         return ids
     }
 
+    /// Makes each subscription on a best-effort basis and returns the ids made: one Twitch refuses (a scope the token
+    /// lacks, a channel that isn't an Affiliate) costs only its own feature.
+    func createBestEffort(_ requests: [EventSubSubscriptionRequest], token: String) async -> [String] {
+        var ids: [String] = []
+        await withTaskGroup(of: String?.self) { group in
+            for request in requests {
+                group.addTask {
+                    do {
+                        return try await self.create(request, token: token)
+                    } catch {
+                        MidgarLog.notice("EventSub subscribe \(request.type) failed: \(error)", category: .eventsub)
+                        return nil
+                    }
+                }
+            }
+            for await id in group {
+                if let id { ids.append(id) }
+            }
+        }
+        return ids
+    }
+
     /// Deletes subscriptions the session no longer needs. Failures are only logged: Twitch drops a session's
     /// subscriptions itself when the session closes.
     func deleteSubscriptions(_ ids: [String], token: String) async {

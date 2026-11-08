@@ -371,3 +371,28 @@ struct StudioHelixTests {
         #expect(StudioHelixDecoder.hypeTrain(Data(#"{"data":[{"current":null}]}"#.utf8)) == nil)
     }
 }
+
+struct SpamWaveDetectorTests {
+    @Test func aCopiedMessageFromManyAccountsWarnsOnce() {
+        var detector = SpamWaveDetector()
+        let start = Date(timeIntervalSince1970: 0)
+        var warnings = 0
+        for index in 0..<30 {
+            if detector.ingest(text: "Follow my channel for free viewers!!", user: "bot\(index % 10)", at: start.addingTimeInterval(Double(index))) {
+                warnings += 1
+            }
+        }
+        #expect(warnings == 1)
+    }
+
+    @Test func emoteSpamAndOneChatterRepeatingAreNotAWave() {
+        var detector = SpamWaveDetector()
+        let start = Date(timeIntervalSince1970: 0)
+        var warned = false
+        for index in 0..<40 {
+            warned = warned || detector.ingest(text: "LUL", user: "user\(index)", at: start.addingTimeInterval(Double(index)))
+            warned = warned || detector.ingest(text: "this is a long repeated message", user: "same", at: start.addingTimeInterval(Double(index)))
+        }
+        #expect(!warned)
+    }
+}

@@ -11,6 +11,8 @@ final class ChatViewModel {
     let noticeSubject = PassthroughSubject<SystemNotice, Never>()
     let activitySubject = PassthroughSubject<ChatActivity, Never>()
     let moderationSubject = PassthroughSubject<ModerationQueue, Never>()
+    /// Each batch of live messages as it arrives, for Studio's spam-wave check.
+    let arrivalsSubject = PassthroughSubject<[ChatMessage], Never>()
     private(set) var moderation = ModerationQueue()
 
     private let room: ChatRoom
@@ -396,6 +398,7 @@ final class ChatViewModel {
             lastCatalog = catalog
             catalogSubject.send(catalog)
         case .messages(let messages):
+            arrivalsSubject.send(messages)
             if let (snapshot, activity) = await store.append(messages) {
                 snapshotSubject.send(snapshot)
                 if activity.added > 0 { activitySubject.send(activity) }
