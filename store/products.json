@@ -1,6 +1,200 @@
 {
   "version": 1,
-  "subscriptionGroups": [],
+  "subscriptionGroups": [
+    {
+      "referenceName": "Embr Studio Pro",
+      "localizations": {
+        "de-DE": {
+          "name": "Embr Studio Pro"
+        },
+        "en-AU": {
+          "name": "Embr Studio Pro"
+        },
+        "en-GB": {
+          "name": "Embr Studio Pro"
+        },
+        "en-US": {
+          "name": "Embr Studio Pro"
+        },
+        "es-ES": {
+          "name": "Embr Studio Pro"
+        },
+        "es-MX": {
+          "name": "Embr Studio Pro"
+        },
+        "fr-FR": {
+          "name": "Embr Studio Pro"
+        },
+        "it": {
+          "name": "Embr Studio Pro"
+        },
+        "ja": {
+          "name": "Embr Studio Pro"
+        },
+        "ko": {
+          "name": "Embr Studio Pro"
+        },
+        "pl": {
+          "name": "Embr Studio Pro"
+        },
+        "pt-BR": {
+          "name": "Embr Studio Pro"
+        },
+        "zh-Hans": {
+          "name": "Embr Studio Pro"
+        },
+        "zh-Hant": {
+          "name": "Embr Studio Pro"
+        }
+      },
+      "subscriptions": [
+        {
+          "productId": "com.guitaripod.embr.studio.yearly",
+          "referenceName": "Embr Studio Pro Yearly",
+          "duration": "ONE_YEAR",
+          "groupLevel": 1,
+          "familySharable": false,
+          "price": {
+            "territory": "USA",
+            "amount": "29.99"
+          },
+          "introductoryOffers": [],
+          "localizations": {
+            "de-DE": {
+              "name": "Studio Pro jährlich",
+              "description": "Werbesteuerung, Sounds und Rückblicke."
+            },
+            "en-AU": {
+              "name": "Studio Pro Yearly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "en-GB": {
+              "name": "Studio Pro Yearly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "en-US": {
+              "name": "Studio Pro Yearly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "es-ES": {
+              "name": "Studio Pro anual",
+              "description": "Control de anuncios, sonidos y resúmenes."
+            },
+            "es-MX": {
+              "name": "Studio Pro anual",
+              "description": "Control de anuncios, sonidos y resúmenes."
+            },
+            "fr-FR": {
+              "name": "Studio Pro annuel",
+              "description": "Gestion des pubs, sons et récapitulatifs."
+            },
+            "it": {
+              "name": "Studio Pro annuale",
+              "description": "Controllo pubblicità, suoni e riepiloghi."
+            },
+            "ja": {
+              "name": "Studio Pro 年額",
+              "description": "広告の操作、通知音、配信のまとめ。"
+            },
+            "ko": {
+              "name": "Studio Pro 연간",
+              "description": "광고 제어, 알림음, 방송 요약."
+            },
+            "pl": {
+              "name": "Studio Pro rocznie",
+              "description": "Reklamy, dźwięki i podsumowania streamów."
+            },
+            "pt-BR": {
+              "name": "Studio Pro anual",
+              "description": "Controle de anúncios, sons e resumos."
+            },
+            "zh-Hans": {
+              "name": "Studio Pro 年度",
+              "description": "广告控制、提示音和直播回顾。"
+            },
+            "zh-Hant": {
+              "name": "Studio Pro 年度",
+              "description": "廣告控制、提示音和直播回顧。"
+            }
+          },
+          "reviewScreenshot": "review/studio-pro.png",
+          "reviewNote": "Studio Pro is for streamers using Embr Studio, a screen for their own Twitch channel while they are live (Settings > Embr Studio on iPhone and iPad, and the Apple TV app). It adds snoozing and running ad breaks, alert sounds, the stream recap, moderator mode for channels the person moderates, and quick messages. Chat, alerts, moderation of your own channel and the sample stream stay free. Every streamer gets one free week of Pro from their first live stream in Studio, with nothing to sign up for. To see it without going live, open Embr Studio and choose Try a Sample Stream."
+        },
+        {
+          "productId": "com.guitaripod.embr.studio.monthly",
+          "referenceName": "Embr Studio Pro Monthly",
+          "duration": "ONE_MONTH",
+          "groupLevel": 1,
+          "familySharable": false,
+          "price": {
+            "territory": "USA",
+            "amount": "3.99"
+          },
+          "introductoryOffers": [],
+          "localizations": {
+            "de-DE": {
+              "name": "Studio Pro monatlich",
+              "description": "Werbesteuerung, Sounds und Rückblicke."
+            },
+            "en-AU": {
+              "name": "Studio Pro Monthly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "en-GB": {
+              "name": "Studio Pro Monthly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "en-US": {
+              "name": "Studio Pro Monthly",
+              "description": "Studio's ad controls, sounds and recaps."
+            },
+            "es-ES": {
+              "name": "Studio Pro mensual",
+              "description": "Control de anuncios, sonidos y resúmenes."
+            },
+            "es-MX": {
+              "name": "Studio Pro mensual",
+              "description": "Control de anuncios, sonidos y resúmenes."
+            },
+            "fr-FR": {
+              "name": "Studio Pro mensuel",
+              "description": "Gestion des pubs, sons et récapitulatifs."
+            },
+            "it": {
+              "name": "Studio Pro mensile",
+              "description": "Controllo pubblicità, suoni e riepiloghi."
+            },
+            "ja": {
+              "name": "Studio Pro 月額",
+              "description": "広告の操作、通知音、配信のまとめ。"
+            },
+            "ko": {
+              "name": "Studio Pro 월간",
+              "description": "광고 제어, 알림음, 방송 요약."
+            },
+            "pl": {
+              "name": "Studio Pro miesięcznie",
+              "description": "Reklamy, dźwięki i podsumowania streamów."
+            },
+            "pt-BR": {
+              "name": "Studio Pro mensal",
+              "description": "Controle de anúncios, sons e resumos."
+            },
+            "zh-Hans": {
+              "name": "Studio Pro 月度",
+              "description": "广告控制、提示音和直播回顾。"
+            },
+            "zh-Hant": {
+              "name": "Studio Pro 月度",
+              "description": "廣告控制、提示音和直播回顧。"
+            }
+          },
+          "reviewScreenshot": "review/studio-pro.png",
+          "reviewNote": "Studio Pro is for streamers using Embr Studio, a screen for their own Twitch channel while they are live (Settings > Embr Studio on iPhone and iPad, and the Apple TV app). It adds snoozing and running ad breaks, alert sounds, the stream recap, moderator mode for channels the person moderates, and quick messages. Chat, alerts, moderation of your own channel and the sample stream stay free. Every streamer gets one free week of Pro from their first live stream in Studio, with nothing to sign up for. To see it without going live, open Embr Studio and choose Try a Sample Stream."
+        }
+      ]
+    }
+  ],
   "inAppPurchases": [
     {
       "productId": "com.guitaripod.embr.tip.large",
@@ -275,6 +469,76 @@
       },
       "reviewScreenshot": "review/supporter.png",
       "reviewNote": "Founding Supporter is a one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven iPhone icons, and a flame badge in the buyer's color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying. Find it in Settings > Become a Founding Supporter on iPhone and iPad. Watching and chat never need it."
+    },
+    {
+      "productId": "com.guitaripod.embr.studio.lifetime",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "Embr Studio Pro Lifetime",
+      "familySharable": false,
+      "price": {
+        "territory": "USA",
+        "amount": "79.99"
+      },
+      "localizations": {
+        "de-DE": {
+          "name": "Studio Pro dauerhaft",
+          "description": "Alles aus Studio Pro, einmal bezahlt."
+        },
+        "en-AU": {
+          "name": "Studio Pro for Life",
+          "description": "Every Studio Pro feature, paid once."
+        },
+        "en-GB": {
+          "name": "Studio Pro for Life",
+          "description": "Every Studio Pro feature, paid once."
+        },
+        "en-US": {
+          "name": "Studio Pro for Life",
+          "description": "Every Studio Pro feature, paid once."
+        },
+        "es-ES": {
+          "name": "Studio Pro de por vida",
+          "description": "Todo Studio Pro con un solo pago."
+        },
+        "es-MX": {
+          "name": "Studio Pro de por vida",
+          "description": "Todo Studio Pro con un solo pago."
+        },
+        "fr-FR": {
+          "name": "Studio Pro à vie",
+          "description": "Tout Studio Pro, payé une seule fois."
+        },
+        "it": {
+          "name": "Studio Pro a vita",
+          "description": "Tutto Studio Pro con un solo acquisto."
+        },
+        "ja": {
+          "name": "Studio Pro 買い切り",
+          "description": "Studio Proのすべてを一度の購入で。"
+        },
+        "ko": {
+          "name": "Studio Pro 평생",
+          "description": "한 번 구매로 Studio Pro 전체."
+        },
+        "pl": {
+          "name": "Studio Pro na zawsze",
+          "description": "Całe Studio Pro za jedną płatność."
+        },
+        "pt-BR": {
+          "name": "Studio Pro vitalício",
+          "description": "Todo o Studio Pro com um só pagamento."
+        },
+        "zh-Hans": {
+          "name": "Studio Pro 永久",
+          "description": "一次购买，永久使用 Studio Pro 全部功能。"
+        },
+        "zh-Hant": {
+          "name": "Studio Pro 永久",
+          "description": "一次購買，永久使用 Studio Pro 全部功能。"
+        }
+      },
+      "reviewScreenshot": "review/studio-pro.png",
+      "reviewNote": "Studio Pro is for streamers using Embr Studio, a screen for their own Twitch channel while they are live (Settings > Embr Studio on iPhone and iPad, and the Apple TV app). It adds snoozing and running ad breaks, alert sounds, the stream recap, moderator mode for channels the person moderates, and quick messages. Chat, alerts, moderation of your own channel and the sample stream stay free. Every streamer gets one free week of Pro from their first live stream in Studio, with nothing to sign up for. To see it without going live, open Embr Studio and choose Try a Sample Stream."
     }
   ]
 }

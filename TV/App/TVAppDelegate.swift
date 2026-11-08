@@ -19,6 +19,7 @@ final class TVAppDelegate: UIResponder, UIApplicationDelegate {
         RemoteConfigService.shared.start()
         TipJarStore.shared.start()
         SupporterStore.shared.start()
+        StudioProStore.shared.start()
         FavoritesSync.shared.start()
         Task { await TVLiveDirectory.shared.refresh() }
         MidgarLog.info("tv app launched", category: .app)

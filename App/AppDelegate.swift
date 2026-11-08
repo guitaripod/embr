@@ -26,6 +26,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         RemoteConfigService.shared.start()
         TipJarStore.shared.start()
         SupporterStore.shared.start()
+        StudioProStore.shared.start()
         FavoritesSync.shared.start()
         MidgarLog.info("app launched", category: .app)
         return true
