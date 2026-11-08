@@ -899,8 +899,17 @@ final class ChannelViewController: UIViewController {
         Task { [weak self] in
             guard let self else { return }
             let user = await self.auth.currentUser()
-            self.attachChat(user: user)
+            self.attachChat(user: user ?? Self.posedChatUser)
         }
+    }
+
+    /// A DEBUG capture can pose a signed-in viewer (`-screenshotChatAs <login>`) so the composer and keyboard show.
+    private static var posedChatUser: AuthenticatedUser? {
+        #if DEBUG
+        ScreenshotRouter.option("ChatAs").map { AuthenticatedUser(id: "posed-\($0)", login: $0, displayName: $0, scopes: []) }
+        #else
+        nil
+        #endif
     }
 
     private func attachChat(user: AuthenticatedUser?) {

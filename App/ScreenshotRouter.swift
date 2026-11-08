@@ -251,6 +251,9 @@ enum ScreenshotRouter {
             ]
             ScreenshotHarness.channelPose = poses[route] ?? .normal
             openChannel(channel, deepLinks: deepLinks, tabBar: tabBar)
+            if let cycles = option("KeyboardCycles").flatMap(Int.init) {
+                cycleKeyboard(in: tabBar, times: cycles, startingAfter: option("KeyboardAt").flatMap(Double.init) ?? 6)
+            }
             if let seconds = option("TurnBack").flatMap(Double.init) {
                 let turn = option("TurnAt").flatMap(Double.init) ?? 4
                 requestLandscape(from: tabBar, after: turn)
@@ -258,6 +261,21 @@ enum ScreenshotRouter {
                 after(turn + seconds + 2) { snapshotWindow(of: tabBar, named: "turnback") }
             }
         default: break
+        }
+    }
+
+    /// Opens and closes the chat keyboard over and over on a channel page, for a screen recording of the keyboard's
+    /// arrival: `-screenshotKeyboardCycles <n>`, starting `-screenshotKeyboardAt <seconds>` after launch.
+    private static func cycleKeyboard(in tabBar: RootTabBarController, times: Int, startingAfter delay: Double) {
+        for cycle in 0..<times {
+            let start = delay + Double(cycle) * 3.5
+            after(start) {
+                guard let top = tabBar.presentedViewController ?? tabBar.selectedViewController,
+                      let chat = chatController(in: top) else { return }
+                KeyboardProbe.shared.watch(cycle: cycle, scene: tabBar.view.window?.windowScene)
+                chat.focusComposer()
+            }
+            after(start + 2) { tabBar.view.window?.endEditing(true) }
         }
     }
 
@@ -338,6 +356,50 @@ enum ScreenshotRouter {
             seeded.append(FavoriteChannel(id: user.id, login: user.login, name: user.displayName, addedAt: Date()))
         }
         FavoritesStore.shared.seedForScreenshots(seeded)
+    }
+}
+/// Logs, frame by frame for a moment after the keyboard is asked for, where every keyboard-hosting view sits on
+/// screen, so a keyboard that flashes in the wrong place shows up in `embr.log` on a real device.
+@MainActor
+final class KeyboardProbe: NSObject {
+    static let shared = KeyboardProbe()
+    private var link: CADisplayLink?
+    private var started = CFAbsoluteTimeGetCurrent()
+    private var cycle = 0
+    private weak var scene: UIWindowScene?
+
+    func watch(cycle: Int, scene: UIWindowScene?) {
+        link?.invalidate()
+        self.cycle = cycle
+        self.scene = scene
+        started = CFAbsoluteTimeGetCurrent()
+        let link = CADisplayLink(target: self, selector: #selector(tick))
+        link.add(to: .main, forMode: .common)
+        self.link = link
+    }
+
+    @objc private func tick() {
+        let elapsed = CFAbsoluteTimeGetCurrent() - started
+        guard elapsed < 0.9, let scene else {
+            link?.invalidate()
+            link = nil
+            return
+        }
+        for window in scene.windows {
+            record(window, in: window, depth: 0, elapsed: elapsed)
+        }
+    }
+
+    private func record(_ view: UIView, in window: UIWindow, depth: Int, elapsed: Double) {
+        let name = String(describing: type(of: view))
+        let interesting = ["Keyboard", "InputSet", "InputView", "Remote", "Prediction", "Assistant"].contains { name.contains($0) }
+        if interesting, !view.isHidden {
+            let shown = view.layer.presentation() ?? view.layer
+            let frame = view.superview.map { $0.layer.convert(shown.frame, to: window.layer) } ?? shown.frame
+            MidgarLog.notice(String(format: "kbprobe c%d t%.3f %@ in %@ y=%.0f h=%.0f w=%.0f a=%.2f", cycle, elapsed, name, String(describing: type(of: window)), frame.minY, frame.height, frame.width, shown.opacity), category: .app)
+        }
+        guard depth < 7 else { return }
+        for child in view.subviews { record(child, in: window, depth: depth + 1, elapsed: elapsed) }
     }
 }
 #endif
