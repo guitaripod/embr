@@ -1,22 +1,22 @@
-SIGNING IN WITH THE DEMO ACCOUNT (Twitch)
-Embr has no Sign in with Apple. Twitch's login page, which Embr opens, shows Twitch's own "Continue with Apple", "Google" and "Amazon" buttons: please do not use them. They sign in with the reviewer's own account, which is not the demo account, so Twitch shows an error or offers to create a new Twitch account. Type the demo username and password into Twitch's fields instead.
-
-Twitch then emails a one-time verification code, as it does on every sign-in from a new device. Twitch has no setting to turn this off and no fixed code. The demo account's email arrives on this page, which shows the newest code within seconds and refreshes itself:
+DEMO ACCOUNT (Twitch)
+On Twitch's login page, which Embr opens, please type the demo username and password into Twitch's fields; don't use Twitch's "Continue with Apple", "Google" or "Amazon" buttons, which sign in with your own account. Twitch then emails a one-time code, as on every sign-in from a new device (it cannot be turned off). The demo account's newest code appears within seconds on this page, which refreshes itself:
 {CODE_PAGE_URL}
-
-1. In Embr: Connect Twitch Account on the welcome screen, or later Settings > Log In with Twitch (the card at the top of Settings).
-2. On Twitch's page, type the username and password from the fields above and tap Log In.
-3. When Twitch asks for the verification code, open the link above in Safari on any device. The code appears within seconds of Twitch asking for it, with how long ago it arrived.
-4. Enter that code on Twitch's screen to finish signing in.
-
-NO LOGIN is needed for browsing, search, watching, reading live chat and VOD chat replay. Login adds Following, sending chat and moderation.
+Log in from the welcome screen (Connect Twitch Account) or Settings > Log In with Twitch. Browsing, watching, live chat and VOD chat replay need no login; login adds Following, sending chat and moderation.
 
 WHAT'S NEW IN 1.5.0
 
-1) CHATS TAB: the Chats tab keeps several channels' chats open without their video, with unread and mention counts on each; Open in Chats is on every channel's menu. On iPad, up to three chats sit side by side. Mentions, at the start of the Chats strip, gathers messages that mention you or match your highlights from every open chat.
-2) USER CARDS: tap a name in chat for that chatter's card: avatar, account age and their messages in this chat, with Mention, Highlight, Profile, Copy, Block and Report.
-3) MODERATOR TOOLS (opt-in): Settings > Safety & Moderation > Moderator Tools. Turning it on asks Twitch for the moderator permissions. In channels where the signed-in account is a moderator or the broadcaster, a bar above the message box opens a queue to allow or deny AutoMod's held messages, answer unban requests and read the moderation log; the user card adds Delete, Time Out, Ban and Unban there. The demo account is the broadcaster of its own channel (search for embrdemo), so in that chat a user card shows Delete, Time Out and Ban.
-4) FOUNDING SUPPORTER (in-app purchase com.guitaripod.embr.supporter, non-consumable): Settings > Become a Founding Supporter. A one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven app icons, and a flame badge in the buyer's chosen color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying. It unlocks no content and no features; watching, chat and everything else stay free. Restore Purchase is on the same screen.
-5) ALSO: Settings is redesigned as pages like the Settings app, with search; favorites sync between the person's iPhone and iPad through their own iCloud; a new message box with swipe to reply.
+1) EMBR STUDIO, for streamers: Settings > Embr Studio. Try a Sample Stream needs no login: an invented channel whose chat and moments loop (follows, gifted subs, a raid, a hype train, a poll, a prediction, an ad break counting down). Tap a message for its actions; the top bar has quick messages, chat modes and Shield Mode. Logged in, Open Studio shows the demo account's own channel (embrdemo), which is offline, so Studio shows its offline screen; Twitch gives ad controls only to Affiliates and Partners. Studio reads only the streamer's own channel, or one they moderate, through Twitch's official Helix API and EventSub with the permissions they approve on Twitch. It plays no video. The Apple TV app is the same Studio, submitted together as tvOS 1.5.0.
+
+2) STUDIO PRO: auto-renewable subscriptions com.guitaripod.embr.studio.monthly ($3.99/month) and com.guitaripod.embr.studio.yearly ($29.99/year) in the group "Embr Studio Pro", and the non-consumable com.guitaripod.embr.studio.lifetime ($79.99). Settings > Embr Studio > Get Studio Pro, or tap any lock in Studio. Pro adds snoozing and running ads, alert sounds, the stream recap, moderator mode for other channels and more than one quick message. Chat, alerts, moderating your own channel and the sample stay free, and the sample unlocks every Pro feature so it can be seen without buying. No App Store trial: a broadcaster's first live stream in Studio starts a free in-app week of Pro that ends by itself and charges nothing. The paywall shows prices, periods, auto-renewal terms and Terms of Use and Privacy Policy links; Restore Purchases is on it. One purchase covers iPhone, iPad and Apple TV.
+
+3) CLIPS FEED: a channel > Clips > tap a clip. Clips play as a vertical feed: swipe up for the next, down for the previous, tap to pause, Share and More (Report Clip, Hide) on the right, pull down to close.
+
+4) CHATS TAB: several chats open without video, with unread and mention counts; up to three side by side on iPad. Mentions gathers messages that mention you from every open chat.
+
+5) USER CARDS: tap a name in chat for avatar, account age and their messages, with Mention, Highlight, Block and Report.
+
+6) MODERATOR TOOLS (opt-in): Settings > Safety & Moderation > Moderator Tools asks Twitch for moderator permissions; where the account moderates, a bar above the message box opens AutoMod's held messages, unban requests and the moderation log, and user cards add Delete, Time Out and Ban (try the embrdemo chat).
+
+7) FOUNDING SUPPORTER (com.guitaripod.embr.supporter, non-consumable): Settings > Become a Founding Supporter. Unlocks only looks (themes, accent colors, chat fonts, app icons, a flame badge with a founding number others see), each tried on before buying. Restore Purchase is on the same screen.
 
 The app supports iPhone and iPad: on iPad, video and chat sit side by side in wide windows and stack in narrow ones.
