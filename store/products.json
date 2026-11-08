@@ -124,7 +124,7 @@
           "productId": "com.guitaripod.embr.studio.monthly",
           "referenceName": "Embr Studio Pro Monthly",
           "duration": "ONE_MONTH",
-          "groupLevel": 1,
+          "groupLevel": 2,
           "familySharable": false,
           "price": {
             "territory": "USA",
