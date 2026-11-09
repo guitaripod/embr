@@ -8,6 +8,8 @@ final class EmoteTextView: UITextView, UITextViewDelegate {
     var onTextChange: (() -> Void)?
     var onReturn: (() -> Void)?
     var onBeginEditing: (() -> Void)?
+    /// Told just before the keyboard is asked for, while there is still time to change what is on screen.
+    var onWillBeginEditing: (() -> Void)?
     var onEndEditing: (() -> Void)?
     var onTab: (() -> Void)?
     /// Told after Dynamic Type changed the text size, since the draft may now take more or fewer lines.
@@ -169,6 +171,11 @@ final class EmoteTextView: UITextView, UITextViewDelegate {
             return false
         }
         if text.contains(" ") { pendingRetokenize = true }
+        return true
+    }
+
+    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
+        onWillBeginEditing?()
         return true
     }
 

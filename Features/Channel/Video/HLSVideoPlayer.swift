@@ -63,6 +63,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var notificationObservers: [NSObjectProtocol] = []
     private var latencyTimer: Timer?
     private var pictureInPictureController: AVPictureInPictureController?
+    private weak var storedPictureInPictureDelegate: AVPictureInPictureControllerDelegate?
     private var isMuted = false
     private var preferredQualityName: String?
     private var pendingResume: PendingResume?
@@ -321,8 +322,25 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     var pictureInPictureDelegate: AVPictureInPictureControllerDelegate? {
-        get { pictureInPictureController?.delegate }
-        set { pictureInPictureController?.delegate = newValue }
+        get { storedPictureInPictureDelegate }
+        set {
+            storedPictureInPictureDelegate = newValue
+            pictureInPictureController?.delegate = newValue
+        }
+    }
+
+    /// Takes picture in picture down while the chat keyboard is up, and brings it back after. While an
+    /// AVPictureInPictureController watches the player layer, iOS 26 draws a ghost copy of the keyboard at the top of
+    /// the screen as the keyboard slides in, so the controller goes before the keyboard is asked for; leaving the app
+    /// while typing therefore does not start picture in picture.
+    func setPictureInPictureSuspended(_ suspended: Bool) {
+        if suspended {
+            guard pictureInPictureController?.isPictureInPictureActive != true else { return }
+            pictureInPictureController = nil
+        } else if pictureInPictureController == nil {
+            configurePictureInPicture()
+            pictureInPictureController?.delegate = storedPictureInPictureDelegate
+        }
     }
 
     private func swapVariant(to quality: StreamQuality) {

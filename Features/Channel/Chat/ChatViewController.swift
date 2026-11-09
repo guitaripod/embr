@@ -12,10 +12,12 @@ protocol ChatViewControllerDelegate: AnyObject {
     func chatViewController(_ controller: ChatViewController, didRequestReplyTo message: ChatMessage)
     func chatViewControllerDidRequestLogin(_ controller: ChatViewController)
     func chatViewController(_ controller: ChatViewController, isComposing: Bool)
+    func chatViewControllerWillCompose(_ controller: ChatViewController)
 }
 
 extension ChatViewControllerDelegate {
     func chatViewController(_ controller: ChatViewController, isComposing: Bool) {}
+    func chatViewControllerWillCompose(_ controller: ChatViewController) {}
 }
 
 @MainActor
@@ -352,13 +354,14 @@ final class ChatViewController: UIViewController {
             if editing, self.isPaused { self.jumpToLatest() }
             if self.composerDock == .tabAccessory, self.composerOpen != editing {
                 self.composerOpen = editing
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, self.composerOpen == editing else { return }
-                    self.applyComposerPlacement(animated: true)
-                }
+                self.applyComposerPlacement(animated: true)
                 if !editing { self.onComposerSummaryChanged?() }
             }
             self.delegate?.chatViewController(self, isComposing: editing)
+        }
+        composer.onWillBeginEditing = { [weak self] in
+            guard let self else { return }
+            self.delegate?.chatViewControllerWillCompose(self)
         }
         composer.onEmoteKeyboardChanged = { [weak self] showing in
             self?.collectionView.keyboardDismissMode = showing ? .onDrag : .interactive

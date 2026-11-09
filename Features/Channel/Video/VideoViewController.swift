@@ -902,7 +902,12 @@ final class VideoViewController: UIViewController {
         }
     }
 
-    func triggerPictureInPicture() {
+    /// Picture in picture steps aside while chat's keyboard is up; see `HLSVideoPlayer.setPictureInPictureSuspended`.
+    func setPictureInPictureSuspended(_ suspended: Bool) {
+        (player as? HLSVideoPlayer)?.setPictureInPictureSuspended(suspended)
+    }
+
+        func triggerPictureInPicture() {
         feedback.impactOccurred()
         if let hls = player as? HLSVideoPlayer, hls.canStartPictureInPicture {
             hls.startPictureInPicture()

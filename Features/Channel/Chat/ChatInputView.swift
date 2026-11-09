@@ -21,6 +21,7 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
     weak var delegate: ChatInputViewDelegate?
     /// Told when the viewer starts or stops writing, so the screen around the chat can make room for it.
     var onEditingChanged: ((Bool) -> Void)?
+    var onWillBeginEditing: (() -> Void)?
     /// Moderators and the broadcaster are not held to slow mode.
     var isExemptFromSlowMode = false {
         didSet { if isExemptFromSlowMode { endCooldown() } }
@@ -391,6 +392,7 @@ final class ChatInputView: UIView, UIGestureRecognizerDelegate {
         textView.onTextSizeChange = { [weak self] in self?.updateFieldHeight() }
         textView.onReturn = { [weak self] in self?.sendTapped() }
         textView.onBeginEditing = { [weak self] in self?.onEditingChanged?(true) }
+        textView.onWillBeginEditing = { [weak self] in self?.onWillBeginEditing?() }
         textView.onEndEditing = { [weak self] in
             self?.switchToSystemKeyboard()
             self?.onEditingChanged?(false)

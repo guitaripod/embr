@@ -932,21 +932,14 @@ extension ChannelViewController: ChatViewControllerDelegate {
         controller.beginReply(to: message)
     }
 
+    func chatViewControllerWillCompose(_ controller: ChatViewController) {
+        videoController?.setPictureInPictureSuspended(true)
+    }
+
     func chatViewController(_ controller: ChatViewController, isComposing: Bool) {
         guard isComposing != isChatComposing else { return }
         isChatComposing = isComposing
-        eventCard.isUserInteractionEnabled = !isComposing
-        DispatchQueue.main.async { [weak self] in
-            guard let self, self.isChatComposing == isComposing else { return }
-            self.animateComposingLayout(isComposing)
-        }
-    }
-
-    /// Folds the stream info away above the keyboard, a turn after the keyboard was asked for. Laying the page out
-    /// inside the call that raises the keyboard can pull the keyboard's own first layout into this animation, which
-    /// showed as a ghost of the keyboard at the top of the screen over the video, the only layout where typing folds
-    /// anything.
-    private func animateComposingLayout(_ isComposing: Bool) {
+        if !isComposing { videoController?.setPictureInPictureSuspended(false) }
         let state = currentLayout
         let hidesInfo = !state.showsInfo || composingCollapsesInfo(state)
         let changes = {
@@ -955,6 +948,7 @@ extension ChannelViewController: ChatViewControllerDelegate {
             self.eventCard.alpha = isComposing ? 0 : 1
             self.view.layoutIfNeeded()
         }
+        eventCard.isUserInteractionEnabled = !isComposing
         guard !Motion.reduced else {
             changes()
             return
