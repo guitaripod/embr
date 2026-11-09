@@ -95,7 +95,11 @@ enum ScreenshotRouter {
             let category = GameCategory(id: id, name: name, boxArtURLTemplate: DemoWorld.boxArtTemplate(gameID: id))
             tabBar.selectedNavigationController?.pushViewController(
                 TopViewController(mode: .game(category), api: AppContainer.shared.api), animated: false)
-        case "search": tabBar.select(.search)
+        case "search":
+            tabBar.select(.search)
+            if let cycles = option("KeyboardCycles").flatMap(Int.init) {
+                cycleKeyboard(in: tabBar, times: cycles, startingAfter: option("KeyboardAt").flatMap(Double.init) ?? 6)
+            }
         case "settings":
             tabBar.select(.settings)
             if let page = option("SettingsPage") {
@@ -270,13 +274,25 @@ enum ScreenshotRouter {
         for cycle in 0..<times {
             let start = delay + Double(cycle) * 3.5
             after(start) {
-                guard let top = tabBar.presentedViewController ?? tabBar.selectedViewController,
-                      let chat = chatController(in: top) else { return }
+                guard let top = tabBar.presentedViewController ?? tabBar.selectedViewController else { return }
                 KeyboardProbe.shared.watch(cycle: cycle, scene: tabBar.view.window?.windowScene)
-                chat.focusComposer()
+                if let chat = chatController(in: top) {
+                    chat.focusComposer()
+                } else {
+                    _ = firstTextInput(in: top.view)?.becomeFirstResponder()
+                }
             }
             after(start + 2) { tabBar.view.window?.endEditing(true) }
         }
+    }
+
+    /// The first text field or text view under a view, for keyboard captures on screens without chat.
+    private static func firstTextInput(in view: UIView) -> UIView? {
+        if view is UITextField || view is UITextView { return view }
+        for child in view.subviews {
+            if let found = firstTextInput(in: child) { return found }
+        }
+        return nil
     }
 
     /// The chat inside a screen, however deep the screen nests it.
@@ -395,7 +411,8 @@ final class KeyboardProbe: NSObject {
         let interesting = ["Keyboard", "InputSet", "InputView", "Remote", "Prediction", "Assistant"].contains { name.contains($0) }
         if interesting, !view.isHidden {
             let shown = view.layer.presentation() ?? view.layer
-            let frame = view.superview.map { $0.layer.convert(shown.frame, to: window.layer) } ?? shown.frame
+            let target = window.layer.presentation() ?? window.layer
+            let frame = shown.convert(shown.bounds, to: target)
             MidgarLog.notice(String(format: "kbprobe c%d t%.3f %@ in %@ y=%.0f h=%.0f w=%.0f a=%.2f", cycle, elapsed, name, String(describing: type(of: window)), frame.minY, frame.height, frame.width, shown.opacity), category: .app)
         }
         guard depth < 7 else { return }
