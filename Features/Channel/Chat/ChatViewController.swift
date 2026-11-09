@@ -352,7 +352,10 @@ final class ChatViewController: UIViewController {
             if editing, self.isPaused { self.jumpToLatest() }
             if self.composerDock == .tabAccessory, self.composerOpen != editing {
                 self.composerOpen = editing
-                self.applyComposerPlacement(animated: true)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.composerOpen == editing else { return }
+                    self.applyComposerPlacement(animated: true)
+                }
                 if !editing { self.onComposerSummaryChanged?() }
             }
             self.delegate?.chatViewController(self, isComposing: editing)
