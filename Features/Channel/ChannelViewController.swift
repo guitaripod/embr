@@ -10,8 +10,8 @@ final class ChannelViewController: UIViewController {
     private let auth: AuthService
     private let store: SettingsStore
 
-    private var chatController: ChatViewController?
-    private var videoController: VideoViewController?
+    private(set) var chatController: ChatViewController?
+    private(set) var videoController: VideoViewController?
     private var chatLoggedIn: Bool?
     private var isChatOnly = false
     private var isAudioOnly = false
@@ -238,37 +238,6 @@ final class ChannelViewController: UIViewController {
         #endif
     }
 
-    #if DEBUG
-    private func applyScreenshotPose() {
-        if let keyboard = ScreenshotRouter.option("Keyboard") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
-                self?.chatController?.raiseKeyboardForScreenshot(emotes: keyboard == "emotes")
-            }
-            let draft = ScreenshotRouter.option("Draft")
-            let replies = ScreenshotRouter.option("Reply") == "1"
-            if draft != nil || replies {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) { [weak self] in
-                    self?.chatController?.composeForScreenshot(draft: draft, reply: replies)
-                }
-            }
-        }
-        let pose = ScreenshotHarness.channelPose
-        guard pose != .normal else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-            guard let self else { return }
-            switch pose {
-            case .audio: self.videoController?.setAudioOnly(true)
-            case .chat: self.setChatOnly(true)
-            case .fullscreen: self.videoController?.toggleFullscreen()
-            case .fullscreenChat:
-                self.videoController?.toggleFullscreen()
-                if !self.isFullscreenChatVisible { self.toggleFullscreenChat() }
-            case .normal: break
-            }
-        }
-    }
-    #endif
-
     private func setUpEventCard() {
         eventCard.translatesAutoresizingMaskIntoConstraints = false
         eventCard.isHidden = true
@@ -392,7 +361,7 @@ final class ChannelViewController: UIViewController {
         chatOnlyItem.accessibilityLabel = isChatOnly ? String(localized: "Show Video") : String(localized: "Chat Only")
     }
 
-    private func setChatOnly(_ on: Bool) {
+    func setChatOnly(_ on: Bool) {
         guard on != isChatOnly else { return }
         prefersFullscreen = false
         Haptics.selection(store)
@@ -899,17 +868,12 @@ final class ChannelViewController: UIViewController {
         Task { [weak self] in
             guard let self else { return }
             let user = await self.auth.currentUser()
+            #if DEBUG
             self.attachChat(user: user ?? Self.posedChatUser)
+            #else
+            self.attachChat(user: user)
+            #endif
         }
-    }
-
-    /// A DEBUG capture can pose a signed-in viewer (`-screenshotChatAs <login>`) so the composer and keyboard show.
-    private static var posedChatUser: AuthenticatedUser? {
-        #if DEBUG
-        ScreenshotRouter.option("ChatAs").map { AuthenticatedUser(id: "posed-\($0)", login: $0, displayName: $0, scopes: []) }
-        #else
-        nil
-        #endif
     }
 
     private func attachChat(user: AuthenticatedUser?) {
