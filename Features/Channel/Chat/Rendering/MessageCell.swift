@@ -91,8 +91,8 @@ final class MessageCell: UICollectionViewCell {
     private static let replyTravel: CGFloat = 72
     private static let replyThreshold: CGFloat = 52
 
-    /// Swiping a message to the right drags it after the finger with a reply arrow growing in behind it; past the
-    /// threshold the arrow fills with a tick, and letting go there starts the reply.
+    /// Swiping a message to the left drags it after the finger with a reply arrow growing in at the right edge; past
+    /// the threshold the arrow fills with a tick, and letting go there starts the reply.
     private func setUpSwipeToReply() {
         replyIcon.image = Self.replyImage
         replyIcon.tintColor = Theme.secondaryText
@@ -112,14 +112,14 @@ final class MessageCell: UICollectionViewCell {
     }
 
     private func setReplyOffset(_ offset: CGFloat) {
-        contentView.transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: offset, ty: 0)
+        contentView.transform = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: -offset, ty: 0)
         let progress = offset / Self.replyThreshold
         replyIcon.alpha = min(1, progress * 1.4)
         replyIcon.transform = Self.iconTransform(progress: progress)
     }
 
     @objc private func handleReplyPan(_ recognizer: UIPanGestureRecognizer) {
-        let dx = max(0, recognizer.translation(in: self).x)
+        let dx = max(0, -recognizer.translation(in: self).x)
         switch recognizer.state {
         case .began:
             Haptics.prepareImpact(.light)
@@ -418,7 +418,7 @@ final class MessageCell: UICollectionViewCell {
         #if os(iOS)
         let iconSide: CGFloat = 26
         replyIcon.bounds = CGRect(x: 0, y: 0, width: iconSide, height: iconSide)
-        replyIcon.center = CGPoint(x: ChatMetrics.edge + iconSide / 2, y: bounds.midY)
+        replyIcon.center = CGPoint(x: bounds.width - ChatMetrics.edge - iconSide / 2, y: bounds.midY)
         #endif
 
         if !replyPreview.isHidden {
@@ -491,12 +491,13 @@ private final class RoomyLabel: UILabel {
 
 #if os(iOS)
 extension MessageCell: UIGestureRecognizerDelegate {
-    /// Only a rightward, mostly horizontal drag on a message that can be replied to; vertical drags stay with the chat.
+    /// Only a leftward, mostly horizontal drag on a message that can be replied to; vertical drags stay with the chat,
+    /// and a rightward drag from the edge stays with going back.
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === replyPan else { return super.gestureRecognizerShouldBegin(gestureRecognizer) }
         guard onSwipeReply != nil else { return false }
         let velocity = replyPan.velocity(in: self)
-        return velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.6
+        return velocity.x < 0 && abs(velocity.x) > abs(velocity.y) * 1.6
     }
 }
 #endif
