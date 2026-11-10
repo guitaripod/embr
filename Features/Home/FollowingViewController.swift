@@ -35,6 +35,10 @@ final class FollowingViewController: UIViewController {
     private var channelsTask: Task<Void, Never>?
 
     private var cancellables = Set<AnyCancellable>()
+    private lazy var foregroundRefresh = ForegroundRefresh(
+        isOnScreen: { [weak self] in self?.viewIfLoaded?.window != nil },
+        action: { [weak self] in self?.reloadInPlace() }
+    )
     private var hasLoaded = false
     private var streamsLoaded = false
     private var channelsLoaded = false
@@ -62,6 +66,11 @@ final class FollowingViewController: UIViewController {
             controller.reloadForWidthClass()
         }
         bootstrap()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        foregroundRefresh.listWillAppear()
     }
 
     private var usesCards: Bool { StreamListLayout.usesCards(traitCollection) }
@@ -100,6 +109,7 @@ final class FollowingViewController: UIViewController {
             self.bind(userID: user.id)
             self.viewModel?.load()
             self.loadFollowedChannels()
+            self.foregroundRefresh.noteRefreshed()
         }
     }
 
@@ -165,13 +175,17 @@ final class FollowingViewController: UIViewController {
             var collected: [FollowedChannel] = []
             var cursor: String?
             var pages = 0
+            var failed = false
             repeat {
-                guard let page = try? await self.api.followedChannels(userID: userID, after: cursor, first: 100) else { break }
+                guard let page = try? await self.api.followedChannels(userID: userID, after: cursor, first: 100) else {
+                    failed = true
+                    break
+                }
                 collected.append(contentsOf: page.items)
                 cursor = page.cursor
                 pages += 1
             } while cursor != nil && pages < 3 && !Task.isCancelled
-            if Task.isCancelled { return }
+            if Task.isCancelled || (failed && self.channelsLoaded) { return }
             self.followedChannels = collected
             self.channelsLoaded = true
             self.rebuild()
@@ -408,6 +422,14 @@ final class FollowingViewController: UIViewController {
     @objc private func refresh() {
         Haptics.selection()
         viewModel?.load()
+        loadFollowedChannels()
+        foregroundRefresh.noteRefreshed()
+    }
+
+    /// Brings the live streams and follows up to date on a return to the app, without the spinner or haptic of a pull
+    /// and without cutting short a list scrolled down.
+    private func reloadInPlace() {
+        viewModel?.refresh()
         loadFollowedChannels()
     }
 }

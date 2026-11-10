@@ -57,6 +57,13 @@ final class TopViewController: UIViewController {
     private var streamsViewModel: StreamListViewModel!
     private var cancellables = Set<AnyCancellable>()
 
+    private lazy var foregroundRefresh = ForegroundRefresh(
+        isOnScreen: { [weak self] in self?.viewIfLoaded?.window != nil },
+        action: { [weak self] in self?.reloadInPlace() }
+    )
+
+    private static let categoryPageSize = 30
+    private static let largestCategoryPage = 100
     private var categories: [GameCategory] = []
     private var categoryCursor: String?
     private var categoryHasMore = true
@@ -104,9 +111,15 @@ final class TopViewController: UIViewController {
         bindSettings()
         bindFavorites()
         streamsViewModel.load()
+        foregroundRefresh.noteRefreshed()
         registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: TopViewController, _) in
             controller.reloadForWidthClass()
         }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        foregroundRefresh.listWillAppear()
     }
 
     private var usesCards: Bool { StreamListLayout.usesCards(traitCollection) }
@@ -462,15 +475,21 @@ final class TopViewController: UIViewController {
         } else {
             streamsViewModel.load()
         }
+        foregroundRefresh.noteRefreshed()
     }
 
-    private func loadCategories(replacing: Bool) {
-        guard !categoryLoading else { return }
-        if replacing {
-            categoryCursor = nil
-            categoryHasMore = true
-        }
-        guard categoryHasMore else { return }
+    /// Brings the streams, and the categories once they have loaded, up to date on a return to the app, without the
+    /// spinner or haptic of a pull and without cutting short a list scrolled down.
+    private func reloadInPlace() {
+        streamsViewModel.refresh()
+        guard !categories.isEmpty else { return }
+        loadCategories(replacing: true, count: min(Self.largestCategoryPage, max(Self.categoryPageSize, categories.count)))
+    }
+
+    /// The categories and their cursor change only when a page arrives, so a reload that fails leaves the list scrolling
+    /// on from where it was.
+    private func loadCategories(replacing: Bool, count: Int = TopViewController.categoryPageSize) {
+        guard !categoryLoading, replacing || categoryHasMore else { return }
         categoryLoading = true
         if showingCategories, categories.isEmpty {
             emptyView.isHidden = true
@@ -481,7 +500,7 @@ final class TopViewController: UIViewController {
             guard let self else { return }
             defer { self.categoryLoading = false; self.refreshControl.endRefreshing() }
             do {
-                let page = try await self.api.topCategories(after: replacing ? nil : self.categoryCursor, first: 30)
+                let page = try await self.api.topCategories(after: replacing ? nil : self.categoryCursor, first: count)
                 if Task.isCancelled { return }
                 self.categoryCursor = page.cursor
                 self.categoryHasMore = page.cursor != nil

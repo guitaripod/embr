@@ -385,6 +385,7 @@ final class StreamListViewModel {
     private let kind: ListKind
     private let api: TwitchAPIProviding
     private let pageSize: Int
+    private static let largestPage = 100
 
     private var streams: [LiveStream] = []
     private var cursor: String?
@@ -425,25 +426,37 @@ final class StreamListViewModel {
     }
 
     func load() {
+        load(count: pageSize)
+    }
+
+    /// Reloads the list in place with as many streams as it shows, up to one Helix page of 100, so a refresh keeps the
+    /// streams a viewer scrolled down to.
+    func refresh() {
+        load(count: min(Self.largestPage, max(pageSize, streams.count)))
+    }
+
+    /// The streams, the cursor and whether more pages exist change only when the new first page arrives, so a reload
+    /// that fails leaves the list scrolling on from where it was.
+    private func load(count: Int) {
         loadTask?.cancel()
         avatarTask?.cancel()
         generation += 1
-        isLoading = false
-        cursor = nil
-        hasMore = true
+        isLoading = true
+        let generation = generation
         loadTask = Task { [weak self] in
-            await self?.fetch(replacing: true, generation: self?.generation ?? 0)
+            await self?.fetch(replacing: true, count: count, generation: generation)
         }
     }
 
     func loadMore() {
         guard hasMore, !isLoading, cursor != nil else { return }
         loadTask = Task { [weak self] in
-            await self?.fetch(replacing: false, generation: self?.generation ?? 0)
+            guard let self else { return }
+            await self.fetch(replacing: false, count: self.pageSize, generation: self.generation)
         }
     }
 
-    private func fetch(replacing: Bool, generation: Int) async {
+    private func fetch(replacing: Bool, count: Int, generation: Int) async {
         isLoading = true
         loadingSubject.send(true)
         defer {
@@ -454,7 +467,7 @@ final class StreamListViewModel {
             }
         }
         do {
-            let page = try await page(after: replacing ? nil : cursor)
+            let page = try await page(after: replacing ? nil : cursor, count: count)
             guard !Task.isCancelled, generation == self.generation else { return }
             cursor = page.cursor
             hasMore = page.cursor != nil
@@ -475,14 +488,14 @@ final class StreamListViewModel {
         }
     }
 
-    private func page(after: String?) async throws -> Page<LiveStream> {
+    private func page(after: String?, count: Int) async throws -> Page<LiveStream> {
         switch kind {
         case .followed(let userID):
-            return try await api.followedStreams(userID: userID, after: after, first: pageSize)
+            return try await api.followedStreams(userID: userID, after: after, first: count)
         case .top:
-            return try await api.topStreams(after: after, first: pageSize)
+            return try await api.topStreams(after: after, first: count)
         case .game(let id):
-            return try await api.streams(gameID: id, after: after, first: pageSize)
+            return try await api.streams(gameID: id, after: after, first: count)
         }
     }
 
