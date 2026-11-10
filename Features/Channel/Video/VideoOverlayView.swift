@@ -42,7 +42,7 @@ final class VideoOverlayView: UIView {
     private let routePicker: AVRoutePickerView = {
         let picker = AVRoutePickerView()
         picker.tintColor = .white
-        picker.activeTintColor = .white
+        picker.activeTintColor = Theme.accent
         picker.prioritizesVideoDevices = true
         picker.translatesAutoresizingMaskIntoConstraints = false
         return picker
@@ -74,6 +74,10 @@ final class VideoOverlayView: UIView {
     private let retryButton = UIButton(type: .system)
     private var errorActive = false
     private var noticeGeneration = 0
+
+    private let externalRow = UIStackView()
+    private let externalLabel = UILabel()
+    private var externalText: String?
 
     private let adCover = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterialDark))
     private let adStatusLabel = UILabel()
@@ -270,6 +274,21 @@ final class VideoOverlayView: UIView {
         routePicker.isHidden = hidden
     }
 
+    /// While a TV has the picture, the top bar says where the stream plays, beside the live badge where fullscreen chat
+    /// never covers it, and the controls stay up, since there is no picture here for them to cover. Nil puts it back.
+    func setExternalPlayback(_ text: String?) {
+        guard text != externalText else { return }
+        externalText = text
+        externalLabel.text = text
+        externalRow.accessibilityLabel = text
+        externalRow.isHidden = text == nil
+        if text != nil {
+            showControls(thenHide: false)
+        } else {
+            scheduleAutoHide()
+        }
+    }
+
     func setBackButtonHidden(_ hidden: Bool) {
         backButton.isHidden = hidden
     }
@@ -313,6 +332,7 @@ final class VideoOverlayView: UIView {
     }
 
     func hideControls() {
+        guard externalText == nil else { return }
         setControls(visible: false, animated: true)
         cancelAutoHide()
     }
@@ -416,6 +436,8 @@ final class VideoOverlayView: UIView {
         bufferingIndicator.translatesAutoresizingMaskIntoConstraints = false
         addSubview(bufferingIndicator)
 
+        buildExternalRow()
+
         errorIcon.contentMode = .scaleAspectFit
         errorIcon.tintColor = .white
         errorIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
@@ -506,6 +528,28 @@ final class VideoOverlayView: UIView {
             UIColor.white.setFill()
             UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: diameter, height: diameter)).fill()
         }
+    }
+
+    private func buildExternalRow() {
+        let icon = UIImageView(image: UIImage(
+            systemName: "airplay.video",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        ))
+        icon.tintColor = Theme.accent
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        icon.setContentCompressionResistancePriority(.required, for: .horizontal)
+        externalLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        externalLabel.textColor = .white
+        externalLabel.lineBreakMode = .byTruncatingTail
+        externalLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        externalRow.axis = .horizontal
+        externalRow.alignment = .center
+        externalRow.spacing = 6
+        externalRow.isHidden = true
+        externalRow.isAccessibilityElement = true
+        externalRow.addArrangedSubview(icon)
+        externalRow.addArrangedSubview(externalLabel)
+        topBar.insertArrangedSubview(externalRow, at: topBar.arrangedSubviews.firstIndex(of: liveBadge).map { $0 + 1 } ?? 0)
     }
 
     private func buildReconnectPill() {

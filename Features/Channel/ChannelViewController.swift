@@ -13,9 +13,8 @@ final class ChannelViewController: UIViewController {
     private(set) var chatController: ChatViewController?
     private(set) var videoController: VideoViewController?
     private var chatLoggedIn: Bool?
-    private var isChatOnly = false
-    private var isAudioOnly = false
-    private let audioBar = AudioOnlyBarView()
+    private var mode = ChannelPlaybackMode()
+    private let miniPlayer = MiniPlayerBarView()
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var chatOnlyItem = UIBarButtonItem(
@@ -222,7 +221,7 @@ final class ChannelViewController: UIViewController {
         view.backgroundColor = Theme.background
         title = channel.broadcasterName
         navigationItem.largeTitleDisplayMode = .never
-        isChatOnly = store.current.chatOnly ?? false
+        mode.chatOnly = store.current.chatOnly ?? false
         navigationItem.rightBarButtonItems = [chatOnlyItem, videosItem, favoriteItem]
         updateChatOnlyButton()
         updateFavoriteButton()
@@ -274,7 +273,7 @@ final class ChannelViewController: UIViewController {
 
     private func loadStreamInfo() {
         infoView.configure(channel: channel)
-        audioBar.configure(name: channel.broadcasterName, title: channel.title)
+        miniPlayer.configure(name: channel.broadcasterName, title: channel.title)
         videoController?.setNowPlayingMetadata(title: channel.title, channelName: channel.broadcasterName)
         gameToOpen = channel.gameName.isEmpty ? nil : GameCategory(id: channel.gameID, name: channel.gameName, boxArtURLTemplate: "")
         infoView.onTapGame = { [weak self] in
@@ -297,7 +296,7 @@ final class ChannelViewController: UIViewController {
             }
             if let avatarURL = self.avatarURL,
                let image = await ImageLoader.shared.image(for: avatarURL, targetScale: 2.0) {
-                self.audioBar.setAvatar(image)
+                self.miniPlayer.setAvatar(image)
                 self.aboutView.setAvatar(image)
             }
         }
@@ -344,7 +343,7 @@ final class ChannelViewController: UIViewController {
     }
 
     private func applyMetadata(title: String) {
-        audioBar.configure(name: channel.broadcasterName, title: title)
+        miniPlayer.configure(name: channel.broadcasterName, title: title)
         videoController?.setNowPlayingMetadata(
             title: title,
             channelName: channel.broadcasterName,
@@ -353,29 +352,41 @@ final class ChannelViewController: UIViewController {
     }
 
     @objc private func toggleChatOnly() {
-        setChatOnly(!isChatOnly)
+        setChatOnly(!mode.chatOnly)
     }
 
     private func updateChatOnlyButton() {
-        chatOnlyItem.image = UIImage(systemName: isChatOnly ? "tv" : "bubble.left.and.bubble.right")
-        chatOnlyItem.accessibilityLabel = isChatOnly ? String(localized: "Show Video") : String(localized: "Chat Only")
+        chatOnlyItem.image = UIImage(systemName: mode.chatOnly ? "tv" : "bubble.left.and.bubble.right")
+        chatOnlyItem.accessibilityLabel = mode.chatOnly ? String(localized: "Show Video") : String(localized: "Chat Only")
     }
 
+    /// Chat only hides the video and stops the stream, except on a TV that has the picture through AirPlay or a mirrored
+    /// screen: that one plays on, in video even if audio played alone before, and the mini player stands in for it.
     func setChatOnly(_ on: Bool) {
-        guard on != isChatOnly else { return }
+        guard on != mode.chatOnly else { return }
         prefersFullscreen = false
         Haptics.selection(store)
-        isChatOnly = on
+        mode.chatOnly = on
         store.update { $0.chatOnly = on }
         updateChatOnlyButton()
-        if isAudioOnly {
-            if on {
+        if mode.audioOnly {
+            if on, !mode.streamPlays {
                 videoController?.exitAudioOnlyKeepingPlayerVariant()
             } else {
                 videoController?.setAudioOnly(false)
             }
         }
-        videoController?.setStreamActive(!on)
+        videoController?.setStreamActive(mode.streamPlays)
+        applyLayout()
+    }
+
+    /// A TV taking the picture gets the video, even from audio only, and keeps it through chat only; losing it while the
+    /// page shows only chat stops the stream, as chat only does on this device.
+    private func applyExternalRoute(_ route: ExternalRoute?) {
+        guard route != mode.externalRoute else { return }
+        mode.externalRoute = route
+        if route != nil, mode.audioOnly { videoController?.setAudioOnly(false) }
+        if mode.chatOnly { videoController?.setStreamActive(mode.streamPlays) }
         applyLayout()
     }
 
@@ -423,15 +434,14 @@ final class ChannelViewController: UIViewController {
             let target = CGSize(width: width, height: UIView.layoutFittingCompressedSize.height)
             let info = infoView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
             let about = aboutView.systemLayoutSizeFitting(target, withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel).height
-            let video = isVideoShown ? width * 9 / 16 : 0
-            fits = video + info + about <= mainColumn.bounds.height
+            let video = mode.showsVideo ? width * 9 / 16 : 0
+            let bar = miniPlayer.superview === mainColumn ? miniPlayer.bounds.height : 0
+            fits = video + bar + info + about <= mainColumn.bounds.height
         }
         if aboutView.isHidden == fits {
             aboutView.isHidden = !fits
         }
     }
-
-    private var isVideoShown: Bool { !isChatOnly && !isAudioOnly }
 
     /// A phone-sized window keeps the phone rule: portrait stacks video over chat, landscape goes
     /// fullscreen. Windows with room for it (every iPad window, the inner display of a foldable
@@ -440,11 +450,11 @@ final class ChannelViewController: UIViewController {
     private func layoutState(for size: CGSize) -> LayoutState {
         let landscape = size.width > size.height
         if !OrientationCoordinator.usesTabletLayout(for: size) {
-            let immersive = landscape && isVideoShown
+            let immersive = landscape && mode.showsVideo
             return LayoutState(
                 arrangement: immersive ? .immersive : .stacked,
-                showsInfo: !landscape && isVideoShown,
-                hidesNavigationBar: landscape && !isAudioOnly,
+                showsInfo: !landscape && mode.showsVideo,
+                hidesNavigationBar: immersive,
                 hidesSystemChrome: landscape,
                 showsOverlayBackButton: landscape || navigationController == nil,
                 centersChatColumn: false,
@@ -454,11 +464,11 @@ final class ChannelViewController: UIViewController {
         let fold = isViewLoaded ? Fold.region(in: view) : nil
         let arrangement: Arrangement
         var automaticFullscreen = false
-        let detailsBesideChat = isChatOnly && !isAudioOnly && fold.map(Self.isVertical) == true
+        let detailsBesideChat = mode.chatOnly && !mode.audioOnly && fold.map(Self.isVertical) == true
             && landscape && size.width >= Self.sideBySideMinimumWidth
         if detailsBesideChat {
             arrangement = .sideBySide
-        } else if !isVideoShown {
+        } else if !mode.showsVideo {
             arrangement = .stacked
         } else if prefersFullscreen {
             arrangement = .immersive
@@ -477,11 +487,11 @@ final class ChannelViewController: UIViewController {
         }
         return LayoutState(
             arrangement: arrangement,
-            showsInfo: (isVideoShown || detailsBesideChat) && arrangement != .immersive,
+            showsInfo: (mode.showsVideo || detailsBesideChat) && arrangement != .immersive,
             hidesNavigationBar: arrangement == .immersive,
             hidesSystemChrome: arrangement == .immersive,
             showsOverlayBackButton: automaticFullscreen || navigationController == nil,
-            centersChatColumn: !isVideoShown && size.width > Self.chatColumnMaximumWidth + 40 && foldInUse == nil,
+            centersChatColumn: !mode.showsVideo && size.width > Self.chatColumnMaximumWidth + 40 && foldInUse == nil,
             fold: foldInUse
         )
     }
@@ -574,12 +584,14 @@ final class ChannelViewController: UIViewController {
 
         navigationController?.setNavigationBarHidden(state.hidesNavigationBar, animated: true)
         videoController?.setBackButtonHidden(!state.showsOverlayBackButton)
-        videoContainer.isHidden = !isVideoShown
+        miniPlayer.setExternalRoute(mode.externalRoute)
+        miniPlayer.place(atTopOf: state.arrangement == .sideBySide ? mainColumn : containerStack, shown: mode.showsMiniPlayer)
+        videoContainer.isHidden = !mode.showsVideo
         infoView.isHidden = !state.showsInfo || composingCollapsesInfo(state)
         infoView.alpha = infoView.isHidden ? 0 : 1
         if state.arrangement != .sideBySide { aboutView.isHidden = true }
         mainSpacer.isHidden = state.arrangement != .sideBySide
-        mainColumn.isHidden = !isVideoShown && state.arrangement != .sideBySide
+        mainColumn.isHidden = !mode.showsVideo && state.arrangement != .sideBySide
         containerStack.axis = state.arrangement == .stacked ? .vertical : .horizontal
 
         applyContainerEdges(state)
@@ -611,7 +623,7 @@ final class ChannelViewController: UIViewController {
     private func applyVideoSizing(_ state: LayoutState) {
         videoContainer.removeConstraints(videoAspectConstraints)
         videoAspectConstraints = []
-        guard isVideoShown, state.arrangement != .immersive else { return }
+        guard mode.showsVideo, state.arrangement != .immersive else { return }
         let aspect = videoContainer.heightAnchor.constraint(equalTo: videoContainer.widthAnchor, multiplier: 9.0 / 16.0)
         aspect.priority = state.arrangement == .sideBySide || state.fold != nil ? UILayoutPriority(740) : .required
         aspect.isActive = true
@@ -638,7 +650,7 @@ final class ChannelViewController: UIViewController {
             chatWidthConstraint?.constant = chatWidth
             removeDivider()
         case .horizontal(let minY, let maxY):
-            guard isVideoShown else { return }
+            guard mode.showsVideo else { return }
             let available = minY - insets.top
             guard available >= Self.minimumFoldColumn / 2 else { return }
             let width = view.bounds.width - insets.left - insets.right
@@ -672,23 +684,14 @@ final class ChannelViewController: UIViewController {
         return min(maximum, max(280, preferred))
     }
 
-    /// Collapses the video area to a compact audio bar (chat fills the screen) or
+    /// Collapses the video area to the mini player (chat fills the screen) or
     /// restores the full video layout. Session-only: the layout is forced vertical
     /// while audio-only so chat stays primary in both orientations.
     private func applyAudioOnly(_ on: Bool) {
-        guard on != isAudioOnly else { return }
+        guard on != mode.audioOnly else { return }
         prefersFullscreen = false
-        isAudioOnly = on
+        mode.audioOnly = on
         Haptics.selection(store)
-        if on {
-            if audioBar.superview == nil {
-                containerStack.insertArrangedSubview(audioBar, at: 0)
-            }
-            audioBar.isHidden = false
-        } else {
-            audioBar.isHidden = true
-            audioBar.removeFromSuperview()
-        }
         applyLayout()
     }
 
@@ -737,7 +740,7 @@ final class ChannelViewController: UIViewController {
     /// iPad fullscreen: the video takes the whole window and chat floats over it on demand.
     /// The phone reaches fullscreen by turning to landscape instead.
     func toggleFullscreen() {
-        guard OrientationCoordinator.usesTabletLayout(for: view.bounds.size), isVideoShown else { return }
+        guard OrientationCoordinator.usesTabletLayout(for: view.bounds.size), mode.showsVideo else { return }
         prefersFullscreen.toggle()
         Haptics.selection(store)
         let animations = { self.applyLayout() }
@@ -830,7 +833,7 @@ final class ChannelViewController: UIViewController {
     }
 
     private func loadChildren() {
-        let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: !isChatOnly)
+        let video = VideoViewController(source: .live(login: channel.broadcasterLogin), active: mode.streamPlays)
         video.onDoubleTapToggleChat = { [weak self] in
             self?.toggleFullscreenChat()
         }
@@ -838,7 +841,10 @@ final class ChannelViewController: UIViewController {
             self?.applyAudioOnly(on)
         }
         video.onPlaybackStateChanged = { [weak self] playing in
-            self?.audioBar.setPlaying(playing)
+            self?.miniPlayer.setPlaying(playing)
+        }
+        video.onExternalRouteChanged = { [weak self] route in
+            self?.applyExternalRoute(route)
         }
         video.onToggleFullscreen = { [weak self] in
             self?.toggleFullscreen()
@@ -846,11 +852,16 @@ final class ChannelViewController: UIViewController {
         video.hostImmersiveState = { [weak self] in
             self?.isVideoFullscreen ?? false
         }
-        audioBar.onPlayPause = { [weak self] in
+        miniPlayer.onPlayPause = { [weak self] in
             self?.videoController?.togglePlayPause()
         }
-        audioBar.onRestoreVideo = { [weak self] in
-            self?.videoController?.setAudioOnly(false)
+        miniPlayer.onRestoreVideo = { [weak self] in
+            guard let self else { return }
+            if self.mode.audioOnly {
+                self.videoController?.setAudioOnly(false)
+            } else {
+                self.setChatOnly(false)
+            }
         }
         addChild(video)
         video.view.translatesAutoresizingMaskIntoConstraints = false

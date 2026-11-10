@@ -34,6 +34,8 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     var latencyPublisher: AnyPublisher<TimeInterval?, Never> { latencySubject.eraseToAnyPublisher() }
     var adBreakPublisher: AnyPublisher<TimeInterval?, Never> { adBreakSubject.eraseToAnyPublisher() }
     var progressPublisher: AnyPublisher<PlaybackProgress, Never> { progressSubject.eraseToAnyPublisher() }
+    /// The TV playing the stream while AirPlay or a mirrored or wired display has the picture; nil while it plays here.
+    var externalRoutePublisher: AnyPublisher<ExternalRoute?, Never> { externalRouteSubject.eraseToAnyPublisher() }
 
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?
@@ -51,6 +53,8 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private let latencySubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let adBreakSubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let progressSubject = CurrentValueSubject<PlaybackProgress, Never>(.empty)
+    private let externalRouteSubject = CurrentValueSubject<ExternalRoute?, Never>(nil)
+    private var externalPlaybackObservation: NSKeyValueObservation?
     private var preferredRate: Float = 1.0
 
     private let metadataCollector = AVPlayerItemMetadataCollector()
@@ -88,6 +92,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         playerView.player = player
         metadataCollector.setDelegate(self, queue: .main)
         observeAudioSession()
+        observeExternalPlayback()
         configurePictureInPicture()
     }
 
@@ -123,11 +128,36 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func handleRouteChange(reasonValue: UInt?) {
+        reflectExternalPlayback()
         guard let reasonValue,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
               reason == .oldDeviceUnavailable else { return }
         playbackIntended = false
         player.pause()
+    }
+
+    /// A mirrored or wired display gets the stream full screen through external playback instead of a copy of the phone,
+    /// and the page learns whenever a TV takes the picture or gives it back.
+    private func observeExternalPlayback() {
+        player.usesExternalPlaybackWhileExternalScreenIsActive = true
+        externalPlaybackObservation = player.observe(\.isExternalPlaybackActive, options: [.new]) { [weak self] _, _ in
+            Task { @MainActor in self?.reflectExternalPlayback() }
+        }
+    }
+
+    /// Publishes which screen has the picture, named after the AirPlay receiver or display the audio route goes to.
+    /// Picture in picture cannot start from a picture a TV is showing, so it does not try to when the app leaves.
+    private func reflectExternalPlayback() {
+        let route = player.isExternalPlaybackActive ? ExternalRoute(deviceName: Self.externalOutputName()) : nil
+        guard route != externalRouteSubject.value else { return }
+        pictureInPictureController?.canStartPictureInPictureAutomaticallyFromInline = route == nil
+        externalRouteSubject.send(route)
+        MidgarLog.info("HLS external playback \(route == nil ? "ended" : "on \(route?.deviceName ?? "an unnamed screen")")", category: .playback)
+    }
+
+    private static func externalOutputName() -> String? {
+        let external: [AVAudioSession.Port] = [.airPlay, .HDMI]
+        return AVAudioSession.sharedInstance().currentRoute.outputs.first { external.contains($0.portType) }?.portName
     }
 
     func seekToLive() {
@@ -542,7 +572,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             return
         }
         pictureInPictureController = AVPictureInPictureController(playerLayer: playerView.playerLayer)
-        pictureInPictureController?.canStartPictureInPictureAutomaticallyFromInline = true
+        pictureInPictureController?.canStartPictureInPictureAutomaticallyFromInline = externalRouteSubject.value == nil
         #endif
     }
 

@@ -23,6 +23,8 @@ final class VideoViewController: UIViewController {
     var onToggleFullscreen: (() -> Void)?
     /// The hosting page's current fullscreen state, restored when Picture in Picture ends.
     var hostImmersiveState: (() -> Bool)?
+    /// Called when a TV takes the picture through AirPlay or a mirrored screen (with where it plays) and when it gives it back.
+    var onExternalRouteChanged: ((ExternalRoute?) -> Void)?
 
     let source: VideoSource
     var player: VideoPlaying
@@ -126,10 +128,15 @@ final class VideoViewController: UIViewController {
         observeLifecycle()
         registerRemoteCommands()
         startPlayback()
+        #if DEBUG
+        applyScreenshotExternalRoute()
+        #endif
     }
 
     var isPiPActive = false
     var pendingAudioOnlyOnPiPStop = false
+    var externalRoute: ExternalRoute?
+    var externalRouteEndWork: DispatchWorkItem?
 
     private func observeLifecycle() {
         NotificationCenter.default.addObserver(
@@ -153,8 +160,8 @@ final class VideoViewController: UIViewController {
             .store(in: &cancellables)
     }
 
-    @objc private func handleBackground() {
-        guard !isPiPActive,
+    @objc func handleBackground() {
+        guard !isPiPActive, !isPlayingExternally,
               (player as? HLSVideoPlayer)?.isPictureInPictureActive != true else { return }
         if store.current.backgroundAudio == false {
             player.pause()
@@ -260,11 +267,13 @@ final class VideoViewController: UIViewController {
         overlay.setBackButtonHidden(hidden)
     }
 
+    /// An inactive stream also drops a playlist lookup in flight, which would otherwise start the stream when it lands.
     func setStreamActive(_ active: Bool) {
         guard active != streamActive else { return }
         streamActive = active
         guard active else {
             cancelRecoveryTimers()
+            cancelResolve()
             player.pause()
             return
         }
@@ -466,6 +475,13 @@ final class VideoViewController: UIViewController {
                 self.onProgress?(progress)
             }
             .store(in: &playerCancellables)
+
+        (player as? HLSVideoPlayer)?.externalRoutePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] route in
+                self?.externalRouteDidChange(route)
+            }
+            .store(in: &playerCancellables)
     }
 
     /// Last-resort fallback: when the ad-stripped HLS path can't recover, swap to
@@ -505,6 +521,7 @@ final class VideoViewController: UIViewController {
         playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.insertSubview(playerView, belowSubview: overlay)
         bindPlayer()
+        applyExternalRoute(nil)
 
         web.setMuted(isMuted)
         overlay.setPictureInPictureEnabled(false)
@@ -772,7 +789,15 @@ final class VideoViewController: UIViewController {
         seekLiveOnReady = false
     }
 
+    private func cancelResolve() {
+        resolveTask?.cancel()
+        resolveTask = nil
+        resolveGeneration += 1
+        isResolving = false
+    }
+
     func resolveAndLoad() {
+        guard streamActive else { return }
         resolveTask?.cancel()
         overlay.clearError()
         overlay.setBuffering(true)
@@ -838,7 +863,7 @@ final class VideoViewController: UIViewController {
         let sheet = UIAlertController(title: String(localized: "Quality"), message: nil, preferredStyle: .actionSheet)
 
         sheet.addAction(qualityAction(named: String(localized: "Auto"), quality: autoQuality, isSelected: !isAudioOnly && player.currentQuality == nil))
-        for quality in qualities where quality.name.caseInsensitiveCompare("auto") != .orderedSame {
+        for quality in qualities where isOffered(quality) {
             let selected = quality.isAudioOnly ? isAudioOnly : (!isAudioOnly && player.currentQuality == quality)
             let label = quality.isAudioOnly ? String(localized: "Audio Only") : quality.name
             sheet.addAction(qualityAction(named: label, quality: quality, isSelected: selected))
@@ -850,6 +875,11 @@ final class VideoViewController: UIViewController {
             popover.sourceRect = sourceView.bounds
         }
         present(sheet, animated: true)
+    }
+
+    /// Auto has its own row, and audio only would leave a TV that has the picture with none, so it is not offered then.
+    private func isOffered(_ quality: StreamQuality) -> Bool {
+        quality.name.caseInsensitiveCompare("auto") != .orderedSame && !(quality.isAudioOnly && isPlayingExternally)
     }
 
     private func qualityAction(named name: String, quality: StreamQuality, isSelected: Bool) -> UIAlertAction {
@@ -936,6 +966,7 @@ final class VideoViewController: UIViewController {
     isolated deinit {
         resolveTask?.cancel()
         adGraceWork?.cancel()
+        externalRouteEndWork?.cancel()
         teardownPlayerIfNeeded()
         NotificationCenter.default.removeObserver(self)
     }

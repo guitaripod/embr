@@ -264,6 +264,9 @@ enum ScreenshotRouter {
                 requestPortrait(from: tabBar, after: turn + seconds)
                 after(turn + seconds + 2) { snapshotWindow(of: tabBar, named: "turnback") }
             }
+            if let seconds = option("SnapshotAt").flatMap(Double.init) {
+                after(seconds) { snapshotWindow(of: tabBar, named: option("SnapshotName") ?? "channel") }
+            }
         default: break
         }
     }
