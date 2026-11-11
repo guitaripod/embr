@@ -428,10 +428,10 @@ final class MediaRowCell: UICollectionViewListCell {
 
     static func views(_ count: Int) -> String {
         if count >= 1_000_000 {
-            return String(localized: "\(String(format: "%.1fM", Double(count) / 1_000_000)) views")
+            return String(localized: "\(String(format: "%.1fM", locale: .current, Double(count) / 1_000_000)) views")
         }
         if count >= 1_000 {
-            return String(localized: "\(String(format: "%.1fK", Double(count) / 1_000)) views")
+            return String(localized: "\(String(format: "%.1fK", locale: .current, Double(count) / 1_000)) views")
         }
         return String(localized: "\(count) views")
     }

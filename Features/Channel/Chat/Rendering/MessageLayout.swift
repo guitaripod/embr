@@ -218,7 +218,7 @@ struct MessageLayout {
     }
 
     private static func formatBits(_ bits: Int) -> String {
-        if bits >= 1000 { return String(format: "%.1fK", Double(bits) / 1000) }
+        if bits >= 1000 { return String(format: "%.1fK", locale: .current, Double(bits) / 1000) }
         return "\(bits)"
     }
 

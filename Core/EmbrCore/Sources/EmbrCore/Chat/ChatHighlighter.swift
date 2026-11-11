@@ -75,6 +75,6 @@ public struct ChatHighlighter: Sendable, Equatable {
     }
 
     private static func normalize(_ text: String) -> String {
-        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+        ContentFilter.spellingOutLetters(text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased())
     }
 }

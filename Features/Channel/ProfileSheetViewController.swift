@@ -157,7 +157,7 @@ final class ProfileSheetViewController: UIViewController {
 
     private static let yearFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
         return formatter
     }()
 }

@@ -253,7 +253,7 @@ final class VideoOverlayView: UIView {
             latencyLabel.text = nil
             return
         }
-        latencyLabel.text = String(localized: "\(String(format: "%.1f", latency))s")
+        latencyLabel.text = String(localized: "\(String(format: "%.1f", locale: .current, latency))s")
     }
 
     func setPictureInPictureEnabled(_ enabled: Bool) {

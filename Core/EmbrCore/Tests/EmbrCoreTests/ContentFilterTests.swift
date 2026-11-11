@@ -4,6 +4,14 @@ import Testing
 @Suite struct ContentFilterTests {
     private let filter = ContentFilter()
 
+    @Test func mutedNordicWordsMatchTheirAsciiSpelling() {
+        let muted = ContentFilter(userTerms: ["spøiler", "þáttur", "lærer"], includeDefaultList: false)
+        #expect(muted.shouldHide("ingen spoiler her"))
+        #expect(muted.shouldHide("nyr thattur i kvold"))
+        #expect(muted.shouldHide("min laerer sa det"))
+        #expect(!muted.shouldHide("god stream i aften"))
+    }
+
     @Test func allowsCleanMessages() {
         #expect(!filter.shouldHide("great stream today, love the gameplay"))
         #expect(!filter.shouldHide("PogChamp that was insane"))

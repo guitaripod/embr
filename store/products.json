@@ -4,6 +4,9 @@
     {
       "referenceName": "Embr Studio Pro",
       "localizations": {
+        "da": {
+          "name": "Embr Studio Pro"
+        },
         "de-DE": {
           "name": "Embr Studio Pro"
         },
@@ -22,6 +25,9 @@
         "es-MX": {
           "name": "Embr Studio Pro"
         },
+        "fi": {
+          "name": "Embr Studio Pro"
+        },
         "fr-FR": {
           "name": "Embr Studio Pro"
         },
@@ -34,10 +40,16 @@
         "ko": {
           "name": "Embr Studio Pro"
         },
+        "no": {
+          "name": "Embr Studio Pro"
+        },
         "pl": {
           "name": "Embr Studio Pro"
         },
         "pt-BR": {
+          "name": "Embr Studio Pro"
+        },
+        "sv": {
           "name": "Embr Studio Pro"
         },
         "zh-Hans": {
@@ -60,6 +72,10 @@
           },
           "introductoryOffers": [],
           "localizations": {
+            "da": {
+              "name": "Studio Pro årligt",
+              "description": "Studios annoncestyring, lyde og opsummeringer."
+            },
             "de-DE": {
               "name": "Studio Pro jährlich",
               "description": "Werbesteuerung, Sounds und Rückblicke."
@@ -84,6 +100,10 @@
               "name": "Studio Pro anual",
               "description": "Control de anuncios, sonidos y resúmenes."
             },
+            "fi": {
+              "name": "Studio Pro vuosittain",
+              "description": "Studion mainosasetukset, äänet ja yhteenvedot."
+            },
             "fr-FR": {
               "name": "Studio Pro annuel",
               "description": "Gestion des pubs, sons et récapitulatifs."
@@ -100,6 +120,10 @@
               "name": "Studio Pro 연간",
               "description": "광고 제어, 알림음, 방송 요약."
             },
+            "no": {
+              "name": "Studio Pro årlig",
+              "description": "Studios annonsekontroll, lyder og oppsummeringer."
+            },
             "pl": {
               "name": "Studio Pro rocznie",
               "description": "Reklamy, dźwięki i podsumowania streamów."
@@ -107,6 +131,10 @@
             "pt-BR": {
               "name": "Studio Pro anual",
               "description": "Controle de anúncios, sons e resumos."
+            },
+            "sv": {
+              "name": "Studio Pro årsvis",
+              "description": "Studions annonskontroll, ljud och sammanfattningar."
             },
             "zh-Hans": {
               "name": "Studio Pro 年度",
@@ -132,6 +160,10 @@
           },
           "introductoryOffers": [],
           "localizations": {
+            "da": {
+              "name": "Studio Pro månedligt",
+              "description": "Studios annoncestyring, lyde og opsummeringer."
+            },
             "de-DE": {
               "name": "Studio Pro monatlich",
               "description": "Werbesteuerung, Sounds und Rückblicke."
@@ -156,6 +188,10 @@
               "name": "Studio Pro mensual",
               "description": "Control de anuncios, sonidos y resúmenes."
             },
+            "fi": {
+              "name": "Studio Pro kuukausittain",
+              "description": "Studion mainosasetukset, äänet ja yhteenvedot."
+            },
             "fr-FR": {
               "name": "Studio Pro mensuel",
               "description": "Gestion des pubs, sons et récapitulatifs."
@@ -172,6 +208,10 @@
               "name": "Studio Pro 월간",
               "description": "광고 제어, 알림음, 방송 요약."
             },
+            "no": {
+              "name": "Studio Pro månedlig",
+              "description": "Studios annonsekontroll, lyder og oppsummeringer."
+            },
             "pl": {
               "name": "Studio Pro miesięcznie",
               "description": "Reklamy, dźwięki i podsumowania streamów."
@@ -179,6 +219,10 @@
             "pt-BR": {
               "name": "Studio Pro mensal",
               "description": "Controle de anúncios, sons e resumos."
+            },
+            "sv": {
+              "name": "Studio Pro månadsvis",
+              "description": "Studions annonskontroll, ljud och sammanfattningar."
             },
             "zh-Hans": {
               "name": "Studio Pro 月度",
@@ -205,6 +249,10 @@
         "amount": "9.99"
       },
       "localizations": {
+        "da": {
+          "name": "Stor drikkepenge",
+          "description": "Støt Embr med en stor drikkepenge. Låser intet op."
+        },
         "de-DE": {
           "name": "Großes Trinkgeld",
           "description": "Ein großes Trinkgeld für Embr. Schaltet nichts frei."
@@ -229,6 +277,10 @@
           "name": "Propina grande",
           "description": "Propina grande para apoyar a Embr. No desbloquea nada."
         },
+        "fi": {
+          "name": "Iso tippi",
+          "description": "Iso tippi Embrin tukemiseen. Ei avaa mitään."
+        },
         "fr-FR": {
           "name": "Gros pourboire",
           "description": "Grand pourboire pour soutenir Embr. Ne débloque rien."
@@ -245,6 +297,10 @@
           "name": "큰 팁",
           "description": "Embr를 응원하는 큰 팁입니다. 잠기는 기능은 없습니다."
         },
+        "no": {
+          "name": "Stort driks",
+          "description": "Støtt Embr med et stort driks. Låser opp ingenting."
+        },
         "pl": {
           "name": "Duży napiwek",
           "description": "Duży napiwek dla Embr. Nic nie odblokowuje."
@@ -252,6 +308,10 @@
         "pt-BR": {
           "name": "Gorjeta grande",
           "description": "Gorjeta grande para apoiar Embr. Não desbloqueia nada."
+        },
+        "sv": {
+          "name": "Stor dricks",
+          "description": "Stöd Embr med en stor dricks. Låser upp inget."
         },
         "zh-Hans": {
           "name": "大额打赏",
@@ -273,6 +333,10 @@
         "amount": "4.99"
       },
       "localizations": {
+        "da": {
+          "name": "Mellemstor drikkepenge",
+          "description": "Støt Embr med mellemstor drikkepenge. Låser intet op."
+        },
         "de-DE": {
           "name": "Mittleres Trinkgeld",
           "description": "Ein mittleres Trinkgeld für Embr. Schaltet nichts frei."
@@ -297,6 +361,10 @@
           "name": "Propina mediana",
           "description": "Propina mediana para apoyar a Embr. No desbloquea nada."
         },
+        "fi": {
+          "name": "Keskikokoinen tippi",
+          "description": "Keskikokoinen tippi Embrin tukemiseen. Ei avaa mitään."
+        },
         "fr-FR": {
           "name": "Moyen pourboire",
           "description": "Pourboire moyen pour soutenir Embr. Ne débloque rien."
@@ -313,6 +381,10 @@
           "name": "중간 팁",
           "description": "Embr를 응원하는 중간 팁입니다. 잠기는 기능은 없습니다."
         },
+        "no": {
+          "name": "Mellomstort driks",
+          "description": "Støtt Embr med mellomstort driks. Låser opp ingenting."
+        },
         "pl": {
           "name": "Średni napiwek",
           "description": "Średni napiwek dla Embr. Nic nie odblokowuje."
@@ -320,6 +392,10 @@
         "pt-BR": {
           "name": "Gorjeta média",
           "description": "Gorjeta média para apoiar o Embr. Não desbloqueia nada."
+        },
+        "sv": {
+          "name": "Mellanstor dricks",
+          "description": "Stöd Embr med en mellanstor dricks. Låser upp inget."
         },
         "zh-Hans": {
           "name": "中额打赏",
@@ -341,6 +417,10 @@
         "amount": "1.99"
       },
       "localizations": {
+        "da": {
+          "name": "Lille drikkepenge",
+          "description": "Støt Embr med en lille drikkepenge. Låser intet op."
+        },
         "de-DE": {
           "name": "Kleines Trinkgeld",
           "description": "Ein kleines Trinkgeld für Embr. Schaltet nichts frei."
@@ -365,6 +445,10 @@
           "name": "Propina pequeña",
           "description": "Propina pequeña para apoyar a Embr. No desbloquea nada."
         },
+        "fi": {
+          "name": "Pieni tippi",
+          "description": "Pieni tippi Embrin tukemiseen. Ei avaa mitään."
+        },
         "fr-FR": {
           "name": "Petit pourboire",
           "description": "Petit pourboire pour soutenir Embr. Ne débloque rien."
@@ -381,6 +465,10 @@
           "name": "작은 팁",
           "description": "Embr를 응원하는 작은 팁입니다. 잠기는 기능은 없습니다."
         },
+        "no": {
+          "name": "Lite driks",
+          "description": "Støtt Embr med et lite driks. Låser opp ingenting."
+        },
         "pl": {
           "name": "Mały napiwek",
           "description": "Mały napiwek dla Embr. Nic nie odblokowuje."
@@ -388,6 +476,10 @@
         "pt-BR": {
           "name": "Gorjeta pequena",
           "description": "Gorjeta pequena para apoiar Embr. Não desbloqueia nada."
+        },
+        "sv": {
+          "name": "Liten dricks",
+          "description": "Stöd Embr med en liten dricks. Låser upp inget."
         },
         "zh-Hans": {
           "name": "小额打赏",
@@ -410,6 +502,10 @@
         "amount": "9.99"
       },
       "localizations": {
+        "da": {
+          "name": "Grundlæggende støtter",
+          "description": "Temaer, chatskrifttyper, ikoner og et mærke alle ser."
+        },
         "de-DE": {
           "name": "Gründungsunterstützer",
           "description": "Designs, Schriften, Symbole und ein Abzeichen für alle."
@@ -434,6 +530,10 @@
           "name": "Miembro fundador",
           "description": "Temas, fuentes, íconos y una insignia que todos ven."
         },
+        "fi": {
+          "name": "Perustava tukija",
+          "description": "Teemat, fontit, kuvakkeet ja kaikille näkyvä merkki."
+        },
         "fr-FR": {
           "name": "Membre fondateur",
           "description": "Thèmes, polices, icônes et un badge visible de tous."
@@ -450,6 +550,10 @@
           "name": "창립 후원자",
           "description": "테마, 채팅 글꼴, 아이콘, 모두에게 보이는 배지."
         },
+        "no": {
+          "name": "Grunnleggende støttespiller",
+          "description": "Temaer, chattfonter, ikoner og et merke alle ser."
+        },
         "pl": {
           "name": "Założycielski Wspierający",
           "description": "Motywy, czcionki czatu, ikony i odznaka dla każdego."
@@ -457,6 +561,10 @@
         "pt-BR": {
           "name": "Apoiador Fundador",
           "description": "Temas, fontes do chat, ícones e um selo para todos."
+        },
+        "sv": {
+          "name": "Grundande stödjare",
+          "description": "Teman, chattypsnitt, ikoner och ett märke för alla."
         },
         "zh-Hans": {
           "name": "创始支持者",
@@ -480,6 +588,10 @@
         "amount": "79.99"
       },
       "localizations": {
+        "da": {
+          "name": "Studio Pro for livstid",
+          "description": "Alle Studio Pro-funktioner, betalt én gang."
+        },
         "de-DE": {
           "name": "Studio Pro dauerhaft",
           "description": "Alles aus Studio Pro, einmal bezahlt."
@@ -504,6 +616,10 @@
           "name": "Studio Pro de por vida",
           "description": "Todo Studio Pro con un solo pago."
         },
+        "fi": {
+          "name": "Studio Pro elinikäinen",
+          "description": "Kaikki Studio Pro -ominaisuudet kertamaksulla."
+        },
         "fr-FR": {
           "name": "Studio Pro à vie",
           "description": "Tout Studio Pro, payé une seule fois."
@@ -520,6 +636,10 @@
           "name": "Studio Pro 평생",
           "description": "한 번 구매로 Studio Pro 전체."
         },
+        "no": {
+          "name": "Studio Pro for livstid",
+          "description": "Alle Studio Pro-funksjoner, betalt én gang."
+        },
         "pl": {
           "name": "Studio Pro na zawsze",
           "description": "Całe Studio Pro za jedną płatność."
@@ -527,6 +647,10 @@
         "pt-BR": {
           "name": "Studio Pro vitalício",
           "description": "Todo o Studio Pro com um só pagamento."
+        },
+        "sv": {
+          "name": "Studio Pro för livstid",
+          "description": "Alla funktioner i Studio Pro, en engångsbetalning."
         },
         "zh-Hans": {
           "name": "Studio Pro 永久",

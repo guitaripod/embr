@@ -74,11 +74,29 @@ public struct ContentFilter: Sendable, Equatable {
     }
 
     private static func normalize(_ text: String) -> String {
-        let folded = text.folding(options: .diacriticInsensitive, locale: nil).lowercased()
+        let folded = spellingOutLetters(text.folding(options: .diacriticInsensitive, locale: nil).lowercased())
         var result = ""
         result.reserveCapacity(folded.count)
         for character in folded {
             result.append(leetMap[character] ?? character)
+        }
+        return result
+    }
+
+    /// Spells out the letters diacritic folding leaves alone (ø, æ, ð, þ, ß), so a Danish, Norwegian or Icelandic
+    /// word matches its ASCII spelling the way é already matches e.
+    static func spellingOutLetters(_ text: String) -> String {
+        var result = ""
+        result.reserveCapacity(text.count)
+        for character in text {
+            switch character {
+            case "ø": result.append("o")
+            case "æ": result.append("ae")
+            case "ð": result.append("d")
+            case "þ": result.append("th")
+            case "ß": result.append("ss")
+            default: result.append(character)
+            }
         }
         return result
     }

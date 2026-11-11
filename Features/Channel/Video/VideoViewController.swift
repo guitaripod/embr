@@ -406,7 +406,7 @@ final class VideoViewController: UIViewController {
     }
 
     private static func rateText(_ rate: Float) -> String {
-        rate == rate.rounded() ? String(format: "%.0fx", rate) : String(format: "%gx", rate)
+        rate == rate.rounded() ? String(format: "%.0fx", locale: .current, rate) : String(format: "%gx", rate)
     }
 
     private func installPlayerView() {

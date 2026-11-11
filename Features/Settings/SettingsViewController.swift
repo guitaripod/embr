@@ -284,7 +284,7 @@ final class SettingsViewController: SettingsPageViewController {
         return [
             SettingsSection(id: "chat.text", header: String(localized: "Text"), items: [
                 SettingsItem(id: "messageScale", title: String(localized: "Message Scale"), keywords: [String(localized: "Size")], kind: .slider(
-                    value: settings.messageScale, range: 0.75...1.5, step: 0.05, format: { String(format: "%.2fx", $0) }
+                    value: settings.messageScale, range: 0.75...1.5, step: 0.05, format: { String(format: "%.2fx", locale: .current, $0) }
                 ) { [weak self] value in self?.store.update { $0.messageScale = value } }),
                 SettingsItem(id: "fontSizeDelta", title: String(localized: "Font Size Adjustment"), keywords: [String(localized: "Size")], kind: .stepper(
                     value: Double(settings.fontSizeDelta), range: -4...8, step: 1, format: { $0 >= 0 ? "+\(Int($0))" : "\(Int($0))" }

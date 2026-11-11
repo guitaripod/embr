@@ -368,8 +368,8 @@ final class StreamInfoView: UIView {
     }
 
     private static func viewers(_ count: Int) -> String {
-        if count >= 1_000_000 { return String(format: "%.1fM", Double(count) / 1_000_000) }
-        if count >= 1_000 { return String(format: "%.1fK", Double(count) / 1_000) }
+        if count >= 1_000_000 { return String(format: "%.1fM", locale: .current, Double(count) / 1_000_000) }
+        if count >= 1_000 { return String(format: "%.1fK", locale: .current, Double(count) / 1_000) }
         return String(count)
     }
 
