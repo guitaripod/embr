@@ -1,0 +1,16 @@
+Hello,
+
+Thank you for the review. We'd like to clarify what this Apple TV version (1.5.0, build 7) does, because it is a different app from the one reviewed as version 1.4.0.
+
+Embr Studio for Apple TV does not stream, play, download or index any third-party audio or video, and it has no catalog or discovery of channels or content. It plays no video at all. It is a dashboard for a Twitch streamer's own channel: after the streamer signs in with Twitch's official OAuth device-code flow and approves the listed permissions on Twitch's own page, the app shows that channel's chat, follower and subscription events, ad-break schedule, polls and predictions, and lets the streamer moderate their own chat. All of it comes from Twitch's official developer platform (the Helix API and EventSub), which Twitch provides to registered applications under the Twitch Developer Services Agreement. The app can only read and act on what Twitch's API returns for the signed-in streamer's own channel, or a channel they moderate, within the permissions they approved. The sample stream shown before sign-in is invented data that ships inside the app.
+
+Documentary evidence, attached in App Review Information:
+1. Embr's registration in the Twitch Developer Console (application "embr-guitaripod", client ID m61yy3c1nkq50qthoyi8k5glugnsqk), through which Twitch authorizes Embr to use its API.
+2. The Twitch Developer Services Agreement that governs that use: https://legal.twitch.com/legal/developer-agreement/
+
+Regarding Guideline 2.1(b): the in-app purchases are in the Apple TV app. Studio Pro (monthly, yearly and lifetime) is under Settings > Studio Pro > Get Studio Pro, and Founding Supporter is under Settings > Founding Supporter. These products were submitted with the iPhone and iPad version 1.5.0, which is in review now. We will include a screen recording of a sandbox purchase on a physical Apple TV when we resubmit.
+
+If any part of the app still raises a concern, please tell us which feature it is, and we will change or remove it.
+
+Thank you,
+Marcus
