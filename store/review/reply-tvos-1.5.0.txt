@@ -8,7 +8,7 @@ Documentary evidence, attached in App Review Information:
 1. Embr's registration in the Twitch Developer Console (application "embr-guitaripod", client ID m61yy3c1nkq50qthoyi8k5glugnsqk), through which Twitch authorizes Embr to use its API.
 2. The Twitch Developer Services Agreement that governs that use: https://legal.twitch.com/legal/developer-agreement/
 
-Regarding Guideline 2.1(b): the in-app purchases are in the Apple TV app. Studio Pro (monthly, yearly and lifetime) is under Settings > Studio Pro > Get Studio Pro, and Founding Supporter is under Settings > Founding Supporter. I submitted these products with the iPhone and iPad version 1.5.0, which is in review now. I will include a screen recording of a sandbox purchase on a physical Apple TV when I resubmit.
+Regarding Guideline 2.1(b): the in-app purchases are in the Apple TV app. Studio Pro (monthly, yearly and lifetime) is under Settings > Studio Pro > Get Studio Pro, and Founding Supporter is under Settings > Founding Supporter. They were approved with the iPhone and iPad version 1.5.0. The App Review notes now link a screen recording made on a physical Apple TV: it starts on the Home Screen, opens the app, shows the sample stream, and completes sandbox purchases of Studio Pro and Founding Supporter.
 
 If any part of the app still raises a concern, please tell me which feature it is, and I will change or remove it.
 
