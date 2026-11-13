@@ -495,7 +495,7 @@
     {
       "productId": "com.guitaripod.embr.supporter",
       "type": "NON_CONSUMABLE",
-      "referenceName": "Embr Founding Supporter",
+      "referenceName": "Embr Founding Member",
       "familySharable": false,
       "price": {
         "territory": "USA",
@@ -503,23 +503,23 @@
       },
       "localizations": {
         "da": {
-          "name": "Grundlæggende støtter",
+          "name": "Stiftende medlem",
           "description": "Temaer, chatskrifttyper, ikoner og et mærke alle ser."
         },
         "de-DE": {
-          "name": "Gründungsunterstützer",
+          "name": "Gründungsmitglied",
           "description": "Designs, Schriften, Symbole und ein Abzeichen für alle."
         },
         "en-AU": {
-          "name": "Founding Supporter",
+          "name": "Founding Member",
           "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "en-GB": {
-          "name": "Founding Supporter",
+          "name": "Founding Member",
           "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "en-US": {
-          "name": "Founding Supporter",
+          "name": "Founding Member",
           "description": "Themes, chat fonts, icons and a badge everyone sees."
         },
         "es-ES": {
@@ -531,7 +531,7 @@
           "description": "Temas, fuentes, íconos y una insignia que todos ven."
         },
         "fi": {
-          "name": "Perustava tukija",
+          "name": "Perustajajäsen",
           "description": "Teemat, fontit, kuvakkeet ja kaikille näkyvä merkki."
         },
         "fr-FR": {
@@ -539,44 +539,44 @@
           "description": "Thèmes, polices, icônes et un badge visible de tous."
         },
         "it": {
-          "name": "Sostenitore fondatore",
+          "name": "Membro fondatore",
           "description": "Temi, font, icone e un badge visibile a tutti."
         },
         "ja": {
-          "name": "創設サポーター",
+          "name": "創設メンバー",
           "description": "テーマ、チャットフォント、アイコン、みんなに見えるバッジ。"
         },
         "ko": {
-          "name": "창립 후원자",
+          "name": "창립 멤버",
           "description": "테마, 채팅 글꼴, 아이콘, 모두에게 보이는 배지."
         },
         "no": {
-          "name": "Grunnleggende støttespiller",
+          "name": "Stiftende medlem",
           "description": "Temaer, chattfonter, ikoner og et merke alle ser."
         },
         "pl": {
-          "name": "Założycielski Wspierający",
+          "name": "Członek Założyciel",
           "description": "Motywy, czcionki czatu, ikony i odznaka dla każdego."
         },
         "pt-BR": {
-          "name": "Apoiador Fundador",
+          "name": "Membro Fundador",
           "description": "Temas, fontes do chat, ícones e um selo para todos."
         },
         "sv": {
-          "name": "Grundande stödjare",
+          "name": "Grundande medlem",
           "description": "Teman, chattypsnitt, ikoner och ett märke för alla."
         },
         "zh-Hans": {
-          "name": "创始支持者",
+          "name": "创始成员",
           "description": "主题、聊天字体、图标和所有人都能看到的徽章。"
         },
         "zh-Hant": {
-          "name": "創始支持者",
+          "name": "創始成員",
           "description": "主題、聊天字體、圖示，以及所有人都看得到的徽章。"
         }
       },
       "reviewScreenshot": "review/supporter.png",
-      "reviewNote": "Founding Supporter is a one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven iPhone icons, and a flame badge in the buyer's color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying. Find it in Settings > Become a Founding Supporter on iPhone and iPad. Watching and chat never need it."
+      "reviewNote": "Founding Member is a one-time purchase that unlocks only looks: the OLED Black, Midnight, Ember and Dusk themes, seven accent colors, four chat fonts, eleven iPhone icons, and a flame badge in the buyer's color beside their name in chat, with their name in that color or glowing and a founding number, which other Embr viewers see. Every look can be tried on before buying. Find it in Settings > Make Embr Yours on iPhone and iPad. Watching and chat never need it."
     },
     {
       "productId": "com.guitaripod.embr.studio.lifetime",
