@@ -37,9 +37,10 @@ CREATIVE = ROOT / "store" / "creative"
 ICON = ROOT / "Resources" / "Assets.xcassets" / "AppIcon.appiconset" / "icon-1024.png"
 
 LOCALES = ["en-US", "en-AU", "en-GB", "ar-SA", "de-DE", "es-ES", "es-MX", "fr-FR", "id", "it", "ja", "ko",
-           "pl", "pt-BR", "ru", "th", "tr", "vi", "zh-Hans", "zh-Hant"]
+           "pl", "pt-BR", "ru", "th", "tr", "vi", "zh-Hans", "zh-Hant", "sv", "da", "no", "fi"]
 UI_LANGUAGE = {"de-DE": "de", "es-ES": "es", "es-MX": "es", "fr-FR": "fr", "it": "it", "ja": "ja", "ko": "ko",
-               "pl": "pl", "pt-BR": "pt-BR", "zh-Hans": "zh-Hans", "zh-Hant": "zh-Hant"}
+               "pl": "pl", "pt-BR": "pt-BR", "zh-Hans": "zh-Hans", "zh-Hant": "zh-Hant", "sv": "sv", "da": "da",
+               "no": "nb", "fi": "fi"}
 
 NIGHT_TOP = np.array([14, 9, 24], dtype=np.float32)
 NIGHT_BOTTOM = np.array([6, 4, 11], dtype=np.float32)

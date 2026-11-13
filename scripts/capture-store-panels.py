@@ -33,7 +33,8 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "marketing" / "raw"
 BUNDLE = "com.guitaripod.embr"
 LANGUAGES = {"en": "en_US", "de": "de_DE", "es": "es_ES", "fr": "fr_FR", "it": "it_IT", "ja": "ja_JP", "ko": "ko_KR",
-             "pl": "pl_PL", "pt-BR": "pt_BR", "zh-Hans": "zh_CN", "zh-Hant": "zh_TW"}
+             "pl": "pl_PL", "pt-BR": "pt_BR", "zh-Hans": "zh_CN", "zh-Hant": "zh_TW", "sv": "sv_SE", "da": "da_DK",
+             "nb": "nb_NO", "fi": "fi_FI"}
 COMMON = ["-embrDemo", "-screenshotTheme", "dark", "-screenshotAuth", "1"]
 STATUS_BAR = ["--time", "9:41", "--dataNetwork", "wifi", "--wifiMode", "active", "--wifiBars", "3",
               "--cellularMode", "active", "--cellularBars", "4", "--batteryState", "charged", "--batteryLevel", "100",
