@@ -109,11 +109,10 @@ enum ScreenshotRouter {
                 }
             }
         case "support":
-            ScreenshotHarness.previewTips = true
             tabBar.select(.settings)
             after(0.6) {
                 let settings = tabBar.settingsNavigationController.viewControllers.first as? SettingsViewController
-                settings?.showSupportForScreenshot()
+                settings?.showHelpForScreenshot()
             }
         case "supporter", "supporterowned":
             SupporterStore.shared.seedForScreenshots(supporter: route == "supporterowned")

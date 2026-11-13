@@ -16,7 +16,6 @@ final class TVAppDelegate: UIResponder, UIApplicationDelegate {
         EmbrMidgar.shared.start()
         NetworkMonitor.shared.start()
         RemoteConfigService.shared.start()
-        TipJarStore.shared.start()
         SupporterStore.shared.start()
         StudioProStore.shared.start()
         MidgarLog.info("tv app launched", category: .app)

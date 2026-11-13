@@ -131,7 +131,7 @@ final class SupporterDirectory: Sendable {
         do {
             let response = try await transport.send(endpoints.supporters())
             guard response.isSuccess else {
-                MidgarLog.notice("supporter directory: status \(response.status)", category: .tips)
+                MidgarLog.notice("supporter directory: status \(response.status)", category: .supporter)
                 return
             }
             let directory = try WorkerEndpoints.decodeSupporterDirectory(response.body)
@@ -144,9 +144,9 @@ final class SupporterDirectory: Sendable {
             changeCount.withLock { $0 += 1 }
             lastRefresh.withLock { $0 = now }
             persist()
-            MidgarLog.info("supporter directory: \(directory.supporters.count) supporters", category: .tips)
+            MidgarLog.info("supporter directory: \(directory.supporters.count) supporters", category: .supporter)
         } catch {
-            MidgarLog.notice("supporter directory refresh failed: \(error)", category: .tips)
+            MidgarLog.notice("supporter directory refresh failed: \(error)", category: .supporter)
         }
     }
 

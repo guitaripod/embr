@@ -3,7 +3,7 @@ import Combine
 import EmbrCore
 import MidgarKit
 
-/// Embr's settings, laid out as the system Settings app: the Twitch account card on top, Founding Supporter, then one
+/// Embr's settings, laid out as the system Settings app: the Twitch account card on top, Founding Member, then one
 /// row per area opening its own page, a search across every setting, and the More Apps card at the bottom.
 @MainActor
 final class SettingsViewController: SettingsPageViewController {
@@ -23,7 +23,7 @@ final class SettingsViewController: SettingsPageViewController {
         let refresh = PassthroughSubject<Void, Never>()
         self.refresh = refresh
         let changes = store.changes.map { _ in () }
-            .merge(with: refresh, TipJarStore.shared.changes, SupporterStore.shared.changes)
+            .merge(with: refresh, SupporterStore.shared.changes)
             .eraseToAnyPublisher()
         self.pageChanges = changes
         super.init(title: String(localized: "Settings"), changes: changes) { page in
@@ -49,7 +49,6 @@ final class SettingsViewController: SettingsPageViewController {
                 self.refresh.send()
             }
             .store(in: &observers)
-        TipJarStore.shared.loadProducts()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -58,8 +57,8 @@ final class SettingsViewController: SettingsPageViewController {
     }
 
     #if DEBUG
-    func showSupportForScreenshot() {
-        navigationController?.pushViewController(makePage(Page.support), animated: false)
+    func showHelpForScreenshot() {
+        navigationController?.pushViewController(makePage(Page.help), animated: false)
     }
 
     /// Opens one page for a screenshot, by its name in `Page`, or searches the root for `query`.
@@ -75,7 +74,7 @@ final class SettingsViewController: SettingsPageViewController {
 
     /// The areas with a page of their own, in the order they appear.
     private enum Page: CaseIterable {
-        case general, home, chat, video, safety, support, about, account
+        case general, home, chat, video, safety, help, about, account
 
         var title: String {
             switch self {
@@ -84,7 +83,7 @@ final class SettingsViewController: SettingsPageViewController {
             case .chat: String(localized: "Chat")
             case .video: String(localized: "Video")
             case .safety: String(localized: "Safety & Moderation")
-            case .support: String(localized: "Support Embr")
+            case .help: String(localized: "Help & Feedback")
             case .about: String(localized: "About")
             case .account: String(localized: "Account")
             }
@@ -97,7 +96,7 @@ final class SettingsViewController: SettingsPageViewController {
             case .chat: SettingsIcon(symbol: "bubble.left.and.bubble.right.fill", color: .systemPurple)
             case .video: SettingsIcon(symbol: "play.rectangle.fill", color: .systemRed)
             case .safety: SettingsIcon(symbol: "hand.raised.fill", color: .systemIndigo)
-            case .support: SettingsIcon(symbol: "heart.fill", color: .systemPink)
+            case .help: SettingsIcon(symbol: "questionmark.circle.fill", color: .systemTeal)
             case .about: SettingsIcon(symbol: "info.circle.fill", color: .systemGray)
             case .account: SettingsIcon(symbol: "person.crop.circle.fill", color: .systemPurple)
             }
@@ -111,7 +110,7 @@ final class SettingsViewController: SettingsPageViewController {
         case .chat: chatSections()
         case .video: videoSections()
         case .safety: safetySections()
-        case .support: supportSections()
+        case .help: helpSections()
         case .about: aboutSections()
         case .account: accountSections()
         }
@@ -143,7 +142,7 @@ final class SettingsViewController: SettingsPageViewController {
             SettingsSection(id: "root.supporter", items: [supporterItem(), studioItem()]),
             SettingsSection(id: "root.app", items: [pageLink(.general), pageLink(.home), pageLink(.chat), pageLink(.video)]),
             SettingsSection(id: "root.safety", items: [pageLink(.safety)]),
-            SettingsSection(id: "root.embr", items: [pageLink(.support), pageLink(.about)]),
+            SettingsSection(id: "root.embr", items: [pageLink(.help), pageLink(.about)]),
         ]
     }
 
@@ -172,8 +171,8 @@ final class SettingsViewController: SettingsPageViewController {
     private func supporterItem() -> SettingsItem {
         let supporter = SupporterStore.shared
         let title = supporter.isSupporter
-            ? supporter.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
-            : String(localized: "Become a Founding Supporter")
+            ? supporter.number.map { String(localized: "Founding Member #\($0)") } ?? String(localized: "Founding Member")
+            : String(localized: "Make Embr Yours")
         let subtitle = supporter.isSupporter
             ? String(localized: "Your themes, icons, chat font and badge.")
             : String(localized: "Themes, app icons, chat fonts and a badge everyone sees.")
@@ -294,7 +293,7 @@ final class SettingsViewController: SettingsPageViewController {
                 toggle("showTimestamps", String(localized: "Show Timestamps"), settings.showTimestamps) { $0.showTimestamps = $1 },
                 toggle("compactChat", String(localized: "Compact Chat"), settings.compactChat) { $0.compactChat = $1 },
                 toggle("recentMessagesBackfill", String(localized: "Backfill Recent Messages"), settings.recentMessagesBackfill) { $0.recentMessagesBackfill = $1 },
-                toggle("supporterNameEffects", String(localized: "Supporter Name Colors"), settings.supporterNameEffectsEnabled) { $0.supporterNameEffects = $1 },
+                toggle("supporterNameEffects", String(localized: "Founding Member Name Colors"), settings.supporterNameEffectsEnabled) { $0.supporterNameEffects = $1 },
                 SettingsItem(id: "highlights", title: String(localized: "Highlights"), keywords: [String(localized: "Mentions")], kind: .link(value: Self.highlightSummary(settings)) { [weak self] presenter in
                     self?.push(HighlightsViewController(), from: presenter)
                 }),
@@ -534,7 +533,7 @@ final class SettingsViewController: SettingsPageViewController {
 
     private static func isSearchable(_ item: SettingsItem) -> Bool {
         switch item.kind {
-        case .custom, .loading: false
+        case .custom: false
         default: true
         }
     }

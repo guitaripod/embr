@@ -24,7 +24,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         ReviewPrompt.beginSession()
         NetworkMonitor.shared.start()
         RemoteConfigService.shared.start()
-        TipJarStore.shared.start()
         SupporterStore.shared.start()
         StudioProStore.shared.start()
         FavoritesSync.shared.start()

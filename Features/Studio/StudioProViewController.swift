@@ -147,7 +147,7 @@ final class StudioProViewController: UIViewController {
         if pro.isSubscriber {
             buyButton.configuration?.title = String(localized: "Studio Pro Is Yours", comment: "Paywall button")
             buyButton.isEnabled = false
-            status.text = String(localized: "Thank you!", comment: "Paywall status")
+            status.text = String(localized: "Every Studio Pro feature is yours on iPhone, iPad and Apple TV.", comment: "Studio Pro settings")
             return
         }
         buyButton.configuration?.title = selected == StudioProStore.lifetimeID

@@ -29,7 +29,7 @@ private func freshStore() -> SettingsStore {
 
     @Test func onlyRowsThatDoSomethingHighlight() {
         #expect(SettingsItem(id: "l", title: "Link", kind: .link(value: nil) { _ in }).isSelectable)
-        #expect(SettingsItem(id: "p", title: "Tip", kind: .price("$1.99") { _, _ in }).isSelectable)
+        #expect(SettingsItem(id: "a", title: "Rate", kind: .action(role: .accent) { _, _ in }).isSelectable)
         #expect(!SettingsItem(id: "s", title: "Switch", kind: .toggle(isOn: true) { _ in }).isSelectable)
         #expect(!SettingsItem(id: "v", title: "Version", kind: .value("1.0")).isSelectable)
     }

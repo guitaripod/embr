@@ -35,7 +35,7 @@ final class SupporterViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = String(localized: "Founding Supporter")
+        title = SupporterCopy.name(number: nil)
         view.backgroundColor = Theme.background
         draft.icon = SupporterStore.currentIcon
         buildLayout()
@@ -205,11 +205,11 @@ final class SupporterViewController: UIViewController {
 
         flame.image = look.badgeColor.flameImage
         if supporter {
-            titleLabel.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
-            bodyLabel.text = String(localized: "Thank you for keeping Embr going. Everything here is yours to change any time.")
+            titleLabel.text = SupporterCopy.name(number: store.number)
+            bodyLabel.text = SupporterCopy.ownerBody
         } else {
-            titleLabel.text = String(localized: "Become a Founding Supporter")
-            bodyLabel.text = String(localized: "Embr is made by one independent developer. Founding Supporters keep it free for everyone and get looks no one else has. Try them on below; watching never needs any of it.")
+            titleLabel.text = SupporterCopy.invitation
+            bodyLabel.text = SupporterCopy.invitationBody
         }
         preview.show(look, number: supporter ? store.number : nil)
         controls.show(look)
@@ -221,7 +221,7 @@ final class SupporterViewController: UIViewController {
         buyBar.isHidden = supporter
         restoreButton.isHidden = supporter
         if let price = store.product?.displayPrice {
-            buyButton.configuration?.title = String(localized: "Become a Supporter · \(price)")
+            buyButton.configuration?.title = String(localized: "Unlock the Looks · \(price)")
             buyButton.isEnabled = !purchasing
         } else if store.productUnavailable {
             buyButton.configuration?.title = String(localized: "Try Again")
@@ -241,11 +241,7 @@ final class SupporterViewController: UIViewController {
         if store.productUnavailable && store.product == nil {
             return String(localized: "Purchases are not available right now.")
         }
-        let count = store.supporterCount
-        guard count >= 10 else {
-            return String(localized: "One purchase, yours on every device with your Apple Account. Founding numbers go in order and stay yours.")
-        }
-        return String(localized: "Join \(count) Founding Supporters. One purchase, yours on every device with your Apple Account.")
+        return SupporterCopy.purchaseNote(count: store.supporterCount)
     }
 
     private func badgeText(_ store: SupporterStore) -> String? {
@@ -292,7 +288,7 @@ final class SupporterViewController: UIViewController {
     /// Brings the flame into view, then lets the sparks fly from where it now is.
     private func celebrate() {
         Haptics.notify(.success)
-        UIAccessibility.post(notification: .announcement, argument: String(localized: "Thank you for supporting Embr."))
+        UIAccessibility.post(notification: .announcement, argument: SupporterCopy.bought(number: SupporterStore.shared.number))
         let top = CGPoint(x: 0, y: -scrollView.adjustedContentInset.top)
         let play = { [weak self] in
             guard let self else { return }
@@ -331,7 +327,7 @@ final class SupporterViewController: UIViewController {
     private func restore() {
         Task { [weak self] in
             if !(await SupporterStore.shared.restore()) {
-                self?.alert(String(localized: "Nothing to Restore"), String(localized: "This Apple Account hasn't bought Founding Supporter yet."))
+                self?.alert(String(localized: "Nothing to Restore"), SupporterCopy.nothingToRestore)
             }
         }
     }

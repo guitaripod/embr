@@ -133,7 +133,7 @@ final class TVStudioProViewController: UIViewController {
 
     private func refresh() {
         if pro.isSubscriber {
-            status.text = String(localized: "Studio Pro is yours. Thank you!", comment: "Paywall status")
+            status.text = String(localized: "Every Studio Pro feature is yours on iPhone, iPad and Apple TV.", comment: "Studio Pro settings")
         } else if case .active(let ends) = pro.weekPhase() {
             status.text = String(localized: "Your free week has \(StudioProWeek.daysLeft(until: ends, now: Date())) days left. Nothing is charged when it ends.", comment: "Paywall status")
         } else if pro.productsUnavailable {

@@ -74,8 +74,6 @@ struct SettingsItem {
         case menu(value: String, choices: [SettingsChoice])
         /// A tappable row that does something in place: tinted, or red when it removes something.
         case action(role: Role, run: (UIViewController, UIView?) -> Void)
-        /// A purchase: the product's name with its price in the accent color.
-        case price(String?, buy: (UIViewController, UIView?) -> Void)
         /// A value to read, not to change.
         case value(String?)
         case slider(value: Double, range: ClosedRange<Double>, step: Double, format: (Double) -> String, commit: (Double) -> Void)
@@ -84,8 +82,6 @@ struct SettingsItem {
         case profile(name: String, detail: String, avatar: UIImage?, open: (UIViewController) -> Void)
         /// A row the page draws itself, once.
         case custom(make: () -> UIView)
-        /// A status line with a spinner.
-        case loading
     }
 
     let id: String
@@ -113,20 +109,18 @@ struct SettingsItem {
         case .link(let value, _): parts.append("link:" + (value ?? ""))
         case .menu(let value, let choices): parts.append("menu:" + value + choices.map(\.title).joined(separator: ","))
         case .action(let role, _): parts.append("action:\(role)")
-        case .price(let price, _): parts.append("price:" + (price ?? ""))
         case .value(let value): parts.append("value:" + (value ?? ""))
         case .slider(let value, _, _, _, _): parts.append("slider:\(value)")
         case .stepper(let value, _, _, _, _): parts.append("stepper:\(value)")
         case .profile(let name, let detail, let avatar, _): parts.append("profile:\(name)|\(detail)|\(avatar.map { ObjectIdentifier($0).hashValue } ?? 0)")
         case .custom: parts.append("custom")
-        case .loading: parts.append("loading")
         }
         return parts.joined(separator: "\u{1F}")
     }
 
     var isSelectable: Bool {
         switch kind {
-        case .link, .action, .price, .profile: return true
+        case .link, .action, .profile: return true
         default: return false
         }
     }

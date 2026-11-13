@@ -2,7 +2,7 @@
 
 A native UIKit Twitch client for iPhone and iPad: browse, watch and chat. It uses the modern Twitch API surface (EventSub for chat, Helix for everything else), plays video with AVPlayer, and keeps every secret in a Cloudflare Worker.
 
-**[Download on the App Store](https://apps.apple.com/us/app/embr-live-streams/id6784940198)**: free, iPhone and iPad, iOS 18 or later. Optional tips, and Founding Supporter, a one-time purchase that unlocks only looks. More at [midgarcorp.cc/embr](https://midgarcorp.cc/embr/).
+**[Download on the App Store](https://apps.apple.com/us/app/embr-live-streams/id6784940198)**: free, iPhone and iPad, iOS 18 or later. Founding Member is an optional one-time purchase that unlocks only looks. More at [midgarcorp.cc/embr](https://midgarcorp.cc/embr/).
 
 Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://github.com/tommyxchow/frosty), with deliberate departures: EventSub instead of IRC, native AVPlayer instead of a WebView, and a Worker-backed Authorization Code flow instead of the embedded implicit one.
 
@@ -15,7 +15,7 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 - **Safety:** a content filter, report and block on every message.
 - **Following and favorites**, with favorites synced between iPhone and iPad through iCloud; search; browse by category.
 - **Settings** laid out like the Settings app, with search.
-- **Founding Supporter:** themes, accent colors, chat fonts, app icons, and a flame badge with a founding number that other Embr viewers see. Every look can be tried on first.
+- **Founding Member:** themes, accent colors, chat fonts, app icons, and a flame badge with a founding number that other Embr viewers see. Every look can be tried on first.
 
 ## What's here
 
@@ -37,7 +37,7 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 - **Video:** the Worker resolves the stream's HLS playlist; the app plays it with `AVPlayer` + `AVPictureInPictureController`, behind a `VideoPlaying` protocol with a `WebViewPlayer` fallback.
 - **Emotes:** Twitch + 7TV (with `events.7tv.io` live updates) + BetterTTV + FrankerFaceZ, merged into a layered `EmoteCatalog`. Animated WebP via SDWebImage.
 - **Rendering:** off-main tokenization (`MessageTokenizer`), precomputed layout, a flipped `UICollectionView` with diffable batches, a shared `CADisplayLink` emote animator.
-- **Platform:** [MidgarKit](https://github.com/guitaripod/MidgarKit) for the file logger (`Library/Logs/embr.log`), the tips and Founding Supporter purchases, and the More Apps card.
+- **Platform:** [MidgarKit](https://github.com/guitaripod/MidgarKit) for the file logger (`Library/Logs/embr.log`), the Founding Member and Studio Pro purchases, and the More Apps card.
 
 See `CONTRACTS.md` for the full type map and `CLAUDE.md` for build instructions.
 

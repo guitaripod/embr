@@ -2,7 +2,7 @@ import Foundation
 
 enum LegalText {
     static let supportEmail = "marcus@midgarcorp.cc"
-    static let lastUpdated = String(localized: "8 November 2026")
+    static let lastUpdated = String(localized: "13 November 2026")
 
     static let termsURL = URL(string: "https://midgarcorp.cc/legal/embr/terms")!
 
@@ -49,7 +49,7 @@ enum LegalText {
 
     private static let termsPurchases = String(localized: """
     Purchases and subscriptions
-    Tips, Founding Supporter and Studio Pro are optional and sold through Apple In-App Purchase. Studio \
+    Founding Member and Studio Pro are optional and sold through Apple In-App Purchase. Studio \
     Pro is a monthly or yearly auto-renewing subscription, or a one-time lifetime purchase. Payment is \
     charged to your Apple Account when you confirm. A subscription renews at the same price unless it \
     is cancelled at least 24 hours before the period ends; manage or cancel it in your Apple Account's \
@@ -63,7 +63,7 @@ enum LegalText {
             privacyIntro,
             privacyOnDevice,
             privacyMidgarID,
-            privacyTips,
+            privacyPurchases,
             privacySupporter,
             privacyStudio,
             privacyMoreApps,
@@ -95,17 +95,17 @@ enum LegalText {
     Midgar's other apps on your devices, so a purchase is recognised everywhere.
     """)
 
-    private static let privacyTips = String(localized: """
-    Tips
-    Tips are optional, unlock nothing and are bought through Apple. When you leave a tip, the purchase \
-    record from Apple (which tip, the price, the dates and your App Store country) is sent to Midgar's \
+    private static let privacyPurchases = String(localized: """
+    Purchases
+    Founding Member and Studio Pro are optional and bought through Apple. When you buy one, the purchase \
+    record from Apple (which product, the price, the dates and your App Store country) is sent to Midgar's \
     own server together with your Midgar ID. Midgar never receives your payment details.
     """)
 
     private static let privacySupporter = String(localized: """
-    Founding Supporter
-    Founding Supporter is an optional one-time purchase through Apple that unlocks only looks. Its \
-    purchase record is handled like a tip's. If you are signed in with Twitch, your Twitch user id is \
+    Founding Member
+    Founding Member is an optional one-time purchase through Apple that unlocks only looks. If you are \
+    signed in with Twitch, your Twitch user id is \
     stored with the purchase, your founding number and the badge color and name style you pick, so a \
     flame badge can appear beside your name in chat. Those are published to everyone using Embr so \
     their app can show them. Your Twitch token is used to confirm the account and is not kept.
@@ -116,7 +116,7 @@ enum LegalText {
     Studio reads your own channel's events, chat and ad schedule straight from Twitch with the \
     permissions you grant, and sends the actions you choose to Twitch as you; none of it passes through \
     Midgar's servers. Recaps and Studio's settings stay on your device, and your quick messages are kept \
-    in your own iCloud account. A Studio Pro purchase record, renewals included, is handled like a tip's.
+    in your own iCloud account. A Studio Pro purchase record, renewals included, is handled as described under Purchases.
     """)
 
     private static let privacyMoreApps = String(localized: """

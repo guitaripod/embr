@@ -49,6 +49,5 @@ windowed mode on the simulator, wallpaper and Dock around it.
 The iPhone Duo panels come from the `iphone-duo` skill's `capture.py`, one screen per state
 (`marketing/raw/duo/<language>/<screen>__<state>.png`).
 
-Other routes: `support` (Settings > Support Embr with fixed US tip prices, the In-App Purchase review
-screenshot), `settings` (`-screenshotSettingsPage <page>`), `following`, `moreapps`, and
+Other routes: `support` (Settings > Help & Feedback), `settings` (`-screenshotSettingsPage <page>`), `following`, `moreapps`, and
 `open -screenshotURL <url>`.

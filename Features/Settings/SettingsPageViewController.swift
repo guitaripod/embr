@@ -226,21 +226,8 @@ class SettingsPageViewController: UIViewController, UICollectionViewDelegate {
             }
             cell.contentConfiguration = content
             cell.accessibilityTraits = .button
-        case .price(let price, _):
-            cell.contentConfiguration = content
-            cell.accessibilityTraits = .button
-            cell.accessibilityValue = price
-            if let price {
-                cell.accessories = [.label(text: price, options: .init(tintColor: Theme.accent, font: .preferredFont(forTextStyle: .body)))]
-            }
         case .value:
             cell.contentConfiguration = content
-        case .loading:
-            content.textProperties.color = Theme.secondaryText
-            cell.contentConfiguration = content
-            let spinner = UIActivityIndicatorView(style: .medium)
-            spinner.startAnimating()
-            cell.accessories = [.customView(configuration: .init(customView: spinner, placement: .trailing()))]
         case .slider(let value, let range, let step, let format, let commit):
             cell.contentConfiguration = SliderRowConfiguration(icon: item.icon?.image, title: item.title, value: value, range: range, step: step, format: format, commit: commit)
         case .stepper(let value, let range, let step, let format, let commit):
@@ -331,7 +318,7 @@ class SettingsPageViewController: UIViewController, UICollectionViewDelegate {
             if navigationController?.topViewController === self, presentedViewController == nil {
                 collectionView.deselectItem(at: indexPath, animated: true)
             }
-        case .action(_, let run), .price(_, let run):
+        case .action(_, let run):
             collectionView.deselectItem(at: indexPath, animated: true)
             run(self, cell)
         default:

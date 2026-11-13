@@ -67,8 +67,8 @@ final class EmbrMidgar: Sendable {
         }
     }
 
-    /// Every product Embr sells: the three tips, Founding Supporter and Studio Pro's three plans.
-    static let productIDs = TipJarStore.productIDs + [SupporterAPI.productID] + StudioProStore.productIDs
+    /// Every product Embr sells: Founding Member (product id `supporter`) and Studio Pro's three plans.
+    static let productIDs = [SupporterAPI.productID] + StudioProStore.productIDs
 
     /// Which entitlement each product grants.
     static let entitlementsByProduct: [String: String] = [SupporterAPI.productID: SupporterStore.entitlement]
@@ -77,8 +77,8 @@ final class EmbrMidgar: Sendable {
     private let commerceStore = OSAllocatedUnfairLock<MidgarStore?>(initialState: nil)
 
     /// The one purchase engine of the process, made on first use. Creating a store starts its `Transaction.updates`
-    /// listener, so the tips and the purchases share this one. The tips grant nothing; Founding Supporter grants the
-    /// `supporter` entitlement and every Studio Pro plan the `studio` one.
+    /// listener, so both purchases share this one. Founding Member grants the `supporter` entitlement and every Studio
+    /// Pro plan the `studio` one.
     var commerce: MidgarStore {
         commerceStore.withLock { store in
             if let store { return store }

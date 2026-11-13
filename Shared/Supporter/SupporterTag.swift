@@ -1,7 +1,7 @@
 import UIKit
 import EmbrCore
 
-/// The capsule on a supporter's profile and channel page: their flame in their color and "Founding Supporter #12".
+/// The capsule on a Founding Member's profile and channel page: their flame in their color and "Founding Member #12".
 final class SupporterTag: UIView {
     private let flame = UIImageView()
     private let label = UILabel()
@@ -46,7 +46,7 @@ final class SupporterTag: UIView {
             return
         }
         flame.image = look.color.flameImage
-        label.text = look.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
+        label.text = SupporterCopy.name(number: look.number)
         label.textColor = Theme.readableNameColor(look.color.color)
         backgroundColor = look.color.color.withAlphaComponent(0.16)
         accessibilityLabel = label.text

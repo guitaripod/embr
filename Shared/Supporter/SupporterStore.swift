@@ -202,7 +202,7 @@ final class SupporterStore {
             self.product = products.first { $0.id == Self.productID }
             self.productUnavailable = self.product == nil
             if self.product == nil {
-                MidgarLog.notice("supporter: product not returned by the App Store", category: .tips)
+                MidgarLog.notice("supporter: product not returned by the App Store", category: .supporter)
             }
             self.changes.send()
         }
@@ -216,7 +216,7 @@ final class SupporterStore {
         do {
             switch try await receipt(from: store, in: scene) {
             case .purchased(let receipt):
-                MidgarLog.info("supporter purchased", category: .tips)
+                MidgarLog.info("supporter purchased", category: .supporter)
                 setSupporter(true)
                 claim(signedTransaction: receipt.signedTransaction)
                 return .purchased
@@ -228,7 +228,7 @@ final class SupporterStore {
             }
         } catch {
             rememberTryOn(nil)
-            MidgarLog.notice("supporter purchase failed: \(error)", category: .tips)
+            MidgarLog.notice("supporter purchase failed: \(error)", category: .supporter)
             return .failed(error.localizedDescription)
         }
     }
@@ -260,7 +260,7 @@ final class SupporterStore {
         do {
             try await store.restore()
         } catch {
-            MidgarLog.notice("supporter restore failed: \(error)", category: .tips)
+            MidgarLog.notice("supporter restore failed: \(error)", category: .supporter)
         }
         await refreshEntitlement()
         return isSupporter
@@ -319,7 +319,7 @@ final class SupporterStore {
         guard UIApplication.shared.supportsAlternateIcons, UIApplication.shared.alternateIconName != name else { return }
         UIApplication.shared.setAlternateIconName(name) { error in
             if let error {
-                MidgarLog.notice("supporter: icon change failed: \(error)", category: .tips)
+                MidgarLog.notice("supporter: icon change failed: \(error)", category: .supporter)
             }
         }
         #endif
@@ -366,22 +366,22 @@ final class SupporterStore {
                 let request = self.endpoints.updateSupporterStyle(SupporterAPI.StyleRequest(twitchAccessToken: token, color: look.badgeColor.rawValue, nameStyle: look.nameStyle))
                 let response = try await self.transport.send(request)
                 if response.status == 403 {
-                    MidgarLog.notice("supporter style: the badge is no longer tied to \(user.login)", category: .tips)
+                    MidgarLog.notice("supporter style: the badge is no longer tied to \(user.login)", category: .supporter)
                     self.lostClaim()
                     return
                 }
                 guard response.isSuccess else {
-                    MidgarLog.notice("supporter style: status \(response.status)", category: .tips)
+                    MidgarLog.notice("supporter style: status \(response.status)", category: .supporter)
                     return
                 }
                 let profile = try WorkerEndpoints.decodeSupporterProfile(response.body)
                 guard self.choice.badgeColor == look.badgeColor, self.choice.nameStyle == look.nameStyle else { return }
                 self.defaults.set(false, forKey: Self.stylePendingKey)
                 SupporterDirectory.shared.pin(user.id, profile: profile)
-                MidgarLog.info("supporter style sent: \(look.badgeColor.rawValue), \(look.nameStyle.rawValue)", category: .tips)
+                MidgarLog.info("supporter style sent: \(look.badgeColor.rawValue), \(look.nameStyle.rawValue)", category: .supporter)
             } catch {
                 guard !Task.isCancelled else { return }
-                MidgarLog.notice("supporter style failed: \(error)", category: .tips)
+                MidgarLog.notice("supporter style failed: \(error)", category: .supporter)
             }
         }
     }
@@ -412,7 +412,7 @@ final class SupporterStore {
                 jws = await Self.currentTransactionJWS()
             }
             guard let jws else {
-                MidgarLog.notice("supporter claim: no verified transaction on this device", category: .tips)
+                MidgarLog.notice("supporter claim: no verified transaction on this device", category: .supporter)
                 self.updateBadge(.failed)
                 return
             }
@@ -427,7 +427,7 @@ final class SupporterStore {
             let request = endpoints.claimSupporter(SupporterAPI.ClaimRequest(signedTransaction: jws, twitchAccessToken: token))
             let response = try await transport.send(request)
             guard response.isSuccess else {
-                MidgarLog.notice("supporter claim: status \(response.status)", category: .tips)
+                MidgarLog.notice("supporter claim: status \(response.status)", category: .supporter)
                 updateBadge(.failed)
                 return
             }
@@ -446,10 +446,10 @@ final class SupporterStore {
                 SupporterDirectory.shared.pin(claimed.twitchUserID, profile: claimed.profile)
             }
             updateBadge(.shown(login: user.login))
-            MidgarLog.info("supporter badge claimed for \(user.login), number \(claimed.number.map(String.init) ?? "none")", category: .tips)
+            MidgarLog.info("supporter badge claimed for \(user.login), number \(claimed.number.map(String.init) ?? "none")", category: .supporter)
         } catch {
             guard !Task.isCancelled else { return }
-            MidgarLog.notice("supporter claim failed: \(error)", category: .tips)
+            MidgarLog.notice("supporter claim failed: \(error)", category: .supporter)
             updateBadge(.failed)
         }
     }

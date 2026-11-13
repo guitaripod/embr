@@ -18,7 +18,7 @@ protocol TVStudioCoordinating: AnyObject {
 }
 
 /// Settings on the Apple TV: Studio Pro, which channel Studio shows and what it may do, how the screen and alerts
-/// behave, chat, the Twitch account, Founding Supporter, safety, the tip jar, Midgar's other apps and the legal pages.
+/// behave, chat, the Twitch account, Founding Member, safety, Midgar's other apps and the legal pages.
 /// Laid out like the Apple TV's own Settings: the list on the right, and on the left a picture, name and description of
 /// the section in focus.
 final class TVSettingsViewController: TVSettingsPageViewController, UITableViewDataSource, UITableViewDelegate, UINavigationControllerDelegate {
@@ -50,7 +50,6 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
         case emotes(EmoteProvider)
         case filter
         case blocked
-        case tip(String)
         case moreApps
         case terms
         case privacy
@@ -92,7 +91,7 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             .sink { [weak self] _ in self?.refresh() }
             .store(in: &cancellables)
         SupporterStore.shared.changes
-            .merge(with: TipJarStore.shared.changes, StudioProStore.shared.changes)
+            .merge(with: StudioProStore.shared.changes)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.hero.refreshAccent()
@@ -107,7 +106,6 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.rebuild() }
             .store(in: &cancellables)
-        TipJarStore.shared.loadProducts()
         SupporterStore.shared.loadProduct()
         StudioProStore.shared.loadProducts()
         rebuild()
@@ -151,9 +149,8 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
         let supporter = store.isSupporter
         let pro = StudioProStore.shared
         let chatRows: [Row] = [.timestamps, .animatedEmotes, .supporterNames] + [.emotes(.sevenTV), .emotes(.betterTTV), .emotes(.frankerFaceZ)]
-        let tipRows = TipJarStore.shared.products.map { Row.tip($0.id) }
         let proDetail: String = {
-            if pro.isSubscriber { return String(localized: "Thank you. Every Studio Pro feature is yours on iPhone, iPad and Apple TV.", comment: "Studio Pro settings") }
+            if pro.isSubscriber { return String(localized: "Every Studio Pro feature is yours on iPhone, iPad and Apple TV.", comment: "Studio Pro settings") }
             if case .active(let ends) = pro.weekPhase() {
                 return String(localized: "Your free week of Studio Pro has \(StudioProWeek.daysLeft(until: ends, now: Date())) days left. Nothing is charged when it ends.", comment: "Studio Pro settings")
             }
@@ -193,10 +190,10 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
                 rows: [.account]
             ),
             Section(
-                title: String(localized: "Founding Supporter"),
+                title: SupporterCopy.name(number: nil),
                 detail: supporter
-                    ? String(localized: "Thank you. Change your theme, colors, chat font and badge any time.")
-                    : String(localized: "A one-time purchase that keeps Embr independent: themes, colors, chat fonts and a flame badge everyone sees. Studio Pro is separate."),
+                    ? String(localized: "Change your theme, colors, chat font and badge any time.")
+                    : String(localized: "One purchase: themes, colors, chat fonts and a flame badge everyone sees. Studio Pro is separate."),
                 picture: .flame(supporter ? store.choice.badgeColor : .violet),
                 rows: [.supporter]
             ),
@@ -206,15 +203,9 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
                 picture: .symbol("hand.raised.fill"),
                 rows: [.filter, .blocked]
             ),
-            Section(
-                title: String(localized: "Tip Jar"),
-                detail: String(localized: "Tips unlock nothing. They keep Embr going."),
-                picture: .symbol("heart.fill"),
-                rows: tipRows
-            ),
             Section(title: nil, detail: nil, picture: .symbol("square.grid.2x2.fill"), rows: [.moreApps]),
             Section(title: String(localized: "About"), detail: nil, picture: .symbol("info.circle.fill"), rows: [.terms, .privacy, .support, .version]),
-        ].filter { !$0.rows.isEmpty }
+        ]
     }
 
     private func showHero(animated: Bool) {
@@ -331,15 +322,15 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             content.image = UIImage(systemName: "flame.fill")
             content.imageProperties.tintColor = Theme.accent
             if store.isSupporter {
-                content.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "You're a Founding Supporter")
+                content.text = SupporterCopy.name(number: store.number)
                 content.secondaryText = badgeText(store.badge)
             } else {
-                content.text = String(localized: "Become a Founding Supporter")
+                content.text = SupporterCopy.invitation
                 content.secondaryText = store.product?.displayPrice
             }
             cell.accessoryType = .disclosureIndicator
         case .supporterNames:
-            toggle(&content, String(localized: "Supporter Name Colors"), settings.supporterNameEffectsEnabled)
+            toggle(&content, String(localized: "Founding Member Name Colors"), settings.supporterNameEffectsEnabled)
         case .timestamps:
             toggle(&content, String(localized: "Timestamps"), settings.showTimestamps)
         case .animatedEmotes:
@@ -352,12 +343,6 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             content.text = String(localized: "Blocked Users")
             content.secondaryText = blockedCount.formatted()
             cell.accessoryType = .disclosureIndicator
-        case .tip(let id):
-            let product = TipJarStore.shared.product(id: id)
-            content.text = product?.displayName
-            content.secondaryText = product?.displayPrice
-            content.image = UIImage(systemName: "heart.fill")
-            content.imageProperties.tintColor = .systemPink
         case .moreApps:
             content.text = String(localized: "More Apps from Midgar")
             content.image = UIImage(systemName: "square.grid.2x2")
@@ -369,7 +354,7 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             content.text = LegalText.privacyTitle
             cell.accessoryType = .disclosureIndicator
         case .support:
-            content.text = String(localized: "Support")
+            content.text = String(localized: "Contact Support")
             content.secondaryText = LegalText.supportEmail
         case .version:
             content.text = String(localized: "Version")
@@ -510,14 +495,6 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             store.update { $0.filterObjectionableContent = !$0.objectionableFilterEnabled }
         case .blocked:
             navigationController?.pushViewController(TVBlockedUsersViewController(), animated: true)
-        case .tip(let id):
-            guard let product = TipJarStore.shared.product(id: id) else { return }
-            Task { [weak self] in
-                let outcome = await TipJarStore.shared.purchase(product, in: self?.view.window?.windowScene)
-                if outcome == .thanked {
-                    self?.thank()
-                }
-            }
         case .moreApps:
             _ = Midgar.present(from: self, config: EmbrMidgar.shared.portalConfig)
         case .terms:
@@ -557,12 +534,6 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
             }
         })
         alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-        present(alert, animated: true)
-    }
-
-    private func thank() {
-        let alert = UIAlertController(title: String(localized: "Thank you!"), message: String(localized: "Your tip keeps Embr going."), preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: String(localized: "You're Welcome"), style: .default))
         present(alert, animated: true)
     }
 

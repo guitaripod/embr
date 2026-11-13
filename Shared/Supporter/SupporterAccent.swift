@@ -74,7 +74,7 @@ enum SupporterAccent: String, CaseIterable, Sendable {
             id: "1",
             setID: "embr-supporter",
             version: accent.rawValue,
-            title: String(localized: "Embr Founding Supporter"),
+            title: String(localized: "Embr Founding Member"),
             provider: .embr,
             images: EmoteImageSet(urlsByScale: urls)
         )

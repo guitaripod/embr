@@ -173,17 +173,17 @@ final class TVSupporterViewController: UIViewController {
         preview.show(look, number: supporter ? store.number : nil)
 
         if supporter {
-            titleLabel.text = store.number.map { String(localized: "Founding Supporter #\($0)") } ?? String(localized: "Founding Supporter")
-            bodyLabel.text = String(localized: "Thank you for keeping Embr going. Everything here is yours to change any time.")
+            titleLabel.text = SupporterCopy.name(number: store.number)
+            bodyLabel.text = SupporterCopy.ownerBody
         } else {
-            titleLabel.text = String(localized: "Become a Founding Supporter")
-            bodyLabel.text = String(localized: "Embr is made by one independent developer. Founding Supporters keep it free for everyone and get looks no one else has. Try them on below; watching never needs any of it.")
+            titleLabel.text = SupporterCopy.invitation
+            bodyLabel.text = SupporterCopy.invitationBody
         }
         buyButton.isHidden = supporter
         restoreButton.isHidden = supporter
         let wasEnabled = buyButton.isEnabled
         if let price = store.product?.displayPrice {
-            buyButton.configuration?.title = String(localized: "Support for \(price)")
+            buyButton.configuration?.title = String(localized: "Unlock for \(price)")
             buyButton.isEnabled = !purchasing
         } else if store.productUnavailable {
             buyButton.configuration?.title = String(localized: "Try Again")
@@ -210,10 +210,7 @@ final class TVSupporterViewController: UIViewController {
     private func status(for store: SupporterStore) -> String? {
         guard store.isSupporter else {
             if store.productUnavailable { return String(localized: "Purchases are not available right now.") }
-            let count = store.supporterCount
-            return count >= 10
-                ? String(localized: "Join \(count) Founding Supporters. One purchase, yours on every device with your Apple Account.")
-                : String(localized: "One purchase, yours on every device with your Apple Account. Founding numbers go in order and stay yours.")
+            return SupporterCopy.purchaseNote(count: store.supporterCount)
         }
         switch store.badge {
         case .needsSignIn: return String(localized: "Sign in with Twitch in Settings to show your badge in chat.")
@@ -242,7 +239,7 @@ final class TVSupporterViewController: UIViewController {
                 self.render()
                 self.setNeedsFocusUpdate()
                 SupporterCelebration.play(from: self.flame, color: SupporterStore.shared.choice.badgeColor.color)
-                UIAccessibility.post(notification: .announcement, argument: String(localized: "Thank you for supporting Embr."))
+                UIAccessibility.post(notification: .announcement, argument: SupporterCopy.bought(number: SupporterStore.shared.number))
             case .pending:
                 self.render()
                 self.alert(String(localized: "Waiting for Approval"), String(localized: "The purchase finishes once it's approved."))
@@ -259,7 +256,7 @@ final class TVSupporterViewController: UIViewController {
         Task { [weak self] in
             let restored = await SupporterStore.shared.restore()
             if !restored {
-                self?.alert(String(localized: "Nothing to Restore"), String(localized: "This Apple Account hasn't bought Founding Supporter yet."))
+                self?.alert(String(localized: "Nothing to Restore"), SupporterCopy.nothingToRestore)
             }
         }
     }
