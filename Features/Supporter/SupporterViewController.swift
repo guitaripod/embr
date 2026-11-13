@@ -3,9 +3,9 @@ import Combine
 import EmbrCore
 import MidgarCore
 
-/// Founding Supporter on iPhone and iPad. Before the purchase it is a fitting room: every look can be tried on, shown
+/// Founding Member on iPhone and iPad. Before the purchase it is a fitting room: every look can be tried on, shown
 /// on this screen and in a chat preview drawn by the real chat, and the purchase keeps exactly what was tried on. For a
-/// supporter the same controls change the app at once, with their founding number and the state of their badge.
+/// member the same controls change the app at once, with their founding number and the state of their badge.
 final class SupporterViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let stack = UIStackView()
@@ -164,7 +164,7 @@ final class SupporterViewController: UIViewController {
         ])
     }
 
-    /// The looks on screen: the supporter's own, or what is being tried on.
+    /// The looks on screen: the member's own, or what is being tried on.
     private var shown: SupporterLookChoice {
         SupporterStore.shared.isSupporter ? SupporterStore.shared.choice : draft
     }

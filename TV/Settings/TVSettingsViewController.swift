@@ -208,6 +208,16 @@ final class TVSettingsViewController: TVSettingsPageViewController, UITableViewD
         ]
     }
 
+    #if DEBUG
+    /// Shows one section in the hero and scrolls to it, for a capture of a section the remote would have to reach.
+    func showSectionForScreenshot(_ index: Int) {
+        guard sections.indices.contains(index) else { return }
+        focusedSection = index
+        tableView.scrollToRow(at: IndexPath(row: 0, section: index), at: .middle, animated: false)
+        showHero(animated: false)
+    }
+    #endif
+
     private func showHero(animated: Bool) {
         guard sections.indices.contains(focusedSection) else { return }
         let section = sections[focusedSection]

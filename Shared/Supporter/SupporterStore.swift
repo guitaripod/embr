@@ -488,7 +488,7 @@ final class SupporterStore {
     /// Poses the supporter screens for screenshots without a purchase.
     func seedForScreenshots(supporter: Bool) {
         isSupporter = supporter
-        product = StoreProduct(id: Self.productID, displayName: "Founding Supporter", description: "", displayPrice: "$9.99", price: 9.99)
+        product = StoreProduct(id: Self.productID, displayName: "Founding Member", description: "", displayPrice: "$9.99", price: 9.99)
         if supporter {
             defaults.set(12, forKey: Self.numberKey)
             defaults.set(SupporterAccent.ember.rawValue, forKey: Self.badgeColorKey)

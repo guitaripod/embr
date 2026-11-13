@@ -2,8 +2,8 @@ import UIKit
 import Combine
 import EmbrCore
 
-/// Founding Supporter on the Apple TV. Before the purchase every look can be tried on with the remote, on this screen
-/// and in a chat preview drawn by the real chat, and the purchase keeps what was tried on. For a supporter the same
+/// Founding Member on the Apple TV. Before the purchase every look can be tried on with the remote, on this screen
+/// and in a chat preview drawn by the real chat, and the purchase keeps what was tried on. For a member the same
 /// rows change the app at once.
 final class TVSupporterViewController: UIViewController {
     private let flame = UIImageView()

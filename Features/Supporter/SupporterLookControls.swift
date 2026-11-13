@@ -1,8 +1,8 @@
 import UIKit
 import EmbrCore
 
-/// Every look a Founding Supporter can pick, as rows of swatches and chips: the badge and name everyone sees, then the
-/// theme, accent, chat font and app icon. It shows a choice and reports each change; the supporter screen decides
+/// Every look a Founding Member can pick, as rows of swatches and chips: the badge and name everyone sees, then the
+/// theme, accent, chat font and app icon. It shows a choice and reports each change; the Founding Member screen decides
 /// whether the change is tried on or kept.
 final class SupporterLookControls: UIStackView {
     var onChange: ((SupporterLookChoice) -> Void)?

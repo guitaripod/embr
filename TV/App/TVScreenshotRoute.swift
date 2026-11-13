@@ -4,7 +4,8 @@ import EmbrCore
 
 /// Drives the Apple TV app straight to a Studio screen for App Store screenshots and UI checks, from `-tvRoute <name>`:
 /// the sample stream, optionally at one of its moments (`-tvMoment raid|gift|hype|poll|prediction|adsoon|adrun|offline|actions`)
-/// and posed for the App Store with `-tvStoreCapture`.
+/// and posed for the App Store with `-tvStoreCapture`. `settings` takes `-tvSettingsSection <index>` to show one section,
+/// and `supporter` and `supporterowned` open the Founding Member screen before and after the purchase.
 /// DEBUG only.
 @MainActor
 enum TVScreenshotRoute {
@@ -40,7 +41,17 @@ enum TVScreenshotRoute {
         case "settings":
             root.openSample()
             try? await Task.sleep(for: .seconds(1))
-            let navigation = UINavigationController(rootViewController: TVSettingsViewController(coordinator: root))
+            let settings = TVSettingsViewController(coordinator: root)
+            let navigation = UINavigationController(rootViewController: settings)
+            navigation.modalPresentationStyle = .fullScreen
+            root.present(navigation, animated: false)
+            if let section = argument("-tvSettingsSection").flatMap(Int.init) {
+                try? await Task.sleep(for: .seconds(1))
+                settings.showSectionForScreenshot(section)
+            }
+        case "supporter", "supporterowned":
+            SupporterStore.shared.seedForScreenshots(supporter: route == "supporterowned")
+            let navigation = UINavigationController(rootViewController: TVSupporterViewController())
             navigation.modalPresentationStyle = .fullScreen
             root.present(navigation, animated: false)
         default:
