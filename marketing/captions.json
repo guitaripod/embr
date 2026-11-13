@@ -1798,5 +1798,365 @@
       "accent": 1,
       "sub": "افتح حتى ثلاث دردشات في وقت واحد على iPad."
     }
+  },
+  "sv": {
+    "watch": {
+      "title": [
+        "Titta live.",
+        "Chatta nativt."
+      ],
+      "accent": 1,
+      "sub": "En nativ spelare och chatt för iPhone, byggd för hastighet."
+    },
+    "emotes": {
+      "title": [
+        "Varje emote.",
+        "Varje leverantör."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV och FrankerFaceZ, i chatten och på ditt emotetangentbord."
+    },
+    "chats": {
+      "title": [
+        "Alla dina chattar.",
+        "En flik."
+      ],
+      "accent": 1,
+      "sub": "Håll chattar öppna utan videon, med antal olästa på varje."
+    },
+    "fullscreen": {
+      "title": [
+        "Helskärm.",
+        "Behåll chatten."
+      ],
+      "accent": 1,
+      "sub": "Vrid telefonen, så flyter chatten bredvid streamen."
+    },
+    "mentions": {
+      "title": [
+        "Missa aldrig",
+        "en omnämning."
+      ],
+      "accent": 1,
+      "sub": "Omnämnanden och markeringar från alla öppna chattar, samlade på ett ställe."
+    },
+    "usercard": {
+      "title": [
+        "Vet vem som",
+        "pratar."
+      ],
+      "accent": 1,
+      "sub": "Tryck på ett namn för kortet, meddelandena och snabbåtgärderna."
+    },
+    "favorites": {
+      "title": [
+        "Favoriter,",
+        "utan konto."
+      ],
+      "accent": 1,
+      "sub": "Stjärnmarkera en kanal för att se när den är live. Logga in bara om du vill."
+    },
+    "audio": {
+      "title": [
+        "Lyssna med",
+        "skärmen av."
+      ],
+      "accent": 1,
+      "sub": "Ljud i bakgrunden och läget Endast ljud håller streamen igång."
+    },
+    "moderate": {
+      "title": [
+        "Modera från",
+        "fickan."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, avbanningsbegäranden och moderationsloggen för kanaler du modererar."
+    },
+    "supporter": {
+      "title": [
+        "Gör den",
+        "till din."
+      ],
+      "accent": 1,
+      "sub": "Teman, chattens typsnitt och ett märke som alla i Embr ser. Testa först."
+    },
+    "sidebyside": {
+      "title": [
+        "Tre chattar.",
+        "Sida vid sida."
+      ],
+      "accent": 1,
+      "sub": "Ha upp till tre chattar öppna samtidigt på iPad."
+    }
+  },
+  "da": {
+    "watch": {
+      "title": [
+        "Se live.",
+        "Chat native."
+      ],
+      "accent": 1,
+      "sub": "En native iPhone-afspiller og chat, bygget til hastighed."
+    },
+    "emotes": {
+      "title": [
+        "Alle emotes.",
+        "Alle udbydere."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV og FrankerFaceZ, i chatten og på dit emotetastatur."
+    },
+    "chats": {
+      "title": [
+        "Alle dine chats.",
+        "Én fane."
+      ],
+      "accent": 1,
+      "sub": "Hold chats åbne uden videoen, med antal ulæste på hver."
+    },
+    "fullscreen": {
+      "title": [
+        "Fuld skærm.",
+        "Behold chatten."
+      ],
+      "accent": 1,
+      "sub": "Drej telefonen, og chatten svæver ved siden af streamen."
+    },
+    "mentions": {
+      "title": [
+        "Gå aldrig glip",
+        "af en omtale."
+      ],
+      "accent": 1,
+      "sub": "Omtaler og fremhævelser fra alle åbne chats, samlet ét sted."
+    },
+    "usercard": {
+      "title": [
+        "Kend hvem",
+        "der taler."
+      ],
+      "accent": 1,
+      "sub": "Tryk på et navn for deres kort, beskeder og hurtige handlinger."
+    },
+    "favorites": {
+      "title": [
+        "Favoritter,",
+        "uden konto."
+      ],
+      "accent": 1,
+      "sub": "Markér en kanal med stjerne for at se, når den er live. Log kun ind, hvis du vil."
+    },
+    "audio": {
+      "title": [
+        "Lyt med",
+        "skærmen slukket."
+      ],
+      "accent": 1,
+      "sub": "Lyd i baggrunden og tilstanden Kun lyd holder streamen i gang."
+    },
+    "moderate": {
+      "title": [
+        "Modér fra",
+        "lommen."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, anmodninger om ophævelse og moderationslog for kanaler, du modererer."
+    },
+    "supporter": {
+      "title": [
+        "Gør den",
+        "til din."
+      ],
+      "accent": 1,
+      "sub": "Temaer, chatskrifttyper og et mærke, som alle i Embr ser. Prøv dem først."
+    },
+    "sidebyside": {
+      "title": [
+        "Tre chats.",
+        "Side om side."
+      ],
+      "accent": 1,
+      "sub": "Hold op til tre chats åbne samtidig på iPad."
+    }
+  },
+  "no": {
+    "watch": {
+      "title": [
+        "Se direkte.",
+        "Chat nativt."
+      ],
+      "accent": 1,
+      "sub": "En nativ iPhone-spiller og chat, bygget for fart."
+    },
+    "emotes": {
+      "title": [
+        "Alle emotes.",
+        "Alle leverandører."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV og FrankerFaceZ, i chatten og på emote-tastaturet ditt."
+    },
+    "chats": {
+      "title": [
+        "Alle chattene dine.",
+        "Én fane."
+      ],
+      "accent": 1,
+      "sub": "Hold chatter åpne uten videoen, med antall uleste på hver."
+    },
+    "fullscreen": {
+      "title": [
+        "Fullskjerm.",
+        "Behold chatten."
+      ],
+      "accent": 1,
+      "sub": "Snu telefonen, så flyter chatten ved siden av streamen."
+    },
+    "mentions": {
+      "title": [
+        "Gå aldri glipp",
+        "av en omtale."
+      ],
+      "accent": 1,
+      "sub": "Omtaler og fremhevinger fra alle åpne chatter, samlet på ett sted."
+    },
+    "usercard": {
+      "title": [
+        "Vet hvem som",
+        "snakker."
+      ],
+      "accent": 1,
+      "sub": "Trykk på et navn for kortet, meldingene og hurtighandlingene."
+    },
+    "favorites": {
+      "title": [
+        "Favoritter,",
+        "uten konto."
+      ],
+      "accent": 1,
+      "sub": "Merk en kanal med stjerne for å se når den er direkte. Logg på bare hvis du vil."
+    },
+    "audio": {
+      "title": [
+        "Lytt med",
+        "skjermen av."
+      ],
+      "accent": 1,
+      "sub": "Lyd i bakgrunnen og modusen Kun lyd holder streamen i gang."
+    },
+    "moderate": {
+      "title": [
+        "Moderer fra",
+        "lomma."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, forespørsler om opphevelse og moderasjonslogg for kanalene du modererer."
+    },
+    "supporter": {
+      "title": [
+        "Gjør den",
+        "til din."
+      ],
+      "accent": 1,
+      "sub": "Temaer, chattens skrifttyper og et merke som alle i Embr ser. Prøv først."
+    },
+    "sidebyside": {
+      "title": [
+        "Tre chatter.",
+        "Side om side."
+      ],
+      "accent": 1,
+      "sub": "Ha opptil tre chatter åpne samtidig på iPad."
+    }
+  },
+  "fi": {
+    "watch": {
+      "title": [
+        "Katso suorana.",
+        "Natiivi chat."
+      ],
+      "accent": 1,
+      "sub": "Natiivi iPhone-soitin ja chat, rakennettu nopeutta varten."
+    },
+    "emotes": {
+      "title": [
+        "Kaikki emotet.",
+        "Kaikki palvelut."
+      ],
+      "accent": 1,
+      "sub": "7TV, BetterTTV ja FrankerFaceZ chatissa ja emotenäppäimistössäsi."
+    },
+    "chats": {
+      "title": [
+        "Kaikki chatit.",
+        "Yksi välilehti."
+      ],
+      "accent": 1,
+      "sub": "Pidä chatit auki ilman videota, ja jokaisessa näkyy lukemattomien määrä."
+    },
+    "fullscreen": {
+      "title": [
+        "Koko näyttö.",
+        "Säilytä chat."
+      ],
+      "accent": 1,
+      "sub": "Käännä puhelin, ja chat leijuu striimin vieressä."
+    },
+    "mentions": {
+      "title": [
+        "Älä missaa",
+        "yhtäkään mainintaa."
+      ],
+      "accent": 1,
+      "sub": "Maininnat ja korostukset kaikista avoimista chateista yhdessä paikassa."
+    },
+    "usercard": {
+      "title": [
+        "Tunne, kuka",
+        "puhuu."
+      ],
+      "accent": 1,
+      "sub": "Napauta nimeä nähdäksesi kortin, viestit ja pikatoiminnot."
+    },
+    "favorites": {
+      "title": [
+        "Suosikit,",
+        "ilman tiliä."
+      ],
+      "accent": 1,
+      "sub": "Merkitse kanava tähdellä nähdäksesi, kun se on live. Kirjaudu vain halutessasi."
+    },
+    "audio": {
+      "title": [
+        "Kuuntele, kun",
+        "näyttö on pois."
+      ],
+      "accent": 1,
+      "sub": "Ääni taustalla ja Vain ääni -tila pitävät striimin käynnissä."
+    },
+    "moderate": {
+      "title": [
+        "Moderoi",
+        "taskustasi."
+      ],
+      "accent": 1,
+      "sub": "AutoMod, porttikiellon poistopyynnöt ja moderointiloki kanaville, joita moderoit."
+    },
+    "supporter": {
+      "title": [
+        "Tee siitä",
+        "omasi."
+      ],
+      "accent": 1,
+      "sub": "Teemat, chatin fontit ja merkki, jonka kaikki Embrissä näkevät. Kokeile ensin."
+    },
+    "sidebyside": {
+      "title": [
+        "Kolme chatia.",
+        "Vierekkäin."
+      ],
+      "accent": 1,
+      "sub": "Pidä enintään kolme chatia auki samaan aikaan iPadilla."
+    }
   }
 }
