@@ -38,6 +38,8 @@ final class VideoViewController: UIViewController {
     private var playerCancellables = Set<AnyCancellable>()
     private var triedWebFallback = false
     private var resolveTask: Task<Void, Never>?
+    private var lastResolution: PlaybackResolution?
+    private var playingLatency: LiveLatency = .standard
 
     var currentState: VideoState = .idle
     var isImmersive = false
@@ -126,6 +128,7 @@ final class VideoViewController: UIViewController {
         installOverlay()
         bindPlayer()
         observeLifecycle()
+        observeLatencySetting()
         registerRemoteCommands()
         startPlayback()
         #if DEBUG
@@ -137,6 +140,54 @@ final class VideoViewController: UIViewController {
     var pendingAudioOnlyOnPiPStop = false
     var externalRoute: ExternalRoute?
     var externalRouteEndWork: DispatchWorkItem?
+
+    private func observeLatencySetting() {
+        store.changes
+            .map(\.liveLatency)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] latency in self?.switchLatency(to: latency) }
+            .store(in: &cancellables)
+    }
+
+    /// The latency mode a live stream resolves with; every other source plays as it always has.
+    private var requestedLatency: LiveLatency {
+        guard case .live = source else { return .standard }
+        #if DEBUG
+        if ScreenshotHarness.hyperLatency { return .hyper }
+        #endif
+        return store.current.liveLatency
+    }
+
+    /// A live resolution in the mode Settings asks for now, which a switch made while the resolve was in flight may have
+    /// changed; anything else as it came.
+    private func inLatency(_ resolution: PlaybackResolution, _ latency: LiveLatency) -> PlaybackResolution {
+        guard case .live = source else { return resolution }
+        return resolution.withLatency(latency)
+    }
+
+    /// Moves the live stream to the latency mode Settings now asks for on the same Twitch session, so the switch costs
+    /// a moment of buffering instead of a fresh preroll.
+    private func switchLatency(to latency: LiveLatency) {
+        guard case .live = source, latency != playingLatency, let resolution = lastResolution,
+              let hls = player as? HLSVideoPlayer, !didTeardownPlayer else { return }
+        let next = resolution.withLatency(latency)
+        lastResolution = next
+        playingLatency = latency
+        hls.pinsVariant = latency == .hyper
+        overlay.setHyperLatency(latency == .hyper)
+        let playing = streamActive && isPlayingOrStarting
+        if playing { overlay.setBuffering(true) }
+        hls.load(next, playing: playing)
+        MidgarLog.info("live latency -> \(latency.rawValue)\(playing ? "" : " (held)")", category: .playback)
+    }
+
+    private var isPlayingOrStarting: Bool {
+        switch currentState {
+        case .playing, .buffering, .loading: true
+        case .idle, .paused, .ended, .error: false
+        }
+    }
 
     private func observeLifecycle() {
         NotificationCenter.default.addObserver(
@@ -516,6 +567,7 @@ final class VideoViewController: UIViewController {
 
         let web = WebViewPlayer()
         player = web
+        overlay.setHyperLatency(false)
         let playerView = web.view
         playerView.frame = view.bounds
         playerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -667,6 +719,7 @@ final class VideoViewController: UIViewController {
         guard !didTeardownPlayer else { return }
         didTeardownPlayer = true
         cancelRecoveryTimers()
+        cancelResolve()
         overlay.setReconnecting(false)
         overlay.setBuffering(false)
         nowPlaying.clear()
@@ -809,12 +862,20 @@ final class VideoViewController: UIViewController {
         isResolving = true
         resolveGeneration += 1
         let generation = resolveGeneration
+        let latency = requestedLatency
         resolveTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let resolution = try await self.resolve()
+                let resolved = try await self.resolve(latency: latency)
                 if Task.isCancelled || generation != self.resolveGeneration { return }
                 self.isResolving = false
+                let current = self.requestedLatency
+                let resolution = self.inLatency(resolved, current)
+                self.lastResolution = resolution
+                self.playingLatency = current
+                let hyper = current == .hyper && !(self.player is WebViewPlayer)
+                (self.player as? HLSVideoPlayer)?.pinsVariant = hyper
+                self.overlay.setHyperLatency(hyper)
                 self.player.load(resolution)
                 self.scheduleTokenRefresh(resolution.expiresAt)
             } catch {
@@ -847,10 +908,10 @@ final class VideoViewController: UIViewController {
         return String(localized: "This content isn't available right now.")
     }
 
-    private func resolve() async throws -> PlaybackResolution {
+    private func resolve(latency: LiveLatency) async throws -> PlaybackResolution {
         switch source {
         case .live(let login):
-            return try await resolver.resolveLive(channelLogin: login)
+            return try await resolver.resolveLive(channelLogin: login, latency: latency)
         case .vod(let id):
             return try await resolver.resolveVOD(videoID: id)
         case .clip(let url):

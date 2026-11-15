@@ -47,6 +47,12 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     /// one its title and artwork for the info panel.
     var itemConfigurator: ((AVPlayerItem) -> Void)?
 
+    /// Hyper Low Latency: plays one variant's media playlist instead of the master, because AVPlayer's adaptive
+    /// switching reads Hyper's still-growing segments as a slow network and stalls. Auto then means
+    /// `LiveLatency.hyperQuality`, and picking a quality swaps variants instead of capping the master's bitrate.
+    /// Set before `load(_:)`.
+    var pinsVariant = false
+
     private let playerView = PlayerView()
     private let player = AVPlayer()
     private let stateSubject = CurrentValueSubject<VideoState, Never>(.idle)
@@ -73,6 +79,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var pendingResume: PendingResume?
     private var playbackIntended = false
     private var liveLatencyConfigured = false
+    private var latencySamples = 0
     private var loadGeneration = 0
     private var appliedAudioOptions: AVAudioSession.CategoryOptions?
     private(set) var isAudioOnly = false
@@ -160,7 +167,11 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         return AVAudioSession.sharedInstance().currentRoute.outputs.first { external.contains($0.portType) }?.portName
     }
 
+    /// Jumps to the live edge, except during a stitched ad: its playlist is the ad alone until the worker can list the
+    /// content after it, and a jump to that edge leaves the player waiting on segments the next playlist no longer has.
+    /// The ad's end seeks to live itself.
     func seekToLive() {
+        guard adBreakSubject.value == nil else { return }
         guard let item = currentItem,
               let range = item.seekableTimeRanges.last?.timeRangeValue,
               range.duration.seconds > 0 else { return }
@@ -179,6 +190,12 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     func load(_ resolution: PlaybackResolution) {
+        load(resolution, playing: true)
+    }
+
+    /// Loads a stream, and starts it only when `playing`: a latency switch made while the viewer has the stream paused
+    /// or the page stopped keeps it that way.
+    func load(_ resolution: PlaybackResolution, playing: Bool) {
         loadGeneration += 1
         self.resolution = resolution
         availableQualities = resolution.qualities
@@ -194,15 +211,38 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         stateSubject.send(.loading)
         pendingResume = nil
 
-        let url = currentQuality?.url ?? resolution.masterPlaylistURL
+        if pinsVariant, currentQuality == nil {
+            loadPinnedVariant(of: resolution, generation: loadGeneration, playing: playing)
+            return
+        }
+        start(currentQuality?.url ?? resolution.masterPlaylistURL, playing: playing)
+    }
+
+    private func start(_ url: URL, playing: Bool) {
         let item = AVPlayerItem(url: url)
         applyMutePreference()
         attach(item)
         player.replaceCurrentItem(with: item)
-        playbackIntended = true
-        player.play()
+        playbackIntended = playing
+        if playing { player.play() } else { player.pause() }
         startLatencySampling()
         MidgarLog.info("HLS load url=\(url.absoluteString) qualities=\(availableQualities.count)", category: .playback)
+    }
+
+    /// Reads the master's qualities before playing and plays the one Hyper Low Latency picks, on its own; the master
+    /// plays when it cannot be read or offers no video.
+    private func loadPinnedVariant(of resolution: PlaybackResolution, generation: Int, playing: Bool) {
+        Task { [weak self] in
+            let text = await HLSPlaylistClient().playlist(at: resolution.masterPlaylistURL)
+            guard let self, self.loadGeneration == generation else { return }
+            let parsed = text.map(HLSPlaylistParser.qualities) ?? []
+            if !parsed.isEmpty { self.availableQualities = parsed }
+            let pinned = LiveLatency.hyperQuality(from: parsed, preferredName: self.preferredQualityName)
+            if let pinned, pinned.name == self.preferredQualityName { self.currentQuality = pinned }
+            MidgarLog.info("HLS hyper pins \(pinned?.name ?? "the master")", category: .playback)
+            self.start(pinned?.url ?? resolution.masterPlaylistURL, playing: playing)
+            self.applyAudioOnlyVariantIfAvailable()
+        }
     }
 
     func play() {
@@ -219,6 +259,11 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     func setQuality(_ quality: StreamQuality) {
         preferredQualityName = isAutoQuality(quality) ? nil : quality.name
         currentQuality = isAutoQuality(quality) ? nil : quality
+
+        if pinsVariant {
+            pin(isAutoQuality(quality) ? nil : quality)
+            return
+        }
 
         if isAutoQuality(quality) {
             currentItem?.preferredPeakBitRate = 0
@@ -320,7 +365,19 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         MidgarLog.info("HLS audio-only variant applied", category: .playback)
     }
 
+    /// Hyper Low Latency swaps to the chosen variant, or Auto's pick, instead of capping the master's bitrate, which
+    /// would bring adaptive switching back.
+    private func pin(_ quality: StreamQuality?) {
+        guard let target = quality ?? LiveLatency.hyperQuality(from: availableQualities) else { return }
+        swapVariant(to: target)
+        MidgarLog.info("HLS hyper quality -> \(quality?.name ?? "Auto (\(target.name))")", category: .playback)
+    }
+
     private func restoreMasterPlaylist() {
+        if pinsVariant, let pinned = LiveLatency.hyperQuality(from: availableQualities) {
+            swapVariant(to: pinned)
+            return
+        }
         guard let url = resolution?.masterPlaylistURL else { return }
         let progress = progressSubject.value
         let resumeTime = player.currentTime()
@@ -495,8 +552,20 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
             guard !parsed.isEmpty, let self, self.loadGeneration == generation else { return }
             self.availableQualities = parsed
             MidgarLog.info("HLS parsed master qualities=\(parsed.count)", category: .playback)
+            self.reapplyPreferredQuality()
             self.applyAudioOnlyVariantIfAvailable()
         }
+    }
+
+    /// Caps the master at the quality the viewer picked again after a reload, since a resolution never lists qualities
+    /// and the pick would otherwise fall back to Auto on every token refresh or latency switch.
+    private func reapplyPreferredQuality() {
+        guard !pinsVariant, currentQuality == nil, let name = preferredQualityName,
+              let match = availableQualities.first(where: { $0.name == name }), !match.isAudioOnly,
+              let bandwidth = match.bandwidth else { return }
+        currentQuality = match
+        currentItem?.preferredPeakBitRate = Double(bandwidth)
+        MidgarLog.info("HLS quality restored -> \(match.name)", category: .playback)
     }
 
     private func startLatencySampling() {
@@ -508,18 +577,25 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         latencyTimer = timer
     }
 
+    /// How far behind the broadcast the picture is: now minus the program date Twitch stamps on the playing segment.
+    /// Nil off a live stream, without a date, and for the nonsense an ad segment's date gives around a discontinuity.
     private func sampleLatency() {
-        guard let item = currentItem else {
+        guard let item = currentItem, item.duration.isIndefinite, let date = item.currentDate() else {
             latencySubject.send(nil)
             return
         }
-        let offset = item.recommendedTimeOffsetFromLive
-        guard offset.isValid, offset.isNumeric, offset.seconds > 0 else {
-            latencySubject.send(nil)
-            return
+        let latency = Date().timeIntervalSince(date)
+        let plausible = Self.plausibleLatency.contains(latency)
+        latencySubject.send(plausible ? latency : nil)
+        latencySamples += 1
+        if plausible, latencySamples % Self.latencyLogEvery == 0, player.timeControlStatus == .playing {
+            MidgarLog.info("HLS latency \(String(format: "%.1f", latency))s \(pinsVariant ? "hyper" : "standard")", category: .playback)
         }
-        latencySubject.send(offset.seconds)
     }
+
+    private static let plausibleLatency: ClosedRange<TimeInterval> = 0.1...900
+    /// Every 15th two-second sample, so the log shows how far behind a stream plays about twice a minute.
+    private static let latencyLogEvery = 15
 
     private func applyMutePreference() {
         player.isMuted = isMuted

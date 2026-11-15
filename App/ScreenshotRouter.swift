@@ -108,6 +108,16 @@ enum ScreenshotRouter {
                     settings?.showPageForScreenshot(page, query: ScreenshotHarness.searchQuery)
                 }
             }
+            if let detent = option("HyperInfo") {
+                after(1.4) {
+                    let info = HyperLatencyInfoViewController()
+                    if detent == "large" { info.sheetPresentationController?.selectedDetentIdentifier = .large }
+                    tabBar.settingsNavigationController.topViewController?.present(info, animated: false)
+                }
+            }
+            if let seconds = option("SnapshotAt").flatMap(Double.init) {
+                after(seconds) { snapshotWindow(of: tabBar, named: option("SnapshotName") ?? "settings") }
+            }
         case "support":
             tabBar.select(.settings)
             after(0.6) {

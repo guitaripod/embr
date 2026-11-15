@@ -59,8 +59,14 @@ public protocol EmoteCataloging: Sendable {
 }
 
 public protocol PlaybackResolving: Sendable {
-    func resolveLive(channelLogin: String) async throws -> PlaybackResolution
+    func resolveLive(channelLogin: String, latency: LiveLatency) async throws -> PlaybackResolution
     func resolveVOD(videoID: String) async throws -> PlaybackResolution
+}
+
+extension PlaybackResolving {
+    public func resolveLive(channelLogin: String) async throws -> PlaybackResolution {
+        try await resolveLive(channelLogin: channelLogin, latency: .standard)
+    }
 }
 
 public protocol TokenStoring: Sendable {

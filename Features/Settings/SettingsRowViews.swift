@@ -256,3 +256,103 @@ final class StepperRowView: UIView, UIContentView {
         plusButton.isEnabled = liveValue < current.range.upperBound
     }
 }
+
+/// A row with a badge under its title, such as Experimental, that opens more about the row.
+struct BadgedRowConfiguration: UIContentConfiguration {
+    var icon: UIImage?
+    var title: String
+    var subtitle: String?
+    var badge: ExperimentalBadge.Style
+    var open: () -> Void
+
+    func makeContentView() -> UIView & UIContentView { BadgedRowView(self) }
+    func updated(for state: UIConfigurationState) -> BadgedRowConfiguration { self }
+}
+
+@MainActor
+final class BadgedRowView: UIView, UIContentView {
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let titleRow = UIStackView()
+    private var badgeView: ExperimentalBadge?
+    private var current: BadgedRowConfiguration
+
+    var configuration: UIContentConfiguration {
+        get { current }
+        set {
+            guard let config = newValue as? BadgedRowConfiguration else { return }
+            current = config
+            apply(config)
+        }
+    }
+
+    init(_ configuration: BadgedRowConfiguration) {
+        self.current = configuration
+        super.init(frame: .zero)
+        preservesSuperviewLayoutMargins = true
+        build()
+        apply(configuration)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func build() {
+        iconView.contentMode = .center
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.textColor = Theme.primaryText
+        titleLabel.numberOfLines = 0
+
+        subtitleLabel.font = .preferredFont(forTextStyle: .subheadline)
+        subtitleLabel.adjustsFontForContentSizeCategory = true
+        subtitleLabel.textColor = Theme.secondaryText
+        subtitleLabel.numberOfLines = 0
+
+        titleRow.addArrangedSubview(titleLabel)
+        titleRow.axis = .vertical
+        titleRow.alignment = .leading
+        titleRow.spacing = 6
+
+        let text = UIStackView(arrangedSubviews: [titleRow, subtitleLabel])
+        text.axis = .vertical
+        text.spacing = 4
+
+        let row = UIStackView(arrangedSubviews: [iconView, text])
+        row.axis = .horizontal
+        row.spacing = 14
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            iconView.widthAnchor.constraint(equalToConstant: SettingsIcon.side),
+            iconView.heightAnchor.constraint(equalToConstant: SettingsIcon.side),
+            row.topAnchor.constraint(equalTo: topAnchor, constant: 11),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -11),
+            row.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+        ])
+    }
+
+    private func apply(_ config: BadgedRowConfiguration) {
+        iconView.image = config.icon
+        iconView.isHidden = config.icon == nil
+        titleLabel.text = config.title
+        subtitleLabel.text = config.subtitle
+        subtitleLabel.isHidden = config.subtitle == nil
+        installBadge(config.badge)
+    }
+
+    /// Puts the badge under the title, once per row, and points its tap at the row's current action.
+    private func installBadge(_ style: ExperimentalBadge.Style) {
+        if badgeView == nil {
+            let badge = ExperimentalBadge(style: style)
+            badge.addAction(UIAction { [weak self] _ in self?.current.open() }, for: .touchUpInside)
+            titleRow.insertArrangedSubview(badge, at: 1)
+            badgeView = badge
+        }
+    }
+}

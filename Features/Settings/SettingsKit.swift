@@ -49,6 +49,12 @@ struct SettingsIcon: Hashable {
     }
 }
 
+/// A capsule under a row's title, such as Experimental, that opens more about the row.
+struct SettingsBadge {
+    let style: ExperimentalBadge.Style
+    let open: (UIViewController) -> Void
+}
+
 /// A choice in a row's pop-up menu.
 struct SettingsChoice {
     let title: String
@@ -91,19 +97,21 @@ struct SettingsItem {
     let kind: Kind
     /// Extra words the search matches, besides the title.
     var keywords: [String] = []
+    var badge: SettingsBadge?
 
-    init(id: String, title: String, subtitle: String? = nil, icon: SettingsIcon? = nil, keywords: [String] = [], kind: Kind) {
+    init(id: String, title: String, subtitle: String? = nil, icon: SettingsIcon? = nil, keywords: [String] = [], badge: SettingsBadge? = nil, kind: Kind) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
         self.keywords = keywords
+        self.badge = badge
         self.kind = kind
     }
 
     /// What the row shows; a row is drawn again only when this changes.
     var signature: String {
-        var parts = [title, subtitle ?? "", icon?.symbol ?? ""]
+        var parts = [title, subtitle ?? "", icon?.symbol ?? "", badge?.style.title ?? ""]
         switch kind {
         case .toggle(let isOn, _): parts.append(isOn ? "on" : "off")
         case .link(let value, _): parts.append("link:" + (value ?? ""))

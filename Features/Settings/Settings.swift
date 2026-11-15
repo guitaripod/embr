@@ -58,6 +58,7 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
     var tvChatPlacement: ChatPlacement?
     var tvChatTextSize: ChatTextSize?
     var livePreviews: Bool?
+    var hyperLowLatency: Bool?
 
     enum ChatPlacement: String, Codable, Sendable, Equatable, CaseIterable {
         case right
@@ -163,6 +164,15 @@ nonisolated struct Settings: Codable, Sendable, Equatable {
 
     var livePreviewsEnabled: Bool {
         livePreviews ?? true
+    }
+
+    /// The experimental Hyper Low Latency mode for live streams, off until the viewer turns it on.
+    var hyperLowLatencyEnabled: Bool {
+        hyperLowLatency ?? false
+    }
+
+    var liveLatency: LiveLatency {
+        hyperLowLatencyEnabled ? .hyper : .standard
     }
 
     /// Whether supporters' names show in their flame color and glow, as each supporter picked. Off, every name keeps

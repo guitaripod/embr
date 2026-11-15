@@ -83490,6 +83490,2381 @@
           }
         }
       }
+    },
+    "Experimental": {
+      "comment": "Badge on a setting that is still an experiment, shown in capital letters; also a search keyword in Settings",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksperimentel"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimentell"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokeellinen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expérimental"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilraunakennt"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sperimentale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "実験的"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "실험적"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksperimentell"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksperymentalny"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimentell"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实验性"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "實驗性"
+          }
+        }
+      }
+    },
+    "Hyper": {
+      "comment": "Short name of the Hyper Low Latency mode: a badge on the video player (shown in capital letters) and a row label in a chart comparing it with Standard",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper"
+          }
+        }
+      }
+    },
+    "Hyper Low Latency on": {
+      "comment": "VoiceOver label of the player badge while Hyper Low Latency plays",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav latenstid til"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper-niedrige Latenz an"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baja latencia activada"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper matala viive päällä"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper faible latence activée"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lítil töf á"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper bassa latenza attiva"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低遅延 オン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 저지연 켜짐"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav forsinkelse på"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper niskie opóźnienie włączone"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baixa latência ativada"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper låg latens på"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延迟已开启"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延遲已開啟"
+          }
+        }
+      }
+    },
+    "Hyper Low Latency": {
+      "comment": "Name of an experimental live-stream mode that plays closer to real time; a setting title and a sheet title",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav latenstid"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper-niedrige Latenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baja latencia"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper matala viive"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper faible latence"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lítil töf"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper bassa latenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低遅延"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 저지연"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav forsinkelse"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper niskie opóźnienie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baixa latência"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper låg latens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延迟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延遲"
+          }
+        }
+      }
+    },
+    "Live Latency": {
+      "comment": "Settings section header above the Hyper Low Latency switch",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-latenstid"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Latenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latencia en directo"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-viive"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latence en direct"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Töf í beinni"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latenza in diretta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブの遅延"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 지연"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forsinkelse i direkte"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opóźnienie na żywo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latência ao vivo"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-latens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播延迟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播延遲"
+          }
+        }
+      }
+    },
+    "Plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more.": {
+      "comment": "Settings footer under the Hyper Low Latency switch; 'Experimental' is the badge next to the setting",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afspiller live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10, med én kvalitet ad gangen. Tryk på Eksperimentel for at læse mere."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spielt Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10 ab, jeweils in einer Qualitätsstufe. Tippe auf Experimentell, um mehr zu erfahren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproduce transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10, con una sola calidad a la vez. Toca Experimental para leer más."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toistaa suoria lähetyksiä noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan, yhdellä laatutasolla kerrallaan. Napauta Kokeellinen lukeaksesi lisää."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lit les directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10, avec une seule qualité à la fois. Touchez Expérimental pour en savoir plus."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spilar beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10, eina gæðastillingu í einu. Pikkaðu á Tilraunakennt til að lesa meira."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riproduce le dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10, una qualità alla volta. Tocca Sperimentale per saperne di più."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブ配信を配信者より約6～7秒遅れで再生します（通常は約10秒）。画質は一度に1つだけです。「実験的」をタップすると詳細を確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 스트림을 스트리머보다 약 6–7초 늦게 재생합니다(일반 모드는 약 10초). 화질은 한 번에 하나만 적용됩니다. 실험적을 탭하면 자세히 볼 수 있습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiller direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10, med én kvalitet om gangen. Trykk på Eksperimentell for å lese mer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odtwarza transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10, z jedną jakością naraz. Dotknij „Eksperymentalny”, aby przeczytać więcej."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reproduz transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10, com uma qualidade por vez. Toque em Experimental para saber mais."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spelar liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10, med en kvalitet i taget. Tryck på Experimentell för att läsa mer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播画面比主播慢约 6 到 7 秒，而不是约 10 秒，且一次只能使用一种画质。点按“实验性”了解更多。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播畫面比主播慢約 6 到 7 秒，而非約 10 秒，且一次只能使用一種畫質。點按「實驗性」了解更多。"
+          }
+        }
+      }
+    },
+    "Latency": {
+      "comment": "Settings search keyword",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latenstid"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latencia"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viive"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latence"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Töf"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遅延"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지연"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latens"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latencja"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latência"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延迟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延遲"
+          }
+        }
+      }
+    },
+    "Delay": {
+      "comment": "Settings search keyword (stream delay)",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forsinkelse"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzögerung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retraso"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viivytys"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Délai"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seinkun"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritardo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディレイ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "딜레이"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forsinkelse"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opóźnienie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atraso"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fördröjning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "延時"
+          }
+        }
+      }
+    },
+    "Closer to the moment": {
+      "comment": "Card title on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tættere på øjeblikket"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Näher am Geschehen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más cerca del momento"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lähempänä hetkeä"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Au plus près du moment"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nær augnablikinu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più vicino al momento"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リアルタイムに近く"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "순간에 더 가깝게"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tettere på øyeblikket"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bliżej tej chwili"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais perto do momento"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Närmare ögonblicket"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更贴近当下"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更貼近當下"
+          }
+        }
+      }
+    },
+    "Embr starts playing each new piece of the stream while Twitch is still sending it, instead of waiting for the piece to finish.": {
+      "comment": "Card body on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr begynder at afspille hvert nyt stykke af streamen, mens Twitch stadig sender det, i stedet for at vente, til stykket er færdigt."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr spielt jeden neuen Abschnitt des Streams ab, während Twitch ihn noch sendet, statt zu warten, bis der Abschnitt fertig ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr empieza a reproducir cada nuevo fragmento de la transmisión mientras Twitch aún lo envía, en lugar de esperar a que termine."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr alkaa toistaa jokaisen uuden osan striimistä, kun Twitch vielä lähettää sitä, sen sijaan että odottaisi osan valmistumista."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr commence à lire chaque nouveau segment du direct pendant que Twitch l'envoie encore, au lieu d'attendre qu'il soit terminé."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr byrjar að spila hvern nýjan hluta straumsins á meðan Twitch er enn að senda hann, í stað þess að bíða eftir að hlutinn klárist."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr inizia a riprodurre ogni nuovo frammento della diretta mentre Twitch lo sta ancora inviando, invece di aspettare che il frammento sia completo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrは、Twitchがまだ送信している配信の新しい部分を、部分の受信完了を待たずに再生し始めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr는 Twitch가 스트림의 새 조각을 아직 보내는 중에도 재생을 시작하며, 조각이 다 도착할 때까지 기다리지 않습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr begynner å spille av hver nye del av strømmen mens Twitch fortsatt sender den, i stedet for å vente til delen er ferdig."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr zaczyna odtwarzać każdy nowy fragment transmisji, zanim Twitch skończy go wysyłać, zamiast czekać, aż fragment zostanie w całości pobrany."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Embr começa a tocar cada novo trecho da transmissão enquanto o Twitch ainda o envia, em vez de esperar o trecho terminar."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr börjar spela upp varje ny del av sändningen medan Twitch fortfarande skickar den, i stället för att vänta tills delen är klar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 会在 Twitch 仍在传输时就开始播放直播的每个新片段，而不是等片段全部下载完成。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 會在 Twitch 仍在傳送時就開始播放直播的每個新片段，而不是等片段完整下載。"
+          }
+        }
+      }
+    },
+    "On low-latency channels": {
+      "comment": "Card title on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "På kanaler med lav latenstid"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei Kanälen mit niedriger Latenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En canales con baja latencia"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanavilla, joilla on matala viive"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sur les chaînes à faible latence"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Á rásum með litla töf"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sui canali a bassa latenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低遅延のチャンネルで"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저지연 채널에서"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "På kanaler med lav forsinkelse"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na kanałach z niskim opóźnieniem"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em canais de baixa latência"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "På kanaler med låg latens"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在低延迟频道上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在低延遲頻道上"
+          }
+        }
+      }
+    },
+    "It works when the streamer has Twitch's Low Latency setting on, which is the default. Other channels play as they always do.": {
+      "comment": "Card body; 'Low Latency' is the name of a setting in Twitch's own broadcaster settings",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det virker, når streameren har Twitchs indstilling for lav latenstid slået til, hvilket er standard. Andre kanaler afspilles som normalt."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es funktioniert, wenn der Streamer die Twitch-Einstellung „Niedrige Latenz“ aktiviert hat, was der Standard ist. Andere Kanäle werden wie gewohnt abgespielt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funciona cuando el streamer tiene activada la opción «Baja latencia» de Twitch, que viene activada por defecto. Los demás canales se reproducen como siempre."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se toimii, kun striimaajalla on Twitchin Matala viive -asetus päällä, mikä on oletusarvo. Muut kanavat toistuvat kuten ennenkin."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cela fonctionne lorsque le streamer a activé le paramètre « Faible latence » de Twitch, qui est activé par défaut. Les autres chaînes se lisent comme d'habitude."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Það virkar þegar streymandinn er með stillinguna „Lítil töf“ á Twitch virka, sem er sjálfgefið. Aðrar rásir spilast eins og venjulega."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funziona quando lo streamer ha attiva l'impostazione «Bassa latenza» di Twitch, che è predefinita. Gli altri canali vengono riprodotti come sempre."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配信者のTwitch配信設定で「低遅延」がオンになっている場合に機能します（初期設定ではオンです）。それ以外のチャンネルは、これまでどおり再生されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스트리머가 Twitch의 '저지연' 설정을 켜 두었을 때 작동하며, 이 설정은 기본값입니다. 다른 채널은 평소와 같이 재생됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det fungerer når strømmeren har Twitchs innstilling for lav forsinkelse på, som er standard. Andre kanaler spilles av som vanlig."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Działa, gdy streamer ma włączone ustawienie Twitcha „Niskie opóźnienie”, które jest domyślne. Inne kanały odtwarzane są jak zwykle."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Funciona quando o streamer tem a configuração «Baixa latência» do Twitch ativada, que é o padrão. Os outros canais são reproduzidos como sempre."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det fungerar när streamaren har Twitchs inställning Låg latens påslagen, vilket är standard. Andra kanaler spelas upp som vanligt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当主播开启了 Twitch 的“低延迟”设置时即可生效，该设置默认开启。其他频道照常播放。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當主播開啟了 Twitch 的「低延遲」設定時即可生效，該設定預設為開啟。其他頻道照常播放。"
+          }
+        }
+      }
+    },
+    "One quality at a time": {
+      "comment": "Card title on the Hyper Low Latency sheet: the video quality does not adapt",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Én kvalitet ad gangen"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeweils eine Qualitätsstufe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una calidad a la vez"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yksi laatutaso kerrallaan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une qualité à la fois"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eina gæðastillingu í einu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una qualità alla volta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画質は一度に1つ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화질은 하나씩"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Én kvalitet om gangen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna jakość naraz"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma qualidade por vez"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En kvalitet i taget"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次只能一种画质"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次只能一種畫質"
+          }
+        }
+      }
+    },
+    "Auto plays up to 720p and stays there instead of adapting to your connection. Choose a higher quality in the player when your connection keeps up.": {
+      "comment": "Card body; 'Auto' is the name of the automatic quality option in the player's quality menu",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto afspiller op til 720p og bliver ved med det i stedet for at tilpasse sig din forbindelse. Vælg en højere kvalitet i afspilleren, når din forbindelse kan klare det."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto spielt bis 720p ab und bleibt dabei, statt sich an deine Verbindung anzupassen. Wähle in der Wiedergabe eine höhere Qualität, wenn deine Verbindung mitkommt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático reproduce hasta 720p y se mantiene ahí en lugar de adaptarse a tu conexión. Elige una calidad más alta en el reproductor cuando tu conexión lo permita."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automaattinen toistaa enintään 720p:llä ja pysyy siinä sen sijaan, että mukautuisi yhteyteesi. Valitse soittimesta korkeampi laatu, kun yhteytesi kestää sen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto lit jusqu'à 720p et reste à ce niveau au lieu de s'adapter à votre connexion. Choisissez une qualité supérieure dans le lecteur lorsque votre connexion le permet."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sjálfvirkt spilar allt að 720p og heldur sig við það í stað þess að laga sig að tengingunni. Veldu hærri gæði í spilaranum þegar tengingin ræður við það."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatica riproduce fino a 720p e resta su quella qualità invece di adattarsi alla connessione. Scegli una qualità più alta nel lettore quando la connessione lo consente."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動は最大720pで再生し、接続状況に合わせて変えずに固定します。接続に余裕があるときは、プレーヤーでより高い画質を選べます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동은 최대 720p로 재생하고 연결 상태에 맞춰 바꾸지 않고 그대로 유지합니다. 연결이 충분하면 플레이어에서 더 높은 화질을 선택하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto spiller av opptil 720p og blir på det nivået i stedet for å tilpasse seg tilkoblingen din. Velg en høyere kvalitet i spilleren når tilkoblingen tåler det."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto odtwarza do 720p i pozostaje na tej jakości zamiast dostosowywać się do połączenia. Wybierz wyższą jakość w odtwarzaczu, gdy połączenie na to pozwala."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático reproduz até 720p e mantém essa qualidade, em vez de se adaptar à sua conexão. Escolha uma qualidade maior no player quando sua conexão aguentar."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto spelar upp till 720p och stannar där i stället för att anpassa sig efter din anslutning. Välj en högre kvalitet i spelaren när din anslutning klarar det."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动最高播放到 720p 并保持不变，而不会根据网络状况调整。网络足够稳定时，可在播放器中选择更高的画质。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動最高播放到 720p 並維持不變，不會依網路狀況調整。網路足夠穩定時，可在播放器中選擇更高的畫質。"
+          }
+        }
+      }
+    },
+    "Less room for a slow connection": {
+      "comment": "Card title on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mindre plads til en langsom forbindelse"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weniger Puffer bei langsamer Verbindung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menos margen para una conexión lenta"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vähemmän tilaa hitaalle yhteydelle"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moins de marge pour une connexion lente"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minna svigrúm fyrir hæga tengingu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno margine per una connessione lenta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低速な接続では余裕が少ない"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "느린 연결에서는 여유가 적음"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mindre rom for en treg tilkobling"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mniej zapasu przy wolnym połączeniu"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menos folga para uma conexão lenta"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mindre marginal för en långsam anslutning"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢速网络下缓冲余量更小"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢速網路下緩衝餘裕較小"
+          }
+        }
+      }
+    },
+    "With less video loaded ahead, a weak or busy connection pauses sooner. Turn Hyper Low Latency off if a stream keeps buffering.": {
+      "comment": "Card body on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Når der er indlæst mindre video på forhånd, sætter en svag eller travl forbindelse afspilningen på pause hurtigere. Slå Hyper lav latenstid fra, hvis en stream bliver ved med at buffere."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da weniger Video vorausgeladen wird, pausiert eine schwache oder überlastete Verbindung früher. Schalte Hyper-niedrige Latenz aus, wenn ein Stream immer wieder puffert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como se carga menos vídeo por adelantado, una conexión débil o saturada se detiene antes. Desactiva Hyper baja latencia si una transmisión sigue cargándose."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun etukäteen ladataan vähemmän videota, heikko tai ruuhkainen yhteys pysähtyy aiemmin. Poista Hyper matala viive käytöstä, jos striimi puskuroi jatkuvasti."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comme moins de vidéo est chargée à l'avance, une connexion faible ou saturée se met en pause plus tôt. Désactivez Hyper faible latence si un direct continue de se mettre en mémoire tampon."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þar sem minna myndskeið er hlaðið fyrirfram stöðvast spilun fyrr ef tengingin er veik eða upptekin. Slökktu á Hyper lítil töf ef straumur heldur áfram að hlaðast."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con meno video caricato in anticipo, una connessione debole o congestionata si blocca prima. Disattiva Hyper bassa latenza se una diretta continua a bufferizzare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先読みする映像が少ないため、接続が弱い、または混雑していると、より早く一時停止します。配信が何度もバッファリングする場合は、Hyper 低遅延をオフにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미리 불러오는 영상이 적어서 연결이 약하거나 혼잡하면 더 빨리 일시정지됩니다. 스트림이 계속 버퍼링되면 Hyper 저지연을 끄세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Når mindre video er lastet på forhånd, pauser en svak eller travel tilkobling tidligere. Slå av Hyper lav forsinkelse hvis en strøm fortsetter å bufre."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy z wyprzedzeniem wczytuje się mniej wideo, słabe lub przeciążone połączenie wstrzymuje odtwarzanie szybciej. Wyłącz Hyper niskie opóźnienie, jeśli transmisja ciągle się buforuje."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Com menos vídeo carregado antecipadamente, uma conexão fraca ou congestionada pausa mais cedo. Desative o Hyper baixa latência se uma transmissão continuar travando."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eftersom mindre video laddas i förväg pausar en svag eller överbelastad anslutning tidigare. Stäng av Hyper låg latens om en sändning fortsätter att buffra."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由于提前加载的视频较少，网络较弱或拥堵时会更早暂停。如果直播持续缓冲，请关闭 Hyper 低延迟。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "由於預先載入的影片較少，網路較弱或壅塞時會更早暫停。如果直播持續緩衝，請關閉 Hyper 低延遲。"
+          }
+        }
+      }
+    },
+    "An experiment": {
+      "comment": "Card title on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Et eksperiment"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Experiment"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un experimento"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokeilu"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une expérience"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tilraun"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un esperimento"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "実験機能です"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "실험 기능"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Et eksperiment"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksperyment"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um experimento"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ett experiment"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实验性功能"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "實驗性功能"
+          }
+        }
+      }
+    },
+    "Hyper Low Latency may change or go away in an update.": {
+      "comment": "Card body on the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav latenstid kan ændre sig eller forsvinde i en opdatering."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper-niedrige Latenz kann sich in einem Update ändern oder entfallen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baja latencia puede cambiar o desaparecer en una actualización."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper matala viive voi muuttua tai poistua päivityksessä."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper faible latence peut changer ou disparaître lors d'une mise à jour."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lítil töf getur breyst eða horfið í uppfærslu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper bassa latenza potrebbe cambiare o scomparire in un aggiornamento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低遅延は、アップデートで変更または削除される場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 저지연은 업데이트에서 변경되거나 제거될 수 있습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper lav forsinkelse kan endre seg eller forsvinne i en oppdatering."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper niskie opóźnienie może zostać zmienione lub usunięte w aktualizacji."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper baixa latência pode mudar ou deixar de existir em uma atualização."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper låg latens kan ändras eller försvinna i en uppdatering."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延迟可能会在更新中有所变化或被移除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 低延遲可能會在更新中有所變動或被移除。"
+          }
+        }
+      }
+    },
+    "Watch live streams closer to the moment they happen.": {
+      "comment": "Subtitle under the Hyper Low Latency sheet title",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se live-streams tættere på det øjeblik, de sker."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh Live-Streams näher am Geschehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mira las transmisiones en directo más cerca del momento en que ocurren."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katso suoria lähetyksiä lähempänä hetkeä, jolloin ne tapahtuvat."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regardez les directs au plus près du moment où ils se produisent."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horfðu á beinar útsendingar nær augnablikinu þegar þær gerast."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda le dirette più vicino al momento in cui accadono."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブ配信を、実際に起きている瞬間に近いタイミングで視聴できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 스트림을 실제 순간에 더 가깝게 시청하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se direktesendinger tettere på øyeblikket de skjer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oglądaj transmisje na żywo bliżej chwili, w której się dzieją."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assista às transmissões ao vivo mais perto do momento em que acontecem."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se liveströmmar närmare det ögonblick de sker."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让直播更贴近实时发生的画面。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓直播更貼近實際發生的畫面。"
+          }
+        }
+      }
+    },
+    "Behind the streamer": {
+      "comment": "Heading over a small bar chart of how many seconds behind the streamer each mode plays",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagud for streameren"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinter dem Streamer"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por detrás del streamer"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jäljessä striimaajasta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retard sur le streamer"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Á eftir straumaranum"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dietro lo streamer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配信者からの遅れ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스트리머와의 지연"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bak streameren"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opóźnienie względem streamera"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atraso em relação ao streamer"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efter streamaren"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与主播的延迟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與主播的延遲"
+          }
+        }
+      }
+    },
+    "about 10 s": {
+      "comment": "Bar chart value: seconds behind the streamer in the standard mode; 's' is the abbreviation for seconds",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca. 10 s"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "etwa 10 s"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unos 10 s"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noin 10 s"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "environ 10 s"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "um 10 s"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "circa 10 s"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "約10秒"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "약 10초"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca. 10 s"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ok. 10 s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cerca de 10 s"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca 10 s"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 10 秒"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "約 10 秒"
+          }
+        }
+      }
+    },
+    "about 6–7 s": {
+      "comment": "Bar chart value: seconds behind the streamer in Hyper Low Latency; keep the en dash range",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca. 6–7 s"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "etwa 6–7 s"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unos 6–7 s"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "noin 6–7 s"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "environ 6–7 s"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "um 6–7 s"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "circa 6–7 s"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "約6～7秒"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "약 6–7초"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca. 6–7 s"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ok. 6–7 s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cerca de 6–7 s"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ca 6–7 s"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "约 6–7 秒"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "約 6–7 秒"
+          }
+        }
+      }
+    },
+    "Standard plays about 10 seconds behind the streamer, Hyper about 6 to 7.": {
+      "comment": "VoiceOver description of the bar chart",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard afspiller ca. 10 sekunder efter streameren, Hyper ca. 6 til 7."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spielt etwa 10 Sekunden hinter dem Streamer ab, Hyper etwa 6 bis 7."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estándar reproduce unos 10 segundos por detrás del streamer, Hyper unos 6 a 7."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oletus toistaa noin 10 sekuntia striimaajasta jäljessä, Hyper noin 6–7 sekuntia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard lit avec environ 10 secondes de retard sur le streamer, Hyper environ 6 à 7."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staðlað spilar um 10 sekúndum á eftir straumaranum, Hyper um 6 til 7."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard riproduce con circa 10 secondi di ritardo rispetto allo streamer, Hyper circa 6-7."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準は配信者より約10秒遅れで再生し、Hyperは約6～7秒遅れです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "표준은 스트리머보다 약 10초 늦게 재생하고, Hyper는 약 6–7초 늦게 재생합니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spiller av ca. 10 sekunder etter streameren, Hyper ca. 6 til 7."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardowy odtwarza z opóźnieniem około 10 sekund względem streamera, Hyper około 6–7."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padrão reproduz com cerca de 10 segundos de atraso em relação ao streamer, Hyper cerca de 6 a 7."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spelar upp ca 10 sekunder efter streamaren, Hyper ca 6 till 7."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标准模式比主播慢约 10 秒，Hyper 模式慢约 6 到 7 秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準模式比主播慢約 10 秒，Hyper 模式慢約 6 到 7 秒。"
+          }
+        }
+      }
+    },
+    "Changes the stream that's playing right away.": {
+      "comment": "Detail under the Hyper Low Latency switch on its sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skifter den stream, der afspilles, med det samme."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wechselt sofort den laufenden Stream."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia de inmediato la transmisión que se está reproduciendo."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaihtaa toistettavan striimin heti."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change immédiatement le direct en cours de lecture."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breytir straumnum sem er í spilun strax."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambia subito la diretta in riproduzione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再生中の配信にすぐ反映されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 재생 중인 스트림에 바로 적용됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endrer strømmen som spilles av, med én gang."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od razu zmienia odtwarzaną transmisję."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muda imediatamente a transmissão que está sendo reproduzida."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ändrar den pågående sändningen direkt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即对正在播放的直播生效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即對正在播放的直播生效。"
+          }
+        }
+      }
+    },
+    "Done": {
+      "comment": "Button that closes the Hyper Low Latency sheet",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udført"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valmis"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokið"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完了"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "완료"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ferdig"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

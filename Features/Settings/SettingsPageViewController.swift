@@ -205,7 +205,7 @@ class SettingsPageViewController: UIViewController, UICollectionViewDelegate {
 
         switch item.kind {
         case .toggle(let isOn, _):
-            cell.contentConfiguration = content
+            cell.contentConfiguration = badgedConfiguration(for: item) ?? content
             let toggle = switchControl(for: item.id)
             if toggle.isOn != isOn { toggle.setOn(isOn, animated: cell.window != nil) }
             toggle.accessibilityLabel = item.title
@@ -253,6 +253,15 @@ class SettingsPageViewController: UIViewController, UICollectionViewDelegate {
             cell.accessories = [.disclosureIndicator()]
         case .custom:
             break
+        }
+    }
+
+    /// The row drawn with its badge after the title, or nil for a row without one.
+    private func badgedConfiguration(for item: SettingsItem) -> UIContentConfiguration? {
+        guard let badge = item.badge else { return nil }
+        return BadgedRowConfiguration(icon: item.icon?.image, title: item.title, subtitle: item.subtitle, badge: badge.style) { [weak self] in
+            guard let self else { return }
+            badge.open(self)
         }
     }
 

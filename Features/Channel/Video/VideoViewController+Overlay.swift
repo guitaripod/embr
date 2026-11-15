@@ -46,6 +46,10 @@ extension VideoViewController: VideoOverlayViewDelegate {
         toggleFullscreen()
     }
 
+    func videoOverlayDidTapHyperLatency(_ overlay: VideoOverlayView) {
+        present(HyperLatencyInfoViewController(), animated: true)
+    }
+
     func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView) {
         present(AdInfoViewController(), animated: true)
     }

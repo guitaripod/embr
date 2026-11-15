@@ -11,6 +11,7 @@ protocol VideoOverlayViewDelegate: AnyObject {
     func videoOverlayDidTapMute(_ overlay: VideoOverlayView)
     func videoOverlayDidTapFullscreen(_ overlay: VideoOverlayView)
     func videoOverlayDidTapAdInfo(_ overlay: VideoOverlayView)
+    func videoOverlayDidTapHyperLatency(_ overlay: VideoOverlayView)
     func videoOverlayDidTapSpeed(_ overlay: VideoOverlayView, from sourceView: UIView)
     func videoOverlayDidBeginScrubbing(_ overlay: VideoOverlayView)
     func videoOverlay(_ overlay: VideoOverlayView, didCommitScrubTo seconds: TimeInterval)
@@ -103,7 +104,14 @@ final class VideoOverlayView: UIView {
         return imageView
     }()
 
+    private let hyperBadge: ExperimentalBadge = {
+        let badge = ExperimentalBadge(style: .hyper)
+        badge.isHidden = true
+        return badge
+    }()
+
     private var isLive = false
+    private var hyperLatency = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -152,6 +160,17 @@ final class VideoOverlayView: UIView {
             liveBadge.removeAllSymbolEffects()
             latencyLabel.text = nil
         }
+        applyHyperBadge()
+    }
+
+    /// Shows the Hyper badge beside the latency while a live stream plays in Hyper Low Latency.
+    func setHyperLatency(_ on: Bool) {
+        hyperLatency = on
+        applyHyperBadge()
+    }
+
+    private func applyHyperBadge() {
+        hyperBadge.isHidden = !(hyperLatency && isLive)
     }
 
     func setBuffering(_ buffering: Bool) {
@@ -390,7 +409,9 @@ final class VideoOverlayView: UIView {
         topBar.addArrangedSubview(backButton)
         topBar.addArrangedSubview(liveBadge)
         topBar.addArrangedSubview(topSpacer)
+        topBar.addArrangedSubview(hyperBadge)
         topBar.addArrangedSubview(latencyLabel)
+        topBar.setCustomSpacing(8, after: hyperBadge)
         addSubview(topBar)
 
         scrubber.minimumTrackTintColor = .systemRed
@@ -656,6 +677,7 @@ final class VideoOverlayView: UIView {
         muteButton.addTarget(self, action: #selector(didTapMute), for: .touchUpInside)
         fullscreenButton.addTarget(self, action: #selector(didTapFullscreen), for: .touchUpInside)
         speedButton.addTarget(self, action: #selector(didTapSpeed), for: .touchUpInside)
+        hyperBadge.addTarget(self, action: #selector(didTapHyperBadge), for: .touchUpInside)
         scrubber.addTarget(self, action: #selector(scrubBegan), for: .touchDown)
         scrubber.addTarget(self, action: #selector(scrubChanged), for: .valueChanged)
         scrubber.addTarget(self, action: #selector(scrubEnded), for: [.touchUpInside, .touchUpOutside, .touchCancel])
@@ -741,6 +763,11 @@ final class VideoOverlayView: UIView {
     @objc private func didTapSpeed() {
         scheduleAutoHide()
         delegate?.videoOverlayDidTapSpeed(self, from: speedButton)
+    }
+
+    @objc private func didTapHyperBadge() {
+        scheduleAutoHide()
+        delegate?.videoOverlayDidTapHyperLatency(self)
     }
 
     @objc private func scrubBegan() {
@@ -872,6 +899,7 @@ final class VideoOverlayView: UIView {
 
 extension VideoOverlayView: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if let view = touch.view, view.isDescendant(of: hyperBadge) { return false }
         guard !adCover.isHidden else { return true }
         return !adCover.bounds.contains(touch.location(in: adCover))
     }

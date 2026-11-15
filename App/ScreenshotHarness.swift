@@ -27,6 +27,10 @@ enum ScreenshotHarness {
     /// Store panels on iPad are shot without the status bar, which iPadOS draws over the
     /// navigation bar of a window turned by the capture copy.
     static var hidesStatusBar = false
+    /// Plays live streams in Hyper Low Latency without touching the saved settings, for a device check of the mode and
+    /// a capture of its badge: `-screenshotHyper 1`, read with or without a route, so a stream opened by a deep link
+    /// plays it with the app's ordinary ad handling.
+    static var hyperLatency: Bool { ScreenshotRouter.option("Hyper") != nil }
 
     /// Popular channels shown, live, in the posed Following tab. Real channels resolved
     /// live via the public API; only the "you follow these" relationship is seeded.

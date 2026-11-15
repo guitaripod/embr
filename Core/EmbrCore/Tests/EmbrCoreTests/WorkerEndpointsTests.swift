@@ -93,6 +93,15 @@ struct WorkerEndpointsTests {
         #expect(request.body == nil)
     }
 
+    @Test("playbackLive asks for Hyper Low Latency only in hyper mode")
+    func playbackLiveHyper() {
+        let hyper = endpoints.playbackLive(login: "shroud", latency: .hyper)
+        #expect(hyper.method == .get)
+        #expect(hyper.url.absoluteString == "https://worker.example.com/playback/shroud?latency=hyper")
+        let standard = endpoints.playbackLive(login: "shroud", latency: .standard)
+        #expect(standard.url.absoluteString == "https://worker.example.com/playback/shroud")
+    }
+
     @Test("playbackVOD builds the right GET path")
     func playbackVODPath() {
         let request = endpoints.playbackVOD(id: "123456789")

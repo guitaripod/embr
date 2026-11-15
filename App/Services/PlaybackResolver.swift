@@ -16,8 +16,8 @@ actor PlaybackResolver: PlaybackResolving {
         self.endpoints = endpoints
     }
 
-    func resolveLive(channelLogin: String) async throws -> PlaybackResolution {
-        try await resolve(request: endpoints.playbackLive(login: channelLogin), label: channelLogin)
+    func resolveLive(channelLogin: String, latency: LiveLatency) async throws -> PlaybackResolution {
+        try await resolve(request: endpoints.playbackLive(login: channelLogin, latency: latency), label: channelLogin)
     }
 
     func resolveVOD(videoID: String) async throws -> PlaybackResolution {
