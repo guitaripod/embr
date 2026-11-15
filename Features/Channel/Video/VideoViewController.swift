@@ -29,7 +29,7 @@ final class VideoViewController: UIViewController {
     let source: VideoSource
     var player: VideoPlaying
     private let resolver: PlaybackResolving
-    private let store: SettingsStore
+    let store: SettingsStore
     let imageLoader: ImageLoading
     private let feedback = UIImpactFeedbackGenerator(style: .medium)
 
@@ -38,8 +38,8 @@ final class VideoViewController: UIViewController {
     private var playerCancellables = Set<AnyCancellable>()
     private var triedWebFallback = false
     private var resolveTask: Task<Void, Never>?
-    private var lastResolution: PlaybackResolution?
-    private var playingLatency: LiveLatency = .standard
+    var lastResolution: PlaybackResolution?
+    var playingLatency: LiveLatency = .standard
 
     var currentState: VideoState = .idle
     var isImmersive = false
@@ -83,7 +83,7 @@ final class VideoViewController: UIViewController {
     private var dragStartCenter: CGPoint = .zero
     lazy var swipeDown = UIPanGestureRecognizer(target: self, action: #selector(handleSwipeDown(_:)))
 
-    private var streamActive: Bool
+    private(set) var streamActive: Bool
 
     init(
         source: VideoSource,
@@ -148,45 +148,6 @@ final class VideoViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] latency in self?.switchLatency(to: latency) }
             .store(in: &cancellables)
-    }
-
-    /// The latency mode a live stream resolves with; every other source plays as it always has.
-    private var requestedLatency: LiveLatency {
-        guard case .live = source else { return .standard }
-        #if DEBUG
-        if ScreenshotHarness.hyperLatency { return .hyper }
-        #endif
-        return store.current.liveLatency
-    }
-
-    /// A live resolution in the mode Settings asks for now, which a switch made while the resolve was in flight may have
-    /// changed; anything else as it came.
-    private func inLatency(_ resolution: PlaybackResolution, _ latency: LiveLatency) -> PlaybackResolution {
-        guard case .live = source else { return resolution }
-        return resolution.withLatency(latency)
-    }
-
-    /// Moves the live stream to the latency mode Settings now asks for on the same Twitch session, so the switch costs
-    /// a moment of buffering instead of a fresh preroll.
-    private func switchLatency(to latency: LiveLatency) {
-        guard case .live = source, latency != playingLatency, let resolution = lastResolution,
-              let hls = player as? HLSVideoPlayer, !didTeardownPlayer else { return }
-        let next = resolution.withLatency(latency)
-        lastResolution = next
-        playingLatency = latency
-        hls.pinsVariant = latency == .hyper
-        overlay.setHyperLatency(latency == .hyper)
-        let playing = streamActive && isPlayingOrStarting
-        if playing { overlay.setBuffering(true) }
-        hls.load(next, playing: playing)
-        MidgarLog.info("live latency -> \(latency.rawValue)\(playing ? "" : " (held)")", category: .playback)
-    }
-
-    private var isPlayingOrStarting: Bool {
-        switch currentState {
-        case .playing, .buffering, .loading: true
-        case .idle, .paused, .ended, .error: false
-        }
     }
 
     private func observeLifecycle() {
@@ -917,48 +878,6 @@ final class VideoViewController: UIViewController {
         case .clip(let url):
             return PlaybackResolution(masterPlaylistURL: url, qualities: [], expiresAt: nil)
         }
-    }
-
-    func presentQualityPicker(from sourceView: UIView) {
-        let qualities = player.availableQualities
-        let sheet = UIAlertController(title: String(localized: "Quality"), message: nil, preferredStyle: .actionSheet)
-
-        sheet.addAction(qualityAction(named: String(localized: "Auto"), quality: autoQuality, isSelected: !isAudioOnly && player.currentQuality == nil))
-        for quality in qualities where isOffered(quality) {
-            let selected = quality.isAudioOnly ? isAudioOnly : (!isAudioOnly && player.currentQuality == quality)
-            let label = quality.isAudioOnly ? String(localized: "Audio Only") : quality.name
-            sheet.addAction(qualityAction(named: label, quality: quality, isSelected: selected))
-        }
-        sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
-
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = sourceView
-            popover.sourceRect = sourceView.bounds
-        }
-        present(sheet, animated: true)
-    }
-
-    /// Auto has its own row, and audio only would leave a TV that has the picture with none, so it is not offered then.
-    private func isOffered(_ quality: StreamQuality) -> Bool {
-        quality.name.caseInsensitiveCompare("auto") != .orderedSame && !(quality.isAudioOnly && isPlayingExternally)
-    }
-
-    private func qualityAction(named name: String, quality: StreamQuality, isSelected: Bool) -> UIAlertAction {
-        let action = UIAlertAction(title: name, style: .default) { [weak self] _ in
-            guard let self else { return }
-            if quality.isAudioOnly {
-                self.setAudioOnly(true)
-            } else {
-                if self.isAudioOnly { self.setAudioOnly(false) }
-                self.player.setQuality(quality)
-            }
-        }
-        action.setValue(isSelected, forKey: "checked")
-        return action
-    }
-
-    private var autoQuality: StreamQuality {
-        StreamQuality(name: "Auto", url: URL(string: "embr://auto")!)
     }
 
     func dismissSelf() {
