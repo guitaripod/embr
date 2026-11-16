@@ -1,0 +1,17 @@
+DEMO ACCOUNT (Twitch)
+On Twitch's login page, which Embr opens, please type the demo username and password into Twitch's fields; don't use Twitch's "Continue with Apple", "Google" or "Amazon" buttons, which sign in with your own account. Twitch then emails a one-time code, as on every sign-in from a new device (it cannot be turned off). The demo account's newest code appears within seconds on this page, which refreshes itself:
+{CODE_PAGE_URL}
+Log in from the welcome screen (Connect Twitch Account) or Settings > Log In with Twitch. Browsing, watching, live chat and VOD chat replay need no login; login adds Following, sending chat and moderation.
+
+WHAT'S NEW IN 1.5.3
+
+1) HYPER LOW LATENCY, an experimental perk of Founding Member: Settings > Video > Live Latency. Without Founding Member the switch stays off and opens Founding Member instead. After buying (sandbox is fine), turn it on and open any live channel: the stream plays as little as 3 seconds behind the streamer instead of about 10, at one quality at a time, and the player shows a Hyper badge beside the delay; tap the badge, or Experimental in Settings, for what the mode does and costs. Watching stays free for everyone, and every viewer's live streams now play about 10 seconds behind instead of about 20.
+
+2) FOUNDING MEMBER (com.guitaripod.embr.supporter, non-consumable, $9.99), formerly Founding Supporter: Settings > Make Embr Yours. Themes, accent colors, chat fonts and app icons can each be tried on before buying; the purchase keeps them and adds a flame badge with a founding number others see, plus Hyper Low Latency. Restore Purchase is on the same screen.
+
+3) HELP & FEEDBACK in Settings: contact support, share diagnostic logs, rate or share Embr. The tip jar is gone.
+
+UNCHANGED SINCE 1.5.0
+Embr Studio for streamers: Settings > Embr Studio > Try a Sample Stream needs no login. Studio Pro is the auto-renewable subscriptions com.guitaripod.embr.studio.monthly ($3.99/month) and com.guitaripod.embr.studio.yearly ($29.99/year) in the group "Embr Studio Pro" and the non-consumable com.guitaripod.embr.studio.lifetime ($79.99), from Settings > Embr Studio > Get Studio Pro or any lock in Studio; Restore Purchases is on the paywall.
+
+The app supports iPhone and iPad: on iPad, video and chat sit side by side in wide windows and stack in narrow ones.
