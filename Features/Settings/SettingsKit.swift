@@ -109,11 +109,13 @@ struct SettingsItem {
         self.kind = kind
     }
 
-    /// What the row shows; a row is drawn again only when this changes.
+    /// What the row shows; a row is drawn again only when this changes. A switch's state is not part of it: the page
+    /// flips the switch in place, and drawing the row again would put the switch back as a new accessory, which slides
+    /// in from the row's leading edge.
     var signature: String {
         var parts = [title, subtitle ?? "", icon?.symbol ?? "", badge?.style.title ?? ""]
         switch kind {
-        case .toggle(let isOn, _): parts.append(isOn ? "on" : "off")
+        case .toggle: parts.append("toggle")
         case .link(let value, _): parts.append("link:" + (value ?? ""))
         case .menu(let value, let choices): parts.append("menu:" + value + choices.map(\.title).joined(separator: ","))
         case .action(let role, _): parts.append("action:\(role)")

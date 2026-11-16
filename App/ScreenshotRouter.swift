@@ -108,6 +108,14 @@ enum ScreenshotRouter {
                     settings?.showPageForScreenshot(page, query: ScreenshotHarness.searchQuery)
                 }
             }
+            if option("Member") != nil { SupporterStore.shared.seedForScreenshots(supporter: true) }
+            if let flips = option("FlipHyper").flatMap(Int.init) {
+                for flip in 0..<flips {
+                    after(2.5 + Double(flip) * 1.5) {
+                        (tabBar.settingsNavigationController.topViewController as? SettingsPageViewController)?.flipSwitchForScreenshot(ScreenshotRouter.option("FlipID") ?? "hyperLowLatency")
+                    }
+                }
+            }
             if let detent = option("HyperInfo") {
                 after(1.4) {
                     let info = HyperLatencyInfoViewController()

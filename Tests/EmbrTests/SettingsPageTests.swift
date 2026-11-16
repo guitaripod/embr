@@ -19,8 +19,10 @@ private func freshStore() -> SettingsStore {
         let on = SettingsItem(id: "a", title: "Haptics", kind: .toggle(isOn: true) { _ in })
         let onAgain = SettingsItem(id: "a", title: "Haptics", kind: .toggle(isOn: true) { _ in })
         let off = SettingsItem(id: "a", title: "Haptics", kind: .toggle(isOn: false) { _ in })
+        let renamed = SettingsItem(id: "a", title: "Vibration", kind: .toggle(isOn: true) { _ in })
         #expect(on.signature == onAgain.signature)
-        #expect(on.signature != off.signature)
+        #expect(on.signature == off.signature)
+        #expect(on.signature != renamed.signature)
 
         let dark = SettingsItem(id: "t", title: "Theme", kind: .menu(value: "Dark", choices: []))
         let light = SettingsItem(id: "t", title: "Theme", kind: .menu(value: "Light", choices: []))

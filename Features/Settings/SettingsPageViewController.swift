@@ -367,6 +367,17 @@ class SettingsPageViewController: UIViewController, UICollectionViewDelegate {
     }
 }
 
+#if DEBUG
+extension SettingsPageViewController {
+    /// Flips a row's switch as a tap would, for recording how the row redraws.
+    func flipSwitchForScreenshot(_ id: String) {
+        guard let toggle = switches[id] else { return }
+        toggle.setOn(!toggle.isOn, animated: true)
+        toggle.sendActions(for: .valueChanged)
+    }
+}
+#endif
+
 extension SettingsPageViewController: UISearchResultsUpdating {
     private func configureSearch() {
         let search = UISearchController(searchResultsController: nil)
