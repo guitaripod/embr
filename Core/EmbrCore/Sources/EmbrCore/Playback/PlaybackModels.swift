@@ -29,6 +29,15 @@ public struct PlaybackResolution: Sendable, Equatable {
     /// Whether this session can play in Hyper Low Latency.
     public var offersHyper: Bool { hyperPlaylistURL != nil }
 
+    /// Twitch's own master for the session: the `src` the worker's proxy link carries, which Hyper reads directly so
+    /// the worker serves none of its playlists.
+    public var upstreamMasterURL: URL? {
+        guard let source = URLComponents(url: standardPlaylistURL, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "src" })?.value,
+              let url = URL(string: source), url.scheme == "https" else { return nil }
+        return url
+    }
+
     /// The latency mode the playing master is in.
     public var latency: LiveLatency {
         hyperPlaylistURL != nil && masterPlaylistURL == hyperPlaylistURL ? .hyper : .standard

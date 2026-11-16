@@ -504,6 +504,15 @@ final class VideoViewController: UIViewController {
                 self?.externalRouteDidChange(route)
             }
             .store(in: &playerCancellables)
+
+        (player as? HLSVideoPlayer)?.tvRoutePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.switchLatency(to: self.requestedLatency)
+            }
+            .store(in: &playerCancellables)
     }
 
     /// Last-resort fallback: when the ad-stripped HLS path can't recover, swap to

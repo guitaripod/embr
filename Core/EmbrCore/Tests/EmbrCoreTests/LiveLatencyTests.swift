@@ -78,4 +78,15 @@ struct PlaybackResolutionLatencyTests {
         #expect(resolution.withLatency(.hyper).masterPlaylistURL == standard)
         #expect(resolution.withLatency(.hyper).latency == .standard)
     }
+
+    @Test("Twitch's own master is the src the proxy link carries, and nothing for any other link")
+    func upstreamMaster() {
+        let usher = "https://usher.ttvnw.net/api/channel/hls/abc.m3u8?sig=x&token=%7B%22a%22%3A1%7D"
+        var components = URLComponents(string: "https://api.midgarcorp.cc/v1/embr/hls/proxy")!
+        components.queryItems = [URLQueryItem(name: "src", value: usher), URLQueryItem(name: "exp", value: "1"), URLQueryItem(name: "sig", value: "s")]
+        let resolution = PlaybackResolution(masterPlaylistURL: components.url!, hyperPlaylistURL: hyper)
+        #expect(resolution.upstreamMasterURL?.absoluteString == usher)
+        #expect(resolution.withLatency(.hyper).upstreamMasterURL?.absoluteString == usher)
+        #expect(PlaybackResolution(masterPlaylistURL: URL(string: "https://clips.example/a.mp4")!).upstreamMasterURL == nil)
+    }
 }

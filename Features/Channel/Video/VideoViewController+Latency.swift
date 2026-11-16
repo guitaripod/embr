@@ -21,9 +21,10 @@ extension VideoViewController {
     }
 
     /// The mode a resolution plays in now: Hyper when Settings asks for it and the worker handed over the link, which
-    /// it does only for a verified Founding Member while Hyper is switched on.
+    /// it does only for a verified Founding Member while Hyper is switched on, and never while the audio goes to a TV,
+    /// since Hyper's on-device playlists cannot be handed to one.
     func effectiveLatency(for resolution: PlaybackResolution) -> LiveLatency {
-        guard requestedLatency == .hyper else { return .standard }
+        guard requestedLatency == .hyper, (player as? HLSVideoPlayer)?.routesToTV != true else { return .standard }
         #if DEBUG
         if ScreenshotHarness.hyperLatency { return .hyper }
         #endif
@@ -42,7 +43,7 @@ extension VideoViewController {
     func switchLatency(to requested: LiveLatency) {
         guard case .live = source, let resolution = lastResolution,
               let hls = player as? HLSVideoPlayer, !didTeardownPlayer else { return }
-        if requested == .hyper, !resolution.offersHyper, wantsHyperLink {
+        if requested == .hyper, !resolution.offersHyper, wantsHyperLink, (player as? HLSVideoPlayer)?.routesToTV != true {
             resolveAgainForHyper()
             return
         }

@@ -36,6 +36,10 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     var progressPublisher: AnyPublisher<PlaybackProgress, Never> { progressSubject.eraseToAnyPublisher() }
     /// The TV playing the stream while AirPlay or a mirrored or wired display has the picture; nil while it plays here.
     var externalRoutePublisher: AnyPublisher<ExternalRoute?, Never> { externalRouteSubject.eraseToAnyPublisher() }
+    /// Whether the audio goes to an AirPlay receiver or a wired display, which Hyper's on-device playlists cannot be
+    /// handed to; the page plays standard while it does.
+    var tvRoutePublisher: AnyPublisher<Bool, Never> { tvRouteSubject.removeDuplicates().eraseToAnyPublisher() }
+    var routesToTV: Bool { tvRouteSubject.value }
 
     private(set) var availableQualities: [StreamQuality] = []
     private(set) var currentQuality: StreamQuality?
@@ -60,6 +64,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private let adBreakSubject = CurrentValueSubject<TimeInterval?, Never>(nil)
     private let progressSubject = CurrentValueSubject<PlaybackProgress, Never>(.empty)
     private let externalRouteSubject = CurrentValueSubject<ExternalRoute?, Never>(nil)
+    private let tvRouteSubject = CurrentValueSubject<Bool, Never>(HLSVideoPlayer.externalOutputName() != nil)
     private var externalPlaybackObservation: NSKeyValueObservation?
     private var preferredRate: Float = 1.0
 
@@ -79,6 +84,9 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private var pendingResume: PendingResume?
     private var playbackIntended = false
     private var liveLatencyConfigured = false
+    private var hyperLoader: HyperPlaylistLoader?
+    /// The variant Hyper plays, for starting it again when the viewer goes back to live.
+    private var pinnedQuality: StreamQuality?
     private var latencySamples = 0
     private var loadGeneration = 0
     private var appliedAudioOptions: AVAudioSession.CategoryOptions?
@@ -135,6 +143,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func handleRouteChange(reasonValue: UInt?) {
+        tvRouteSubject.send(Self.externalOutputName() != nil)
         reflectExternalPlayback()
         guard let reasonValue,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue),
@@ -169,9 +178,15 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
 
     /// Jumps to the live edge, except during a stitched ad: its playlist is the ad alone until the worker can list the
     /// content after it, and a jump to that edge leaves the player waiting on segments the next playlist no longer has.
-    /// The ad's end seeks to live itself.
+    /// The ad's end seeks to live itself. Hyper starts its variant again instead of seeking: a fresh start lands about
+    /// 3 seconds behind the streamer, while AVPlayer's seekable end sits about 6 behind and a seek to its live offset
+    /// about 4.5.
     func seekToLive() {
         guard adBreakSubject.value == nil else { return }
+        if pinsVariant, let pinned = pinnedQuality {
+            swapVariant(to: pinned)
+            return
+        }
         guard let item = currentItem,
               let range = item.seekableTimeRanges.last?.timeRangeValue,
               range.duration.seconds > 0 else { return }
@@ -219,7 +234,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     }
 
     private func start(_ url: URL, playing: Bool) {
-        let item = AVPlayerItem(url: url)
+        let item = makeItem(url)
         applyMutePreference()
         attach(item)
         player.replaceCurrentItem(with: item)
@@ -229,20 +244,42 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         MidgarLog.info("HLS load url=\(url.absoluteString) qualities=\(availableQualities.count)", category: .playback)
     }
 
-    /// Reads the master's qualities before playing and plays the one Hyper Low Latency picks, on its own; the master
-    /// plays when it cannot be read or offers no video.
+    /// Reads Twitch's own master for the session and plays the variant Hyper Low Latency picks, on its own and through
+    /// `HyperPlaylistLoader`, so the worker serves none of its playlists. The standard master plays when Twitch's cannot
+    /// be read or offers no video.
     private func loadPinnedVariant(of resolution: PlaybackResolution, generation: Int, playing: Bool) {
         Task { [weak self] in
-            let text = await HLSPlaylistClient().playlist(at: resolution.masterPlaylistURL)
+            var text: String?
+            if let upstream = resolution.upstreamMasterURL {
+                text = await HLSPlaylistClient().playlist(at: upstream)
+            }
             guard let self, self.loadGeneration == generation else { return }
             let parsed = text.map(HLSPlaylistParser.qualities) ?? []
             if !parsed.isEmpty { self.availableQualities = parsed }
             let pinned = LiveLatency.hyperQuality(from: parsed, preferredName: self.preferredQualityName)
             if let pinned, pinned.name == self.preferredQualityName { self.currentQuality = pinned }
-            MidgarLog.info("HLS hyper pins \(pinned?.name ?? "the master")", category: .playback)
-            self.start(pinned?.url ?? resolution.masterPlaylistURL, playing: playing)
+            self.pinnedQuality = pinned
+            MidgarLog.info("HLS hyper pins \(pinned?.name ?? "the standard master")", category: .playback)
+            self.start(pinned?.url ?? resolution.standardPlaylistURL, playing: playing)
             self.applyAudioOnlyVariantIfAvailable()
         }
+    }
+
+    /// A player item for `url`: a Twitch variant in Hyper plays through a new `HyperPlaylistLoader`, kept for as long
+    /// as its item plays; anything else as AVPlayer loads it.
+    private func makeItem(_ url: URL) -> AVPlayerItem {
+        guard pinsVariant, Self.isTwitchPlaylist(url) else {
+            hyperLoader = nil
+            return AVPlayerItem(url: url)
+        }
+        let (item, loader) = HyperPlaylistLoader.item(playing: url)
+        hyperLoader = loader
+        return item
+    }
+
+    private static func isTwitchPlaylist(_ url: URL) -> Bool {
+        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        return host == "ttvnw.net" || host.hasSuffix(".ttvnw.net")
     }
 
     func play() {
@@ -369,12 +406,14 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     /// would bring adaptive switching back.
     private func pin(_ quality: StreamQuality?) {
         guard let target = quality ?? LiveLatency.hyperQuality(from: availableQualities) else { return }
+        pinnedQuality = target
         swapVariant(to: target)
         MidgarLog.info("HLS hyper quality -> \(quality?.name ?? "Auto (\(target.name))")", category: .playback)
     }
 
     private func restoreMasterPlaylist() {
         if pinsVariant, let pinned = LiveLatency.hyperQuality(from: availableQualities) {
+            pinnedQuality = pinned
             swapVariant(to: pinned)
             return
         }
@@ -433,9 +472,10 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
     private func swapVariant(to quality: StreamQuality) {
         let progress = progressSubject.value
         let resumeTime = player.currentTime()
-        let item = AVPlayerItem(url: quality.url)
+        let item = makeItem(quality.url)
         attach(item)
-        if progress.current > 0 {
+        if pinsVariant { pinnedQuality = quality }
+        if progress.current > 0, !(pinsVariant && progress.isLive) {
             pendingResume = progress.isLive ? .liveEdge : .time(resumeTime)
         } else {
             pendingResume = nil
