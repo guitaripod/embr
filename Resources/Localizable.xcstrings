@@ -81605,100 +81605,6 @@
         }
       }
     },
-    "Themes, accent colors, chat fonts, app icons and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours. Try them on below; watching never needs any of it.": {
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temaer, accentfarver, chatskrifttyper, app-ikoner og et flammemærke, som alle i Embr ser ved siden af dit navn, med et stifternummer, der forbliver dit. Prøv dem nedenfor; at se med kræver aldrig noget af det."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Designs, Akzentfarben, Chat-Schriften, App-Symbole und ein Flammen-Abzeichen, das alle in Embr neben deinem Namen sehen, mit einer Gründungsnummer, die dir bleibt. Probiere sie unten aus; zum Zuschauen braucht man davon nie etwas."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temas, colores de acento, fuentes del chat, iconos de app y una insignia de llama que todos en Embr ven junto a tu nombre, con un número de fundador que es tuyo para siempre. Pruébalos abajo; mirar nunca necesita nada de esto."
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teemat, korostusvärit, chatin fontit, sovelluskuvakkeet ja liekkimerkki, jonka kaikki Embrissä näkevät nimesi vieressä, sekä perustajanumero, joka pysyy sinulla. Kokeile niitä alla; katsominen ei vaadi tästä mitään."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thèmes, couleurs d'accent, polices du chat, icônes d'app et un badge flamme que tout le monde voit à côté de votre nom dans Embr, avec un numéro de fondateur qui reste le vôtre. Essayez-les ci-dessous : regarder n'a jamais besoin de rien de tout cela."
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Þemu, áherslulitir, leturgerðir spjalls, app-tákn og logamerki sem allir í Embr sjá við hliðina á nafninu þínu, með stofnunarnúmeri sem helst þitt. Prófaðu þau hér fyrir neðan; áhorf krefst aldrei neins af þessu."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temi, colori di accento, font della chat, icone dell'app e un badge a fiamma che tutti in Embr vedono accanto al tuo nome, con un numero di fondatore che resta tuo. Provali qui sotto: guardare non richiede nulla di tutto questo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "テーマ、アクセントカラー、チャットフォント、Appアイコン、そしてEmbrのみんなに名前の横で見える炎のバッジと、ずっとあなたのものになる創設番号。下で試してみてください。視聴にこれらは一切必要ありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "테마, 강조 색상, 채팅 글꼴, 앱 아이콘, 그리고 Embr의 모든 사람이 내 이름 옆에서 보는 불꽃 배지와 계속 내 것으로 남는 창립 번호. 아래에서 미리 적용해 보세요. 시청에는 이 중 어떤 것도 필요하지 않습니다."
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temaer, aksentfarger, skrifttyper i chatten, app-ikoner og et flammemerke som alle i Embr ser ved siden av navnet ditt, med et stifternummer som forblir ditt. Prøv dem nedenfor; å se på streams krever aldri noe av dette."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Motywy, kolory akcentu, czcionki czatu, ikony aplikacji i odznaka płomienia, którą wszyscy w Embr widzą obok twojej nazwy, z numerem założycielskim, który zostaje przy tobie. Wypróbuj je poniżej. Oglądanie nigdy niczego z tego nie wymaga."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Temas, cores de destaque, fontes do chat, ícones do app e um selo de chama que todo mundo no Embr vê ao lado do seu nome, com um número de fundador que fica com você. Experimente abaixo; assistir nunca exige nada disso."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Teman, accentfärger, chattens typsnitt, appikoner och ett flammärke som alla i Embr ser bredvid ditt namn, med ett grundarnummer som förblir ditt. Prova dem nedan; för att titta behövs aldrig något av det."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主题、强调色、聊天字体、App 图标，以及 Embr 中所有人都能在你名字旁看到的火焰徽章，还有永久归你所有的创始编号。可以在下方试用；观看从来不需要这些。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "主題、強調色、聊天字體、App 圖示，以及 Embr 中所有人都能在你名字旁看到的火焰徽章，還有永久屬於你的創始編號。可以在下方試用；觀看從來不需要這些。"
-          }
-        }
-      }
-    },
     "Themes, accent colors, chat fonts and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours. Try them on below; Studio never needs any of it.": {
       "localizations": {
         "da": {
@@ -83966,101 +83872,6 @@
         }
       }
     },
-    "Plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more.": {
-      "comment": "Settings footer under the Hyper Low Latency switch; 'Experimental' is the badge next to the setting",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afspiller live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10, med én kvalitet ad gangen. Tryk på Eksperimentel for at læse mere."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spielt Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10 ab, jeweils in einer Qualitätsstufe. Tippe auf Experimentell, um mehr zu erfahren."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reproduce transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10, con una sola calidad a la vez. Toca Experimental para leer más."
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toistaa suoria lähetyksiä noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan, yhdellä laatutasolla kerrallaan. Napauta Kokeellinen lukeaksesi lisää."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lit les directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10, avec une seule qualité à la fois. Touchez Expérimental pour en savoir plus."
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spilar beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10, eina gæðastillingu í einu. Pikkaðu á Tilraunakennt til að lesa meira."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Riproduce le dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10, una qualità alla volta. Tocca Sperimentale per saperne di più."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ライブ配信を配信者より約6～7秒遅れで再生します（通常は約10秒）。画質は一度に1つだけです。「実験的」をタップすると詳細を確認できます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "라이브 스트림을 스트리머보다 약 6–7초 늦게 재생합니다(일반 모드는 약 10초). 화질은 한 번에 하나만 적용됩니다. 실험적을 탭하면 자세히 볼 수 있습니다."
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spiller direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10, med én kvalitet om gangen. Trykk på Eksperimentell for å lese mer."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odtwarza transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10, z jedną jakością naraz. Dotknij „Eksperymentalny”, aby przeczytać więcej."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reproduz transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10, com uma qualidade por vez. Toque em Experimental para saber mais."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spelar liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10, med en kvalitet i taget. Tryck på Experimentell för att läsa mer."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直播画面比主播慢约 6 到 7 秒，而不是约 10 秒，且一次只能使用一种画质。点按“实验性”了解更多。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直播畫面比主播慢約 6 到 7 秒，而非約 10 秒，且一次只能使用一種畫質。點按「實驗性」了解更多。"
-          }
-        }
-      }
-    },
     "Latency": {
       "comment": "Settings search keyword",
       "localizations": {
@@ -85862,6 +85673,671 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成"
+          }
+        }
+      }
+    },
+    "Comes with Founding Member": {
+      "comment": "Subtitle under the Hyper Low Latency setting and a card title: the feature is included with the Founding Member purchase",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inkluderet med Stiftende medlem"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Gründungsmitglied enthalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluido con Miembro fundador"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sisältyy perustajajäsenyyteen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inclus avec Membre fondateur"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fylgir með stofnfélaga"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluso con Membro fondatore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設メンバーに含まれる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 멤버에 포함"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Følger med Stiftende medlem"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W pakiecie Członka Założyciela"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluso com Membro Fundador"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingår med Grundande medlem"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含在创始成员中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包含在創始成員中"
+          }
+        }
+      }
+    },
+    "A Founding Member perk: plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more.": {
+      "comment": "Settings footer under the Hyper Low Latency switch; 'Experimental' is the badge next to the setting",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fordel for stiftende medlemmer: Afspiller live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10, med én kvalitet ad gangen. Tryk på Eksperimentel for at læse mere."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Vorteil für Gründungsmitglieder: Spielt Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10 ab, jeweils in einer Qualitätsstufe. Tippe auf Experimentell, um mehr zu erfahren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una ventaja para miembros fundadores: Reproduce transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10, con una sola calidad a la vez. Toca Experimental para leer más."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perustajajäsenen etu: Toistaa suoria lähetyksiä noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan, yhdellä laatutasolla kerrallaan. Napauta Kokeellinen lukeaksesi lisää."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un avantage des membres fondateurs : Lit les directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10, avec une seule qualité à la fois. Touchez Expérimental pour en savoir plus."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fríðindi stofnfélaga: Spilar beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10, eina gæðastillingu í einu. Pikkaðu á Tilraunakennt til að lesa meira."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un vantaggio per i membri fondatori: Riproduce le dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10, una qualità alla volta. Tocca Sperimentale per saperne di più."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設メンバー特典：ライブ配信を配信者より約6～7秒遅れで再生します（通常は約10秒）。画質は一度に1つだけです。「実験的」をタップすると詳細を確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 멤버 혜택: 라이브 스트림을 스트리머보다 약 6–7초 늦게 재생합니다(일반 모드는 약 10초). 화질은 한 번에 하나만 적용됩니다. 실험적을 탭하면 자세히 볼 수 있습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fordel for stiftende medlemmer: Spiller direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10, med én kvalitet om gangen. Trykk på Eksperimentell for å lese mer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywilej Członka Założyciela: Odtwarza transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10, z jedną jakością naraz. Dotknij „Eksperymentalny”, aby przeczytać więcej."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vantagem para Membros Fundadores: Reproduz transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10, com uma qualidade por vez. Toque em Experimental para saber mais."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fördel för grundande medlemmar: Spelar liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10, med en kvalitet i taget. Tryck på Experimentell för att läsa mer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创始成员专享：直播画面比主播慢约 6 到 7 秒，而不是约 10 秒，且一次只能使用一种画质。点按“实验性”了解更多。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創始成員專屬：直播畫面比主播慢約 6 到 7 秒，而非約 10 秒，且一次只能使用一種畫質。點按「實驗性」了解更多。"
+          }
+        }
+      }
+    },
+    "Each Hyper viewer costs Embr's server about twice as much as a standard one, so Hyper Low Latency comes with Founding Member, a one-time purchase.": {
+      "comment": "Card body on the Hyper Low Latency sheet explaining why it is a Founding Member perk",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hver Hyper-seer koster Embr's server omkring dobbelt så meget som en standardseer, så Hyper lav latenstid følger med Stiftende medlem, et engangskøb."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server von Embr kostet pro Hyper-Zuschauer etwa doppelt so viel wie pro Standardzuschauer, deshalb ist Hyper-niedrige Latenz im Gründungsmitglied enthalten, einem Einmalkauf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada espectador de Hyper cuesta al servidor de Embr unas dos veces más que uno estándar, por eso Hyper baja latencia viene incluido con Miembro fundador, un pago único."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jokainen Hyper-katsoja maksaa Embr-palvelimelle noin kaksi kertaa enemmän kuin tavallinen katsoja, joten Hyper matala viive kuuluu Perustajajäsenyyteen, joka on kertaosto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chaque spectateur Hyper coûte environ deux fois plus cher au serveur d'Embr qu'un spectateur standard, c'est pourquoi Hyper faible latence est inclus avec Membre fondateur, un achat unique."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hver Hyper-áhorfandi kostar Embr-þjóninn um tvöfalt meira en venjulegur áhorfandi, þess vegna fylgir Hyper lítil töf með Stofnfélaga, sem er einskiptiskaup."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogni spettatore Hyper costa al server di Embr circa il doppio di uno standard, quindi Hyper bassa latenza è incluso con Membro fondatore, un acquisto unico."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper の視聴者1人ごとに Embr のサーバー負荷は通常の約2倍かかるため、Hyper 低遅延は買い切りの創設メンバーに含まれています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hyper 시청자 한 명당 Embr 서버 비용은 일반 시청자의 약 두 배이므로, Hyper 저지연은 일회성 구매인 창립 멤버에 포함됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hver Hyper-seer koster Embr-serveren omtrent dobbelt så mye som en standardseer, så Hyper lav forsinkelse følger med Stiftende medlem, et engangskjøp."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdy widz Hyper obciąża serwer Embr około dwa razy bardziej niż zwykły widz, dlatego Hyper niskie opóźnienie jest częścią Członka Założyciela, jednorazowego zakupu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada espectador Hyper custa ao servidor do Embr cerca de duas vezes mais que um espectador padrão, por isso a Hyper baixa latência vem com o Membro Fundador, uma compra única."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varje Hyper-tittare kostar Embr-servern ungefär dubbelt så mycket som en vanlig tittare, så Hyper låg latens ingår i Grundande medlem, ett engångsköp."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每位 Hyper 观众给 Embr 服务器带来的成本约为标准观众的两倍，因此 Hyper 低延迟包含在创始成员中，这是一次性购买。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每位 Hyper 觀眾給 Embr 伺服器帶來的成本約為標準觀眾的兩倍，因此 Hyper 低延遲包含在創始成員中，這是一次性購買。"
+          }
+        }
+      }
+    },
+    "A one-time purchase that also brings themes, app icons, chat fonts and a badge everyone sees.": {
+      "comment": "Detail on the card offering Founding Member to someone who does not have it",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Et engangskøb, der også giver temaer, app-ikoner, chatskrifttyper og et mærke, som alle kan se."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Einmalkauf, der außerdem Designs, App-Symbole, Chat-Schriften und ein Abzeichen bringt, das alle sehen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un pago único que además incluye temas, iconos de app, fuentes del chat y una insignia que todos ven."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kertaosto, joka tuo myös teemat, sovelluskuvakkeet, chatin fontit ja merkin, jonka kaikki näkevät."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un achat unique qui apporte aussi thèmes, icônes d'app, polices du chat et un badge visible de tous."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einskiptiskaup sem gefur líka þemu, app-tákn, leturgerðir spjalls og merki sem allir sjá."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un acquisto unico che include anche temi, icone dell'app, font della chat e un badge visibile a tutti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "買い切りで、テーマ、Appアイコン、チャットフォント、みんなに見えるバッジも手に入ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일회성 구매로 테마, 앱 아이콘, 채팅 글꼴, 모두에게 보이는 배지도 함께 제공됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Et engangskjøp som også gir temaer, app-ikoner, skrifttyper i chatten og et merke alle kan se."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jednorazowy zakup, który daje też motywy, ikony aplikacji, czcionki czatu i odznakę widoczną dla wszystkich."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma compra única que também traz temas, ícones do app, fontes do chat e um selo que todo mundo vê."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ett engångsköp som också ger teman, appikoner, chattens typsnitt och ett märke som alla ser."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性购买，另外还包括主题、App 图标、聊天字体，以及所有人都能看到的徽章。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次性購買，另外還包括主題、App 圖示、聊天字體，以及所有人都看得到的徽章。"
+          }
+        }
+      }
+    },
+    "See Founding Member": {
+      "comment": "Button that opens the Founding Member purchase page",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se Stiftende medlem"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gründungsmitglied ansehen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver Miembro fundador"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katso perustajajäsenyys"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir Membre fondateur"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skoða stofnfélaga"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vedi Membro fondatore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設メンバーを見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 멤버 보기"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se Stiftende medlem"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz Członka Założyciela"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver Membro Fundador"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa Grundande medlem"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看创始成员"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看創始成員"
+          }
+        }
+      }
+    },
+    "Live streams about 6 to 7 seconds behind the streamer instead of about 10.": {
+      "comment": "Card on the Founding Member page describing the Hyper Low Latency perk",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suorat lähetykset noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブ配信が配信者より約10秒ではなく約6～7秒遅れになります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 스트림이 스트리머보다 약 10초가 아닌 6–7초 늦게 재생됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播画面比主播慢约 6 到 7 秒，而不是约 10 秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播畫面比主播慢約 6 到 7 秒，而非約 10 秒。"
+          }
+        }
+      }
+    },
+    "Themes, accent colors, chat fonts, app icons and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours, plus the experimental Hyper Low Latency. Try the looks on below; watching stays free.": {
+      "comment": "Founding Member pitch on iPhone and iPad for someone who has not bought it",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temaer, accentfarver, chatskrifttyper, app-ikoner og et flammemærke, som alle i Embr ser ved siden af dit navn, med et stifternummer, der forbliver dit, plus den eksperimentelle Hyper lav latenstid. Prøv looksene nedenfor; at se med er gratis."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Designs, Akzentfarben, Chat-Schriften, App-Symbole und ein Flammen-Abzeichen, das alle in Embr neben deinem Namen sehen, mit einer Gründungsnummer, die dir bleibt, plus die experimentelle Hyper-niedrige Latenz. Probiere die Looks unten aus; Zuschauen bleibt kostenlos."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas, colores de acento, fuentes del chat, iconos de app y una insignia de llama que todos en Embr ven junto a tu nombre, con un número de fundador que es tuyo para siempre, más la experimental Hyper baja latencia. Prueba los looks abajo; mirar sigue siendo gratis."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teemat, korostusvärit, chatin fontit, sovelluskuvakkeet ja liekkimerkki, jonka kaikki Embrissä näkevät nimesi vieressä, sekä perustajanumero, joka pysyy sinulla, ja lisäksi kokeellinen Hyper matala viive. Kokeile ulkoasuja alla; katsominen on ilmaista."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thèmes, couleurs d'accent, polices du chat, icônes d'app et un badge flamme que tout le monde voit à côté de votre nom dans Embr, avec un numéro de fondateur qui reste le vôtre, plus la Hyper faible latence expérimentale. Essayez les looks ci-dessous : regarder reste gratuit."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Þemu, áherslulitir, leturgerðir spjalls, app-tákn og logamerki sem allir í Embr sjá við hliðina á nafninu þínu, með stofnunarnúmeri sem helst þitt, auk tilraunakennda Hyper lítil töf. Prófaðu útlitin hér fyrir neðan; áhorf er ókeypis."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temi, colori di accento, font della chat, icone dell'app e un badge a fiamma che tutti in Embr vedono accanto al tuo nome, con un numero di fondatore che resta tuo, più l'Hyper bassa latenza sperimentale. Prova i look qui sotto: guardare resta gratuito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テーマ、アクセントカラー、チャットフォント、Appアイコン、そしてEmbrのみんなに名前の横で見える炎のバッジと、ずっとあなたのものになる創設番号に加えて、実験的な Hyper 低遅延。下で見た目を試してみてください。視聴は無料です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "테마, 강조 색상, 채팅 글꼴, 앱 아이콘, 그리고 Embr의 모든 사람이 내 이름 옆에서 보는 불꽃 배지와 계속 내 것으로 남는 창립 번호, 그리고 실험적인 Hyper 저지연. 아래에서 룩을 미리 적용해 보세요. 시청은 무료입니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temaer, aksentfarger, skrifttyper i chatten, app-ikoner og et flammemerke som alle i Embr ser ved siden av navnet ditt, med et stifternummer som forblir ditt, pluss den eksperimentelle Hyper lav forsinkelse. Prøv lookene nedenfor; å se på streams er gratis."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motywy, kolory akcentu, czcionki czatu, ikony aplikacji i odznaka płomienia, którą wszyscy w Embr widzą obok twojej nazwy, z numerem założycielskim, który zostaje przy tobie, a także eksperymentalne Hyper niskie opóźnienie. Wypróbuj wyglądy poniżej. Oglądanie pozostaje bezpłatne."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas, cores de destaque, fontes do chat, ícones do app e um selo de chama que todo mundo no Embr vê ao lado do seu nome, com um número de fundador que fica com você, mais a Hyper baixa latência experimental. Experimente os looks abaixo; assistir continua grátis."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teman, accentfärger, chattens typsnitt, appikoner och ett flammärke som alla i Embr ser bredvid ditt namn, med ett grundarnummer som förblir ditt, plus den experimentella Hyper låg latens. Prova lookerna nedan; att titta är gratis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题、强调色、聊天字体、App 图标，以及 Embr 中所有人都能在你名字旁看到的火焰徽章，还有永久归你所有的创始编号，以及实验性的 Hyper 低延迟。可以在下方试用这些外观；观看始终免费。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題、強調色、聊天字體、App 圖示，以及 Embr 中所有人都能在你名字旁看到的火焰徽章，還有永久屬於你的創始編號，以及實驗性的 Hyper 低延遲。可以在下方試用這些外觀；觀看永遠免費。"
           }
         }
       }

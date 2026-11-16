@@ -97,9 +97,24 @@ public enum WorkerAPI {
     public struct PlaybackResponse: Codable, Sendable, Equatable {
         public let url: String
         public let expiresAt: Double?
-        public init(url: String, expiresAt: Double?) {
+        /// The same session in Hyper Low Latency, handed to a Founding Member while Hyper is switched on.
+        public let hyperUrl: String?
+        /// What a Founding Member's request got: "on", "off" (switched off for everyone) or "denied".
+        public let hyper: String?
+        public init(url: String, expiresAt: Double?, hyperUrl: String? = nil, hyper: String? = nil) {
             self.url = url
             self.expiresAt = expiresAt
+            self.hyperUrl = hyperUrl
+            self.hyper = hyper
+        }
+    }
+
+    /// A Founding Member's live playback request: the signed StoreKit transaction of the supporter purchase, which the
+    /// worker verifies before it hands out a Hyper Low Latency link.
+    public struct HyperPlaybackRequest: Codable, Sendable, Equatable {
+        public let signedTransaction: String
+        public init(signedTransaction: String) {
+            self.signedTransaction = signedTransaction
         }
     }
 

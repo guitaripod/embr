@@ -56,21 +56,26 @@ struct LiveLatencyTests {
 
 @Suite("PlaybackResolution latency")
 struct PlaybackResolutionLatencyTests {
-    private let standard = URL(string: "https://api.midgarcorp.cc/v1/embr/hls/proxy?src=https%3A%2F%2Fusher.ttvnw.net%2Fapi%2Fchannel%2Fhls%2Fa.m3u8%3Fsig%3Dx%26token%3D%257B%257D&exp=1794864299&sig=2a62")!
+    private let standard = URL(string: "https://api.midgarcorp.cc/v1/embr/hls/proxy?src=a&exp=1&sig=s")!
+    private let hyper = URL(string: "https://api.midgarcorp.cc/v1/embr/hls/proxy?src=a&exp=1&sig=h&latency=hyper")!
 
-    @Test("Hyper adds the latency query and keeps the signed source untouched")
-    func addsHyper() {
-        let hyper = PlaybackResolution(masterPlaylistURL: standard).withLatency(.hyper)
-        #expect(hyper.masterPlaylistURL.absoluteString == standard.absoluteString + "&latency=hyper")
+    @Test("A session with a Hyper link switches between the two and back")
+    func switchesBothWays() {
+        let resolution = PlaybackResolution(masterPlaylistURL: standard, expiresAt: Date(timeIntervalSince1970: 5), hyperPlaylistURL: hyper)
+        #expect(resolution.latency == .standard)
+        let fast = resolution.withLatency(.hyper)
+        #expect(fast.masterPlaylistURL == hyper)
+        #expect(fast.latency == .hyper)
+        #expect(fast.expiresAt == Date(timeIntervalSince1970: 5))
+        #expect(fast.withLatency(.standard).masterPlaylistURL == standard)
+        #expect(fast.withLatency(.standard) == resolution)
     }
 
-    @Test("Standard takes it away again, and switching twice changes nothing more")
-    func roundTrips() {
-        let hyper = PlaybackResolution(masterPlaylistURL: standard, expiresAt: Date(timeIntervalSince1970: 5)).withLatency(.hyper)
-        let back = hyper.withLatency(.standard)
-        #expect(back.masterPlaylistURL == standard)
-        #expect(back.expiresAt == Date(timeIntervalSince1970: 5))
-        #expect(hyper.withLatency(.hyper).masterPlaylistURL == hyper.masterPlaylistURL)
-        #expect(PlaybackResolution(masterPlaylistURL: standard).withLatency(.standard).masterPlaylistURL == standard)
+    @Test("A session without one stays standard when Hyper is asked for")
+    func noHyperLink() {
+        let resolution = PlaybackResolution(masterPlaylistURL: standard)
+        #expect(!resolution.offersHyper)
+        #expect(resolution.withLatency(.hyper).masterPlaylistURL == standard)
+        #expect(resolution.withLatency(.hyper).latency == .standard)
     }
 }

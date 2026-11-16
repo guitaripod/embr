@@ -93,13 +93,25 @@ struct WorkerEndpointsTests {
         #expect(request.body == nil)
     }
 
-    @Test("playbackLive asks for Hyper Low Latency only in hyper mode")
-    func playbackLiveHyper() {
-        let hyper = endpoints.playbackLive(login: "shroud", latency: .hyper)
-        #expect(hyper.method == .get)
-        #expect(hyper.url.absoluteString == "https://worker.example.com/playback/shroud?latency=hyper")
-        let standard = endpoints.playbackLive(login: "shroud", latency: .standard)
-        #expect(standard.url.absoluteString == "https://worker.example.com/playback/shroud")
+    @Test("A Founding Member's live request is a POST carrying the purchase proof")
+    func playbackLiveWithProof() throws {
+        let request = endpoints.playbackLive(login: "shroud", purchaseProof: "header.payload.signature")
+        #expect(request.method == .post)
+        #expect(request.url.absoluteString == "https://worker.example.com/playback/shroud")
+        #expect(request.headers["Content-Type"] == "application/json")
+        let body = try TwitchJSON.decode(WorkerAPI.HyperPlaybackRequest.self, from: try #require(request.body))
+        #expect(body.signedTransaction == "header.payload.signature")
+    }
+
+    @Test("decodePlayback reads the Hyper link and what the request got")
+    func decodePlaybackHyper() throws {
+        let json = """
+        { "url": "https://w.example/hls/proxy?src=a", "hyperUrl": "https://w.example/hls/proxy?src=a&latency=hyper", "hyper": "on" }
+        """
+        let playback = try WorkerEndpoints.decodePlayback(Data(json.utf8))
+        #expect(playback.hyperUrl == "https://w.example/hls/proxy?src=a&latency=hyper")
+        #expect(playback.hyper == "on")
+        #expect(try WorkerEndpoints.decodePlayback(Data(#"{ "url": "u" }"#.utf8)).hyperUrl == nil)
     }
 
     @Test("playbackVOD builds the right GET path")

@@ -34,13 +34,14 @@ public struct WorkerEndpoints: Sendable {
         jsonPost("/report", body: body)
     }
 
-    /// The live playback request; `.hyper` asks the worker for Hyper Low Latency playlists.
-    public func playbackLive(login: String, latency: LiveLatency = .standard) -> HTTPRequest {
-        let path = "/playback/\(escape(login))"
-        guard latency == .hyper, let url = QueryEncoder.url(self.path(path), items: [("latency", latency.rawValue)]) else {
-            return HTTPRequest(method: .get, url: url(for: path))
-        }
-        return HTTPRequest(method: .get, url: url)
+    public func playbackLive(login: String) -> HTTPRequest {
+        HTTPRequest(method: .get, url: url(for: "/playback/\(escape(login))"))
+    }
+
+    /// A Founding Member's live playback request, which also asks for the session's Hyper Low Latency link with the
+    /// supporter purchase as proof.
+    public func playbackLive(login: String, purchaseProof: String) -> HTTPRequest {
+        jsonPost("/playback/\(escape(login))", body: WorkerAPI.HyperPlaybackRequest(signedTransaction: purchaseProof))
     }
 
     public func playbackVOD(id: String) -> HTTPRequest {

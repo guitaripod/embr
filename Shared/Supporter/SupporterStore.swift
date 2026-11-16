@@ -466,6 +466,12 @@ final class SupporterStore {
         changes.send()
     }
 
+    /// The proof of the supporter purchase a live playback request carries, for the worker to hand over the session's
+    /// Hyper Low Latency link; nil on a device that holds no such purchase.
+    static func purchaseProof() async -> String? {
+        await currentTransactionJWS()
+    }
+
     /// The signed transaction StoreKit holds for the supporter purchase on this device: what the worker verifies with
     /// Apple's certificates before it shows a badge.
     private static func currentTransactionJWS() async -> String? {

@@ -1,8 +1,9 @@
 import Combine
 import UIKit
 
-/// What Hyper Low Latency does and costs, opened from its Experimental badge in Settings and its Hyper badge on the
-/// player, with the switch that turns it on and off.
+/// What Hyper Low Latency does and costs, opened from its Experimental badge in Settings, its Hyper badge on the
+/// player and its card on Founding Member, with the switch that turns it on and off for a Founding Member and the way to
+/// Founding Member for anyone else.
 @MainActor
 final class HyperLatencyInfoViewController: UIViewController {
 
@@ -39,6 +40,12 @@ final class HyperLatencyInfoViewController: UIViewController {
             body: String(localized: "With less video loaded ahead, a weak or busy connection pauses sooner. Turn Hyper Low Latency off if a stream keeps buffering.")
         ),
         Topic(
+            symbol: "flame.fill",
+            tint: .systemOrange,
+            title: String(localized: "Comes with Founding Member"),
+            body: String(localized: "Each Hyper viewer costs Embr's server about twice as much as a standard one, so Hyper Low Latency comes with Founding Member, a one-time purchase.")
+        ),
+        Topic(
             symbol: "flask.fill",
             tint: .systemTeal,
             title: String(localized: "An experiment"),
@@ -47,13 +54,17 @@ final class HyperLatencyInfoViewController: UIViewController {
     ]
 
     private let store: SettingsStore
+    private let supporter: SupporterStore
     private let toggle = UISwitch()
+    private let accessSlot = UIStackView()
+    private var showsSwitch: Bool?
     private var bars: [(empty: NSLayoutConstraint, full: NSLayoutConstraint)] = []
     private var barsShown = false
     private var cancellables = Set<AnyCancellable>()
 
-    init(store: SettingsStore = .shared) {
+    init(store: SettingsStore = .shared, supporter: SupporterStore = .shared) {
         self.store = store
+        self.supporter = supporter
         super.init(nibName: nil, bundle: nil)
         if let sheet = sheetPresentationController {
             sheet.detents = [.medium(), .large()]
@@ -69,14 +80,10 @@ final class HyperLatencyInfoViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = Theme.background
         build()
-        store.changes
-            .map(\.hyperLowLatencyEnabled)
-            .removeDuplicates()
+        store.changes.map { _ in () }
+            .merge(with: supporter.changes)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] on in
-                guard let self, self.toggle.isOn != on else { return }
-                self.toggle.setOn(on, animated: true)
-            }
+            .sink { [weak self] in self?.renderAccess() }
             .store(in: &cancellables)
     }
 
@@ -93,7 +100,9 @@ final class HyperLatencyInfoViewController: UIViewController {
         scroll.alwaysBounceVertical = true
         view.addSubview(scroll)
 
-        let stack = UIStackView(arrangedSubviews: [makeHeader(), makeComparison(), makeToggleCard()])
+        accessSlot.axis = .vertical
+        renderAccess()
+        let stack = UIStackView(arrangedSubviews: [makeHeader(), makeComparison(), accessSlot])
         stack.axis = .vertical
         stack.spacing = 14
         stack.setCustomSpacing(24, after: stack.arrangedSubviews[0])
@@ -257,6 +266,61 @@ final class HyperLatencyInfoViewController: UIViewController {
         }
     }
 
+    /// The switch for a Founding Member, and for anyone else the offer it comes with; drawn again when either changes.
+    private func renderAccess() {
+        let member = supporter.isSupporter
+        let on = member && store.current.hyperLowLatencyEnabled
+        if toggle.isOn != on { toggle.setOn(on, animated: view.window != nil) }
+        guard showsSwitch != member else { return }
+        showsSwitch = member
+        accessSlot.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        accessSlot.addArrangedSubview(member ? makeToggleCard() : makeOfferCard())
+    }
+
+    /// What a viewer without Founding Member sees where the switch would be: what Hyper comes with, and the way there.
+    private func makeOfferCard() -> UIView {
+        let title = UILabel()
+        title.text = String(localized: "Comes with Founding Member")
+        title.font = .preferredFont(forTextStyle: .body).withWeight(.semibold)
+        title.adjustsFontForContentSizeCategory = true
+        title.textColor = Theme.primaryText
+        title.numberOfLines = 0
+
+        let detail = UILabel()
+        detail.text = String(localized: "A one-time purchase that also brings themes, app icons, chat fonts and a badge everyone sees.")
+        detail.font = .preferredFont(forTextStyle: .footnote)
+        detail.adjustsFontForContentSizeCategory = true
+        detail.textColor = Theme.secondaryText
+        detail.numberOfLines = 0
+
+        var config = UIButton.Configuration.filled()
+        var label = AttributedString(String(localized: "See Founding Member"))
+        label.font = UIFont.preferredFont(forTextStyle: .headline)
+        config.attributedTitle = label
+        config.image = UIImage(systemName: "flame.fill")
+        config.imagePadding = 6
+        config.baseBackgroundColor = ExperimentalBadge.colors[0]
+        config.baseForegroundColor = .white
+        config.cornerStyle = .large
+        let button = UIButton(configuration: config)
+        button.addAction(UIAction { [weak self] _ in self?.presentFoundingMember() }, for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [title, detail, button])
+        stack.axis = .vertical
+        stack.spacing = 4
+        stack.setCustomSpacing(14, after: detail)
+        return card(around: stack)
+    }
+
+    private func presentFoundingMember() {
+        let page = SupporterViewController()
+        let navigation = UINavigationController(rootViewController: page)
+        page.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak navigation] _ in
+            navigation?.dismiss(animated: true)
+        })
+        present(navigation, animated: true)
+    }
+
     private func makeToggleCard() -> UIView {
         let title = UILabel()
         title.text = String(localized: "Hyper Low Latency")
@@ -278,7 +342,7 @@ final class HyperLatencyInfoViewController: UIViewController {
         text.axis = .vertical
         text.spacing = 2
 
-        toggle.isOn = store.current.hyperLowLatencyEnabled
+        toggle.isOn = supporter.isSupporter && store.current.hyperLowLatencyEnabled
         toggle.onTintColor = ExperimentalBadge.colors[0]
         toggle.accessibilityLabel = String(localized: "Hyper Low Latency")
         toggle.setContentHuggingPriority(.required, for: .horizontal)

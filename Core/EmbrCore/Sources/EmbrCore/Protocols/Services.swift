@@ -59,13 +59,14 @@ public protocol EmoteCataloging: Sendable {
 }
 
 public protocol PlaybackResolving: Sendable {
-    func resolveLive(channelLogin: String, latency: LiveLatency) async throws -> PlaybackResolution
+    /// A live stream; with a Founding Member's purchase proof the resolution also carries the Hyper Low Latency link.
+    func resolveLive(channelLogin: String, hyperProof: String?) async throws -> PlaybackResolution
     func resolveVOD(videoID: String) async throws -> PlaybackResolution
 }
 
 extension PlaybackResolving {
     public func resolveLive(channelLogin: String) async throws -> PlaybackResolution {
-        try await resolveLive(channelLogin: channelLogin, latency: .standard)
+        try await resolveLive(channelLogin: channelLogin, hyperProof: nil)
     }
 }
 

@@ -16,8 +16,11 @@ actor PlaybackResolver: PlaybackResolving {
         self.endpoints = endpoints
     }
 
-    func resolveLive(channelLogin: String, latency: LiveLatency) async throws -> PlaybackResolution {
-        try await resolve(request: endpoints.playbackLive(login: channelLogin, latency: latency), label: channelLogin)
+    func resolveLive(channelLogin: String, hyperProof: String?) async throws -> PlaybackResolution {
+        guard let hyperProof else {
+            return try await resolve(request: endpoints.playbackLive(login: channelLogin), label: channelLogin)
+        }
+        return try await resolve(request: endpoints.playbackLive(login: channelLogin, purchaseProof: hyperProof), label: channelLogin)
     }
 
     func resolveVOD(videoID: String) async throws -> PlaybackResolution {
@@ -38,11 +41,12 @@ actor PlaybackResolver: PlaybackResolving {
         guard let url = URL(string: decoded.url) else {
             throw APIError.decoding("Invalid playback URL: \(decoded.url)")
         }
-        MidgarLog.info("Resolved playback for \(label)", category: .playback)
+        MidgarLog.info("Resolved playback for \(label)\(decoded.hyper.map { ", hyper \($0)" } ?? "")", category: .playback)
         return PlaybackResolution(
             masterPlaylistURL: url,
             qualities: [],
-            expiresAt: decoded.expiresAt.map { Date(timeIntervalSince1970: $0) }
+            expiresAt: decoded.expiresAt.map { Date(timeIntervalSince1970: $0) },
+            hyperPlaylistURL: decoded.hyperUrl.flatMap(URL.init(string:))
         )
     }
 }

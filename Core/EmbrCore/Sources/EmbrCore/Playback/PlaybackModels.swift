@@ -1,14 +1,44 @@
 import Foundation
 
 public struct PlaybackResolution: Sendable, Equatable {
+    /// The master playlist to play.
     public let masterPlaylistURL: URL
     public let qualities: [StreamQuality]
     public let expiresAt: Date?
+    /// The session's master in each latency mode: the standard one always, the Hyper one only when the worker handed
+    /// it to a Founding Member.
+    public let standardPlaylistURL: URL
+    public let hyperPlaylistURL: URL?
 
-    public init(masterPlaylistURL: URL, qualities: [StreamQuality] = [], expiresAt: Date? = nil) {
+    public init(masterPlaylistURL: URL, qualities: [StreamQuality] = [], expiresAt: Date? = nil, hyperPlaylistURL: URL? = nil) {
         self.masterPlaylistURL = masterPlaylistURL
         self.qualities = qualities
         self.expiresAt = expiresAt
+        self.standardPlaylistURL = masterPlaylistURL
+        self.hyperPlaylistURL = hyperPlaylistURL
+    }
+
+    private init(playing: URL, standard: URL, hyper: URL?, qualities: [StreamQuality], expiresAt: Date?) {
+        self.masterPlaylistURL = playing
+        self.qualities = qualities
+        self.expiresAt = expiresAt
+        self.standardPlaylistURL = standard
+        self.hyperPlaylistURL = hyper
+    }
+
+    /// Whether this session can play in Hyper Low Latency.
+    public var offersHyper: Bool { hyperPlaylistURL != nil }
+
+    /// The latency mode the playing master is in.
+    public var latency: LiveLatency {
+        hyperPlaylistURL != nil && masterPlaylistURL == hyperPlaylistURL ? .hyper : .standard
+    }
+
+    /// The same Twitch session in another latency mode, so a switch brings no fresh preroll; standard when the
+    /// session offers no Hyper link.
+    public func withLatency(_ latency: LiveLatency) -> PlaybackResolution {
+        let playing = latency == .hyper ? (hyperPlaylistURL ?? standardPlaylistURL) : standardPlaylistURL
+        return PlaybackResolution(playing: playing, standard: standardPlaylistURL, hyper: hyperPlaylistURL, qualities: qualities, expiresAt: expiresAt)
     }
 }
 

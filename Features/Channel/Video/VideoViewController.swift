@@ -141,13 +141,23 @@ final class VideoViewController: UIViewController {
     var externalRoute: ExternalRoute?
     var externalRouteEndWork: DispatchWorkItem?
 
+    /// Follows the Hyper switch in Settings and the Founding Member purchase it comes with.
     private func observeLatencySetting() {
-        store.changes
-            .map(\.liveLatency)
-            .removeDuplicates()
+        store.changes.map { _ in () }
+            .merge(with: SupporterStore.shared.changes)
             .receive(on: DispatchQueue.main)
+            .compactMap { [weak self] in self?.requestedLatency }
+            .removeDuplicates()
             .sink { [weak self] latency in self?.switchLatency(to: latency) }
             .store(in: &cancellables)
+    }
+
+    /// Resolves the stream again for a Founding Member who turned Hyper on while playing a session resolved without
+    /// its Hyper link: a new Twitch session, since the old one cannot gain one.
+    func resolveAgainForHyper() {
+        guard !isResolving else { return }
+        MidgarLog.info("live latency -> hyper needs a new session", category: .playback)
+        reload(preservingPosition: false)
     }
 
     private func observeLifecycle() {
@@ -823,14 +833,14 @@ final class VideoViewController: UIViewController {
         isResolving = true
         resolveGeneration += 1
         let generation = resolveGeneration
-        let latency = requestedLatency
+        let wantsHyperLink = wantsHyperLink
         resolveTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let resolved = try await self.resolve(latency: latency)
+                let resolved = try await self.resolve(wantsHyperLink: wantsHyperLink)
                 if Task.isCancelled || generation != self.resolveGeneration { return }
                 self.isResolving = false
-                let current = self.requestedLatency
+                let current = self.effectiveLatency(for: resolved)
                 let resolution = self.inLatency(resolved, current)
                 self.lastResolution = resolution
                 self.playingLatency = current
@@ -869,10 +879,11 @@ final class VideoViewController: UIViewController {
         return String(localized: "This content isn't available right now.")
     }
 
-    private func resolve(latency: LiveLatency) async throws -> PlaybackResolution {
+    private func resolve(wantsHyperLink: Bool) async throws -> PlaybackResolution {
         switch source {
         case .live(let login):
-            return try await resolver.resolveLive(channelLogin: login, latency: latency)
+            let proof = wantsHyperLink ? await SupporterStore.purchaseProof() : nil
+            return try await resolver.resolveLive(channelLogin: login, hyperProof: proof)
         case .vod(let id):
             return try await resolver.resolveVOD(videoID: id)
         case .clip(let url):

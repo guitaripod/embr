@@ -16,7 +16,7 @@ enum SupporterCopy {
         #if os(tvOS)
         String(localized: "Themes, accent colors, chat fonts and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours. Try them on below; Studio never needs any of it.")
         #else
-        String(localized: "Themes, accent colors, chat fonts, app icons and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours. Try them on below; watching never needs any of it.")
+        String(localized: "Themes, accent colors, chat fonts, app icons and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours, plus the experimental Hyper Low Latency. Try the looks on below; watching stays free.")
         #endif
     }
 

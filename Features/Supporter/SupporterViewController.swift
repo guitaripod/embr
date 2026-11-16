@@ -101,10 +101,12 @@ final class SupporterViewController: UIViewController {
         restoreButton.configuration?.title = String(localized: "Restore Purchase")
         restoreButton.addAction(UIAction { [weak self] _ in self?.restore() }, for: .primaryActionTriggered)
 
-        [flame, titleLabel, bodyLabel, preview, badgeLabel, badgeRetry, controls, restoreButton].forEach(stack.addArrangedSubview)
+        let hyper = makeHyperPerk()
+        [flame, titleLabel, bodyLabel, hyper, preview, badgeLabel, badgeRetry, controls, restoreButton].forEach(stack.addArrangedSubview)
         stack.setCustomSpacing(10, after: flame)
         stack.setCustomSpacing(8, after: titleLabel)
-        stack.setCustomSpacing(22, after: bodyLabel)
+        stack.setCustomSpacing(18, after: bodyLabel)
+        stack.setCustomSpacing(22, after: hyper)
         stack.setCustomSpacing(6, after: preview)
         stack.setCustomSpacing(28, after: badgeRetry)
         stack.setCustomSpacing(28, after: controls)
@@ -121,6 +123,66 @@ final class SupporterViewController: UIViewController {
             stack.widthAnchor.constraint(lessThanOrEqualToConstant: 600),
             stack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).withPriority(.defaultHigh),
         ])
+    }
+
+    /// Hyper Low Latency, the perk that comes with Founding Member besides the looks; tapping it opens what it does.
+    private func makeHyperPerk() -> UIView {
+        let title = UILabel()
+        title.text = String(localized: "Hyper Low Latency")
+        title.font = .preferredFont(forTextStyle: .headline)
+        title.adjustsFontForContentSizeCategory = true
+        title.textColor = Theme.primaryText
+        title.numberOfLines = 0
+
+        let badge = ExperimentalBadge(style: .experimental)
+        badge.isUserInteractionEnabled = false
+
+        let detail = UILabel()
+        detail.text = String(localized: "Live streams about 6 to 7 seconds behind the streamer instead of about 10.")
+        detail.font = .preferredFont(forTextStyle: .subheadline)
+        detail.adjustsFontForContentSizeCategory = true
+        detail.textColor = Theme.secondaryText
+        detail.numberOfLines = 0
+
+        let bolt = UIImageView(image: UIImage(systemName: "bolt.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold)))
+        bolt.tintColor = ExperimentalBadge.colors[0]
+        bolt.contentMode = .center
+        bolt.setContentHuggingPriority(.required, for: .horizontal)
+
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(textStyle: .footnote, scale: .medium)))
+        chevron.tintColor = Theme.secondaryText
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+
+        let text = UIStackView(arrangedSubviews: [title, badge, detail])
+        text.axis = .vertical
+        text.alignment = .leading
+        text.spacing = 5
+
+        let row = UIStackView(arrangedSubviews: [bolt, text, chevron])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 14
+        row.isUserInteractionEnabled = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+
+        let card = UIControl()
+        card.backgroundColor = Theme.surface
+        card.layer.cornerRadius = 16
+        card.layer.cornerCurve = .continuous
+        card.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+            row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14),
+            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+        ])
+        card.isAccessibilityElement = true
+        card.accessibilityTraits = .button
+        card.accessibilityLabel = "\(String(localized: "Hyper Low Latency")), \(String(localized: "Experimental")). \(detail.text ?? "")"
+        card.addAction(UIAction { [weak self] _ in
+            self?.present(HyperLatencyInfoViewController(), animated: true)
+        }, for: .touchUpInside)
+        return card
     }
 
     /// The purchase stays in reach while someone scrolls through the looks.

@@ -3,8 +3,8 @@ import Foundation
 /// How close to the broadcast a live stream plays, which the worker shapes its playlists for.
 ///
 /// `standard` is every viewer's: about 10 seconds behind the streamer. `hyper` is the experimental Hyper Low Latency
-/// mode: the worker also lists Twitch's still-growing low-latency segments, about 6 to 7.5 seconds behind on channels
-/// with Twitch's low latency on. It holds only on one variant at a time, because AVPlayer's adaptive switching reads
+/// mode, a Founding Member perk the worker enforces: it also lists Twitch's still-growing low-latency segments, about 6
+/// to 7.5 seconds behind on channels with Twitch's low latency on. It holds only on one variant at a time, because AVPlayer's adaptive switching reads
 /// the growing segments as a slow network, so the player pins a quality in this mode.
 public nonisolated enum LiveLatency: String, Sendable, CaseIterable {
     case standard
@@ -37,19 +37,5 @@ public nonisolated enum LiveLatency: String, Sendable, CaseIterable {
 
     private static func rank(_ quality: StreamQuality) -> Int {
         quality.bandwidth ?? (height(of: quality) ?? 0)
-    }
-}
-
-extension PlaybackResolution {
-    /// The same Twitch session in another latency mode: the worker's master URL with `latency=hyper` for `.hyper` and
-    /// without it for `.standard`, the rest of the URL kept byte for byte. Switching this way keeps Twitch's session,
-    /// so it brings no fresh preroll.
-    public func withLatency(_ latency: LiveLatency) -> PlaybackResolution {
-        guard var components = URLComponents(url: masterPlaylistURL, resolvingAgainstBaseURL: false) else { return self }
-        var items = (components.percentEncodedQueryItems ?? []).filter { $0.name != "latency" }
-        if latency == .hyper { items.append(URLQueryItem(name: "latency", value: latency.rawValue)) }
-        components.percentEncodedQueryItems = items.isEmpty ? nil : items
-        guard let url = components.url else { return self }
-        return PlaybackResolution(masterPlaylistURL: url, qualities: qualities, expiresAt: expiresAt)
     }
 }

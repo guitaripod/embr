@@ -320,25 +320,40 @@ final class SettingsViewController: SettingsPageViewController {
                 toggle("backgroundAudio", String(localized: "Background Audio"), settings.backgroundAudio ?? true) { $0.backgroundAudio = $1 },
                 toggle("keepScreenAwake", String(localized: "Keep Screen Awake"), settings.keepScreenAwake) { $0.keepScreenAwake = $1 },
             ]),
-            SettingsSection(id: "video.latency", header: String(localized: "Live Latency"), footer: String(localized: "Plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more."), items: [
+            SettingsSection(id: "video.latency", header: String(localized: "Live Latency"), footer: String(localized: "A Founding Member perk: plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more."), items: [
                 hyperLatencyItem(settings),
             ]),
         ]
     }
 
+    /// Hyper Low Latency's row. It is a Founding Member perk: for anyone else the switch stays off and turning it on
+    /// opens Founding Member instead.
     private func hyperLatencyItem(_ settings: Settings) -> SettingsItem {
         let store = store
+        let member = SupporterStore.shared.isSupporter
         return SettingsItem(
             id: "hyperLowLatency",
             title: String(localized: "Hyper Low Latency"),
-            keywords: [String(localized: "Latency"), String(localized: "Delay"), String(localized: "Experimental")],
+            subtitle: member ? nil : String(localized: "Comes with Founding Member"),
+            keywords: [String(localized: "Latency"), String(localized: "Delay"), String(localized: "Experimental"), String(localized: "Founding Member")],
             badge: SettingsBadge(style: .experimental) { presenter in
                 presenter.present(HyperLatencyInfoViewController(store: store), animated: true)
             },
-            kind: .toggle(isOn: settings.hyperLowLatencyEnabled) { on in
-                store.update { $0.hyperLowLatency = on }
+            kind: .toggle(isOn: member && settings.hyperLowLatencyEnabled) { [weak self] on in
+                guard on, !SupporterStore.shared.isSupporter else {
+                    store.update { $0.hyperLowLatency = on }
+                    return
+                }
+                self?.offerFoundingMemberForHyper()
             }
         )
+    }
+
+    /// Puts the switch back and opens Founding Member, which Hyper Low Latency comes with.
+    private func offerFoundingMemberForHyper() {
+        refresh.send()
+        guard let presenter = navigationController?.topViewController else { return }
+        push(SupporterViewController(), from: presenter)
     }
 
     private func safetySections() -> [SettingsSection] {
