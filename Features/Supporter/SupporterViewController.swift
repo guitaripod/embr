@@ -138,7 +138,7 @@ final class SupporterViewController: UIViewController {
         badge.isUserInteractionEnabled = false
 
         let detail = UILabel()
-        detail.text = String(localized: "Live streams about 6 to 7 seconds behind the streamer instead of about 10.")
+        detail.text = String(localized: "Live streams as little as 3 seconds behind the streamer instead of about 10.")
         detail.font = .preferredFont(forTextStyle: .subheadline)
         detail.adjustsFontForContentSizeCategory = true
         detail.textColor = Theme.secondaryText

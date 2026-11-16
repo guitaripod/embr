@@ -187,8 +187,8 @@ final class HyperLatencyInfoViewController: UIViewController {
         )
         let hyper = makeBar(
             title: String(localized: "Hyper", comment: "Latency mode name"),
-            value: String(localized: "about 6–7 s", comment: "Seconds behind the streamer in Hyper Low Latency"),
-            fraction: 6.5 / scale,
+            value: String(localized: "as little as 3 s", comment: "Seconds behind the streamer in Hyper Low Latency, at its best"),
+            fraction: 3.2 / scale,
             gradient: ExperimentalBadge.colors
         )
 
@@ -197,7 +197,7 @@ final class HyperLatencyInfoViewController: UIViewController {
         stack.spacing = 12
         stack.setCustomSpacing(14, after: heading)
         stack.isAccessibilityElement = true
-        stack.accessibilityLabel = String(localized: "Standard plays about 10 seconds behind the streamer, Hyper about 6 to 7.")
+        stack.accessibilityLabel = String(localized: "Standard plays about 10 seconds behind the streamer, Hyper as little as 3.")
         return card(around: stack)
     }
 

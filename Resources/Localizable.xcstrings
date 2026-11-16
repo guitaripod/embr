@@ -85297,196 +85297,6 @@
         }
       }
     },
-    "about 6–7 s": {
-      "comment": "Bar chart value: seconds behind the streamer in Hyper Low Latency; keep the en dash range",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ca. 6–7 s"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "etwa 6–7 s"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "unos 6–7 s"
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "noin 6–7 s"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "environ 6–7 s"
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "um 6–7 s"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "circa 6–7 s"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "約6～7秒"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "약 6–7초"
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ca. 6–7 s"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ok. 6–7 s"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "cerca de 6–7 s"
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ca 6–7 s"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "约 6–7 秒"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "約 6–7 秒"
-          }
-        }
-      }
-    },
-    "Standard plays about 10 seconds behind the streamer, Hyper about 6 to 7.": {
-      "comment": "VoiceOver description of the bar chart",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard afspiller ca. 10 sekunder efter streameren, Hyper ca. 6 til 7."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard spielt etwa 10 Sekunden hinter dem Streamer ab, Hyper etwa 6 bis 7."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estándar reproduce unos 10 segundos por detrás del streamer, Hyper unos 6 a 7."
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oletus toistaa noin 10 sekuntia striimaajasta jäljessä, Hyper noin 6–7 sekuntia."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard lit avec environ 10 secondes de retard sur le streamer, Hyper environ 6 à 7."
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Staðlað spilar um 10 sekúndum á eftir straumaranum, Hyper um 6 til 7."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard riproduce con circa 10 secondi di ritardo rispetto allo streamer, Hyper circa 6-7."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標準は配信者より約10秒遅れで再生し、Hyperは約6～7秒遅れです。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "표준은 스트리머보다 약 10초 늦게 재생하고, Hyper는 약 6–7초 늦게 재생합니다."
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard spiller av ca. 10 sekunder etter streameren, Hyper ca. 6 til 7."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standardowy odtwarza z opóźnieniem około 10 sekund względem streamera, Hyper około 6–7."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Padrão reproduz com cerca de 10 segundos de atraso em relação ao streamer, Hyper cerca de 6 a 7."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Standard spelar upp ca 10 sekunder efter streamaren, Hyper ca 6 till 7."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "标准模式比主播慢约 10 秒，Hyper 模式慢约 6 到 7 秒。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "標準模式比主播慢約 10 秒，Hyper 模式慢約 6 到 7 秒。"
-          }
-        }
-      }
-    },
     "Changes the stream that's playing right away.": {
       "comment": "Detail under the Hyper Low Latency switch on its sheet",
       "localizations": {
@@ -85768,101 +85578,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "包含在創始成員中"
-          }
-        }
-      }
-    },
-    "A Founding Member perk: plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more.": {
-      "comment": "Settings footer under the Hyper Low Latency switch; 'Experimental' is the badge next to the setting",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En fordel for stiftende medlemmer: Afspiller live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10, med én kvalitet ad gangen. Tryk på Eksperimentel for at læse mere."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ein Vorteil für Gründungsmitglieder: Spielt Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10 ab, jeweils in einer Qualitätsstufe. Tippe auf Experimentell, um mehr zu erfahren."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una ventaja para miembros fundadores: Reproduce transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10, con una sola calidad a la vez. Toca Experimental para leer más."
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perustajajäsenen etu: Toistaa suoria lähetyksiä noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan, yhdellä laatutasolla kerrallaan. Napauta Kokeellinen lukeaksesi lisää."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un avantage des membres fondateurs : Lit les directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10, avec une seule qualité à la fois. Touchez Expérimental pour en savoir plus."
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fríðindi stofnfélaga: Spilar beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10, eina gæðastillingu í einu. Pikkaðu á Tilraunakennt til að lesa meira."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un vantaggio per i membri fondatori: Riproduce le dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10, una qualità alla volta. Tocca Sperimentale per saperne di più."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "創設メンバー特典：ライブ配信を配信者より約6～7秒遅れで再生します（通常は約10秒）。画質は一度に1つだけです。「実験的」をタップすると詳細を確認できます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "창립 멤버 혜택: 라이브 스트림을 스트리머보다 약 6–7초 늦게 재생합니다(일반 모드는 약 10초). 화질은 한 번에 하나만 적용됩니다. 실험적을 탭하면 자세히 볼 수 있습니다."
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En fordel for stiftende medlemmer: Spiller direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10, med én kvalitet om gangen. Trykk på Eksperimentell for å lese mer."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przywilej Członka Założyciela: Odtwarza transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10, z jedną jakością naraz. Dotknij „Eksperymentalny”, aby przeczytać więcej."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vantagem para Membros Fundadores: Reproduz transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10, com uma qualidade por vez. Toque em Experimental para saber mais."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En fördel för grundande medlemmar: Spelar liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10, med en kvalitet i taget. Tryck på Experimentell för att läsa mer."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "创始成员专享：直播画面比主播慢约 6 到 7 秒，而不是约 10 秒，且一次只能使用一种画质。点按“实验性”了解更多。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "創始成員專屬：直播畫面比主播慢約 6 到 7 秒，而非約 10 秒，且一次只能使用一種畫質。點按「實驗性」了解更多。"
           }
         }
       }
@@ -86152,101 +85867,6 @@
         }
       }
     },
-    "Live streams about 6 to 7 seconds behind the streamer instead of about 10.": {
-      "comment": "Card on the Founding Member page describing the Hyper Low Latency perk",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live-streams ca. 6 til 7 sekunder efter streameren i stedet for ca. 10."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live-Streams etwa 6 bis 7 Sekunden hinter dem Streamer statt etwa 10."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transmisiones en directo unos 6 a 7 segundos por detrás del streamer en lugar de unos 10."
-          }
-        },
-        "fi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suorat lähetykset noin 6–7 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Directs avec environ 6 à 7 secondes de retard sur le streamer au lieu d'environ 10."
-          }
-        },
-        "is": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beinar útsendingar um 6 til 7 sekúndum á eftir straumaranum í stað um 10."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dirette con circa 6-7 secondi di ritardo rispetto allo streamer invece di circa 10."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ライブ配信が配信者より約10秒ではなく約6～7秒遅れになります。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "라이브 스트림이 스트리머보다 약 10초가 아닌 6–7초 늦게 재생됩니다."
-          }
-        },
-        "nb": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Direktesendinger omtrent 6 til 7 sekunder etter streameren i stedet for omtrent 10."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transmisje na żywo z opóźnieniem około 6–7 sekund względem streamera zamiast około 10."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transmissões ao vivo com cerca de 6 a 7 segundos de atraso em relação ao streamer, em vez de cerca de 10."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liveströmmar cirka 6 till 7 sekunder efter streamaren i stället för cirka 10."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直播画面比主播慢约 6 到 7 秒，而不是约 10 秒。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直播畫面比主播慢約 6 到 7 秒，而非約 10 秒。"
-          }
-        }
-      }
-    },
     "Themes, accent colors, chat fonts, app icons and a flame badge everyone in Embr sees beside your name, with a founding number that stays yours, plus the experimental Hyper Low Latency. Try the looks on below; watching stays free.": {
       "comment": "Founding Member pitch on iPhone and iPad for someone who has not bought it",
       "localizations": {
@@ -86338,6 +85958,386 @@
           "stringUnit": {
             "state": "translated",
             "value": "主題、強調色、聊天字體、App 圖示，以及 Embr 中所有人都能在你名字旁看到的火焰徽章，還有永久屬於你的創始編號，以及實驗性的 Hyper 低延遲。可以在下方試用這些外觀；觀看永遠免費。"
+          }
+        }
+      }
+    },
+    "as little as 3 s": {
+      "comment": "Bar chart value: seconds behind the streamer in Hyper Low Latency, at its best; 's' abbreviates seconds",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "helt ned til 3 s"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "schon ab 3 s"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "desde 3 s"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "jopa vain 3 s"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dès 3 s"
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "allt niður í 3 s"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a partire da 3 s"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最短3秒"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최소 3초"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "helt ned til 3 s"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nawet 3 s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "a partir de 3 s"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "så lite som 3 s"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低至 3 秒"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "低至 3 秒"
+          }
+        }
+      }
+    },
+    "Standard plays about 10 seconds behind the streamer, Hyper as little as 3.": {
+      "comment": "VoiceOver description of the latency bar chart",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard afspiller ca. 10 sekunder efter streameren, Hyper helt ned til 3."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spielt etwa 10 Sekunden hinter dem Streamer ab, Hyper schon ab 3."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estándar reproduce unos 10 segundos por detrás del streamer, Hyper desde 3."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oletus toistaa noin 10 sekuntia striimaajasta jäljessä, Hyper jopa vain 3 sekuntia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard lit avec environ 10 secondes de retard sur le streamer, Hyper dès 3."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staðlað spilar um 10 sekúndum á eftir straumaranum, Hyper allt niður í 3."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard riproduce con circa 10 secondi di ritardo rispetto allo streamer, Hyper a partire da 3."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準は配信者より約10秒遅れで再生し、Hyperは最短3秒遅れです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "표준은 스트리머보다 약 10초 늦게 재생하고, Hyper는 최소 3초 늦게 재생합니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spiller av ca. 10 sekunder etter streameren, Hyper helt ned til 3."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standardowy odtwarza z opóźnieniem około 10 sekund względem streamera, Hyper nawet 3."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padrão reproduz com cerca de 10 segundos de atraso em relação ao streamer, Hyper a partir de 3."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard spelar upp ca 10 sekunder efter streamaren, Hyper så lite som 3."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标准模式比主播慢约 10 秒，Hyper 模式低至 3 秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準模式比主播慢約 10 秒，Hyper 模式低至 3 秒。"
+          }
+        }
+      }
+    },
+    "A Founding Member perk: plays live streams as little as 3 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more.": {
+      "comment": "Settings footer under the Hyper Low Latency switch",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fordel for stiftende medlemmer: Afspiller live-streams helt ned til 3 sekunder efter streameren i stedet for ca. 10, med én kvalitet ad gangen. Tryk på Eksperimentel for at læse mere."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Vorteil für Gründungsmitglieder: Spielt Live-Streams schon ab 3 Sekunden hinter dem Streamer statt etwa 10 ab, jeweils in einer Qualitätsstufe. Tippe auf Experimentell, um mehr zu erfahren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una ventaja para miembros fundadores: Reproduce transmisiones en directo desde 3 segundos por detrás del streamer en lugar de unos 10, con una sola calidad a la vez. Toca Experimental para leer más."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perustajajäsenen etu: Toistaa suoria lähetyksiä jopa vain 3 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan, yhdellä laatutasolla kerrallaan. Napauta Kokeellinen lukeaksesi lisää."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un avantage des membres fondateurs : Lit les directs dès 3 secondes derrière le streamer au lieu d'environ 10, avec une seule qualité à la fois. Touchez Expérimental pour en savoir plus."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fríðindi stofnfélaga: Spilar beinar útsendingar allt niður í 3 sekúndur á eftir straumaranum í stað um 10, eina gæðastillingu í einu. Pikkaðu á Tilraunakennt til að lesa meira."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un vantaggio per i membri fondatori: Riproduce le dirette a partire da 3 secondi dietro lo streamer invece di circa 10, una qualità alla volta. Tocca Sperimentale per saperne di più."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創設メンバー特典：ライブ配信を配信者より最短3秒遅れで再生します（通常は約10秒）。画質は一度に1つだけです。「実験的」をタップすると詳細を確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "창립 멤버 혜택: 라이브 스트림을 스트리머보다 최소 3초 늦게 재생합니다(일반 모드는 약 10초). 화질은 한 번에 하나만 적용됩니다. 실험적을 탭하면 자세히 볼 수 있습니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fordel for stiftende medlemmer: Spiller direktesendinger helt ned til 3 sekunder etter streameren i stedet for omtrent 10, med én kvalitet om gangen. Trykk på Eksperimentell for å lese mer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywilej Członka Założyciela: Odtwarza transmisje na żywo z opóźnieniem nawet 3 sekund względem streamera zamiast około 10, z jedną jakością naraz. Dotknij „Eksperymentalny”, aby przeczytać więcej."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vantagem para Membros Fundadores: Reproduz transmissões ao vivo com a partir de 3 segundos de atraso em relação ao streamer, em vez de cerca de 10, com uma qualidade por vez. Toque em Experimental para saber mais."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fördel för grundande medlemmar: Spelar liveströmmar så lite som 3 sekunder efter streamaren i stället för cirka 10, med en kvalitet i taget. Tryck på Experimentell för att läsa mer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创始成员专享：直播画面与主播的延迟低至 3 秒，而不是约 10 秒，且一次只能使用一种画质。点按“实验性”了解更多。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創始成員專屬：直播畫面與主播的延遲低至 3 秒，而非約 10 秒，且一次只能使用一種畫質。點按「實驗性」了解更多。"
+          }
+        }
+      }
+    },
+    "Live streams as little as 3 seconds behind the streamer instead of about 10.": {
+      "comment": "Card on the Founding Member page describing the Hyper Low Latency perk",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-streams helt ned til 3 sekunder efter streameren i stedet for ca. 10."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live-Streams schon ab 3 Sekunden hinter dem Streamer statt etwa 10."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmisiones en directo desde 3 segundos por detrás del streamer en lugar de unos 10."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suorat lähetykset jopa vain 3 sekuntia striimaajasta jäljessä noin 10 sekunnin sijaan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directs dès 3 secondes derrière le streamer au lieu d'environ 10."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beinar útsendingar allt niður í 3 sekúndur á eftir straumaranum í stað um 10."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirette a partire da 3 secondi dietro lo streamer invece di circa 10."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブ配信が配信者より約10秒ではなく最短3秒遅れになります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라이브 스트림이 스트리머보다 약 10초가 아닌 최소 3초 늦게 재생됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direktesendinger helt ned til 3 sekunder etter streameren i stedet for omtrent 10."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmisje na żywo z opóźnieniem nawet 3 sekund względem streamera zamiast około 10."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transmissões ao vivo com a partir de 3 segundos de atraso em relação ao streamer, em vez de cerca de 10."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liveströmmar så lite som 3 sekunder efter streamaren i stället för cirka 10."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播画面与主播的延迟低至 3 秒，而不是约 10 秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直播畫面與主播的延遲低至 3 秒，而非約 10 秒。"
           }
         }
       }

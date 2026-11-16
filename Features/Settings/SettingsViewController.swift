@@ -320,7 +320,7 @@ final class SettingsViewController: SettingsPageViewController {
                 toggle("backgroundAudio", String(localized: "Background Audio"), settings.backgroundAudio ?? true) { $0.backgroundAudio = $1 },
                 toggle("keepScreenAwake", String(localized: "Keep Screen Awake"), settings.keepScreenAwake) { $0.keepScreenAwake = $1 },
             ]),
-            SettingsSection(id: "video.latency", header: String(localized: "Live Latency"), footer: String(localized: "A Founding Member perk: plays live streams about 6 to 7 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more."), items: [
+            SettingsSection(id: "video.latency", header: String(localized: "Live Latency"), footer: String(localized: "A Founding Member perk: plays live streams as little as 3 seconds behind the streamer instead of about 10, one quality at a time. Tap Experimental to read more."), items: [
                 hyperLatencyItem(settings),
             ]),
         ]
