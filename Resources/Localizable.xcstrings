@@ -1060,6 +1060,7 @@
       }
     },
     "%lld viewers": {
+      "comment": "VoiceOver",
       "localizations": {
         "de": {
           "variations": {
@@ -4948,7 +4949,7 @@
           }
         }
       },
-      "comment": "Tab of the player's info panel"
+      "comment": "Studio settings"
     },
     "Channel Emotes": {
       "localizations": {
@@ -5327,6 +5328,7 @@
       }
     },
     "Chat": {
+      "comment": "Studio iPhone switch\nStudio settings header",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -6079,6 +6081,7 @@
       }
     },
     "Clips": {
+      "comment": "Clip feed title",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -8717,6 +8720,7 @@
       }
     },
     "Dismiss": {
+      "comment": "Studio banner button",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -13705,7 +13709,7 @@
           }
         }
       },
-      "comment": "Badge on a live channel"
+      "comment": "Studio live badge"
     },
     "Last updated %@.": {
       "localizations": {
@@ -15400,7 +15404,7 @@
       }
     },
     "Midnight": {
-      "comment": "Theme and app icon name",
+      "comment": "App icon name\nTheme name",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -15590,6 +15594,7 @@
       }
     },
     "Mute": {
+      "comment": "Clip feed sound button",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -19354,6 +19359,7 @@
       }
     },
     "Privacy Policy": {
+      "comment": "Paywall link",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -24056,7 +24062,7 @@
       }
     },
     "Standard": {
-      "comment": "Theme and chat font name",
+      "comment": "Chat font name\nTheme name",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -25373,6 +25379,7 @@
       }
     },
     "Terms of Use": {
+      "comment": "Paywall link",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -25561,6 +25568,7 @@
       }
     },
     "This clip can't be played right now.": {
+      "comment": "Clip feed error",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -26131,6 +26139,7 @@
       }
     },
     "Try Again": {
+      "comment": "Clip feed retry button",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -26883,6 +26892,7 @@
       }
     },
     "Unmute": {
+      "comment": "Clip feed sound button",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -33087,6 +33097,7 @@
       }
     },
     "Close": {
+      "comment": "Clip feed close button\nKeyboard shortcut in the clip feed",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -33275,7 +33286,7 @@
       }
     },
     "Ember": {
-      "comment": "Accent color name",
+      "comment": "Accent color name\nTheme name",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -34690,6 +34701,7 @@
       }
     },
     "On": {
+      "comment": "Studio Pro status",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -39581,6 +39593,7 @@
       }
     },
     "More": {
+      "comment": "Clip feed button",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -45691,6 +45704,7 @@
       }
     },
     "%@ used %@": {
+      "comment": "Studio alert, a Power-up",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -53850,7 +53864,7 @@
       }
     },
     "%lld of %lld": {
-      "comment": "Studio permissions count\nStudio settings, how many permissions are granted",
+      "comment": "Studio permissions count",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -54261,7 +54275,7 @@
       }
     },
     "%lld seconds": {
-      "comment": "Studio run ad length\nStudio settings value",
+      "comment": "Studio run ad length",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -55677,7 +55691,7 @@
       }
     },
     "Ad Break Chimes": {
-      "comment": "Studio settings\nStudio settings row",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -56531,7 +56545,7 @@
       }
     },
     "Alert Sounds": {
-      "comment": "Studio settings\nStudio settings row",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -56816,7 +56830,7 @@
       }
     },
     "Alerts": {
-      "comment": "Settings section\nStudio iPhone switch\nStudio settings header",
+      "comment": "Studio iPhone switch\nStudio settings header",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -57006,7 +57020,7 @@
       }
     },
     "Announce Ad Breaks in Chat": {
-      "comment": "Studio settings\nStudio settings row",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -57956,7 +57970,7 @@
       }
     },
     "Chat Modes": {
-      "comment": "Studio chat modes sheet\nStudio menu\nStudio status line button",
+      "comment": "Studio chat modes sheet\nStudio menu",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -61086,7 +61100,7 @@
       }
     },
     "Get Studio Pro": {
-      "comment": "Studio Pro settings row\nStudio settings",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -63935,7 +63949,7 @@
       }
     },
     "My Channel": {
-      "comment": "Studio channel\nStudio settings row",
+      "comment": "Studio channel",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -64695,7 +64709,7 @@
       }
     },
     "Next stream: %@": {
-      "comment": "Studio iOS offline\nStudio offline, next stream",
+      "comment": "Studio iOS offline",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -66120,7 +66134,7 @@
       }
     },
     "Permissions": {
-      "comment": "Studio permissions page\nStudio settings\nStudio settings row",
+      "comment": "Studio permissions page\nStudio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -67450,7 +67464,7 @@
       }
     },
     "Quick Message": {
-      "comment": "Studio menu\nStudio quick messages sheet\nStudio status line button",
+      "comment": "Studio menu",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -67545,7 +67559,7 @@
       }
     },
     "Quick Messages": {
-      "comment": "Studio quick messages page\nStudio settings\nStudio settings row",
+      "comment": "Studio quick messages page\nStudio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -69349,7 +69363,7 @@
       }
     },
     "SAMPLE STREAM": {
-      "comment": "Studio sample stream badge\nStudio sample stream ribbon",
+      "comment": "Studio sample stream badge",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -70013,7 +70027,7 @@
       }
     },
     "Screen": {
-      "comment": "Settings section\nStudio settings header",
+      "comment": "Studio settings header",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -71343,7 +71357,7 @@
       }
     },
     "Show Viewer Count": {
-      "comment": "Studio settings\nStudio settings row",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -73050,7 +73064,7 @@
       }
     },
     "Studio Pro": {
-      "comment": "Settings section\nSettings, a Pro feature\nStudio settings\nStudio settings header",
+      "comment": "Studio quick message locked\nStudio settings\nStudio settings header",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -75371,7 +75385,7 @@
       }
     },
     "This Apple Account has no Studio Pro purchase.": {
-      "comment": "Paywall status\nRestore result",
+      "comment": "Paywall status",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -76114,7 +76128,7 @@
       }
     },
     "Try a Sample Stream": {
-      "comment": "Studio settings\nStudio settings row\nStudio welcome button",
+      "comment": "Studio settings",
       "localizations": {
         "da": {
           "stringUnit": {
@@ -79908,7 +79922,7 @@
       }
     },
     "Your Channel": {
-      "comment": "Settings section\nStudio settings header",
+      "comment": "Studio settings header",
       "localizations": {
         "da": {
           "stringUnit": {
