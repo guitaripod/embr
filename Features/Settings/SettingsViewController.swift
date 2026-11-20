@@ -181,7 +181,7 @@ final class SettingsViewController: SettingsPageViewController {
             icon: SettingsIcon(symbol: "flame.fill", color: .systemOrange),
             keywords: [String(localized: "Themes"), String(localized: "App Icon")],
             kind: .link(value: nil) { [weak self] presenter in
-                self?.push(SupporterViewController(), from: presenter)
+                self?.push(SupporterViewController(placement: .settings), from: presenter)
             }
         )
     }
@@ -353,7 +353,7 @@ final class SettingsViewController: SettingsPageViewController {
     private func offerFoundingMemberForHyper() {
         refresh.send()
         guard let presenter = navigationController?.topViewController else { return }
-        push(SupporterViewController(), from: presenter)
+        push(SupporterViewController(placement: .feature), from: presenter)
     }
 
     private func safetySections() -> [SettingsSection] {

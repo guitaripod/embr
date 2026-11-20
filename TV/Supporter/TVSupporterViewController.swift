@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCommerce
 
 /// Founding Member on the Apple TV. Before the purchase every look can be tried on with the remote, on this screen
 /// and in a chat preview drawn by the real chat, and the purchase keeps what was tried on. For a member the same
@@ -23,6 +24,20 @@ final class TVSupporterViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private var purchasing = false
     private var draft = SupporterLookChoice.tryOn
+    private var hasReportedShown = false
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        reportShownOnce()
+    }
+
+    /// Sends `paywall.view` once per page and only for someone who can still buy; on the Apple TV the page is opened
+    /// from Settings alone.
+    private func reportShownOnce() {
+        guard !hasReportedShown, !SupporterStore.shared.isSupporter else { return }
+        hasReportedShown = true
+        MidgarPaywallMoments.noteShown(placement: .settings)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()

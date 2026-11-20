@@ -52,6 +52,7 @@ enum ReviewPrompt {
             return
         }
         policy.notePrompted()
+        WatchOffer.shared.noteRatingAsked()
         MidgarLog.info("review prompt requested", category: .app)
         AppStore.requestReview(in: scene)
     }

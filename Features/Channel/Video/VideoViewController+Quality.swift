@@ -12,6 +12,11 @@ extension VideoViewController {
             let label = quality.isAudioOnly ? String(localized: "Audio Only") : quality.name
             sheet.addAction(qualityAction(named: label, quality: quality, isSelected: selected))
         }
+        if offersHyperLatency {
+            sheet.addAction(UIAlertAction(title: String(localized: "Hyper Low Latency"), style: .default) { [weak self] _ in
+                self?.present(HyperLatencyInfoViewController(), animated: true)
+            })
+        }
         sheet.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))
 
         if let popover = sheet.popoverPresentationController {
@@ -19,6 +24,14 @@ extension VideoViewController {
             popover.sourceRect = sourceView.bounds
         }
         present(sheet, animated: true)
+    }
+
+    /// Whether the picker ends with Hyper Low Latency's row, which opens what it does, its switch for a Founding
+    /// Member and the way to Founding Member for anyone else. It belongs to a live stream played on this device: a TV
+    /// cannot be handed Hyper's playlists.
+    private var offersHyperLatency: Bool {
+        guard case .live = source else { return false }
+        return !isPlayingExternally
     }
 
     /// Auto has its own row, and audio only would leave a TV that has the picture with none, so it is not offered then.

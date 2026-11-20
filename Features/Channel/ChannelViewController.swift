@@ -156,6 +156,7 @@ final class ChannelViewController: UIViewController {
     }
 
     private var reviewWatchWork: DispatchWorkItem?
+    private var hasCountedWatch = false
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         OrientationCoordinator.isPhone ? [.portrait, .landscapeLeft, .landscapeRight] : .all
@@ -192,6 +193,7 @@ final class ChannelViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         if isMovingFromParent {
             (tabBarController as? RootTabBarController)?.endPlayback()
+            WatchOffer.shared.offerIfDue(afterLeaving: self)
         }
         eventsPoller.stop()
         liveStatsPoller.stop()
@@ -201,11 +203,15 @@ final class ChannelViewController: UIViewController {
     /// Credits a review-prompt success once this visit has stayed on a confirmed live stream
     /// continuously for `ReviewPrompt.continuousWatchSecondsForSuccess`; leaving before then, or
     /// never getting a positive live confirmation (an offline channel, or a run of failed polls),
-    /// earns nothing.
+    /// earns nothing. The same stretch counts the stream as watched for ``WatchOffer``, once per
+    /// visit however often the viewer steps away to the channel's videos and back.
     private func scheduleReviewWatchSuccess() {
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.hasConfirmedLiveStream, !self.isStreamOffline else { return }
             ReviewPrompt.recordStreamWatched(in: self.view.window?.windowScene)
+            guard !self.hasCountedWatch else { return }
+            self.hasCountedWatch = true
+            WatchOffer.shared.noteStreamWatched(isMember: SupporterStore.shared.isSupporter)
         }
         reviewWatchWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + ReviewPrompt.continuousWatchSecondsForSuccess, execute: work)

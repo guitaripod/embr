@@ -1,12 +1,15 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCommerce
 import MidgarCore
 
 /// Founding Member on iPhone and iPad. Before the purchase it is a fitting room: every look can be tried on, shown
 /// on this screen and in a chat preview drawn by the real chat, and the purchase keeps exactly what was tried on. For a
 /// member the same controls change the app at once, with their founding number and the state of their badge.
 final class SupporterViewController: UIViewController {
+    private let placement: MidgarSignal.Placement
+    private var hasReportedShown = false
     private let scrollView = UIScrollView()
     private let stack = UIStackView()
     private let flame = UIImageView()
@@ -24,7 +27,10 @@ final class SupporterViewController: UIViewController {
     private var purchasing = false
     private var draft = SupporterLookChoice.tryOn
 
-    init() {
+    /// - Parameter placement: Where the page was opened from, as `paywall.view` reports it: `settings` for its own
+    ///   row, `feature` for Hyper Low Latency, `moment` for the offer after a watched stream.
+    init(placement: MidgarSignal.Placement) {
+        self.placement = placement
         super.init(nibName: nil, bundle: nil)
         hidesBottomBarWhenPushed = true
         navigationItem.largeTitleDisplayMode = .never
@@ -50,6 +56,20 @@ final class SupporterViewController: UIViewController {
         poseForScreenshots()
         #endif
         render()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        reportShownOnce()
+    }
+
+    /// Sends `paywall.view` with where the page was opened from, once per page and only for someone who can still
+    /// buy: for a member this page is where they change their looks, and a page pushed over it and popped again is not
+    /// a second view.
+    private func reportShownOnce() {
+        guard !hasReportedShown, !SupporterStore.shared.isSupporter else { return }
+        hasReportedShown = true
+        MidgarPaywallMoments.noteShown(placement: placement)
     }
 
     override func viewDidLayoutSubviews() {
@@ -398,6 +418,18 @@ final class SupporterViewController: UIViewController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: String(localized: "OK"), style: .default))
         present(alert, animated: true)
+    }
+}
+
+extension SupporterViewController {
+    /// The page on its own with a Close button, for the places that open it over what the viewer was doing.
+    static func sheet(placement: MidgarSignal.Placement) -> UINavigationController {
+        let page = SupporterViewController(placement: placement)
+        let navigation = UINavigationController(rootViewController: page)
+        page.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak navigation] _ in
+            navigation?.dismiss(animated: true)
+        })
+        return navigation
     }
 }
 

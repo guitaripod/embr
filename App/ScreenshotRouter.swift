@@ -136,7 +136,7 @@ enum ScreenshotRouter {
             SupporterStore.shared.seedForScreenshots(supporter: route == "supporterowned")
             tabBar.select(.settings)
             after(0.6) {
-                tabBar.settingsNavigationController.pushViewController(SupporterViewController(), animated: false)
+                tabBar.settingsNavigationController.pushViewController(SupporterViewController(placement: .settings), animated: false)
             }
         case "favorites":
             tabBar.select(.favorites)

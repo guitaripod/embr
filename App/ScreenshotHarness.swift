@@ -31,6 +31,9 @@ enum ScreenshotHarness {
     /// a capture of its badge: `-screenshotHyper 1`, read with or without a route, so a stream opened by a deep link
     /// plays it with the app's ordinary ad handling.
     static var hyperLatency: Bool { ScreenshotRouter.option("Hyper") != nil }
+    /// Makes the Founding Member offer due the moment a stream's page is left, for a capture or a check of its sheet
+    /// without the watching that earns it: `-screenshotWatchOffer 1`, with `-screenshotPopAfter <seconds>` to leave.
+    static var watchOffer: Bool { ScreenshotRouter.option("WatchOffer") != nil }
 
     /// Popular channels shown, live, in the posed Following tab. Real channels resolved
     /// live via the public API; only the "you follow these" relationship is seeded.

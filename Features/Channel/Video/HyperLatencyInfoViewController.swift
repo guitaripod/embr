@@ -313,12 +313,7 @@ final class HyperLatencyInfoViewController: UIViewController {
     }
 
     private func presentFoundingMember() {
-        let page = SupporterViewController()
-        let navigation = UINavigationController(rootViewController: page)
-        page.navigationItem.rightBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak navigation] _ in
-            navigation?.dismiss(animated: true)
-        })
-        present(navigation, animated: true)
+        present(SupporterViewController.sheet(placement: .feature), animated: true)
     }
 
     private func makeToggleCard() -> UIView {
