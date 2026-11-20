@@ -9,6 +9,9 @@ import MidgarKit
 @MainActor
 enum ScreenshotRouter {
     private static let completedOnboardingKey = "completedOnboarding"
+    /// How long the `offer` route waits before the sheet comes up, so the work of launching is over and a frame watch
+    /// measures the sheet alone.
+    private static let offerDelay: TimeInterval = 3
 
     static func option(_ name: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
@@ -27,10 +30,15 @@ enum ScreenshotRouter {
         applyAppearance()
         if DemoWorld.isActive { seedDemoState() }
         if option("Sidebar") == "shown" { tabBar.sidebar.isHidden = false }
+        if option("FrameWatch") != nil { MidgarFrameWatch.shared.start() }
         if let seconds = option("PopAfter").flatMap(Double.init) {
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak tabBar] in
+                MidgarFrameWatch.shared.report("until leaving the page")
                 tabBar?.selectedNavigationController?.popToRootViewController(animated: true)
             }
+        }
+        if let seconds = option("SnapshotAt").flatMap(Double.init) {
+            after(seconds) { snapshotWindow(of: tabBar, named: option("SnapshotName") ?? route) }
         }
         ScreenshotHarness.searchQuery = option("Query")
         ScreenshotHarness.moderates = option("Moderator") == "1"
@@ -123,9 +131,6 @@ enum ScreenshotRouter {
                     tabBar.settingsNavigationController.topViewController?.present(info, animated: false)
                 }
             }
-            if let seconds = option("SnapshotAt").flatMap(Double.init) {
-                after(seconds) { snapshotWindow(of: tabBar, named: option("SnapshotName") ?? "settings") }
-            }
         case "support":
             tabBar.select(.settings)
             after(0.6) {
@@ -138,6 +143,8 @@ enum ScreenshotRouter {
             after(0.6) {
                 tabBar.settingsNavigationController.pushViewController(SupporterViewController(placement: .settings), animated: false)
             }
+        case "offer":
+            after(Self.offerDelay) { tabBar.present(SupporterViewController.sheet(placement: .moment), animated: true) }
         case "favorites":
             tabBar.select(.favorites)
             if !DemoWorld.isActive {
@@ -281,9 +288,6 @@ enum ScreenshotRouter {
                 requestPortrait(from: tabBar, after: turn + seconds)
                 after(turn + seconds + 2) { snapshotWindow(of: tabBar, named: "turnback") }
             }
-            if let seconds = option("SnapshotAt").flatMap(Double.init) {
-                after(seconds) { snapshotWindow(of: tabBar, named: option("SnapshotName") ?? "channel") }
-            }
         default: break
         }
     }
@@ -356,16 +360,18 @@ enum ScreenshotRouter {
         }
     }
 
-    /// Draws the window into Library/Logs/<name>.png, where `devicectl ... copy from` reaches it on a phone that no
-    /// screenshot tool can.
+    /// Draws the window into Library/Logs/<name>.png, beside the log `devicectl ... copy from` brings back. The frame
+    /// watch reports the stretch up to here first and leaves the drawing out of the next one.
     private static func snapshotWindow(of tabBar: RootTabBarController, named name: String) {
         guard let window = tabBar.view.window,
               let logs = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first?.appending(path: "Logs") else { return }
+        MidgarFrameWatch.shared.report("until snapshot \(name)")
         let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
         try? image.pngData()?.write(to: logs.appending(path: "\(name).png"))
         MidgarLog.info("snapshot \(name): \(window.bounds.size)", category: .app)
+        MidgarFrameWatch.shared.disregardWhatJustRan()
     }
 
     /// Turns the window back upright, for checking what a trip to landscape leaves behind.
