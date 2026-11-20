@@ -3,7 +3,7 @@ On Twitch's login page, which Embr opens, please type the demo username and pass
 {CODE_PAGE_URL}
 Log in from the welcome screen (Connect Twitch Account) or Settings > Log In with Twitch. Browsing, watching, live chat and VOD chat replay need no login; login adds Following, sending chat and moderation.
 
-WHAT'S NEW IN 1.5.3
+WHAT'S NEW IN 1.5.4
 
 1) HYPER LOW LATENCY, an experimental perk of Founding Member: Settings > Video > Live Latency. Without Founding Member the switch stays off and opens Founding Member instead. After buying (sandbox is fine), turn it on and open any live channel: the stream plays as little as 3 seconds behind the streamer instead of about 10, at one quality at a time, and the player shows a Hyper badge beside the delay; tap the badge, or Experimental in Settings, for what the mode does and costs. Watching stays free for everyone.
 
