@@ -50,7 +50,9 @@ final class WatchOffer {
 
 extension WatchOffer {
     /// Offers Founding Member over the page the viewer comes back to, once the stream's page has gone. A back swipe
-    /// let go of half-way leaves the stream on screen and the offer for later.
+    /// let go of half-way leaves the stream on screen and the offer for later. The offer waits one more turn of the
+    /// main queue after the way back has finished, so building its page does not land on top of the work of taking
+    /// the stream's page apart: on an iPhone XS the two together held the screen for a tenth of a second.
     func offerIfDue(afterLeaving stream: UIViewController) {
         guard isMomentNow, let host = stream.tabBarController else { return }
         guard let transition = stream.transitionCoordinator else {
@@ -59,7 +61,7 @@ extension WatchOffer {
         }
         transition.animate(alongsideTransition: nil) { context in
             guard !context.isCancelled else { return }
-            self.present(over: host)
+            DispatchQueue.main.async { self.present(over: host) }
         }
     }
 
@@ -81,8 +83,20 @@ extension WatchOffer {
         guard isMomentNow, host.presentedViewController == nil, !(front is PlaybackPage),
               host.view.window?.windowScene?.activationState == .foregroundActive
         else { return }
-        noteOffered()
+        countOffer()
         host.present(SupporterViewController.sheet(placement: .moment), animated: true)
         MidgarLog.info("offered Founding Member after a watched stream", category: .supporter)
+    }
+
+    /// Counts the offer that is about to show. One posed for a capture is not counted: it must not use up one of the
+    /// three a viewer gets on the phone it was posed on.
+    private func countOffer() {
+        #if DEBUG
+        if ScreenshotHarness.watchOffer {
+            isDue = false
+            return
+        }
+        #endif
+        noteOffered()
     }
 }

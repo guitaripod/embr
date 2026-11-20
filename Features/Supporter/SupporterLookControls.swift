@@ -4,8 +4,26 @@ import EmbrCore
 /// Every look a Founding Member can pick, as rows of swatches and chips: the badge and name everyone sees, then the
 /// theme, accent, chat font and app icon. It shows a choice and reports each change; the Founding Member screen decides
 /// whether the change is tried on or kept.
+///
+/// The sections are built one per frame from the first frame on, not all at once: together they are some forty
+/// buttons, and building them in one go held the main thread of an iPhone XS for a tenth of a second before the page
+/// could open. They stand below what the page opens on, so they are in place before anyone reaches them.
 final class SupporterLookControls: UIStackView {
     var onChange: ((SupporterLookChoice) -> Void)?
+
+    private enum Section: CaseIterable {
+        case badgeAndName
+        case theme
+        case accent
+        case chatFont
+        case appIcon
+    }
+
+    private static let iconSize = CGSize(width: 60, height: 60)
+    private static let iconPlaceholder = UIGraphicsImageRenderer(size: iconSize).image { _ in }
+
+    private var unbuilt = Section.allCases
+    private var buildSteps: CADisplayLink?
 
     private var choice: SupporterLookChoice = .tryOn
     private var badgeButtons: [SupporterAccent: UIButton] = [:]
@@ -21,45 +39,66 @@ final class SupporterLookControls: UIStackView {
         super.init(frame: frame)
         axis = .vertical
         spacing = 10
-
-        addSection(String(localized: "Badge & Name"), footnote: String(localized: "Everyone watching in Embr sees your flame badge and name this way."))
-        addArrangedSubview(swatchRow(into: &badgeButtons) { [weak self] color in self?.change { $0.badgeColor = color } })
-        for (index, style) in Self.nameStyles.enumerated() {
-            nameStyle.insertSegment(withTitle: Self.title(for: style), at: index, animated: false)
-        }
-        nameStyle.addAction(UIAction { [weak self] _ in
-            guard let self else { return }
-            let style = Self.nameStyles[self.nameStyle.selectedSegmentIndex]
-            self.change { $0.nameStyle = style }
-        }, for: .valueChanged)
-        addArrangedSubview(nameStyle)
-
-        addSection(String(localized: "Theme"), footnote: nil)
-        addArrangedSubview(scrollingRow(SupporterTheme.allCases.map { theme in
-            let button = Self.chip(title: theme.title)
-            button.addAction(UIAction { [weak self] _ in self?.change { $0.theme = theme } }, for: .primaryActionTriggered)
-            themeButtons[theme] = button
-            return button
-        }))
-
-        addSection(String(localized: "Accent Color"), footnote: nil)
-        addArrangedSubview(swatchRow(into: &accentButtons) { [weak self] accent in self?.change { $0.accent = accent } })
-
-        addSection(String(localized: "Chat Font"), footnote: nil)
-        addArrangedSubview(scrollingRow(SupporterChatFont.allCases.map { font in
-            let button = Self.chip(title: font.title, chatFont: font)
-            button.addAction(UIAction { [weak self] _ in self?.change { $0.chatFont = font } }, for: .primaryActionTriggered)
-            fontButtons[font] = button
-            return button
-        }))
-
-        if UIApplication.shared.supportsAlternateIcons {
-            addSection(String(localized: "App Icon"), footnote: nil)
-            addArrangedSubview(iconGrid())
-        }
+        let steps = CADisplayLink(target: self, selector: #selector(buildOnFrame))
+        steps.add(to: .main, forMode: .common)
+        buildSteps = steps
         registerForTraitChanges([UITraitUserInterfaceStyle.self, UITraitPreferredContentSizeCategory.self]) { (self: Self, _: UITraitCollection) in
             self.show(self.choice)
             for button in self.fontButtons.values { button.setNeedsUpdateConfiguration() }
+        }
+    }
+
+    @objc private func buildOnFrame() {
+        buildNextSection()
+    }
+
+    /// Builds the next section, dressed in the current choice, and stops the frame steps after the last one.
+    private func buildNextSection() {
+        guard !unbuilt.isEmpty else { return }
+        build(unbuilt.removeFirst())
+        show(choice)
+        guard unbuilt.isEmpty else { return }
+        buildSteps?.invalidate()
+        buildSteps = nil
+    }
+
+    private func build(_ section: Section) {
+        switch section {
+        case .badgeAndName:
+            addSection(String(localized: "Badge & Name"), footnote: String(localized: "Everyone watching in Embr sees your flame badge and name this way."))
+            addArrangedSubview(swatchRow(into: &badgeButtons) { [weak self] color in self?.change { $0.badgeColor = color } })
+            for (index, style) in Self.nameStyles.enumerated() {
+                nameStyle.insertSegment(withTitle: Self.title(for: style), at: index, animated: false)
+            }
+            nameStyle.addAction(UIAction { [weak self] _ in
+                guard let self else { return }
+                let style = Self.nameStyles[self.nameStyle.selectedSegmentIndex]
+                self.change { $0.nameStyle = style }
+            }, for: .valueChanged)
+            addArrangedSubview(nameStyle)
+        case .theme:
+            addSection(String(localized: "Theme"), footnote: nil)
+            addArrangedSubview(scrollingRow(SupporterTheme.allCases.map { theme in
+                let button = Self.chip(title: theme.title)
+                button.addAction(UIAction { [weak self] _ in self?.change { $0.theme = theme } }, for: .primaryActionTriggered)
+                themeButtons[theme] = button
+                return button
+            }))
+        case .accent:
+            addSection(String(localized: "Accent Color"), footnote: nil)
+            addArrangedSubview(swatchRow(into: &accentButtons) { [weak self] accent in self?.change { $0.accent = accent } })
+        case .chatFont:
+            addSection(String(localized: "Chat Font"), footnote: nil)
+            addArrangedSubview(scrollingRow(SupporterChatFont.allCases.map { font in
+                let button = Self.chip(title: font.title, chatFont: font)
+                button.addAction(UIAction { [weak self] _ in self?.change { $0.chatFont = font } }, for: .primaryActionTriggered)
+                fontButtons[font] = button
+                return button
+            }))
+        case .appIcon:
+            guard UIApplication.shared.supportsAlternateIcons else { return }
+            addSection(String(localized: "App Icon"), footnote: nil)
+            addArrangedSubview(iconGrid())
         }
     }
 
@@ -162,7 +201,7 @@ final class SupporterLookControls: UIStackView {
                 row = next
             }
             var configuration = UIButton.Configuration.plain()
-            configuration.image = UIImage(named: icon.previewName)?.preparingThumbnail(of: CGSize(width: 60, height: 60))
+            configuration.image = Self.iconPlaceholder
             configuration.imagePlacement = .top
             configuration.imagePadding = 6
             configuration.title = icon.title
@@ -179,11 +218,20 @@ final class SupporterLookControls: UIStackView {
             button.addAction(UIAction { [weak self] _ in self?.change { $0.icon = icon.alternateName } }, for: .primaryActionTriggered)
             iconButtons[icon.alternateName ?? Self.embrIcon] = button
             row?.addArrangedSubview(button)
+            Self.loadPreview(of: icon, into: button)
         }
         if let row, row.arrangedSubviews.count < 4 {
             for _ in row.arrangedSubviews.count..<4 { row.addArrangedSubview(UIView()) }
         }
         return grid
+    }
+
+    /// Sets an icon's preview once it has been scaled down away from the main thread. Until then a clear square of the
+    /// same size holds its place, so the grid does not move when the picture arrives.
+    private static func loadPreview(of icon: SupporterIcon, into button: UIButton) {
+        UIImage(named: icon.previewName)?.prepareThumbnail(of: iconSize) { [weak button] preview in
+            Task { @MainActor in button?.configuration?.image = preview }
+        }
     }
 
     private static func title(for style: SupporterAPI.NameStyle) -> String {

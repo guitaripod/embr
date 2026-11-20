@@ -41,6 +41,7 @@ final class SupporterViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        let began = ContinuousClock.now
         title = SupporterCopy.name(number: nil)
         view.backgroundColor = Theme.background
         draft.icon = SupporterStore.currentIcon
@@ -56,6 +57,12 @@ final class SupporterViewController: UIViewController {
         poseForScreenshots()
         #endif
         render()
+        MidgarLog.info("fitting room built in \(Self.milliseconds(since: began)) ms, from \(placement.rawValue)", category: .supporter)
+    }
+
+    private static func milliseconds(since instant: ContinuousClock.Instant) -> Int {
+        let elapsed = instant.duration(to: .now)
+        return Int((Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15).rounded())
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -69,6 +76,7 @@ final class SupporterViewController: UIViewController {
     private func reportShownOnce() {
         guard !hasReportedShown, !SupporterStore.shared.isSupporter else { return }
         hasReportedShown = true
+        MidgarLog.info("fitting room on screen, from \(placement.rawValue)", category: .supporter)
         MidgarPaywallMoments.noteShown(placement: placement)
     }
 
