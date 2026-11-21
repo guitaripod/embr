@@ -287,7 +287,9 @@ final class StudioOnAirStripView: UIView {
         statsStack.alignment = .center
         for view in [livePill, uptimeLabel, categoryLabel, viewersLabel, viewersCaption] {
             view.setContentHuggingPriority(.required, for: .horizontal)
+            view.setContentCompressionResistancePriority(.required, for: .horizontal)
         }
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let live = UIStackView(arrangedSubviews: [livePill, uptimeLabel])
         live.spacing = scale.spacing * 0.6
         live.alignment = .center
