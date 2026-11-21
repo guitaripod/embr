@@ -37335,96 +37335,190 @@
         }
       }
     },
-    "Embr has no advertising and no tracking, and the developer does not sell or share your data. The only usage counts it sends are anonymous and described under More Apps.": {
+    "Embr has no advertising and no tracking, and the developer does not sell or share your data. The usage counts and crash reports it sends are anonymous and described below.": {
       "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr har ingen reklamer og ingen sporing, og udvikleren sælger eller deler ikke dine data. Brugsoptællingerne og nedbrudsrapporterne, som appen sender, er anonyme og beskrevet nedenfor."
+          }
+        },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr hat keine Werbung und kein Tracking, und der Entwickler verkauft oder teilt deine Daten nicht. Die einzigen Nutzungszahlen, die gesendet werden, sind anonym und unter More Apps beschrieben."
+            "value": "Embr enthält keine Werbung und kein Tracking, und der Entwickler verkauft oder teilt deine Daten nicht. Die Nutzungszahlen und Absturzberichte, die die App sendet, sind anonym und werden unten beschrieben."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr no tiene publicidad ni seguimiento, y el desarrollador no vende ni comparte tus datos. Los únicos recuentos de uso que se envían son anónimos y se describen en More Apps."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr ne contient aucune publicité ni aucun suivi, et le développeur ne vend ni ne partage vos données. Les seuls compteurs d'utilisation envoyés sont anonymes et décrits sous More Apps."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr non contiene pubblicità né tracciamento, e lo sviluppatore non vende né condivide i tuoi dati. Gli unici conteggi di utilizzo inviati sono anonimi e descritti in More Apps."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embrには広告もトラッキングもなく、開発者があなたのデータを販売または共有することはありません。送信される利用回数は匿名で、More Appsで説明しています。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr에는 광고와 추적이 없으며, 개발자는 여러분의 데이터를 판매하거나 공유하지 않습니다. 전송되는 사용 횟수는 익명이며 More Apps에서 설명합니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Embr não tem publicidade nem rastreamento, e o desenvolvedor não vende nem compartilha seus dados. As únicas contagens de uso enviadas são anônimas e descritas em More Apps."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr nie zawiera reklam ani śledzenia, a deweloper nie sprzedaje ani nie udostępnia Twoich danych. Jedyne wysyłane liczniki użycia są anonimowe i opisane w sekcji More Apps."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr 没有广告，也没有追踪，开发者不会出售或共享您的数据。发送的使用次数统计仅为匿名数据，详见 More Apps。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr 沒有廣告，也沒有追蹤，開發者不會出售或分享您的資料。傳送的使用次數統計僅為匿名資料，詳見 More Apps。"
-          }
-        },
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Embr har ingen reklamer og ingen sporing, og udvikleren sælger eller deler ikke dine data. De eneste brugstal, som appen sender, er anonyme og er beskrevet under More Apps."
+            "value": "Embr no incluye publicidad ni rastreo, y el desarrollador no vende ni comparte tus datos. Los recuentos de uso y los informes de fallos que envía la app son anónimos y se describen a continuación."
           }
         },
         "fi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr-sovelluksessa ei ole mainontaa eikä seurantaa, eikä kehittäjä myy tai jaa tietojasi. Ainoat käyttömäärät, jotka sovellus lähettää, ovat anonyymejä, ja ne on kuvattu kohdassa More Apps."
+            "value": "Embrissä ei ole mainoksia eikä seurantaa, eikä kehittäjä myy tai jaa tietojasi. Sovelluksen lähettämät käyttömäärät ja kaatumisraportit ovat anonyymejä, ja ne kuvataan alla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr ne contient ni publicité ni suivi, et le développeur ne vend ni ne partage vos données. Les statistiques d'utilisation et les rapports de plantage qu'elle envoie sont anonymes et décrits ci-dessous."
           }
         },
         "is": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr er án auglýsinga og rakningar, og þróunaraðilinn selur ekki né deilir gögnum þínum. Einu notkunartölurnar sem eru sendar eru nafnlausar og þeim er lýst undir Fleiri öpp."
+            "value": "Embr birtir engar auglýsingar og rekur enga rakningu, og framkvæmdaraðilinn selur ekki né deilir gögnunum þínum. Notkunartölurnar og hrunskýrslurnar sem appið sendir eru nafnlausar og er lýst hér að neðan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr non contiene pubblicità né tracciamento, e lo sviluppatore non vende né condivide i tuoi dati. I conteggi di utilizzo e le segnalazioni di arresto anomalo che l'app invia sono anonimi e descritti di seguito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embrには広告もトラッキングもなく、開発者があなたのデータを販売または共有することはありません。Embrが送信する利用状況の集計とクラッシュレポートは匿名であり、以下で説明しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr에는 광고와 추적이 없으며, 개발자는 여러분의 데이터를 판매하거나 공유하지 않습니다. Embr가 보내는 사용 횟수와 충돌 보고서는 익명이며 아래에 설명되어 있습니다."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr har ingen annonser og ingen sporing, og utvikleren selger eller deler ikke dataene dine. De eneste bruksstatistikkene som sendes, er anonyme og beskrevet under More Apps."
+            "value": "Embr har ingen annonser og ingen sporing, og utvikleren selger eller deler ikke dataene dine. Bruksstatistikken og krasjrapportene appen sender, er anonyme og beskrevet nedenfor."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr nie zawiera reklam ani śledzenia, a deweloper nie sprzedaje ani nie udostępnia twoich danych. Liczniki użycia i raporty o awariach, które aplikacja wysyła, są anonimowe i opisane poniżej."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Embr não tem publicidade nem rastreamento, e o desenvolvedor não vende nem compartilha seus dados. As contagens de uso e os relatórios de falhas que o app envia são anônimos e descritos abaixo."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Embr har ingen reklam och ingen spårning, och utvecklaren säljer eller delar inte dina uppgifter. Den enda användningsstatistik som skickas är anonym och beskrivs under Fler appar."
+            "value": "Embr har ingen reklam och ingen spårning, och utvecklaren säljer eller delar inte dina uppgifter. Användningsräkningarna och kraschrapporterna som appen skickar är anonyma och beskrivs nedan."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 没有广告，也没有追踪，开发者不会出售或分享你的数据。它发送的使用次数统计和崩溃报告是匿名的，下文有详细说明。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Embr 沒有廣告，也沒有追蹤，開發者不會出售或分享你的資料。它傳送的使用次數統計和當機報告是匿名的，下文有詳細說明。"
+          }
+        }
+      }
+    },
+    "Crash Reports and Usage Counts\nWhen Embr crashes or freezes it sends a short report: the kind of fault, where in the app's code it happened, the app version, the system version and the device model. It also sends anonymous counts of how the app is used, such as which parts are opened and whether the install is free or paying. Neither carries an identifier or anything you wrote, and both stop when you turn off Usage Counts in Settings.": {
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nedbrudsrapporter og brugsoptællinger\nNår Embr går ned eller hænger sig, sender appen en kort rapport: fejltypen, hvor i appens kode fejlen opstod, appversionen, systemversionen og enhedsmodellen. Den sender også anonyme optællinger af, hvordan appen bruges, fx hvilke dele der åbnes, og om installationen er gratis eller betalt. Ingen af dem indeholder et identifikationsnummer eller noget, du har skrevet, og begge stopper, når du slår Brugsoptællinger fra under Indstillinger."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Absturzberichte und Nutzungszahlen\nWenn Embr abstürzt oder hängen bleibt, sendet die App einen kurzen Bericht: die Art des Fehlers, die Stelle im Code, an der er auftrat, die App-Version, die Systemversion und das Gerätemodell. Außerdem sendet sie anonyme Zählungen darüber, wie die App genutzt wird, etwa welche Bereiche geöffnet werden und ob die Installation kostenlos oder kostenpflichtig ist. Keines davon enthält eine Kennung oder etwas, das du eingegeben hast, und beides endet, sobald du Nutzungszahlen in den Einstellungen deaktivierst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informes de fallos y recuentos de uso\nCuando Embr falla o deja de responder, envía un informe breve: el tipo de fallo, el lugar del código de la app donde ocurrió, la versión de la app, la versión del sistema y el modelo del dispositivo. También envía recuentos anónimos de cómo se usa la app, como qué secciones se abren y si la instalación es gratuita o de pago. Ninguno de los dos incluye un identificador ni nada de lo que escribas, y ambos se detienen cuando desactivas Recuentos de uso en Ajustes."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaatumisraportit ja käyttömäärät\nKun Embr kaatuu tai jumittuu, se lähettää lyhyen raportin: vian tyypin, kohdan sovelluksen koodissa, jossa vika tapahtui, sovelluksen version, järjestelmän version ja laitemallin. Se lähettää myös anonyymejä laskureita sovelluksen käytöstä, kuten siitä, mitkä osat avataan, ja siitä, onko asennus ilmainen vai maksullinen. Kumpikaan ei sisällä tunnistetta tai mitään kirjoittamaasi, ja molemmat lakkaavat, kun poistat Käyttömäärät-asetuksen käytöstä Asetuksissa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapports de plantage et statistiques d'utilisation\nLorsque Embr plante ou se bloque, il envoie un bref rapport : le type d'erreur, l'endroit du code de l'application où elle s'est produite, la version de l'application, la version du système et le modèle de l'appareil. Il envoie aussi des compteurs anonymes sur l'utilisation de l'application, comme les sections ouvertes et si l'installation est gratuite ou payante. Aucun de ces envois ne contient d'identifiant ni rien de ce que vous avez saisi, et les deux cessent lorsque vous désactivez Statistiques d'utilisation dans Réglages."
+          }
+        },
+        "is": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hrunskýrslur og notkunartölur\nÞegar Embr hrynur eða frýs sendir það stutta skýrslu: tegund villunnar, hvar í kóða appsins hún átti sér stað, útgáfu appsins, útgáfu stýrikerfisins og gerð tækisins. Það sendir einnig nafnlausar tölur um hvernig appið er notað, svo sem hvaða hlutar eru opnaðir og hvort uppsetningin er ókeypis eða greidd. Hvorug skýrslan inniheldur auðkenni eða nokkuð sem þú skrifaðir, og báðar hætta þegar þú slekkur á Notkunartölum í Stillingum."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segnalazioni di arresto anomalo e conteggi di utilizzo\nQuando Embr si arresta in modo anomalo o si blocca, invia un breve rapporto: il tipo di errore, il punto del codice dell'app in cui si è verificato, la versione dell'app, la versione del sistema e il modello del dispositivo. Invia anche conteggi anonimi di come viene usata l'app, come le sezioni aperte e se l'installazione è gratuita o a pagamento. Nessuno dei due contiene un identificatore o quello che scrivi, e si fermano entrambi quando disattivi Conteggi di utilizzo nelle Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クラッシュレポートと利用状況の集計\nEmbrがクラッシュしたりフリーズしたりすると、短いレポートを送信します。内容は、不具合の種類、アプリのコードでどこで発生したか、アプリのバージョン、システムのバージョン、機種です。また、どの画面が開かれたか、インストールが無料か有料かといった、アプリの利用方法の匿名の集計も送信します。どちらも識別子や入力した内容は含まず、設定で「利用状況の集計」をオフにすると送信は停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "충돌 보고서 및 사용 횟수\nEmbr가 충돌하거나 멈추면 짧은 보고서를 보냅니다. 여기에는 오류의 종류, 앱 코드에서 오류가 발생한 위치, 앱 버전, 시스템 버전, 기기 모델이 포함됩니다. 또한 어떤 부분이 열렸는지, 설치가 무료인지 유료인지 등 앱 사용 방식에 대한 익명 사용 횟수도 보냅니다. 둘 다 식별자나 여러분이 입력한 내용은 포함하지 않으며, 설정에서 사용 횟수를 끄면 둘 다 중단됩니다."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krasjrapporter og bruksstatistikk\nNår Embr krasjer eller henger seg, sender den en kort rapport: type feil, hvor i appens kode den oppstod, appversjonen, systemversjonen og enhetsmodellen. Den sender også anonym telling av hvordan appen brukes, for eksempel hvilke deler som åpnes, og om installasjonen er gratis eller betalt. Ingen av dem inneholder en identifikator eller noe du har skrevet, og begge stopper når du slår av Bruksstatistikk i Innstillinger."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporty o awariach i liczniki użycia\nGdy Embr ulega awarii lub przestaje odpowiadać, wysyła krótki raport: rodzaj błędu, miejsce w kodzie aplikacji, w którym wystąpił, wersję aplikacji, wersję systemu i model urządzenia. Wysyła też anonimowe liczniki tego, jak aplikacja jest używana, na przykład które sekcje są otwierane oraz czy instalacja jest bezpłatna, czy płatna. Żadne z tych danych nie zawiera identyfikatora ani niczego, co wpisujesz, a oba przestają być wysyłane po wyłączeniu opcji Liczniki użycia w Ustawieniach."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relatórios de falhas e contagens de uso\nQuando o Embr falha ou trava, ele envia um relatório curto: o tipo de falha, o ponto do código do app onde ela ocorreu, a versão do app, a versão do sistema e o modelo do dispositivo. Ele também envia contagens anônimas de como o app é usado, como quais partes são abertas e se a instalação é gratuita ou paga. Nenhuma delas tem identificador ou qualquer coisa que você tenha digitado, e ambas param quando você desativa Contagens de uso em Ajustes."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kraschrapporter och användningsräkningar\nNär Embr kraschar eller hänger sig skickar appen en kort rapport: vilken typ av fel det var, var i appens kod det inträffade, appversionen, systemversionen och enhetsmodellen. Den skickar också anonyma räkningar av hur appen används, till exempel vilka delar som öppnas och om installationen är gratis eller betald. Ingen av dem innehåller en identifierare eller något du skrivit, och båda slutar när du stänger av Användningsräkningar i Inställningar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "崩溃报告和使用次数\n当 Embr 崩溃或卡死时，它会发送一份简短报告：故障类型、故障在应用代码中的位置、应用版本、系统版本和设备型号。它还会发送关于应用使用方式的匿名计数，例如打开了哪些部分，以及该安装是免费还是付费。两者都不包含标识符或你输入的任何内容，并且在“设置”中关闭“使用次数”后，两者都会停止发送。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當機報告和使用次數\n當 Embr 當機或無回應時，它會傳送一份簡短報告：故障類型、故障發生在應用程式程式碼中的位置、應用程式版本、系統版本和裝置型號。它也會傳送關於應用程式使用方式的匿名計數，例如開啟了哪些部分，以及此安裝是免費還是付費。兩者都不包含識別碼或你輸入的任何內容，並且在「設定」中關閉「使用次數」後，兩者都會停止傳送。"
           }
         }
       }

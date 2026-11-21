@@ -67,6 +67,7 @@ enum LegalText {
             privacySupporter,
             privacyStudio,
             privacyMoreApps,
+            privacyCrashReports,
             privacyTwitchSignIn,
             privacyReports,
             privacyServices,
@@ -77,7 +78,7 @@ enum LegalText {
 
     private static let privacyIntro = String(localized: """
     Embr has no advertising and no tracking, and the developer does not sell or share your data. The \
-    only usage counts it sends are anonymous and described under More Apps.
+    usage counts and crash reports it sends are anonymous and described below.
     """)
 
     private static let privacyOnDevice = String(localized: """
@@ -123,6 +124,14 @@ enum LegalText {
     More Apps
     The More Apps card in Settings sends anonymous counts of how often it is opened, shown and tapped. \
     They carry no identifier and are not linked to you.
+    """)
+
+    private static let privacyCrashReports = String(localized: """
+    Crash Reports and Usage Counts
+    When Embr crashes or freezes it sends a short report: the kind of fault, where in the app's code it \
+    happened, the app version, the system version and the device model. It also sends anonymous counts of \
+    how the app is used, such as which parts are opened and whether the install is free or paying. \
+    Neither carries an identifier or anything you wrote, and both stop when you turn off Usage Counts in Settings.
     """)
 
     private static let privacyTwitchSignIn = String(localized: """

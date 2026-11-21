@@ -2,6 +2,7 @@ import UIKit
 import Combine
 import EmbrCore
 import MidgarKit
+import MidgarCore
 
 /// Embr's settings, laid out as the system Settings app: the Twitch account card on top, Founding Member, then one
 /// row per area opening its own page, a search across every setting, and the More Apps card at the bottom.
@@ -49,6 +50,11 @@ final class SettingsViewController: SettingsPageViewController {
                 self.refresh.send()
             }
             .store(in: &observers)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("settings")
     }
 
     override func viewWillAppear(_ animated: Bool) {

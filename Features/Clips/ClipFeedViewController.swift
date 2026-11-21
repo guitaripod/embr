@@ -89,6 +89,7 @@ final class ClipFeedViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("clips", feature: true)
         becomeFirstResponder()
         activateAudioSession()
         if hasAppeared {

@@ -1,5 +1,6 @@
 import UIKit
 import MidgarKit
+import MidgarUI
 
 /// The Help & Feedback and About pages and their actions: the support email, sharing the logs and the app, the
 /// source code. Each action presents from the page the row was tapped on, which is the one on screen.
@@ -31,6 +32,9 @@ extension SettingsViewController {
                 SettingsItem(id: "version", title: String(localized: "Version"), kind: .value(Self.versionString)),
                 SettingsItem(id: "github", title: String(localized: "GitHub"), keywords: [String(localized: "Source Code")], kind: .link(value: nil) { [weak self] presenter in
                     self?.openGitHub(from: presenter)
+                }),
+                SettingsItem(id: "usageCounts", title: MidgarUsageCounts.title, kind: .link(value: MidgarUsageCounts.status) { [weak self] presenter in
+                    self?.push(MidgarUsageCountsViewController(), from: presenter)
                 }),
                 SettingsItem(id: "termsOfUse", title: String(localized: "Terms of Use"), kind: .link(value: nil) { [weak self] presenter in
                     self?.push(LegalViewController(title: LegalText.termsTitle, body: LegalText.terms), from: presenter)

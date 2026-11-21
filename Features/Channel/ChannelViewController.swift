@@ -183,6 +183,7 @@ final class ChannelViewController: UIViewController {
     /// Stage Manager and the app switcher label the window with the channel being watched.
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("channel", feature: true)
         view.window?.windowScene?.title = channel.broadcasterName
     }
 

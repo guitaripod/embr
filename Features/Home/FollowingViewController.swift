@@ -68,6 +68,11 @@ final class FollowingViewController: UIViewController {
         bootstrap()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("following")
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         foregroundRefresh.listWillAppear()

@@ -542,6 +542,7 @@ final class HLSVideoPlayer: NSObject, VideoPlaying {
         guard let item = currentItem else { return }
         switch item.status {
         case .readyToPlay:
+            MidgarSignals.noteValue()
             if availableQualities.isEmpty {
                 parseMasterIfNeeded(item)
             }

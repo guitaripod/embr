@@ -86,6 +86,7 @@ final class ChatsViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("chats", feature: true)
         model.setVisible(Set(shown))
     }
 

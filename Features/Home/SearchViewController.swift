@@ -1,6 +1,7 @@
 import UIKit
 import Combine
 import EmbrCore
+import MidgarCore
 
 @MainActor
 final class SearchViewController: UIViewController {
@@ -69,6 +70,11 @@ final class SearchViewController: UIViewController {
             }
         }
         #endif
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("search", feature: true)
     }
 
     /// ⌘F lands here with the field ready to type into.

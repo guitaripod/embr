@@ -71,6 +71,7 @@ final class StudioViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        MidgarSignals.noteScreen("studio", feature: true)
         session.start()
         updateAwake()
     }
