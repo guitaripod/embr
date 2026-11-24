@@ -69,12 +69,15 @@ final class StreamCell: UICollectionViewCell {
         loadAvatar(url)
     }
 
+    /// The count and the locale it is spelled in: a language change arrives without the cell
+    /// reloading, so the key must not read a string from the language before it.
     private static func viewersText(_ count: Int) -> NSAttributedString {
-        if let cached = viewersCache.object(forKey: NSNumber(value: count)), cached.tint == Theme.liveDot {
+        let key = "\(count)|\(Locale.current.identifier)" as NSString
+        if let cached = viewersCache.object(forKey: key) {
             return cached.text
         }
         let text = makeViewersText(count)
-        viewersCache.setObject(ViewersText(text: text, tint: Theme.liveDot), forKey: NSNumber(value: count))
+        viewersCache.setObject(ViewersText(text: text), forKey: key)
         return text
     }
 
@@ -100,16 +103,14 @@ final class StreamCell: UICollectionViewCell {
 
     private final class ViewersText {
         let text: NSAttributedString
-        let tint: UIColor
 
-        init(text: NSAttributedString, tint: UIColor) {
+        init(text: NSAttributedString) {
             self.text = text
-            self.tint = tint
         }
     }
 
-    private static let viewersCache: NSCache<NSNumber, ViewersText> = {
-        let cache = NSCache<NSNumber, ViewersText>()
+    private static let viewersCache: NSCache<NSString, ViewersText> = {
+        let cache = NSCache<NSString, ViewersText>()
         cache.countLimit = 200
         return cache
     }()
