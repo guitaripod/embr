@@ -1,6 +1,7 @@
 import UIKit
 import EmbrCore
 import MidgarCore
+import MidgarKit
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,6 +18,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         EmbrMidgar.configureLogging()
         #if DEBUG
         DemoWorld.resetLaunchState()
+        MidgarFrameWatch.shared.startIfRequested()
         #endif
         performFirstRunIfNeeded()
         _ = AppContainer.shared

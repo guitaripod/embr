@@ -36,6 +36,7 @@ final class ChatsViewController: UIViewController {
     private var columnViews: [String: ChatColumnView] = [:]
     private var recent: [String] = []
     private var shown: [String] = []
+    private var renderScheduled = false
     private var cancellables = Set<AnyCancellable>()
 
     init(model: ChatsModel = .shared, auth: AuthService = .shared) {
@@ -66,7 +67,7 @@ final class ChatsViewController: UIViewController {
         setUpEmptyState()
         model.changes
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.render() }
+            .sink { [weak self] in self?.scheduleRender() }
             .store(in: &cancellables)
         registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (controller: ChatsViewController, _) in
             controller.render()
@@ -258,6 +259,18 @@ final class ChatsViewController: UIViewController {
             emptyState.leadingAnchor.constraint(equalTo: view.readableContentGuide.leadingAnchor, constant: 16),
             emptyState.trailingAnchor.constraint(equalTo: view.readableContentGuide.trailingAnchor, constant: -16),
         ])
+    }
+
+    /// One render per turn of the main queue: several chats talking at once publish a batch every 200 ms each, and each
+    /// batch only changes the chip counts the last render already asked for.
+    private func scheduleRender() {
+        guard !renderScheduled else { return }
+        renderScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.renderScheduled = false
+            self.render()
+        }
     }
 
     /// Lays the screen out for the open chats: the strip, then the chat in front, or on a wide iPad as many as fit side

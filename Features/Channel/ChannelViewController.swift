@@ -225,6 +225,9 @@ final class ChannelViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        #if DEBUG
+        let started = CFAbsoluteTimeGetCurrent()
+        #endif
         view.backgroundColor = Theme.background
         title = channel.broadcasterName
         navigationItem.largeTitleDisplayMode = .never
@@ -241,6 +244,7 @@ final class ChannelViewController: UIViewController {
         WatchHistoryStore.shared.record(id: channel.id, login: channel.broadcasterLogin, name: channel.broadcasterName)
         #if DEBUG
         applyScreenshotPose()
+        MidgarLog.info("channel page built in \(Int((CFAbsoluteTimeGetCurrent() - started) * 1000)) ms", category: .playback)
         #endif
     }
 

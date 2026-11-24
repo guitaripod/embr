@@ -157,7 +157,7 @@ final class TopViewController: UIViewController {
                     guard let self else { return }
                     self.recentChannels = channels
                     self.loadRecentAvatars()
-                    if !self.showingCategories { self.applyStreams(self.streamsViewModel.currentStreams) }
+                    self.refreshForBackgroundChange()
                 }
             }
             .store(in: &cancellables)
@@ -171,7 +171,7 @@ final class TopViewController: UIViewController {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.updateFavoritesItem()
-                    if !self.showingCategories { self.applyStreams(self.streamsViewModel.currentStreams) }
+                    self.refreshForBackgroundChange()
                 }
             }
             .store(in: &cancellables)
@@ -184,11 +184,18 @@ final class TopViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 MainActor.assumeIsolated {
-                    guard let self, self.favoritesOnly, !self.showingCategories else { return }
-                    self.applyStreams(self.streamsViewModel.currentStreams)
+                    guard let self, self.favoritesOnly else { return }
+                    self.refreshForBackgroundChange()
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Redraws the list for a change the viewer did not make here: opening a channel writes watch history while the
+    /// channel's page is being pushed, and an animated diff of every row lands in the frames that push owns.
+    private func refreshForBackgroundChange() {
+        guard !showingCategories else { return }
+        applyStreams(streamsViewModel.currentStreams, animated: false)
     }
 
     private func loadRecentAvatars() {
@@ -415,16 +422,20 @@ final class TopViewController: UIViewController {
             .store(in: &cancellables)
     }
 
+    /// Redraws the rows on screen when a chunk of avatars lands. A row reads its avatar when it is configured, so rows
+    /// off screen pick theirs up as they scroll in and do not need redrawing now.
     private func reconfigureStreamAvatars() {
         guard !showingCategories else { return }
         var snapshot = dataSource.snapshot()
-        let streamItems = snapshot.itemIdentifiers.filter { if case .stream = $0 { return true } else { return false } }
-        guard !streamItems.isEmpty else { return }
-        snapshot.reconfigureItems(streamItems)
+        let visible = collectionView.indexPathsForVisibleItems
+            .compactMap { dataSource.itemIdentifier(for: $0) }
+            .filter { if case .stream = $0 { return true } else { return false } }
+        guard !visible.isEmpty else { return }
+        snapshot.reconfigureItems(visible)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
-    private func applyStreams(_ streams: [LiveStream]) {
+    private func applyStreams(_ streams: [LiveStream], animated: Bool = true) {
         #if DEBUG
         let streams = ScreenshotHarness.isPosing ? streams.filter(ScreenshotHarness.suitsStoreShot) : streams
         #endif
@@ -437,7 +448,7 @@ final class TopViewController: UIViewController {
         }
         snapshot.appendSections([.main])
         snapshot.appendItems(displayed.map(Item.stream), toSection: .main)
-        dataSource.apply(snapshot, animatingDifferences: true)
+        dataSource.apply(snapshot, animatingDifferences: animated)
         emptyView.setMessage(favoritesOnly
             ? String(localized: "No favorites are live right now. Tap the star on a channel to add it here.")
             : Self.emptyStreamsMessage)

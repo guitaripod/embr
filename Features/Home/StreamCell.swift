@@ -70,6 +70,17 @@ final class StreamCell: UICollectionViewCell {
     }
 
     private static func viewersText(_ count: Int) -> NSAttributedString {
+        if let cached = viewersCache.object(forKey: NSNumber(value: count)), cached.tint == Theme.liveDot {
+            return cached.text
+        }
+        let text = makeViewersText(count)
+        viewersCache.setObject(ViewersText(text: text, tint: Theme.liveDot), forKey: NSNumber(value: count))
+        return text
+    }
+
+    /// The eye and the count as one string, which every row for the same viewer count can share: building the tinted
+    /// symbol, its attachment and the string per cell was repeated work in the middle of a scroll.
+    private static func makeViewersText(_ count: Int) -> NSAttributedString {
         let font = UIFont.systemFont(ofSize: 12, weight: .semibold)
         let text = NSMutableAttributedString()
         if let icon = UIImage(systemName: "eye.fill")?
@@ -86,6 +97,22 @@ final class StreamCell: UICollectionViewCell {
         ]))
         return text
     }
+
+    private final class ViewersText {
+        let text: NSAttributedString
+        let tint: UIColor
+
+        init(text: NSAttributedString, tint: UIColor) {
+            self.text = text
+            self.tint = tint
+        }
+    }
+
+    private static let viewersCache: NSCache<NSNumber, ViewersText> = {
+        let cache = NSCache<NSNumber, ViewersText>()
+        cache.countLimit = 200
+        return cache
+    }()
 
     private func applyAccessibility(_ stream: LiveStream) {
         isAccessibilityElement = true

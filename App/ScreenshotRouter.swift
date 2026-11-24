@@ -46,6 +46,10 @@ enum ScreenshotRouter {
         tabBar.setNeedsStatusBarAppearanceUpdate()
         ScreenshotHarness.skippedLogins = Set(option("Skip")?.lowercased().split(separator: ",").map(String.init) ?? [])
         if route == "onboarding" { return false }
+        if route == "walk" {
+            ScreenshotWalk.start(on: tabBar, deepLinks: deepLinks)
+            return true
+        }
         let wantsSession = option("Auth") == "1" || route == "following"
         Task { @MainActor in
             if wantsSession, DemoWorld.isActive {
@@ -86,7 +90,7 @@ enum ScreenshotRouter {
         })
     }
 
-    private static func perform(_ route: String, on tabBar: RootTabBarController, deepLinks: DeepLinkRouter) {
+    static func perform(_ route: String, on tabBar: RootTabBarController, deepLinks: DeepLinkRouter) {
         let channel = option("Channel")
         switch route {
         case "top": tabBar.select(.top)

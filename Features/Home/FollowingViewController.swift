@@ -166,9 +166,23 @@ final class FollowingViewController: UIViewController {
     }
 
     private func reconfigureLiveAvatars() {
+        reconfigureVisible(in: .live)
+    }
+
+    private func reconfigureOffline() {
+        reconfigureVisible(in: .offline)
+    }
+
+    /// Redraws only the rows on screen: a row reads its avatar when it is configured, so rows off screen pick theirs
+    /// up when they scroll in and cost nothing now.
+    private func reconfigureVisible(in section: Section) {
         var snapshot = dataSource.snapshot()
-        guard snapshot.sectionIdentifiers.contains(.live) else { return }
-        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .live))
+        guard snapshot.sectionIdentifiers.contains(section) else { return }
+        let visible = collectionView.indexPathsForVisibleItems
+            .compactMap { dataSource.itemIdentifier(for: $0) }
+            .filter { snapshot.sectionIdentifier(containingItem: $0) == section }
+        guard !visible.isEmpty else { return }
+        snapshot.reconfigureItems(visible)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
 
@@ -398,13 +412,6 @@ final class FollowingViewController: UIViewController {
         emptyView.setMessage(Self.emptyMessage)
         emptyView.onRetry = nil
         emptyView.isHidden = !(bothLoaded && liveStreams.isEmpty && offline.isEmpty)
-    }
-
-    private func reconfigureOffline() {
-        var snapshot = dataSource.snapshot()
-        guard snapshot.sectionIdentifiers.contains(.offline) else { return }
-        snapshot.reconfigureItems(snapshot.itemIdentifiers(inSection: .offline))
-        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func handleLoading(_ loading: Bool) {
