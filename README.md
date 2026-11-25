@@ -22,11 +22,16 @@ Inspired by [chatsen](https://github.com/chatsen/chatsen) and [frosty](https://g
 | Component | Language | Tested |
 |---|---|---|
 | `EmbrCore` | Swift 6 (SwiftPM) | ✅ `swift build` + `swift test` on Linux/macOS |
+| `Cli` (`embr` command line) | Swift 6 (SwiftPM) | ✅ 30 tests on Linux/macOS |
 | `Embr` (iPhone and iPad) | Swift 6 / UIKit | ✅ Swift Testing on macOS (`scripts/ios-build.sh`) |
 | `EmbrTV` (Apple TV, TestFlight only) | Swift 6 / UIKit | ✅ `scripts/tv-build.sh` |
 | `services/embr` (Midgar monorepo) | TypeScript (Hono) | ✅ `tsc` + `vitest` |
 
 `EmbrCore` holds the platform-agnostic logic (parsing, emote merge, HLS handling, Helix request specs) and compiles and tests on Linux and macOS. The app layers are Darwin-only. The Worker handles OAuth and stream resolution.
+
+`Cli/` builds `embr`, a command-line Twitch client on top of EmbrCore: streams, chat and moderation,
+Studio tools, EventSub/IRC streaming, emotes, playback URLs and the full OAuth device flow. See
+[`Cli/README.md`](Cli/README.md) for install and examples.
 
 ## Architecture
 

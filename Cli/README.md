@@ -52,6 +52,13 @@ Environment variables override the file: `EMBR_CLIENT_ID` (or `TWITCH_CLIENT_ID`
 `EMBR_ACCESS_TOKEN` (or `TWITCH_ACCESS_TOKEN`), `EMBR_REFRESH_TOKEN`, `EMBR_CLIENT_SECRET` (for
 `auth app-token`, and for refreshing tokens when the Twitch app is confidential).
 
+### Which Twitch app
+
+Use your own Twitch application (public client, no secret): `embr auth login --client-id <your-id>`.
+Refresh then stays direct and local. If you use Embr's client id, token refresh goes through Embr's
+worker; set `EMBR_REFRESH_URL` to another endpoint or `EMBR_DISABLE_WORKER_REFRESH=1` to keep it local
+(then a confidential app needs `EMBR_CLIENT_SECRET`). See `PRIVACY.md` and `SECURITY.md`.
+
 ## Quick start
 
 ```sh
@@ -154,4 +161,6 @@ See `SKILL.md` for recipes.
 - WebSocket support comes from `websocket-kit` (NIO); everything else is Foundation.
 - Not exposed: Embr's worker/account backend, StoreKit, favorites/alerts/watch history, the player and
   HLS ad stripping. `embr help exclusions` explains why.
-- GPL-3.0, like the rest of the monorepo.
+- GPL-3.0, like the rest of Embr; third-party notices are in `THIRD_PARTY_NOTICES.md`.
+- Public source lives in the `embr` app repository under `Cli/`; the monorepo path is
+  `apps/embr/Cli`.
