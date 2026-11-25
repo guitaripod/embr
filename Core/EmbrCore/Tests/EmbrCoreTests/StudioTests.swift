@@ -348,6 +348,23 @@ struct StudioHelixTests {
         #expect(after?.snoozeCount == 1 && after?.duration == 90 && after?.lastAdAt == Date(timeIntervalSince1970: 50))
     }
 
+    @Test func followersPageKeepsTheLoginAndCursor() throws {
+        let json = """
+        {
+          "data": [
+            { "user_id": "1", "user_login": "alpha", "user_name": "Alpha", "followed_at": "2024-01-02T03:04:05Z" }
+          ],
+          "pagination": { "cursor": "NEXT" },
+          "total": 9
+        }
+        """
+        let page = StudioHelixDecoder.followersPage(Data(json.utf8))
+        #expect(page.total == 9)
+        #expect(page.cursor == "NEXT")
+        #expect(page.recent.first?.userLogin == "alpha")
+        #expect(page.recent.first?.userName == "Alpha")
+    }
+
     @Test func requestsGoWhereTwitchDocumentsThem() throws {
         let commercial = factory.startCommercial(broadcasterID: "1", length: 600, token: "t")
         #expect(commercial.method == .post && commercial.url.absoluteString == "https://api.twitch.tv/helix/channels/commercial")
