@@ -25,8 +25,7 @@ enum EventSubCommands {
         options: [
             .value("session", "ID", "The WebSocket session id from a session_welcome.", required: true),
             .value("sub-version", "V", "Subscription version.", defaultValue: "1"),
-            .repeated("condition", "KEY=VALUE", "Condition fields; repeat for each."),
-            .flag("raw", "Print Twitch's response untouched (default).")
+            .repeated("condition", "KEY=VALUE", "Condition fields; repeat for each.")
         ],
         examples: [
             "embr eventsub create channel.follow --session SESSION --condition broadcaster_user_id=123 --condition moderator_user_id=123"

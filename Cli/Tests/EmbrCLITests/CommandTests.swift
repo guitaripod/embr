@@ -238,6 +238,23 @@ struct CommandTests {
         #expect(store.profile("default")?.refreshToken == "device-refresh")
     }
 
+    @Test func dryRunRedactsSecretsInBodies() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let result = await TestRun.run(
+            ["auth", "app-token", "--dry-run", "--json"],
+            transport: transport,
+            configDirectory: dir,
+            extraEnvironment: ["EMBR_CLIENT_SECRET": "s3cr3t-value"]
+        )
+        #expect(result.code == 0)
+        #expect(!result.out.text.contains("s3cr3t-value"))
+        let data = try #require(result.out.json as? [String: Any])
+        let payload = try #require(data["data"] as? [String: Any])
+        let body = try #require(payload["body"] as? String)
+        #expect(body.contains("client_secret=REDACTED"))
+    }
+
     @Test func errorsUseTheErrorEnvelopeAndExitCode() async throws {
         let dir = TestRun.make()
         let transport = FakeTransport { _ in response(401, #"{"message":"invalid token"}"#) }

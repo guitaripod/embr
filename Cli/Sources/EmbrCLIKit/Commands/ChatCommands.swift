@@ -247,15 +247,15 @@ enum ChatCommands {
         let first = invocation.int("first") ?? context.options.first ?? 100
         let request = factory.chatters(broadcasterID: broadcaster.id, moderatorID: moderatorID, first: first, after: context.options.after, token: token)
         if let raw = try await CommandSupport.raw(request, context) { return raw }
-        let (items, cursor) = try await context.collect(request, decode: { try TwitchJSON.decoder.decode(HelixResponse<ChannelUser>.self, from: $0) }) { after in
+        let page = try await context.collectWithTotal(request, decode: { try TwitchJSON.decoder.decode(HelixResponse<ChannelUser>.self, from: $0) }) { after in
             factory.chatters(broadcasterID: broadcaster.id, moderatorID: moderatorID, first: first, after: after, token: token)
         }
-        let views = items.map(ChannelUserView.init)
+        let views = page.items.map(ChannelUserView.init)
         let table = CommandSupport.table(
             ["LOGIN", "NAME", "ID"],
             views.map { [$0.userLogin, $0.userName, $0.userID] }
         )
-        return CommandSupport.list(views, table: table, cursor: cursor)
+        return CommandSupport.list(views, table: table, cursor: page.cursor, total: page.total)
     }
 
     static let pin = CommandSpec(

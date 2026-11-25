@@ -52,6 +52,7 @@ public enum Help {
         lines.append("  embr streams top --first 10")
         lines.append("  embr chat watch xqc --json --limit 20")
         lines.append("")
+        lines.append("Topics: auth, output, scopes, agents, exit-codes, exclusions.")
         lines.append("For agents: `embr commands --json`, `embr help agents`, and `--json` on every command.")
         return lines.joined(separator: "\n")
     }
@@ -203,7 +204,12 @@ public struct Catalog: Encodable, Sendable {
     }
 
     public static func build(_ registry: CommandRegistry, groupFilter: [String]? = nil) -> Catalog {
-        let groups = registry.groups.map { Group(name: $0.path.joined(separator: " "), summary: $0.summary, details: $0.details) }
+        let groups = registry.groups
+            .filter { group in
+                guard let groupFilter else { return true }
+                return group.path.starts(with: groupFilter)
+            }
+            .map { Group(name: $0.path.joined(separator: " "), summary: $0.summary, details: $0.details) }
         let commands = registry.commands
             .filter { command in
                 guard let groupFilter else { return true }

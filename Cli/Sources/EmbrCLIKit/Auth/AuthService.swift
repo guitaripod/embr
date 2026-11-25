@@ -70,6 +70,7 @@ public struct AuthStatus: Sendable {
     public let expiresAt: Date?
     public let configPath: String
     public let configPermissions: Int?
+    public let configMode: String?
 }
 
 
@@ -87,6 +88,7 @@ public struct ConfigSnapshot: Encodable, Sendable {
     public let path: String
     public let exists: Bool
     public let permissions: Int?
+    public let mode: String?
     public let profile: String
     public let profiles: [ConfigProfileSummary]
     public let environmentOverrides: [String]
@@ -272,7 +274,14 @@ public actor AuthService {
 
     public func startDevice(clientID: String, scopes: [String]) async throws -> DeviceAuthorization.Start {
         let response = try await client.send(DeviceAuthorization.startRequest(clientID: clientID, scopes: scopes))
-        return try DeviceAuthorization.decodeStart(response)
+        guard response.isSuccess else {
+            throw CLIError.http(status: response.status, body: response.body)
+        }
+        do {
+            return try DeviceAuthorization.decodeStart(response)
+        } catch {
+            throw CLIError(.decode, "Could not read the device code response.")
+        }
     }
 
     public func pollDevice(clientID: String, deviceCode: String, scopes: [String]) async throws -> DeviceAuthorization.PollResult {
@@ -334,7 +343,22 @@ public actor AuthService {
 
     public func appToken(clientID: String, clientSecret: String, scopes: [String]) async throws -> OAuthToken {
         let response = try await client.send(AppAccessToken.request(clientID: clientID, clientSecret: clientSecret, scopes: scopes))
-        return try AppAccessToken.decode(response)
+        guard response.isSuccess else {
+            if response.status == 400 || response.status == 401 {
+                throw CLIError(
+                    .auth,
+                    "Twitch rejected the client credentials.",
+                    status: response.status,
+                    hint: "Check the client id and the secret in EMBR_CLIENT_SECRET."
+                )
+            }
+            throw CLIError.http(status: response.status, body: response.body)
+        }
+        do {
+            return try AppAccessToken.decode(response)
+        } catch {
+            throw CLIError(.decode, "Could not read the app token response.")
+        }
     }
 
     public func revoke(_ auth: AuthContext) async throws {
@@ -387,7 +411,8 @@ public actor AuthService {
             scopes: stored.scopes,
             expiresAt: stored.expiresAt,
             configPath: store.url.path,
-            configPermissions: store.permissions()
+            configPermissions: store.permissions(),
+            configMode: store.permissions().map { String(format: "%03o", $0) }
         )
     }
 
@@ -404,6 +429,7 @@ public actor AuthService {
             path: store.url.path,
             exists: store.exists,
             permissions: store.permissions(),
+            mode: store.permissions().map { String(format: "%03o", $0) },
             profile: profile,
             profiles: file.profiles.keys.sorted().map { name in
                 let stored = file.profiles[name] ?? StoredProfile()
@@ -445,14 +471,22 @@ public actor AuthService {
         let secret = environment["EMBR_CLIENT_SECRET"]
         let request = TokenRefresh.request(clientID: auth.clientID, clientSecret: secret, refreshToken: refreshToken)
         let response = try await client.send(request)
+        guard response.isSuccess else {
+            if response.status == 400 || response.status == 401 {
+                throw CLIError(
+                    .auth,
+                    "Twitch rejected the refresh request.",
+                    status: response.status,
+                    hint: "If this app is confidential, set EMBR_CLIENT_SECRET; otherwise run `embr auth login` to sign in again."
+                )
+            }
+            throw CLIError.http(status: response.status, body: response.body)
+        }
         let token: OAuthToken
         do {
             token = try TokenRefresh.decode(response)
-        } catch let error as CLIError {
-            if error.status == 400 || error.status == 401 {
-                throw CLIError.auth("Twitch rejected the refresh token.", hint: "Run `embr auth login` to sign in again.")
-            }
-            throw error
+        } catch {
+            throw CLIError(.decode, "Could not read the refreshed token.")
         }
         let expiresAt = Date().addingTimeInterval(TimeInterval(token.expiresIn))
         let scopes = token.scope.isEmpty ? auth.scopes : token.scope

@@ -17,7 +17,12 @@ enum UtilityCommands {
         needsAuth: false
     ) { _, context in
         let snapshot = await context.authService.configSnapshot()
-        return CommandResult(ConfigPathView(path: snapshot.path, exists: snapshot.exists, permissions: snapshot.permissions))
+        return CommandResult(ConfigPathView(
+            path: snapshot.path,
+            exists: snapshot.exists,
+            permissions: snapshot.permissions,
+            mode: snapshot.permissions.map { String(format: "%03o", $0) }
+        ))
     }
 
     static let configShow = CommandSpec(
@@ -87,6 +92,15 @@ enum UtilityCommands {
         } else {
             checks.append(DoctorCheck(name: "config", status: "warn", detail: "No credentials file at \(snapshot.path)"))
         }
+        if let expiry = snapshot.profiles.first(where: { $0.name == snapshot.profile })?.expiresAt,
+           expiry.timeIntervalSinceNow < 86_400 {
+            let hours = max(Int(expiry.timeIntervalSinceNow / 3600), 0)
+            checks.append(DoctorCheck(
+                name: "token-expiry",
+                status: "warn",
+                detail: "Access token expires in \(hours)h; a confidential client needs EMBR_CLIENT_SECRET to refresh, otherwise run `embr auth login`."
+            ))
+        }
         if let auth = try? await context.authService.current() {
             do {
                 let identity = try await context.authService.identity(auth)
@@ -130,6 +144,7 @@ private struct ConfigPathView: Encodable {
     let path: String
     let exists: Bool
     let permissions: Int?
+    let mode: String?
 }
 
 private struct CompletionView: Encodable {

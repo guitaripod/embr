@@ -34,8 +34,8 @@ default `default`). `--scopes` takes presets (`chat`, `mod`, `studio`, `channel`
 explicit scopes. For unattended agents, `embr auth login --no-wait --json` and `embr auth poll`.
 
 Environment variables override the file: `EMBR_CLIENT_ID` (or `TWITCH_CLIENT_ID`),
-`EMBR_ACCESS_TOKEN` (or `TWITCH_ACCESS_TOKEN`), `EMBR_REFRESH_TOKEN`, `EMBR_CLIENT_SECRET` (only for
-`auth app-token`).
+`EMBR_ACCESS_TOKEN` (or `TWITCH_ACCESS_TOKEN`), `EMBR_REFRESH_TOKEN`, `EMBR_CLIENT_SECRET` (for
+`auth app-token`, and for refreshing tokens when the Twitch app is confidential).
 
 ## Quick start
 

@@ -46,11 +46,19 @@ enum DirectoryCommands {
                 users.append(user)
             }
         }
+        let byID = Dictionary(uniqueKeysWithValues: users.map { ($0.id, $0) })
+        let byLogin = Dictionary(uniqueKeysWithValues: users.map { ($0.login.lowercased(), $0) })
+        let ordered = inputs.compactMap { input -> TwitchUser? in
+            if input.allSatisfy(\.isNumber) {
+                return byID[input]
+            }
+            return byLogin[input.lowercased()]
+        }
         let table = CommandSupport.table(
             ["LOGIN", "NAME", "ID", "TYPE"],
-            users.map { [$0.login, $0.displayName, $0.id, $0.broadcasterType] }
+            ordered.map { [$0.login, $0.displayName, $0.id, $0.broadcasterType] }
         )
-        return CommandSupport.list(users, table: table, cursor: nil)
+        return CommandSupport.list(ordered, table: table, cursor: nil)
     }
 
     static let channelsInfo = CommandSpec(
@@ -98,6 +106,9 @@ enum DirectoryCommands {
         let names = ["title", "game-id", "language", "delay", "tag", "clear-tags", "ccl", "branded"]
         try CommandSupport.requireAnyFlag(invocation, names)
 
+        if invocation.has("clear-tags"), !invocation.list("tag").isEmpty {
+            throw CLIError.usage("Use either --tag or --clear-tags, not both.")
+        }
         var tags: [String]? = invocation.list("tag").isEmpty ? nil : invocation.list("tag")
         if invocation.has("clear-tags") { tags = [] }
         let labels = try invocation.list("ccl").map { raw -> ContentClassificationLabel in
@@ -151,20 +162,34 @@ enum DirectoryCommands {
         let factory = try context.factory()
         let token = try context.token()
         let first = invocation.int("first") ?? context.options.first ?? 20
-        let request = factory.channelFollowers(broadcasterID: user.id, first: first, token: token)
+        let request = factory.channelFollowers(broadcasterID: user.id, first: first, after: context.options.after, token: token)
         if let raw = try await CommandSupport.raw(request, context) { return raw }
-        let response = try await context.send(request)
-        let decoded = StudioHelixDecoder.followers(response.body)
+        var followers: [StudioFollow] = []
+        var cursor = context.options.after
+        var total = 0
+        var pages = 0
+        while true {
+            let pageRequest = factory.channelFollowers(broadcasterID: user.id, first: first, after: cursor, token: token)
+            let response = try await context.send(pageRequest)
+            let page = StudioHelixDecoder.followersPage(response.body)
+            total = page.total
+            followers.append(contentsOf: page.recent)
+            cursor = page.cursor
+            pages += 1
+            guard context.options.all, cursor != nil, pages < context.options.maxPages else { break }
+            await context.client.sleepIfExhausted(response)
+        }
         let table = CommandSupport.table(
-            ["USER", "ID", "FOLLOWED"],
-            decoded.recent.map { [$0.userName, $0.userID, CommandSupport.timestamp($0.followedAt)] }
+            ["LOGIN", "USER", "ID", "FOLLOWED"],
+            followers.map { [$0.userLogin ?? "", $0.userName, $0.userID, CommandSupport.timestamp($0.followedAt)] }
         )
         return CommandResult(
-            FollowersView(total: decoded.total, followers: decoded.recent),
-            items: decoded.recent.map { AnyEncodable($0) },
+            FollowersView(total: total, followers: followers),
+            items: followers.map { AnyEncodable($0) },
             table: table,
-            total: decoded.total,
-            count: decoded.recent.count
+            cursor: cursor,
+            total: total,
+            count: followers.count
         )
     }
 
@@ -269,7 +294,12 @@ enum DirectoryCommands {
         var firstPage: SchedulePage?
         while true {
             let current = pageCount == 0 ? request : factory.schedule(broadcasterID: user.id, first: first, after: cursor, token: token)
-            let response = try await context.send(current)
+            let response: HTTPResponse
+            do {
+                response = try await context.send(current)
+            } catch let error as CLIError where error.kind == .notFound {
+                throw CLIError(.notFound, error.message, status: 404, hint: "\(user.login) has no stream schedule.")
+            }
             let page = try HelixDecoder.schedule(response.body)
             if firstPage == nil { firstPage = page }
             segments.append(contentsOf: page.segments)

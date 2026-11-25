@@ -8,7 +8,9 @@ enum StudioCommands {
         adSnooze,
         hypeTrain,
         poll,
+        polls,
         prediction,
+        predictions,
         goals,
         followers,
         shieldStatus,
@@ -89,36 +91,45 @@ enum StudioCommands {
         return CommandResult(HypeTrainView(channel: broadcaster.login, active: train != nil, train: train.map(HypeTrainDetail.init)), count: train == nil ? 0 : 1)
     }
 
-    static let poll = CommandSpec(
-        ["studio", "poll"],
-        summary: "The channel's active poll.",
-        positionals: [PositionalSpec("channel", "Channel login or id.")],
-        examples: ["embr studio poll xqc --json"],
-        scopes: ["channel:read:polls"]
-    ) { invocation, context in
-        let broadcaster = try await context.resolver.user(try invocation.require(0, "channel"))
-        let factory = try context.factory()
-        let token = try context.token()
-        let request = factory.polls(broadcasterID: broadcaster.id, token: token)
-        let response = try await context.send(request)
-        let active = StudioHelixDecoder.activePoll(response.body)
-        return CommandResult(PollView(channel: broadcaster.login, active: active != nil, poll: active.map(PollDetail.init)), count: active == nil ? 0 : 1)
+    static let poll = pollSpec(["studio", "poll"], summary: "The channel's active poll.")
+    static let polls = pollSpec(["studio", "polls"], summary: "Alias for `studio poll`.")
+    static let prediction = predictionSpec(["studio", "prediction"], summary: "The channel's active or locked prediction.")
+    static let predictions = predictionSpec(["studio", "predictions"], summary: "Alias for `studio prediction`.")
+
+    private static func pollSpec(_ path: [String], summary: String) -> CommandSpec {
+        CommandSpec(
+            path,
+            summary: summary,
+            positionals: [PositionalSpec("channel", "Channel login or id.")],
+            examples: ["embr \(path.joined(separator: " ")) xqc --json"],
+            scopes: ["channel:read:polls"]
+        ) { invocation, context in
+            let broadcaster = try await context.resolver.user(try invocation.require(0, "channel"))
+            let factory = try context.factory()
+            let token = try context.token()
+            let request = factory.polls(broadcasterID: broadcaster.id, token: token)
+            let response = try await context.send(request)
+            let active = StudioHelixDecoder.activePoll(response.body)
+            return CommandResult(PollView(channel: broadcaster.login, active: active != nil, poll: active.map(PollDetail.init)), count: active == nil ? 0 : 1)
+        }
     }
 
-    static let prediction = CommandSpec(
-        ["studio", "prediction"],
-        summary: "The channel's active or locked prediction.",
-        positionals: [PositionalSpec("channel", "Channel login or id.")],
-        examples: ["embr studio prediction xqc --json"],
-        scopes: ["channel:read:predictions"]
-    ) { invocation, context in
-        let broadcaster = try await context.resolver.user(try invocation.require(0, "channel"))
-        let factory = try context.factory()
-        let token = try context.token()
-        let request = factory.predictions(broadcasterID: broadcaster.id, token: token)
-        let response = try await context.send(request)
-        let active = StudioHelixDecoder.activePrediction(response.body)
-        return CommandResult(PredictionView(channel: broadcaster.login, active: active != nil, prediction: active.map(PredictionDetail.init)), count: active == nil ? 0 : 1)
+    private static func predictionSpec(_ path: [String], summary: String) -> CommandSpec {
+        CommandSpec(
+            path,
+            summary: summary,
+            positionals: [PositionalSpec("channel", "Channel login or id.")],
+            examples: ["embr \(path.joined(separator: " ")) xqc --json"],
+            scopes: ["channel:read:predictions"]
+        ) { invocation, context in
+            let broadcaster = try await context.resolver.user(try invocation.require(0, "channel"))
+            let factory = try context.factory()
+            let token = try context.token()
+            let request = factory.predictions(broadcasterID: broadcaster.id, token: token)
+            let response = try await context.send(request)
+            let active = StudioHelixDecoder.activePrediction(response.body)
+            return CommandResult(PredictionView(channel: broadcaster.login, active: active != nil, prediction: active.map(PredictionDetail.init)), count: active == nil ? 0 : 1)
+        }
     }
 
     static let goals = CommandSpec(
@@ -152,19 +163,34 @@ enum StudioCommands {
         let factory = try context.factory()
         let token = try context.token()
         let first = invocation.int("first") ?? context.options.first ?? 20
-        let request = factory.channelFollowers(broadcasterID: broadcaster.id, first: first, token: token)
-        let response = try await context.send(request)
-        let decoded = StudioHelixDecoder.followers(response.body)
+        let request = factory.channelFollowers(broadcasterID: broadcaster.id, first: first, after: context.options.after, token: token)
+        if let raw = try await CommandSupport.raw(request, context) { return raw }
+        var followers: [StudioFollow] = []
+        var cursor = context.options.after
+        var total = 0
+        var pages = 0
+        while true {
+            let pageRequest = factory.channelFollowers(broadcasterID: broadcaster.id, first: first, after: cursor, token: token)
+            let response = try await context.send(pageRequest)
+            let page = StudioHelixDecoder.followersPage(response.body)
+            total = page.total
+            followers.append(contentsOf: page.recent)
+            cursor = page.cursor
+            pages += 1
+            guard context.options.all, cursor != nil, pages < context.options.maxPages else { break }
+            await context.client.sleepIfExhausted(response)
+        }
         let table = CommandSupport.table(
-            ["USER", "ID", "FOLLOWED"],
-            decoded.recent.map { [$0.userName, $0.userID, CommandSupport.timestamp($0.followedAt)] }
+            ["LOGIN", "USER", "ID", "FOLLOWED"],
+            followers.map { [$0.userLogin ?? "", $0.userName, $0.userID, CommandSupport.timestamp($0.followedAt)] }
         )
         return CommandResult(
-            ChannelFollowersView(total: decoded.total, followers: decoded.recent),
-            items: decoded.recent.map { AnyEncodable($0) },
+            ChannelFollowersView(total: total, followers: followers),
+            items: followers.map { AnyEncodable($0) },
             table: table,
-            total: decoded.total,
-            count: decoded.recent.count
+            cursor: cursor,
+            total: total,
+            count: followers.count
         )
     }
 

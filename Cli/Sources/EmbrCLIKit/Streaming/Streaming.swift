@@ -17,8 +17,8 @@ enum StreamingCommands {
         positionals: [PositionalSpec("channel", "Channel login.")],
         options: [
             .flag("anonymous", "Force the anonymous IRC transport."),
-            .value("transport", "eventsub|irc", "Choose the transport explicitly."),
-            .value("limit", "N", "Stop after this many events.", range: 1...1_000_000),
+            .value("transport", "eventsub|irc", "Choose the transport explicitly.", choices: ["eventsub", "irc"]),
+            .value("limit", "N", "Stop after this many chat messages.", range: 1...1_000_000),
             .value("duration", "SECONDS", "Stop after this many seconds.", range: 1...86_400)
         ],
         examples: [
@@ -29,6 +29,9 @@ enum StreamingCommands {
     ) { invocation, context in
         let channel = try invocation.require(0, "channel").lowercased()
         let requested = invocation.value("transport")
+        if invocation.has("anonymous"), requested == "eventsub" {
+            throw CLIError.usage("Choose either --anonymous or --transport eventsub, not both.")
+        }
         let anonymous = invocation.has("anonymous") || requested == "irc"
         let auth: AuthContext?
         if anonymous {
@@ -73,7 +76,7 @@ enum StreamingCommands {
         options: [
             .value("chat", "CHANNEL", "Subscribe to this channel's chat."),
             .value("moderate", "CHANNEL", "Also subscribe as a moderator of this channel."),
-            .value("limit", "N", "Stop after this many events.", range: 1...1_000_000),
+            .value("limit", "N", "Stop after this many notifications.", range: 1...1_000_000),
             .value("duration", "SECONDS", "Stop after this many seconds.", range: 1...86_400)
         ],
         examples: [
@@ -81,10 +84,16 @@ enum StreamingCommands {
             "embr eventsub listen --duration 60 --json"
         ],
         scopes: ["user:read:chat"],
-        needsAuth: true
+        needsAuth: false
     ) { invocation, context in
-        let auth = try context.requireAuth()
+        let auth = try? await context.authService.current()
+        if invocation.value("chat") != nil, auth == nil {
+            throw CLIError.auth("Subscribing to chat needs a signed-in token.", hint: "Run `embr auth login`.")
+        }
         if let channel = invocation.value("chat") {
+            guard let auth else {
+                throw CLIError.auth("Subscribing to chat needs a signed-in token.", hint: "Run `embr auth login`.")
+            }
             try await EventSubRunner(
                 context: context,
                 auth: auth,
@@ -215,6 +224,7 @@ private final class EventSubRunner {
     private let limit: Int?
     private let duration: Int?
     private var emitted = 0
+    private var subscriptionIDs: [String] = []
 
     init(context: RunContext, auth: AuthContext, channel: String, moderator: Bool, limit: Int?, duration: Int?) {
         self.context = context
@@ -231,6 +241,7 @@ private final class EventSubRunner {
         let deadline = duration.map { Date().addingTimeInterval(TimeInterval($0)) }
         var reconnects = 0
 
+        do {
         while true {
             let socket = try await Socket.connect(url)
             let closer = startDeadlineTimer(socket, deadline: deadline)
@@ -269,7 +280,8 @@ private final class EventSubRunner {
                         data: (try? JSONValue.decode(event)) ?? .null,
                         message: nil
                     )
-                    if let mapped = try? EventSubMapper.chatEvent(subscriptionType: type, eventData: event, timestamp: Date()) {
+                    if type == "channel.chat.message",
+                       let mapped = try? EventSubMapper.chatEvent(subscriptionType: type, eventData: event, timestamp: Date()) {
                         if case .message(let chat) = mapped {
                             line = StreamLine(
                                 type: "message",
@@ -289,6 +301,7 @@ private final class EventSubRunner {
                 case .revocation(let reason, let type, _):
                     emit(StreamLine(type: "revocation", transport: "eventsub", subscription: type, channel: channelLogin, data: jsonValue(["reason": reason]), message: nil))
                 }
+                if nextURL != nil { break }
                 if let limit, emitted >= limit { break }
             }
 
@@ -310,6 +323,11 @@ private final class EventSubRunner {
             reconnects += 1
             if reconnects > 10 { break }
         }
+        } catch {
+            await cleanupSubscriptions()
+            throw error
+        }
+        await cleanupSubscriptions()
     }
 
     private func subscribe(broadcasterID: String, sessionID: String) async throws {
@@ -335,17 +353,17 @@ private final class EventSubRunner {
             )
         }
         guard let primary = requests.first else { return }
-        try await createSubscription(primary)
+        _ = try await createSubscription(primary)
         for request in requests.dropFirst() {
             do {
-                try await createSubscription(request)
+                _ = try await createSubscription(request)
             } catch {
                 context.renderer.note("subscribe \(request.type) failed: \((error as? CLIError)?.message ?? String(describing: error))")
             }
         }
     }
 
-    private func createSubscription(_ request: EventSubSubscriptionRequest) async throws {
+    private func createSubscription(_ request: EventSubSubscriptionRequest) async throws -> String? {
         let body = try request.encoded()
         let http = HTTPRequest(
             method: .post,
@@ -361,6 +379,37 @@ private final class EventSubRunner {
         guard (200..<300).contains(response.status) else {
             throw CLIError.http(status: response.status, body: response.body)
         }
+        let id = createdID(response.body)
+        if let id { subscriptionIDs.append(id) }
+        return id
+    }
+
+    private func createdID(_ body: Data) -> String? {
+        struct Created: Decodable {
+            struct Item: Decodable { let id: String }
+            let data: [Item]
+        }
+        return (try? TwitchJSON.decoder.decode(Created.self, from: body))?.data.first?.id
+    }
+
+    private func cleanupSubscriptions() async {
+        guard !subscriptionIDs.isEmpty else { return }
+        let ids = subscriptionIDs
+        subscriptionIDs.removeAll()
+        for id in ids {
+            var components = URLComponents(string: "https://api.twitch.tv/helix/eventsub/subscriptions")
+            components?.queryItems = [URLQueryItem(name: "id", value: id)]
+            guard let url = components?.url else { continue }
+            let request = HTTPRequest(
+                method: .delete,
+                url: url,
+                headers: [
+                    "Client-Id": auth.clientID,
+                    "Authorization": "Bearer \(auth.accessToken)"
+                ]
+            )
+            _ = try? await context.client.send(request)
+        }
     }
 
     private func resolveChannel(_ login: String) async throws -> String {
@@ -369,7 +418,9 @@ private final class EventSubRunner {
     }
 
     private func emit(_ line: StreamLine) {
-        emitted += 1
+        if line.type == "message" {
+            emitted += 1
+        }
         context.renderer.writeLine(line)
     }
 
@@ -392,14 +443,15 @@ private final class EventSubRunner {
 
 private final class RawEventSubRunner {
     private let context: RunContext
-    private let auth: AuthContext
+    private let auth: AuthContext?
     private let chatChannel: String?
     private let moderatorChannel: String?
     private let limit: Int?
     private let duration: Int?
     private var emitted = 0
+    private var subscriptionIDs: [String] = []
 
-    init(context: RunContext, auth: AuthContext, chatChannel: String?, moderatorChannel: String?, limit: Int?, duration: Int?) {
+    init(context: RunContext, auth: AuthContext?, chatChannel: String?, moderatorChannel: String?, limit: Int?, duration: Int?) {
         self.context = context
         self.auth = auth
         self.chatChannel = chatChannel
@@ -411,7 +463,7 @@ private final class RawEventSubRunner {
     func run() async throws {
         let channel = chatChannel ?? moderatorChannel
         let broadcasterID: String?
-        if let channel {
+        if let channel, let auth {
             broadcasterID = try await Resolver(client: context.client, auth: auth).userID(channel)
         } else {
             broadcasterID = nil
@@ -420,6 +472,7 @@ private final class RawEventSubRunner {
         let deadline = duration.map { Date().addingTimeInterval(TimeInterval($0)) }
         var reconnects = 0
 
+        do {
         while true {
             let socket = try await Socket.connect(url)
             let closer = startDeadlineTimer(socket, deadline: deadline)
@@ -429,8 +482,8 @@ private final class RawEventSubRunner {
                 guard let data = text.data(using: .utf8), let message = try? EventSubMessage.decode(data) else { continue }
                 switch message {
                 case .welcome(let sessionID, let keepalive):
-                    if let channel, let broadcasterID {
-                        try await subscribeChat(broadcasterID: broadcasterID, sessionID: sessionID, channel: channel)
+                    if let auth, let channel, let broadcasterID {
+                        try await subscribeChat(auth: auth, broadcasterID: broadcasterID, sessionID: sessionID, channel: channel)
                     }
                     emit(RawLine(type: "welcome", sessionID: sessionID, keepaliveSeconds: keepalive, subscription: nil, broadcasterID: nil, event: nil, url: nil, reason: nil))
                 case .keepalive:
@@ -444,6 +497,7 @@ private final class RawEventSubRunner {
                 case .revocation(let reason, let type, _):
                     emit(RawLine(type: "revocation", sessionID: nil, keepaliveSeconds: nil, subscription: type, broadcasterID: nil, event: nil, url: nil, reason: reason))
                 }
+                if nextURL != nil { break }
                 if let limit, emitted >= limit { break }
             }
             closer.cancel()
@@ -455,9 +509,14 @@ private final class RawEventSubRunner {
             reconnects += 1
             if reconnects > 10 { break }
         }
+        } catch {
+            await cleanupSubscriptions()
+            throw error
+        }
+        await cleanupSubscriptions()
     }
 
-    private func subscribeChat(broadcasterID: String, sessionID: String, channel: String) async throws {
+    private func subscribeChat(auth: AuthContext, broadcasterID: String, sessionID: String, channel: String) async throws {
         let userID: String
         if let known = auth.userID {
             userID = known
@@ -472,17 +531,20 @@ private final class RawEventSubRunner {
             requests += EventSubSubscriptionRequest.moderatorSubscriptions(broadcasterID: broadcasterID, moderatorID: userID, sessionID: sessionID)
         }
         guard let primary = requests.first else { return }
-        try await createSubscription(primary)
+        _ = try await createSubscription(primary)
         for request in requests.dropFirst() {
             do {
-                try await createSubscription(request)
+                _ = try await createSubscription(request)
             } catch {
                 context.renderer.note("subscribe \(request.type) failed: \((error as? CLIError)?.message ?? String(describing: error))")
             }
         }
     }
 
-    private func createSubscription(_ request: EventSubSubscriptionRequest) async throws {
+    private func createSubscription(_ request: EventSubSubscriptionRequest) async throws -> String? {
+        guard let auth else {
+            throw CLIError.auth("Subscribing needs a signed-in token.", hint: "Run `embr auth login`.")
+        }
         let http = HTTPRequest(
             method: .post,
             url: URL(string: "https://api.twitch.tv/helix/eventsub/subscriptions")!,
@@ -497,10 +559,39 @@ private final class RawEventSubRunner {
         guard (200..<300).contains(response.status) else {
             throw CLIError.http(status: response.status, body: response.body)
         }
+        struct Created: Decodable {
+            struct Item: Decodable { let id: String }
+            let data: [Item]
+        }
+        let id = (try? TwitchJSON.decoder.decode(Created.self, from: response.body))?.data.first?.id
+        if let id { subscriptionIDs.append(id) }
+        return id
+    }
+
+    private func cleanupSubscriptions() async {
+        guard let auth, !subscriptionIDs.isEmpty else { return }
+        let ids = subscriptionIDs
+        subscriptionIDs.removeAll()
+        for id in ids {
+            var components = URLComponents(string: "https://api.twitch.tv/helix/eventsub/subscriptions")
+            components?.queryItems = [URLQueryItem(name: "id", value: id)]
+            guard let url = components?.url else { continue }
+            let request = HTTPRequest(
+                method: .delete,
+                url: url,
+                headers: [
+                    "Client-Id": auth.clientID,
+                    "Authorization": "Bearer \(auth.accessToken)"
+                ]
+            )
+            _ = try? await context.client.send(request)
+        }
     }
 
     private func emit(_ line: RawLine) {
-        emitted += 1
+        if line.type == "notification" {
+            emitted += 1
+        }
         context.renderer.writeLine(line)
     }
 
@@ -588,10 +679,15 @@ private final class IRCRunner {
                 channel: channel,
                 data: nil,
                 message: chat.plainText
-            ), extra: ["author": chat.author.login, "id": chat.id])
+            ), data: [
+                "author": chat.author.login,
+                "display_name": chat.author.displayName,
+                "id": chat.id,
+                "badges": chat.badges.map { "\($0.setID)/\($0.id)" }.joined(separator: ",")
+            ])
         case "ROOMSTATE":
             let state = IRCMapper.roomState(from: message, merging: RoomState())
-            emit(StreamLine(type: "roomstate", transport: "irc", subscription: nil, channel: channel, data: nil, message: nil), extra: [
+            emit(StreamLine(type: "roomstate", transport: "irc", subscription: nil, channel: channel, data: nil, message: nil), data: [
                 "emote_only": state.emoteOnly ? "true" : "false",
                 "followers_only": state.followersOnly.map(String.init) ?? "",
                 "slow": state.slowMode.map(String.init) ?? ""
@@ -609,19 +705,17 @@ private final class IRCRunner {
         }
     }
 
-    private func emit(_ line: StreamLine, extra: [String: String] = [:]) {
+    private func emit(_ line: StreamLine, data: [String: String] = [:]) {
         var object: [String: Any] = [
             "type": line.type,
             "transport": line.transport ?? "irc",
             "channel": line.channel ?? channel
         ]
         if let message = line.message { object["message"] = message }
-        for (key, value) in extra where !value.isEmpty {
-            object[key] = value
-        }
-        guard let data = try? JSONSerialization.data(withJSONObject: object),
-              let value = try? JSONValue.decode(data) else { return }
-        emitted += 1
+        if !data.isEmpty { object["data"] = data }
+        guard let encoded = try? JSONSerialization.data(withJSONObject: object),
+              let value = try? JSONValue.decode(encoded) else { return }
+        if line.type == "message" { emitted += 1 }
         context.renderer.writeLine(value)
     }
 

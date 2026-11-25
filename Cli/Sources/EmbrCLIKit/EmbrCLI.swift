@@ -236,25 +236,68 @@ public enum EmbrCLI {
 
     private static func renderDryRun(_ request: HTTPRequest, renderer: Renderer) {
         var headers = request.headers
-        if headers["Authorization"] != nil {
-            headers["Authorization"] = "REDACTED"
+        for name in headers.keys where isSecretName(name) {
+            headers[name] = "REDACTED"
         }
-        var body: JSONValue?
-        if let data = request.body {
-            if let json = try? JSONValue.decode(data) {
-                body = json
-            } else {
-                body = .string(String(decoding: data, as: UTF8.self))
-            }
-        }
+        let body = request.body.flatMap(redactedBody)
         let view = DryRunView(
             dryRun: true,
             method: request.method.rawValue,
-            url: request.url.absoluteString,
+            url: redactedURL(request.url),
             headers: headers,
             body: body
         )
         try? renderer.write(CommandResult(view), command: "dry-run")
+    }
+
+    private static func redactedBody(_ data: Data) -> JSONValue? {
+        if let json = try? JSONValue.decode(data) {
+            return redact(json)
+        }
+        let raw = String(decoding: data, as: UTF8.self)
+        guard raw.contains("="), !raw.contains("\n") else {
+            return .string(raw)
+        }
+        let fields = raw.split(separator: "&").map { field -> String in
+            let parts = field.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return String(field) }
+            return isSecretName(parts[0]) ? "\(parts[0])=REDACTED" : String(field)
+        }
+        return .string(fields.joined(separator: "&"))
+    }
+
+    private static func redact(_ value: JSONValue) -> JSONValue {
+        switch value {
+        case .object(let object):
+            var redacted: [String: JSONValue] = [:]
+            for (key, value) in object {
+                redacted[key] = isSecretName(key) ? .string("REDACTED") : redact(value)
+            }
+            return .object(redacted)
+        case .array(let array):
+            return .array(array.map(redact))
+        default:
+            return value
+        }
+    }
+
+    private static func isSecretName(_ name: String) -> Bool {
+        let lowered = name.lowercased()
+        return lowered.contains("authorization")
+            || lowered.contains("secret")
+            || lowered.contains("token")
+            || lowered == "code"
+            || lowered.hasSuffix("_code")
+    }
+
+    private static func redactedURL(_ url: URL) -> String {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url.absoluteString
+        }
+        components.queryItems = components.queryItems?.map { item in
+            isSecretName(item.name) ? URLQueryItem(name: item.name, value: "REDACTED") : item
+        }
+        return components.url?.absoluteString ?? url.absoluteString
     }
 }
 

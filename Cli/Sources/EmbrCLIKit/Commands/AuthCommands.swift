@@ -49,7 +49,8 @@ enum AuthCommands {
                     verificationURI: start.verificationURI.absoluteString,
                     deviceCode: start.deviceCode,
                     interval: start.interval,
-                    expiresIn: start.expiresIn
+                    expiresIn: start.expiresIn,
+                    scopes: scopes
                 )
             )
         }
@@ -162,6 +163,7 @@ enum AuthCommands {
             expiresAt: expiresAt,
             configPath: status.configPath,
             configPermissions: status.configPermissions,
+            configMode: status.configMode,
             reason: reason
         ))
     }
@@ -287,6 +289,7 @@ private struct DeviceView: Encodable {
     let deviceCode: String
     let interval: Int
     let expiresIn: Int
+    let scopes: [String]
 }
 
 private struct LoginView: Encodable {
@@ -331,6 +334,7 @@ private struct StatusView: Encodable {
     let expiresAt: Date?
     let configPath: String
     let configPermissions: Int?
+    let configMode: String?
     let reason: String?
 }
 

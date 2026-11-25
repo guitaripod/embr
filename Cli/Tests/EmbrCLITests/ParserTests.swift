@@ -50,15 +50,17 @@ enum TestRun {
     static func run(
         _ arguments: [String],
         transport: FakeTransport,
-        configDirectory: URL
+        configDirectory: URL,
+        extraEnvironment: [String: String] = [:]
     ) async -> (code: Int32, out: Capture, err: Capture) {
         let out = Capture()
         let err = Capture()
-        let environment = [
+        var environment = [
             "EMBR_CONFIG_DIR": configDirectory.path,
             "EMBR_CLIENT_ID": "client-id",
             "EMBR_ACCESS_TOKEN": "access-token"
         ]
+        environment.merge(extraEnvironment) { _, new in new }
         let code = await EmbrCLI.run(
             arguments: ["embr"] + arguments,
             environment: environment,
@@ -113,6 +115,9 @@ struct ParserTests {
         #expect(CommandCatalog.commands.contains { $0.path == ["chat", "watch"] })
         #expect(CommandCatalog.commands.contains { $0.path == ["eventsub", "listen"] })
         #expect(CommandCatalog.commands.contains { $0.path == ["mod", "vips"] })
+        let chatCatalog = Catalog.build(CommandCatalog.registry, groupFilter: ["chat"])
+        #expect(chatCatalog.groups.allSatisfy { $0.name.hasPrefix("chat") })
+        #expect(chatCatalog.commands.allSatisfy { $0.name.hasPrefix("chat") })
     }
 
     @Test func rootHelpNamesGroupsAndExitCodes() {

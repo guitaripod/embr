@@ -146,6 +146,38 @@ public struct RunContext: Sendable {
         return (items, cursor)
     }
 
+    public func collectWithTotal<Model: Sendable>(
+        _ request: HTTPRequest,
+        decode: @Sendable (Data) throws -> HelixResponse<Model>,
+        next: @Sendable (String) -> HTTPRequest
+    ) async throws -> (items: [Model], cursor: String?, total: Int?) {
+        var items: [Model] = []
+        var current = request
+        var cursor: String? = options.after
+        var total: Int?
+        var pages = 0
+        while true {
+            let response = try await client.send(current)
+            try client.requireSuccess(response)
+            let page: HelixResponse<Model>
+            do {
+                page = try decode(response.body)
+            } catch {
+                throw CLIError(.decode, "Could not decode Twitch's page: \(error)")
+            }
+            if total == nil {
+                total = page.total
+            }
+            items.append(contentsOf: page.data)
+            cursor = page.pagination?.cursor
+            pages += 1
+            guard options.all, let nextCursor = cursor, pages < options.maxPages else { break }
+            await client.sleepIfExhausted(response)
+            current = next(nextCursor)
+        }
+        return (items, cursor, total)
+    }
+
     public func readMessage(_ parts: [String]) throws -> String {
         if parts == ["-"] {
             guard !options.noInput else {
