@@ -4,17 +4,18 @@ Twitch from the terminal, built on EmbrCore. It covers everything Embr's core ca
 
 ## Install
 
+Run this from the CLI directory: `Cli/` in the public `guitaripod/embr` checkout, or
+`apps/embr/Cli` in the monorepo.
+
 macOS:
 
 ```sh
-cd apps/embr/Cli
 ./scripts/install.sh
 ```
 
 Linux (Arch, Debian, Ubuntu): the script uses a local Swift toolchain if present, otherwise the `swift:6.4.1-jammy` Docker image with a statically linked Swift runtime.
 
 ```sh
-cd apps/embr/Cli
 ./scripts/install.sh
 ```
 
