@@ -133,6 +133,7 @@ enum AuthCommands {
         needsAuth: false
     ) { _, context in
         let status = await context.authService.status()
+        let refresh = await context.authService.refreshStrategy()
         var authenticated = status.source != nil
         var login = status.login
         var userID = status.userID
@@ -167,6 +168,7 @@ enum AuthCommands {
             configPath: status.configPath,
             configPermissions: status.configPermissions,
             configMode: status.configMode,
+            refresh: refresh,
             reason: reason
         ))
     }
@@ -338,6 +340,7 @@ private struct StatusView: Encodable {
     let configPath: String
     let configPermissions: Int?
     let configMode: String?
+    let refresh: String
     let reason: String?
 }
 

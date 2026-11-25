@@ -95,11 +95,15 @@ enum UtilityCommands {
         if let expiry = snapshot.profiles.first(where: { $0.name == snapshot.profile })?.expiresAt,
            expiry.timeIntervalSinceNow < 86_400 {
             let hours = max(Int(expiry.timeIntervalSinceNow / 3600), 0)
-            checks.append(DoctorCheck(
-                name: "token-expiry",
-                status: "warn",
-                detail: "Access token expires in \(hours)h; a confidential client needs EMBR_CLIENT_SECRET to refresh, otherwise run `embr auth login`."
-            ))
+            let refresh = await context.authService.refreshStrategy()
+            switch refresh {
+            case "worker":
+                checks.append(DoctorCheck(name: "token-refresh", status: "ok", detail: "Access token expires in \(hours)h; refreshes through Embr's worker."))
+            case "secret":
+                checks.append(DoctorCheck(name: "token-refresh", status: "ok", detail: "Access token expires in \(hours)h; refreshes with EMBR_CLIENT_SECRET."))
+            default:
+                checks.append(DoctorCheck(name: "token-refresh", status: "warn", detail: "Access token expires in \(hours)h; no refresh path, so run `embr auth login` when it lapses."))
+            }
         }
         if let auth = try? await context.authService.current() {
             do {

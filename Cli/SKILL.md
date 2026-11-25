@@ -17,8 +17,8 @@ embr commands --json        # full catalog: names, args, options, scopes, exampl
 Auth precedence: `--client-id`/`--token` flags → `EMBR_CLIENT_ID`/`EMBR_ACCESS_TOKEN` (or
 `TWITCH_*`) → `~/.config/embr/credentials.json`. If the token is missing or expired, ask the human to
 run `embr auth login` (it needs their browser/phone). `auth login --no-wait --json` plus `auth poll`
-lets an agent drive the device flow. A confidential app needs `EMBR_CLIENT_SECRET` to refresh; the
-error hint says so when it is missing.
+lets an agent drive the device flow. Embr's client id refreshes through Embr's worker; another
+confidential app needs `EMBR_CLIENT_SECRET` (the error hint says so when it is missing).
 
 ## Output contract
 

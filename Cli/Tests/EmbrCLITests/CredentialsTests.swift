@@ -78,6 +78,39 @@ struct CredentialsTests {
         #expect(stored?.refreshToken == "refresh-2")
     }
 
+    @Test func workerRefreshRotatesTokensWithoutASecret() async throws {
+        let directory = TestRun.make()
+        let store = CredentialsStore(url: directory.appendingPathComponent("credentials.json"))
+        try store.update("default") { file in
+            file.profiles["default"] = StoredProfile(
+                clientID: "cid",
+                accessToken: "old",
+                refreshToken: "refresh-1",
+                expiresAt: Date().addingTimeInterval(-60)
+            )
+        }
+        let transport = FakeTransport { request in
+            #expect(request.url.absoluteString == "https://worker.example/refresh")
+            return HTTPResponse(
+                status: 200,
+                headers: [:],
+                body: Data(#"{"accessToken":"new","refreshToken":"refresh-2","expiresIn":14000,"scope":["chat:read"]}"#.utf8)
+            )
+        }
+        let client = APIClient(transport: transport)
+        let service = AuthService(
+            store: store,
+            environment: ["EMBR_REFRESH_URL": "https://worker.example/refresh"],
+            client: client,
+            profile: "default"
+        )
+        let auth = try await service.current()
+        #expect(auth.accessToken == "new")
+        #expect(auth.refreshToken == "refresh-2")
+        #expect(store.profile("default")?.accessToken == "new")
+        #expect(await service.refreshStrategy() == "worker")
+    }
+
     @Test func failedRefreshNamesTheClientSecret() async throws {
         let directory = TestRun.make()
         let store = CredentialsStore(url: directory.appendingPathComponent("credentials.json"))

@@ -41,9 +41,11 @@ The device flow prints a code and a `twitch.tv/activate` link. Tokens are stored
 default `default`). `--scopes` takes presets (`chat`, `mod`, `studio`, `channel`, `user`, `all`) or
 explicit scopes. For unattended agents, `embr auth login --no-wait --json` and `embr auth poll`.
 
-A confidential Twitch app (including Embr's existing client id) needs `EMBR_CLIENT_SECRET` to refresh
-tokens; without it, `auth refresh` fails and you sign in again when the access token expires. A public
-client refreshes with the client id alone.
+Embr's client id refreshes tokens through Embr's worker, which holds the app secret, so there is no
+re-login every few hours. A different confidential Twitch app needs `EMBR_CLIENT_SECRET` for direct
+refresh; a public client refreshes with the client id alone. Override the worker endpoint with
+`EMBR_REFRESH_URL`, or force direct refresh with `EMBR_DISABLE_WORKER_REFRESH=1`. The refresh token is
+sent to that endpoint over TLS and the rotated tokens are written back to the 0600 config.
 
 Environment variables override the file: `EMBR_CLIENT_ID` (or `TWITCH_CLIENT_ID`),
 `EMBR_ACCESS_TOKEN` (or `TWITCH_ACCESS_TOKEN`), `EMBR_REFRESH_TOKEN`, `EMBR_CLIENT_SECRET` (for
@@ -137,8 +139,8 @@ See `SKILL.md` for recipes.
 
 ## Troubleshooting
 
-- `401` usually means the token expired. Run `embr auth status`, then `embr auth refresh` or sign in
-  again; a confidential app needs `EMBR_CLIENT_SECRET` to refresh.
+- `401` usually means the token expired. Run `embr auth status`, then `embr auth refresh`; Embr's
+  client id refreshes through the worker, a CLI-specific confidential app needs `EMBR_CLIENT_SECRET`.
 - `403` names a missing scope. Re-run `embr auth login --scopes all` or pass the exact scope.
 - A dry run that stops at a user lookup is telling you to pass numeric ids; the response carries a
   `note` field saying so.

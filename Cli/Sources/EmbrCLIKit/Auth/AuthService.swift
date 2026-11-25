@@ -95,6 +95,9 @@ public struct ConfigSnapshot: Encodable, Sendable {
 }
 
 public actor AuthService {
+    private static let embrClientID = "m61yy3c1nkq50qthoyi8k5glugnsqk"
+    private static let embrRefreshURL = URL(string: "https://embr.guitaripod.workers.dev/auth/refresh")!
+
     private let store: CredentialsStore
     private let environment: [String: String]
     private let client: APIClient
@@ -468,6 +471,63 @@ public actor AuthService {
         guard let refreshToken = auth.refreshToken else {
             throw CLIError.auth("The token expired and there is no refresh token.", hint: "Run `embr auth login`.")
         }
+        if let worker = workerRefreshURL(for: auth.clientID) {
+            do {
+                let token = try await refreshThroughWorker(worker, refreshToken: refreshToken)
+                return try persist(token, auth: auth)
+            } catch let error as CLIError where error.kind == .auth {
+                throw error
+            } catch {
+                if environment["EMBR_CLIENT_SECRET"] == nil {
+                    throw error
+                }
+            }
+        }
+        let token = try await refreshDirect(auth, refreshToken: refreshToken)
+        return try persist(token, auth: auth)
+    }
+
+    private func refreshThroughWorker(_ url: URL, refreshToken: String) async throws -> OAuthToken {
+        let body = try? JSONEncoder().encode(["refreshToken": refreshToken])
+        let request = HTTPRequest(
+            method: .post,
+            url: url,
+            headers: ["Content-Type": "application/json"],
+            body: body
+        )
+        let response = try await client.send(request)
+        if response.status == 400 || response.status == 401 {
+            throw CLIError(
+                .auth,
+                "Twitch rejected the refresh token.",
+                status: response.status,
+                hint: "Run `embr auth login` to sign in again."
+            )
+        }
+        guard response.isSuccess else {
+            throw CLIError.http(status: response.status, body: response.body)
+        }
+        struct WorkerToken: Decodable {
+            let accessToken: String
+            let refreshToken: String?
+            let expiresIn: Int
+            let scope: [String]?
+        }
+        let decoded: WorkerToken
+        do {
+            decoded = try JSONDecoder().decode(WorkerToken.self, from: response.body)
+        } catch {
+            throw CLIError(.decode, "Could not read the worker's refreshed token.")
+        }
+        return OAuthToken(
+            accessToken: decoded.accessToken,
+            refreshToken: decoded.refreshToken,
+            expiresIn: decoded.expiresIn,
+            scope: decoded.scope ?? []
+        )
+    }
+
+    private func refreshDirect(_ auth: AuthContext, refreshToken: String) async throws -> OAuthToken {
         let secret = environment["EMBR_CLIENT_SECRET"]
         let request = TokenRefresh.request(clientID: auth.clientID, clientSecret: secret, refreshToken: refreshToken)
         let response = try await client.send(request)
@@ -482,12 +542,14 @@ public actor AuthService {
             }
             throw CLIError.http(status: response.status, body: response.body)
         }
-        let token: OAuthToken
         do {
-            token = try TokenRefresh.decode(response)
+            return try TokenRefresh.decode(response)
         } catch {
             throw CLIError(.decode, "Could not read the refreshed token.")
         }
+    }
+
+    private func persist(_ token: OAuthToken, auth: AuthContext) throws -> AuthContext {
         let expiresAt = Date().addingTimeInterval(TimeInterval(token.expiresIn))
         let scopes = token.scope.isEmpty ? auth.scopes : token.scope
         let updated = AuthContext(
@@ -514,5 +576,23 @@ public actor AuthService {
             }
         }
         return updated
+    }
+
+    public func refreshStrategy() -> String {
+        let stored = store.load().profiles[profile] ?? StoredProfile()
+        guard let clientID = resolvedClientID(stored), !clientID.isEmpty else { return "none" }
+        if workerRefreshURL(for: clientID) != nil { return "worker" }
+        return environment["EMBR_CLIENT_SECRET"] != nil ? "secret" : "none"
+    }
+
+    private func workerRefreshURL(for clientID: String) -> URL? {
+        if environment["EMBR_DISABLE_WORKER_REFRESH"] == "1" {
+            return nil
+        }
+        if let override = environment["EMBR_REFRESH_URL"], let url = URL(string: override) {
+            return url
+        }
+        guard clientID == Self.embrClientID else { return nil }
+        return Self.embrRefreshURL
     }
 }

@@ -29,8 +29,10 @@ enum HelpTopics {
     (EMBR_CLIENT_ID/TWITCH_CLIENT_ID, EMBR_ACCESS_TOKEN/TWITCH_ACCESS_TOKEN, EMBR_REFRESH_TOKEN),
     then the config file.
 
-    Tokens refresh automatically 60 seconds before expiry. A refresh rewrites the config file. A
-    confidential Twitch app needs EMBR_CLIENT_SECRET for that refresh; without it, sign in again.
+    Tokens refresh automatically 60 seconds before expiry and the refreshed tokens rewrite the config
+    file. Embr's client id refreshes through Embr's worker, which holds the app secret; override that
+    with EMBR_REFRESH_URL or disable it with EMBR_DISABLE_WORKER_REFRESH=1. Another confidential app
+    needs EMBR_CLIENT_SECRET; a public app needs only the client id.
     `embr auth app-token` is the only command that prints a secret; it reads the client secret from
     --client-secret-env or stdin, never from argv.
 
