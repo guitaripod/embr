@@ -141,6 +141,7 @@ public enum StudioEventDecoder {
         return .follow(StudioFollow(
             userID: userID,
             userName: json.string("user_name") ?? json.string("user_login") ?? "",
+            userLogin: json.string("user_login"),
             followedAt: json.date("followed_at") ?? receivedAt
         ))
     }

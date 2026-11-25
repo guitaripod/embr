@@ -57,11 +57,13 @@ public enum StudioTier: String, Sendable, Equatable, Codable {
 public struct StudioFollow: Codable, Sendable, Equatable {
     public let userID: String
     public let userName: String
+    public let userLogin: String?
     public let followedAt: Date
 
-    public init(userID: String, userName: String, followedAt: Date) {
+    public init(userID: String, userName: String, userLogin: String? = nil, followedAt: Date) {
         self.userID = userID
         self.userName = userName
+        self.userLogin = userLogin
         self.followedAt = followedAt
     }
 }

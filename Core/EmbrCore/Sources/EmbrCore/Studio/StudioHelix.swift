@@ -35,8 +35,16 @@ extension HelixRequestFactory {
         get("goals", items: [("broadcaster_id", broadcasterID)], token: token)
     }
 
-    public func channelFollowers(broadcasterID: String, first: Int = 20, token: String) -> HTTPRequest {
-        get("channels/followers", items: [("broadcaster_id", broadcasterID), ("first", String(min(max(first, 1), 100)))], token: token)
+    public func channelFollowers(broadcasterID: String, first: Int = 20, after: String? = nil, token: String) -> HTTPRequest {
+        get(
+            "channels/followers",
+            items: [
+                ("broadcaster_id", broadcasterID),
+                ("first", String(min(max(first, 1), 100))),
+                ("after", after),
+            ],
+            token: token
+        )
     }
 
     public func shoutout(fromBroadcasterID: String, toBroadcasterID: String, moderatorID: String, token: String) -> HTTPRequest {
@@ -207,12 +215,26 @@ public enum StudioHelixDecoder {
     }
 
     public static func followers(_ data: Data) -> (total: Int, recent: [StudioFollow]) {
+        let page = followersPage(data)
+        return (page.total, page.recent)
+    }
+
+    public static func followersPage(_ data: Data) -> (total: Int, recent: [StudioFollow], cursor: String?) {
         let root = StudioJSON(data: data)
         let recent = list(data).compactMap { item -> StudioFollow? in
             guard let id = item.text("user_id") else { return nil }
-            return StudioFollow(userID: id, userName: item.string("user_name") ?? item.string("user_login") ?? "", followedAt: item.date("followed_at") ?? Date())
+            return StudioFollow(
+                userID: id,
+                userName: item.string("user_name") ?? item.string("user_login") ?? "",
+                userLogin: item.string("user_login"),
+                followedAt: item.date("followed_at") ?? Date()
+            )
         }
-        return (root?.int("total") ?? recent.count, recent)
+        return (
+            root?.int("total") ?? recent.count,
+            recent,
+            root?.child("pagination")?.text("cursor")
+        )
     }
 
     public static func moderatedChannels(_ data: Data) -> (channels: [ModeratedChannel], cursor: String?) {
