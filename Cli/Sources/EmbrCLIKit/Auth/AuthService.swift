@@ -30,12 +30,12 @@ public struct AuthContext: Sendable {
 
 public struct TokenIdentity: Sendable, Equatable {
     public let clientID: String
-    public let login: String
-    public let userID: String
+    public let login: String?
+    public let userID: String?
     public let scopes: [String]
     public let expiresIn: Int
 
-    public init(clientID: String, login: String, userID: String, scopes: [String], expiresIn: Int) {
+    public init(clientID: String, login: String?, userID: String?, scopes: [String], expiresIn: Int) {
         self.clientID = clientID
         self.login = login
         self.userID = userID
@@ -46,8 +46,8 @@ public struct TokenIdentity: Sendable, Equatable {
 
 private struct ValidateResponse: Decodable, Sendable {
     let clientID: String
-    let login: String
-    let userID: String
+    let login: String?
+    let userID: String?
     let scopes: [String]
     let expiresIn: Int
 

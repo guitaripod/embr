@@ -106,10 +106,8 @@ public enum Help {
             }
         }
         lines.append("")
-        lines.append("Global options:")
-        for option in GlobalOptions.specs where !option.hidden && option.name != "help" {
-            lines.append(optionLine(option))
-        }
+        lines.append("Global: --json, --table, --ndjson, --raw, --dry-run, --all, --first N, --after CURSOR, --max-pages N, --profile NAME, --timeout S, --retries N, --quiet, --verbose, --no-color, --no-input, --version.")
+        lines.append("Run `embr --help` for what each global option does.")
         if !command.scopes.isEmpty {
             lines.append("")
             lines.append("Requires scopes: \(command.scopes.joined(separator: ", "))")

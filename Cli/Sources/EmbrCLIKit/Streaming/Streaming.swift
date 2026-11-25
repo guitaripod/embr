@@ -33,14 +33,22 @@ enum StreamingCommands {
             throw CLIError.usage("Choose either --anonymous or --transport eventsub, not both.")
         }
         let anonymous = invocation.has("anonymous") || requested == "irc"
-        let auth: AuthContext?
-        if anonymous {
-            auth = nil
-        } else {
-            auth = try? await context.authService.current()
+        var auth: AuthContext?
+        var authFailure: CLIError?
+        if !anonymous {
+            do {
+                auth = try await context.authService.current()
+            } catch let error as CLIError {
+                authFailure = error
+            } catch {
+                authFailure = CLIError(.auth, String(describing: error))
+            }
         }
         if requested == "eventsub", auth == nil {
-            throw CLIError.auth("EventSub needs a signed-in token.", hint: "Run `embr auth login` or drop --transport eventsub.")
+            throw authFailure ?? CLIError.auth("EventSub needs a signed-in token.", hint: "Run `embr auth login` or drop --transport eventsub.")
+        }
+        if !anonymous, auth == nil, let authFailure {
+            context.renderer.note("Using anonymous IRC: \(authFailure.message)")
         }
         let limit = invocation.int("limit")
         let duration = invocation.int("duration")
@@ -334,8 +342,10 @@ private final class EventSubRunner {
         let userID: String
         if let known = auth.userID {
             userID = known
+        } else if let resolved = try await context.authService.identity(auth).userID {
+            userID = resolved
         } else {
-            userID = try await context.authService.identity(auth).userID
+            throw CLIError.auth("This token has no user; EventSub chat needs a user token.", hint: "Run `embr auth login`.")
         }
         var requests: [EventSubSubscriptionRequest] = [
             .chatMessage(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)
@@ -520,8 +530,10 @@ private final class RawEventSubRunner {
         let userID: String
         if let known = auth.userID {
             userID = known
+        } else if let resolved = try await context.authService.identity(auth).userID {
+            userID = resolved
         } else {
-            userID = try await context.authService.identity(auth).userID
+            throw CLIError.auth("This token has no user; EventSub chat needs a user token.", hint: "Run `embr auth login`.")
         }
         var requests: [EventSubSubscriptionRequest] = [
             .chatMessage(broadcasterID: broadcasterID, userID: userID, sessionID: sessionID)

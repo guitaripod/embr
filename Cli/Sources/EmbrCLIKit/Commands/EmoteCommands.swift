@@ -50,18 +50,23 @@ enum EmoteCommands {
         let broadcaster = try await context.resolver.user(try invocation.require(0, "channel"))
         let factory = try context.factory()
         let token = try context.token()
-        async let twitchEmotes = fetchTwitch(broadcaster.id, factory: factory, token: token, context: context)
-        async let sevenTVEmotes = fetchProvider(.sevenTV, broadcaster.id, context)
-        async let bttvEmotes = fetchProvider(.betterTTV, broadcaster.id, context)
-        async let ffzEmotes = fetchProvider(.frankerFaceZ, broadcaster.id, context)
+        async let twitchEmotes = try? fetchTwitch(broadcaster.id, factory: factory, token: token, context: context)
+        async let sevenTVEmotes = try? fetchProvider(.sevenTV, broadcaster.id, context)
+        async let bttvEmotes = try? fetchProvider(.betterTTV, broadcaster.id, context)
+        async let ffzEmotes = try? fetchProvider(.frankerFaceZ, broadcaster.id, context)
+        let (twitch, sevenTV, bttv, ffz) = await (twitchEmotes, sevenTVEmotes, bttvEmotes, ffzEmotes)
         var combined: [ProviderEmote] = []
-        combined += try await twitchEmotes
-        combined += try await sevenTVEmotes
-        combined += try await bttvEmotes
-        combined += try await ffzEmotes
+        if let twitch {
+            combined += twitch
+        } else {
+            context.renderer.note("Twitch emotes failed; continuing with the third-party providers.")
+        }
+        if let sevenTV { combined += sevenTV } else { context.renderer.note("7TV emotes failed; continuing.") }
+        if let bttv { combined += bttv } else { context.renderer.note("BetterTTV emotes failed; continuing.") }
+        if let ffz { combined += ffz } else { context.renderer.note("FrankerFaceZ emotes failed; continuing.") }
         let table = CommandSupport.table(
             ["PROVIDER", "NAME", "ID"],
-            combined.map { [$0.provider, $0.name, $0.id] }
+            combined.map { [$0.providerName, $0.name, $0.id] }
         )
         return CommandSupport.list(combined, table: table, cursor: nil)
     }
@@ -82,7 +87,7 @@ enum EmoteCommands {
             let emotes = try await fetchProvider(provider, broadcaster.id, context)
             let table = CommandSupport.table(
                 ["PROVIDER", "NAME", "ID"],
-                emotes.map { [$0.provider, $0.name, $0.id] }
+                emotes.map { [$0.providerName, $0.name, $0.id] }
             )
             return CommandSupport.list(emotes, table: table, cursor: nil)
         }
@@ -100,7 +105,7 @@ enum EmoteCommands {
                 for scale in ["1x", "2x", "4x"] {
                     images[scale] = "https://cdn.7tv.app/emote/\(emote.id)/\(scale).webp"
                 }
-                return ProviderEmote(provider: "7TV", id: emote.id, name: emote.name, animated: animated, images: images)
+                return ProviderEmote(provider: "7tv", providerName: "7TV", id: emote.id, name: emote.name, animated: animated, images: images)
             }
         case .betterTTV:
             let url = URL(string: "https://api.betterttv.net/3/cached/users/twitch/\(broadcasterID)")!
@@ -111,7 +116,7 @@ enum EmoteCommands {
                 for scale in ["1x", "2x", "3x"] {
                     images[scale] = "https://cdn.betterttv.net/emote/\(emote.id)/\(scale)"
                 }
-                return ProviderEmote(provider: "BetterTTV", id: emote.id, name: emote.code, animated: emote.imageType == "gif", images: images)
+                return ProviderEmote(provider: "bttv", providerName: "BetterTTV", id: emote.id, name: emote.code, animated: emote.imageType == "gif", images: images)
             }
         case .frankerFaceZ:
             let url = URL(string: "https://api.frankerfacez.com/v1/room/id/\(broadcasterID)")!
@@ -123,7 +128,8 @@ enum EmoteCommands {
                     images[scale] = value
                 }
                 return ProviderEmote(
-                    provider: "FrankerFaceZ",
+                    provider: "ffz",
+                    providerName: "FrankerFaceZ",
                     id: String(emote.id),
                     name: emote.name,
                     animated: emote.animated ?? false,
@@ -150,7 +156,8 @@ enum EmoteCommands {
                 images["\(scale.rawValue)x"] = url.absoluteString
             }
             return ProviderEmote(
-                provider: "Twitch",
+                provider: "twitch",
+                providerName: "Twitch",
                 id: emote.id,
                 name: emote.name,
                 animated: emote.isAnimated,
@@ -162,6 +169,7 @@ enum EmoteCommands {
 
 struct ProviderEmote: Encodable {
     let provider: String
+    let providerName: String
     let id: String
     let name: String
     let animated: Bool

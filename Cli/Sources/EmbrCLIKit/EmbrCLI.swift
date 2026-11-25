@@ -53,7 +53,16 @@ public enum EmbrCLI {
         }
 
         if line.versionRequested {
-            initialRenderer.writeText(EmbrCLIVersion.full + "\n")
+            if line.flags["json"] != nil {
+                let options = OutputOptions(mode: .json, isTTY: tty)
+                let renderer = Renderer(options: options, stdout: stdout, stderr: stderr)
+                try? renderer.write(
+                    CommandResult(VersionView(name: EmbrCLIVersion.name, version: EmbrCLIVersion.version)),
+                    command: "version"
+                )
+            } else {
+                initialRenderer.writeText(EmbrCLIVersion.full + "\n")
+            }
             return 0
         }
 
@@ -169,7 +178,7 @@ public enum EmbrCLI {
             try renderer.write(result, command: spec.name)
             return 0
         } catch let error as DryRun {
-            renderDryRun(error.request, renderer: renderer)
+            renderDryRun(error.request, command: spec.name, renderer: renderer)
             return 0
         } catch let error as CLIError {
             renderer.writeError(error, command: spec.name)
@@ -234,20 +243,33 @@ public enum EmbrCLI {
         }
     }
 
-    private static func renderDryRun(_ request: HTTPRequest, renderer: Renderer) {
+    private static func renderDryRun(_ request: HTTPRequest, command: String, renderer: Renderer) {
         var headers = request.headers
         for name in headers.keys where isSecretName(name) {
             headers[name] = "REDACTED"
         }
         let body = request.body.flatMap(redactedBody)
+        let note = dryRunNote(request, command: command)
         let view = DryRunView(
             dryRun: true,
             method: request.method.rawValue,
             url: redactedURL(request.url),
             headers: headers,
-            body: body
+            body: body,
+            note: note
         )
         try? renderer.write(CommandResult(view), command: "dry-run")
+    }
+
+    private static func dryRunNote(_ request: HTTPRequest, command: String) -> String? {
+        if request.url.host == "id.twitch.tv", request.url.path == "/oauth2/validate", command != "auth status" {
+            return "This only validates the token to learn your user id. Pass numeric ids, or --as <moderator-id>, to reach the final request."
+        }
+        if request.method == .get, request.url.path.hasSuffix("/users"), command != "users get",
+           request.url.query?.contains("login=") == true {
+            return "This is the login lookup, not the final request. Pass numeric ids to see the final request."
+        }
+        return nil
     }
 
     private static func redactedBody(_ data: Data) -> JSONValue? {
@@ -307,4 +329,10 @@ private struct DryRunView: Encodable {
     let url: String
     let headers: [String: String]
     let body: JSONValue?
+    let note: String?
+}
+
+private struct VersionView: Encodable {
+    let name: String
+    let version: String
 }

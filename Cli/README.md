@@ -18,7 +18,15 @@ cd apps/embr/Cli
 ./scripts/install.sh
 ```
 
-Both install `~/.local/bin/embr`. Verify with `embr doctor`.
+Both install `~/.local/bin/embr` (override with `EMBR_BIN_DIR`). Verify with `embr doctor`.
+
+Shell completion:
+
+```sh
+embr completion bash > ~/.bash_completion.d/embr
+embr completion zsh  > ~/.zsh/completions/_embr
+embr completion fish > ~/.config/fish/completions/embr.fish
+```
 
 ## Sign in
 
@@ -32,6 +40,10 @@ The device flow prints a code and a `twitch.tv/activate` link. Tokens are stored
 `${XDG_CONFIG_HOME:-~/.config}/embr/credentials.json`, mode `0600`, under a profile (`--profile`,
 default `default`). `--scopes` takes presets (`chat`, `mod`, `studio`, `channel`, `user`, `all`) or
 explicit scopes. For unattended agents, `embr auth login --no-wait --json` and `embr auth poll`.
+
+A confidential Twitch app (including Embr's existing client id) needs `EMBR_CLIENT_SECRET` to refresh
+tokens; without it, `auth refresh` fails and you sign in again when the access token expires. A public
+client refreshes with the client id alone.
 
 Environment variables override the file: `EMBR_CLIENT_ID` (or `TWITCH_CLIENT_ID`),
 `EMBR_ACCESS_TOKEN` (or `TWITCH_ACCESS_TOKEN`), `EMBR_REFRESH_TOKEN`, `EMBR_CLIENT_SECRET` (for
@@ -53,6 +65,22 @@ embr playback url xqc
 `--json` gives a stable envelope on stdout; errors are JSON on stderr with a non-zero exit code.
 `--dry-run` prints the HTTP request instead of sending it. `--all` follows cursors; `--first`,
 `--after` and `--max-pages` control paging. `--ndjson` streams one object per line.
+
+| Global flag | Meaning |
+|---|---|
+| `--json` / `--table` / `--ndjson` | Output mode; pipes default to JSON |
+| `--raw` | Print Twitch's payload instead of the CLI's model |
+| `--all`, `--first N`, `--after C`, `--max-pages N` | Pagination |
+| `--dry-run` | Print the request, redacted, and send nothing |
+| `--profile NAME` | Credential profile |
+| `--client-id` / `--token` | One-shot credential overrides |
+| `--timeout S` / `--retries N` | Network tuning |
+| `--quiet` / `--verbose` / `--trace` / `--no-color` | Logging and presentation |
+| `--no-input` | Never read stdin |
+| `--version` / `--help` | Version and help |
+
+Exit codes: `0` ok, `2` usage, `3` auth/scope, `4` not found, `5` rate limited, `6` network, `7`
+server, `8` decode, `130` interrupted.
 
 ```json
 {"ok":true,"command":"streams top","data":[…],"pagination":{"cursor":"…"},"meta":{"count":20}}
@@ -84,7 +112,17 @@ Run `embr --help`, `embr <group> --help`, or `embr <command> --help`. Conceptual
 
 `embr chat watch <channel>` uses EventSub when signed in and anonymous IRC otherwise; force IRC with
 `--anonymous`. `embr eventsub listen --chat <channel>` opens a raw EventSub socket and subscribes the
-session. Both emit NDJSON, follow Twitch's reconnect URL, and stop on `--limit` or `--duration`.
+session. Both emit NDJSON, follow Twitch's reconnect URL, and stop on `--limit` (messages, not
+keepalives) or `--duration`.
+
+```json
+{"type":"message","transport":"eventsub","channel":"xqc","subscription":"channel.chat.message","message":"hello","data":{…}}
+{"type":"roomstate","transport":"irc","channel":"xqc","data":{"emote_only":"false","followers_only":"1440"}}
+```
+
+`eventsub listen` prints `welcome`, `keepalive`, `notification`, `reconnect` and `revocation` lines
+with the raw event under `event`; `--chat` makes it subscribe automatically. Subscriptions created by
+`chat watch`/`eventsub listen` are deleted when the command exits.
 
 ## Agent use
 
@@ -96,6 +134,16 @@ session. Both emit NDJSON, follow Twitch's reconnect URL, and stop on `--limit` 
 - Never log `auth app-token` output; every other command keeps secrets out of stdout.
 
 See `SKILL.md` for recipes.
+
+## Troubleshooting
+
+- `401` usually means the token expired. Run `embr auth status`, then `embr auth refresh` or sign in
+  again; a confidential app needs `EMBR_CLIENT_SECRET` to refresh.
+- `403` names a missing scope. Re-run `embr auth login --scopes all` or pass the exact scope.
+- A dry run that stops at a user lookup is telling you to pass numeric ids; the response carries a
+  `note` field saying so.
+- `doctor --network` checks the token and Helix reachability; without it, only local state.
+- `429` is retried for idempotent calls; `--all` sleeps until the rate-limit reset.
 
 ## Notes
 

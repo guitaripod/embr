@@ -255,6 +255,69 @@ struct CommandTests {
         #expect(body.contains("client_secret=REDACTED"))
     }
 
+    @Test func versionJson() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let result = await TestRun.run(["--version", "--json"], transport: transport, configDirectory: dir)
+        #expect(result.code == 0)
+        let data = try #require(result.out.json as? [String: Any])
+        let payload = try #require(data["data"] as? [String: Any])
+        #expect(payload["version"] as? String == "0.1.0")
+        #expect(transport.requests.isEmpty)
+    }
+
+    @Test func dryRunExplainsALoginLookup() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let result = await TestRun.run(
+            ["chat", "send", "shroud", "hello", "--dry-run", "--json"],
+            transport: transport,
+            configDirectory: dir
+        )
+        #expect(result.code == 0)
+        let data = try #require(result.out.json as? [String: Any])
+        let payload = try #require(data["data"] as? [String: Any])
+        #expect((payload["note"] as? String)?.contains("login lookup") == true)
+    }
+
+    @Test func completionsKnowNestedGroups() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let bash = await TestRun.run(["completion", "bash"], transport: transport, configDirectory: dir)
+        #expect(bash.code == 0)
+        #expect(bash.out.text.contains("\"chat emotes\""))
+        #expect(bash.out.text.contains("channel global user"))
+        let zsh = await TestRun.run(["completion", "zsh"], transport: transport, configDirectory: dir)
+        #expect(zsh.out.text.contains("\"chat emotes\""))
+        let fish = await TestRun.run(["completion", "fish"], transport: transport, configDirectory: dir)
+        #expect(fish.out.text.contains("__fish_seen_subcommand_from emotes"))
+    }
+
+    @Test func appTokensReportAuthenticatedWithoutALogin() async throws {
+        let dir = TestRun.make()
+        let transport = FakeTransport { request in
+            if request.url.host == "id.twitch.tv" {
+                return response(200, #"{"client_id":"client-id","scopes":["chat:read"],"expires_in":3600}"#)
+            }
+            return response(404, "{}")
+        }
+        let result = await TestRun.run(["auth", "status", "--json"], transport: transport, configDirectory: dir)
+        #expect(result.code == 0)
+        let data = try #require(result.out.json as? [String: Any])
+        let payload = try #require(data["data"] as? [String: Any])
+        #expect(payload["authenticated"] as? Bool == true)
+        #expect(payload["login"] == nil)
+        #expect(payload["reason"] == nil)
+    }
+
+    @Test func loginWithNoInputRefusesToWait() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let result = await TestRun.run(["auth", "login", "--no-input", "--json"], transport: transport, configDirectory: dir)
+        #expect(result.code == 2)
+        #expect(transport.requests.isEmpty)
+    }
+
     @Test func errorsUseTheErrorEnvelopeAndExitCode() async throws {
         let dir = TestRun.make()
         let transport = FakeTransport { _ in response(401, #"{"message":"invalid token"}"#) }

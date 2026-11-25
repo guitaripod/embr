@@ -187,7 +187,7 @@ public struct GlobalOptions: Sendable {
         .flag("json", "Machine-readable JSON envelope on stdout."),
         .flag("table", "Human-readable table for list commands."),
         .flag("ndjson", "One JSON object per line; streams use this by default."),
-        .flag("raw", "Print Twitch's payload instead of the CLI's shape."),
+        .flag("raw", "Print Twitch's payload instead of the CLI's shape (first page only)."),
         .flag("no-color", "Disable ANSI colour."),
         .flag("quiet", "Suppress notes on stderr."),
         .flag("verbose", "Log requests to stderr with secrets redacted."),

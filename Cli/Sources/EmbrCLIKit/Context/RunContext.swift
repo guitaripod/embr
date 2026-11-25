@@ -78,7 +78,13 @@ public struct RunContext: Sendable {
         if let userID = auth.userID, !userID.isEmpty {
             return userID
         }
-        return try await authService.identity(auth).userID
+        guard let userID = try await authService.identity(auth).userID, !userID.isEmpty else {
+            throw CLIError.auth(
+                "This token has no user behind it (an app access token).",
+                hint: "Run `embr auth login` or pass a user token for this command."
+            )
+        }
+        return userID
     }
 
     public func login() async throws -> String {
@@ -86,7 +92,13 @@ public struct RunContext: Sendable {
         if let login = auth.login, !login.isEmpty {
             return login
         }
-        return try await authService.identity(auth).login
+        guard let login = try await authService.identity(auth).login, !login.isEmpty else {
+            throw CLIError.auth(
+                "This token has no user behind it (an app access token).",
+                hint: "Run `embr auth login` or pass a user token for this command."
+            )
+        }
+        return login
     }
 
     public func moderatorID(_ override: String?) async throws -> String {
@@ -245,5 +257,57 @@ public actor Resolver {
 
     public func userID(_ input: String) async throws -> String {
         try await user(input).id
+    }
+
+    public func users(_ inputs: [String]) async throws -> [TwitchUser] {
+        guard let auth else {
+            throw CLIError.auth("Not signed in.", hint: "Run `embr auth login`.")
+        }
+        var missing: [String] = []
+        for input in inputs where userCache[input.lowercased()] == nil {
+            if !missing.contains(where: { $0.lowercased() == input.lowercased() }) {
+                missing.append(input)
+            }
+        }
+        let factory = HelixRequestFactory(clientID: auth.clientID)
+        let numeric = missing.filter { $0.allSatisfy(\.isNumber) && !$0.isEmpty }
+        let logins = missing.filter { !($0.allSatisfy(\.isNumber) && !$0.isEmpty) }
+        if !numeric.isEmpty {
+            let response = try await client.send(factory.usersByIDs(numeric, token: auth.accessToken))
+            try client.requireSuccess(response)
+            let page: HelixResponse<TwitchUser>
+            do {
+                page = try HelixDecoder.users(response.body)
+            } catch {
+                throw CLIError(.decode, "Could not decode the user lookup: \(error)")
+            }
+            for user in page.data {
+                cache(user)
+            }
+        }
+        if !logins.isEmpty {
+            let response = try await client.send(factory.usersByLogins(logins, token: auth.accessToken))
+            try client.requireSuccess(response)
+            let page: HelixResponse<TwitchUser>
+            do {
+                page = try HelixDecoder.users(response.body)
+            } catch {
+                throw CLIError(.decode, "Could not decode the user lookup: \(error)")
+            }
+            for user in page.data {
+                cache(user)
+            }
+        }
+        return try inputs.map { input in
+            guard let user = userCache[input.lowercased()] else {
+                throw CLIError.notFound("No Twitch user matches `\(input)`.")
+            }
+            return user
+        }
+    }
+
+    private func cache(_ user: TwitchUser) {
+        userCache[user.id] = user
+        userCache[user.login.lowercased()] = user
     }
 }

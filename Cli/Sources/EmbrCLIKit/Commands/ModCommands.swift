@@ -313,11 +313,7 @@ enum ModCommands {
     }
 
     private static func resolveAll(_ inputs: [String], _ context: RunContext) async throws -> [String] {
-        var ids: [String] = []
-        for input in inputs {
-            ids.append(try await context.resolver.userID(input))
-        }
-        return ids
+        try await context.resolver.users(inputs).map(\.id)
     }
 }
 

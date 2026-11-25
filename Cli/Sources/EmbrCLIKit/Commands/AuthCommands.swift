@@ -30,6 +30,9 @@ enum AuthCommands {
         ],
         needsAuth: false
     ) { invocation, context in
+        if context.options.noInput, !invocation.has("no-wait") {
+            throw CLIError.usage("`auth login` waits for approval; use --no-wait with --no-input.")
+        }
         let service = context.authService
         guard let clientID = await service.configuredClientID() else {
             throw CLIError.auth(

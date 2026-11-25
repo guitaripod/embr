@@ -83,17 +83,22 @@ enum StreamCommands {
         guard !invocation.positionals.isEmpty else {
             throw CLIError.usage("Name at least one channel.")
         }
-        var ids: [String] = []
-        for input in invocation.positionals {
-            ids.append(try await context.resolver.userID(input))
-        }
+        let users = try await context.resolver.users(invocation.positionals)
+        let ids = users.map(\.id)
         let factory = try context.factory()
         let token = try context.token()
         let request = factory.streamsByUserIDs(ids, token: token)
         if let raw = try await CommandSupport.raw(request, context) { return raw }
         let response = try await context.send(request)
-        let page = try HelixDecoder.streams(response.body)
-        return CommandSupport.list(page.data, table: streamTable(page.data), cursor: nil)
+        let page: HelixResponse<LiveStream>
+        do {
+            page = try HelixDecoder.streams(response.body)
+        } catch {
+            throw CLIError(.decode, "Could not decode the stream lookup: \(error)")
+        }
+        let byLogin = Dictionary(uniqueKeysWithValues: page.data.map { ($0.userLogin.lowercased(), $0) })
+        let ordered = users.compactMap { byLogin[$0.login.lowercased()] }
+        return CommandSupport.list(ordered, table: streamTable(ordered), cursor: nil)
     }
 
     static let gamesTop = CommandSpec(

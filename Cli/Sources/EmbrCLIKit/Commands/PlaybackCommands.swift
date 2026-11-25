@@ -9,7 +9,8 @@ enum PlaybackCommands {
         summary: "Resolve a live or VOD HLS (Usher) URL without playing it.",
         details: """
         Uses Twitch's web playback token, the same public token the web player asks for. The URL is a
-        master playlist; hand it to ffplay, mpv or the app. No account token is needed.
+        master playlist; hand it to ffplay, mpv or the app. No account token is needed. The URL carries
+        a signed token that expires, so resolve a fresh one for a later session.
         """,
         positionals: [PositionalSpec("channel", "Channel login for a live stream.", required: false)],
         options: [.value("vod", "ID", "Resolve this VOD id instead of a live channel.")],

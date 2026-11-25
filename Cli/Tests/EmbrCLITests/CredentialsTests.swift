@@ -78,6 +78,31 @@ struct CredentialsTests {
         #expect(stored?.refreshToken == "refresh-2")
     }
 
+    @Test func failedRefreshNamesTheClientSecret() async throws {
+        let directory = TestRun.make()
+        let store = CredentialsStore(url: directory.appendingPathComponent("credentials.json"))
+        try store.update("default") { file in
+            file.profiles["default"] = StoredProfile(
+                clientID: "cid",
+                accessToken: "old",
+                refreshToken: "refresh-1",
+                expiresAt: Date().addingTimeInterval(-60)
+            )
+        }
+        let transport = FakeTransport { _ in
+            HTTPResponse(status: 400, headers: [:], body: Data(#"{"message":"invalid client"}"#.utf8))
+        }
+        let client = APIClient(transport: transport)
+        let service = AuthService(store: store, environment: [:], client: client, profile: "default")
+        do {
+            _ = try await service.current()
+            Issue.record("expected an auth error")
+        } catch let error as CLIError {
+            #expect(error.kind == .auth)
+            #expect(error.hint?.contains("EMBR_CLIENT_SECRET") == true)
+        }
+    }
+
     @Test func missingClientIDIsAnAuthError() async {
         let directory = TestRun.make()
         let store = CredentialsStore(url: directory.appendingPathComponent("credentials.json"))

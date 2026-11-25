@@ -104,10 +104,11 @@ enum UtilityCommands {
         if let auth = try? await context.authService.current() {
             do {
                 let identity = try await context.authService.identity(auth)
+                let who = [identity.login, identity.userID].compactMap { $0 }.joined(separator: " / ")
                 checks.append(DoctorCheck(
                     name: "auth",
                     status: "ok",
-                    detail: "\(identity.login) (\(identity.userID)), \(identity.scopes.count) scopes, expires in \(identity.expiresIn)s"
+                    detail: "\(who.isEmpty ? "app token" : who), \(identity.scopes.count) scopes, expires in \(identity.expiresIn)s"
                 ))
             } catch {
                 checks.append(DoctorCheck(name: "auth", status: "fail", detail: "Token rejected: \((error as? CLIError)?.message ?? String(describing: error))"))
@@ -168,55 +169,75 @@ enum Completion {
         var lines: [String] = []
         lines.append("# embr bash completion")
         lines.append("_embr_complete() {")
-        lines.append("  local cur prev")
+        lines.append("  local cur path word i")
         lines.append("  cur=\"${COMP_WORDS[COMP_CWORD]}\"")
-        lines.append("  prev=\"${COMP_WORDS[COMP_CWORD-1]}\"")
-        lines.append("  local top=\"\(registry.groups.filter { $0.path.count == 1 }.map { $0.path[0] }.sorted().joined(separator: " ")) \(registry.commands.filter { $0.path.count == 1 }.map { $0.path[0] }.sorted().joined(separator: " "))\"")
-        lines.append("  case \"${COMP_WORDS[1]}\" in")
-        for group in registry.groups where group.path.count >= 1 {
-            let path = group.path.joined(separator: " ")
-            let children = registry.children(of: group.path).map(\.name).joined(separator: " ")
-            guard !children.isEmpty else { continue }
-            lines.append("    \(group.path[0])) COMPREPLY=( $(compgen -W \"\(children)\" -- \"$cur\") ); return ;;")
-            if group.path.count > 1 {
-                lines.append("    # \(path)")
-            }
+        lines.append("  path=\"\"")
+        lines.append("  for ((i=1; i<COMP_CWORD; i++)); do")
+        lines.append("    word=\"${COMP_WORDS[i]}\"")
+        lines.append("    case \"$word\" in --*) continue ;; esac")
+        lines.append("    path=\"${path:+$path }$word\"")
+        lines.append("  done")
+        lines.append("  case \"$path\" in")
+        lines.append("    \"\") COMPREPLY=( $(compgen -W \"\(topLevel(registry))\" -- \"$cur\") ) ;;")
+        for group in groupsWithChildren(registry) {
+            lines.append("    \"\(group.path.joined(separator: " "))\") COMPREPLY=( $(compgen -W \"\(names(of: group.path, registry))\" -- \"$cur\") ) ;;")
         }
+        lines.append("    *) COMPREPLY=() ;;")
         lines.append("  esac")
-        lines.append("  COMPREPLY=( $(compgen -W \"$top\" -- \"$cur\") )")
+        lines.append("  return 0")
         lines.append("}")
         lines.append("complete -F _embr_complete embr")
         return lines.joined(separator: "\n") + "\n"
     }
 
     static func zsh(_ registry: CommandRegistry) -> String {
-        let top = registry.groups.filter { $0.path.count == 1 }.map { $0.path[0] }.sorted()
-            + registry.commands.filter { $0.path.count == 1 }.map { $0.path[0] }.sorted()
-        return """
-        #compdef embr
-        _embr() {
-          local -a commands
-          commands=(\(top.map { "'\($0)'" }.joined(separator: " ")))
-          _describe 'command' commands
+        var lines: [String] = []
+        lines.append("#compdef embr")
+        lines.append("_embr() {")
+        lines.append("  local path=\"${(j: :)words[2,CURRENT-1]}\"")
+        lines.append("  local -a items")
+        lines.append("  case \"$path\" in")
+        lines.append("    \"\") items=(\(topLevel(registry).split(separator: " ").map { "'\($0)'" }.joined(separator: " "))) ;;")
+        for group in groupsWithChildren(registry) {
+            let items = names(of: group.path, registry).split(separator: " ").map { "'\($0)'" }.joined(separator: " ")
+            lines.append("    \"\(group.path.joined(separator: " "))\") items=(\(items)) ;;")
         }
-        compdef _embr embr
-        """ + "\n"
+        lines.append("    *) items=() ;;")
+        lines.append("  esac")
+        lines.append("  compadd -a items")
+        lines.append("}")
+        lines.append("compdef _embr embr")
+        return lines.joined(separator: "\n") + "\n"
     }
 
     static func fish(_ registry: CommandRegistry) -> String {
         var lines: [String] = ["# embr fish completion"]
-        for group in registry.groups.filter({ $0.path.count == 1 }) {
-            lines.append("complete -c embr -n '__fish_use_subcommand' -a '\(group.path[0])' -d '\(escape(group.summary))'")
-            for child in registry.children(of: group.path) where child.isGroup == false {
-                let path = group.path + [child.name]
-                lines.append("complete -c embr -n '__fish_seen_subcommand_from \(group.path[0])' -a '\(child.name)' -d '\(escape(child.summary))'")
-                _ = path
+        for child in registry.children(of: []) {
+            lines.append("complete -c embr -f -n '__fish_use_subcommand' -a '\(child.name)' -d '\(escape(child.summary))'")
+        }
+        for group in groupsWithChildren(registry) {
+            let condition = group.path.map { "__fish_seen_subcommand_from \($0)" }.joined(separator: "; and ")
+            for child in registry.children(of: group.path) {
+                lines.append("complete -c embr -f -n '\(condition)' -a '\(child.name)' -d '\(escape(child.summary))'")
             }
         }
-        for command in registry.commands where command.path.count == 1 {
-            lines.append("complete -c embr -n '__fish_use_subcommand' -a '\(command.path[0])' -d '\(escape(command.summary))'")
-        }
         return lines.joined(separator: "\n") + "\n"
+    }
+
+    private static func groupsWithChildren(_ registry: CommandRegistry) -> [GroupSpec] {
+        registry.groups
+            .filter { !registry.children(of: $0.path).isEmpty }
+            .sorted { $0.path.joined(separator: " ") < $1.path.joined(separator: " ") }
+    }
+
+    private static func topLevel(_ registry: CommandRegistry) -> String {
+        let groups = registry.groups.filter { $0.path.count == 1 }.map { $0.path[0] }
+        let commands = registry.commands.filter { $0.path.count == 1 }.map { $0.path[0] }
+        return (groups + commands).sorted().joined(separator: " ")
+    }
+
+    private static func names(of path: [String], _ registry: CommandRegistry) -> String {
+        registry.children(of: path).map(\.name).sorted().joined(separator: " ")
     }
 
     private static func escape(_ value: String) -> String {

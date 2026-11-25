@@ -17,7 +17,8 @@ embr commands --json        # full catalog: names, args, options, scopes, exampl
 Auth precedence: `--client-id`/`--token` flags → `EMBR_CLIENT_ID`/`EMBR_ACCESS_TOKEN` (or
 `TWITCH_*`) → `~/.config/embr/credentials.json`. If the token is missing or expired, ask the human to
 run `embr auth login` (it needs their browser/phone). `auth login --no-wait --json` plus `auth poll`
-lets an agent drive the device flow.
+lets an agent drive the device flow. A confidential app needs `EMBR_CLIENT_SECRET` to refresh; the
+error hint says so when it is missing.
 
 ## Output contract
 
@@ -25,8 +26,9 @@ lets an agent drive the device flow.
 - stderr: JSON error envelopes `{"ok":false,"error":{"kind","status","message","hint"}}`.
 - Exit codes: 0 ok, 2 usage, 3 auth/scope, 4 not found, 5 rate limited, 6 network, 7 server,
   8 decode.
-- `--json`, `--ndjson`, `--table`, `--raw` (Twitch payload), `--all`, `--first`, `--after`,
-  `--max-pages`, `--timeout`, `--retries`, `--profile`, `--no-input`, `--quiet`, `--verbose`.
+- `--json`, `--ndjson`, `--table`, `--raw` (Twitch payload, first page), `--all`, `--first`,
+  `--after`, `--max-pages`, `--timeout`, `--retries`, `--profile`, `--no-input`, `--quiet`,
+  `--verbose`. `--version --json` returns `{"name","version"}`.
 
 ## Read
 
@@ -69,7 +71,10 @@ embr eventsub listen --duration 60
 ```
 
 Each line is a JSON object with `type` (`message`, `notification`, `keepalive`, `reconnect`,
-`roomstate`, `delete`, `clear`, `notice`). Stop with `--limit`/`--duration`; reconnects are automatic.
+`roomstate`, `delete`, `clear`, `notice`). Messages carry the text in `message` and transport detail in
+`data`; EventSub messages keep the raw Twitch event under `data`. `--limit` counts messages, not
+keepalives. Stop with `--limit`/`--duration`; reconnects are automatic and created subscriptions are
+deleted on exit.
 
 ## Other
 
@@ -77,7 +82,7 @@ Each line is a JSON object with `type` (`message`, `notification`, `keepalive`, 
 embr chat history xqc --limit 50 --json          # no token needed
 embr playback url xqc --json                     # live HLS URL
 embr playback url --vod 1234567890 --json
-embr emotes all xqc --json                       # Twitch + 7TV + BTTV + FFZ
+embr emotes all xqc --json                       # provider ids: twitch, 7tv, bttv, ffz
 embr auth app-token --json                       # secret: never log it
 ```
 
