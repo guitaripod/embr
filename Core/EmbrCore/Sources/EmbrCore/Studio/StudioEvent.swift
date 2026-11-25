@@ -54,7 +54,7 @@ public enum StudioTier: String, Sendable, Equatable, Codable {
     }
 }
 
-public struct StudioFollow: Sendable, Equatable {
+public struct StudioFollow: Codable, Sendable, Equatable {
     public let userID: String
     public let userName: String
     public let followedAt: Date
@@ -303,7 +303,7 @@ public struct StudioPrediction: Sendable, Equatable {
     public var totalPoints: Int { outcomes.reduce(0) { $0 + $1.votes } }
 }
 
-public struct StudioGoal: Sendable, Equatable {
+public struct StudioGoal: Codable, Sendable, Equatable {
     public let id: String
     public let kind: String
     public let description: String

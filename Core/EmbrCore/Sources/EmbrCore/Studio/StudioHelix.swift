@@ -132,7 +132,7 @@ public struct ModeratedChannel: Sendable, Equatable, Identifiable {
 }
 
 /// What Twitch said to Start Commercial.
-public struct CommercialResult: Sendable, Equatable {
+public struct CommercialResult: Codable, Sendable, Equatable {
     public let length: Int
     public let retryAfter: TimeInterval
     public let message: String

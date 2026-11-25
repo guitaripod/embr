@@ -1,7 +1,7 @@
 import Foundation
 
 /// One user in a channel's chatters, moderators or VIP list. Twitch returns the same three fields for all three.
-public struct ChannelUser: Decodable, Sendable, Equatable, Hashable, Identifiable {
+public struct ChannelUser: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let userID: String
     public let userLogin: String
     public let userName: String
@@ -23,7 +23,7 @@ public struct ChannelUser: Decodable, Sendable, Equatable, Hashable, Identifiabl
 
 /// A user in a channel's ban list. `expiresAt` is nil for a permanent ban, where Twitch sends an empty string instead
 /// of a timestamp.
-public struct BannedUser: Decodable, Sendable, Equatable, Identifiable {
+public struct BannedUser: Codable, Sendable, Equatable, Identifiable {
     public let userID: String
     public let userLogin: String
     public let userName: String

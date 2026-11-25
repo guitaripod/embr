@@ -1,6 +1,6 @@
 import Foundation
 
-public struct LiveStream: Sendable, Equatable, Hashable, Identifiable {
+public struct LiveStream: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let userID: String
     public let userLogin: String
@@ -53,7 +53,7 @@ public struct LiveStream: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct GameCategory: Sendable, Equatable, Hashable, Identifiable {
+public struct GameCategory: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let name: String
     public let boxArtURLTemplate: String
@@ -72,7 +72,7 @@ public struct GameCategory: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct TwitchUser: Sendable, Equatable, Hashable, Identifiable {
+public struct TwitchUser: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let login: String
     public let displayName: String
@@ -100,7 +100,7 @@ public struct TwitchUser: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct ChannelInfo: Sendable, Equatable, Hashable, Identifiable {
+public struct ChannelInfo: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let broadcasterLogin: String
     public let broadcasterName: String
@@ -134,7 +134,7 @@ public struct ChannelInfo: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct VideoOnDemand: Sendable, Equatable, Hashable, Identifiable {
+public struct VideoOnDemand: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let userID: String
     public let userLogin: String
@@ -174,7 +174,7 @@ public struct VideoOnDemand: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct Clip: Sendable, Equatable, Hashable, Identifiable {
+public struct Clip: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let broadcasterID: String
     public let broadcasterName: String
@@ -211,7 +211,7 @@ public struct Clip: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct FollowedChannel: Sendable, Equatable, Hashable, Identifiable {
+public struct FollowedChannel: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let broadcasterLogin: String
     public let broadcasterName: String
@@ -225,7 +225,7 @@ public struct FollowedChannel: Sendable, Equatable, Hashable, Identifiable {
     }
 }
 
-public struct ScheduleSegment: Sendable, Equatable, Hashable, Identifiable {
+public struct ScheduleSegment: Codable, Sendable, Equatable, Hashable, Identifiable {
     public let id: String
     public let startTime: Date
     public let endTime: Date?

@@ -1,7 +1,7 @@
 import Foundation
 
 /// What Twitch's Ads Manager says about the channel's ad breaks, from Get Ad Schedule or Snooze Next Ad.
-public struct AdSchedule: Sendable, Equatable {
+public struct AdSchedule: Codable, Sendable, Equatable {
     public let nextAdAt: Date?
     public let lastAdAt: Date?
     public let duration: TimeInterval

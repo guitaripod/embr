@@ -31,7 +31,7 @@ public enum ConnectionStatus: Sendable, Equatable {
     case disconnected(reason: String?)
 }
 
-public struct RoomState: Sendable, Equatable {
+public struct RoomState: Codable, Sendable, Equatable {
     public var emoteOnly: Bool
     public var followersOnly: Int?
     public var subscribersOnly: Bool
@@ -53,7 +53,7 @@ public struct RoomState: Sendable, Equatable {
     }
 }
 
-public struct SendResult: Sendable, Equatable {
+public struct SendResult: Codable, Sendable, Equatable {
     public let messageID: String?
     public let isSent: Bool
     public let dropReason: String?

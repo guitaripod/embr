@@ -3,8 +3,6 @@ import Foundation
 public enum GQLPlayback {
     public static let webClientID = "kimne78kx3ncx6brgo4mv6wki5h1ko"
 
-    public static let persistedQueryHash = "ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9"
-
     public struct PlaybackAccessToken: Sendable, Equatable {
         public let value: String
         public let signature: String
@@ -68,6 +66,23 @@ public enum GQLPlayback {
         return url
     }
 
+    /// Twitch's web player query. It is sent in full rather than as a persisted-query hash because the hash Twitch's
+    /// own player uses changes without notice and a stale one fails the whole request.
+    public static let query = """
+    query PlaybackAccessToken($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!, $platform: String!) {
+      streamPlaybackAccessToken(channelName: $login, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) {
+        value
+        signature
+        __typename
+      }
+      videoPlaybackAccessToken(id: $vodID, params: {platform: $platform, playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isVod) {
+        value
+        signature
+        __typename
+      }
+    }
+    """
+
     private static func requestBody(isLive: Bool, login: String, isVod: Bool, vodID: String) -> Data {
         let body = Request(
             operationName: "PlaybackAccessToken",
@@ -76,11 +91,10 @@ public enum GQLPlayback {
                 login: login,
                 isVod: isVod,
                 vodID: vodID,
-                playerType: "site"
+                playerType: "site",
+                platform: "web"
             ),
-            extensions: Extensions(
-                persistedQuery: PersistedQuery(version: 1, sha256Hash: persistedQueryHash)
-            )
+            query: query
         )
         return (try? TwitchJSON.encoder.encode(body)) ?? Data()
     }
@@ -88,7 +102,7 @@ public enum GQLPlayback {
     private struct Request: Encodable {
         let operationName: String
         let variables: Variables
-        let extensions: Extensions
+        let query: String
     }
 
     private struct Variables: Encodable {
@@ -97,15 +111,7 @@ public enum GQLPlayback {
         let isVod: Bool
         let vodID: String
         let playerType: String
-    }
-
-    private struct Extensions: Encodable {
-        let persistedQuery: PersistedQuery
-    }
-
-    private struct PersistedQuery: Encodable {
-        let version: Int
-        let sha256Hash: String
+        let platform: String
     }
 
     private struct TokenDTO: Decodable {

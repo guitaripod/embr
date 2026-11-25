@@ -159,7 +159,7 @@ import Testing
 }
 
 @Suite struct GQLPlaybackTests {
-    @Test func liveRequestBodyContainsPersistedHashAndVariables() throws {
+    @Test func liveRequestBodyCarriesTheWebQueryAndVariables() throws {
         let data = GQLPlayback.liveRequestBody(login: "shroud")
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         #expect(json?["operationName"] as? String == "PlaybackAccessToken")
@@ -169,11 +169,11 @@ import Testing
         #expect(variables?["isVod"] as? Bool == false)
         #expect(variables?["login"] as? String == "shroud")
         #expect(variables?["playerType"] as? String == "site")
+        #expect(variables?["platform"] as? String == "web")
 
-        let extensions = json?["extensions"] as? [String: Any]
-        let persisted = extensions?["persistedQuery"] as? [String: Any]
-        #expect(persisted?["version"] as? Int == 1)
-        #expect(persisted?["sha256Hash"] as? String == "ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9")
+        let query = json?["query"] as? String
+        #expect(query?.contains("streamPlaybackAccessToken") == true)
+        #expect(query?.contains("$platform") == true)
     }
 
     @Test func vodRequestBodyHasVodFlags() throws {
