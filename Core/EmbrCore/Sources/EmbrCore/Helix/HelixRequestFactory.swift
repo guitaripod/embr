@@ -250,8 +250,106 @@ public struct HelixRequestFactory: Sendable {
         get("moderation/channels", items: [("user_id", userID), ("first", "100"), ("after", after)], token: token)
     }
 
+    /// The people connected to the channel's chat right now. Twitch updates the list with a delay, so treat it as a
+    /// snapshot rather than a join/leave stream.
+    public func chatters(broadcasterID: String, moderatorID: String, first: Int = 100, after: String? = nil, token: String) -> HTTPRequest {
+        get(
+            "chat/chatters",
+            items: [
+                ("broadcaster_id", broadcasterID),
+                ("moderator_id", moderatorID),
+                ("first", String(min(max(first, 1), 1000))),
+                ("after", after),
+            ],
+            token: token
+        )
+    }
+
+    /// The emotes the signed-in user can use anywhere. Naming a broadcaster adds that channel's follower emotes to the
+    /// first page when the user follows it.
+    public func userEmotes(userID: String, broadcasterID: String? = nil, after: String? = nil, token: String) -> HTTPRequest {
+        get(
+            "chat/emotes/user",
+            items: [
+                ("user_id", userID),
+                ("broadcaster_id", broadcasterID),
+                ("after", after),
+            ],
+            token: token
+        )
+    }
+
+    public func pinnedMessage(broadcasterID: String, moderatorID: String, token: String) -> HTTPRequest {
+        get("chat/pins", items: [("broadcaster_id", broadcasterID), ("moderator_id", moderatorID)], token: token)
+    }
+
+    public func updatePinnedMessage(broadcasterID: String, moderatorID: String, messageID: String, durationSeconds: Int? = nil, token: String) -> HTTPRequest {
+        HTTPRequest(
+            method: .patch,
+            url: makeURL("chat/pins", items: [
+                ("broadcaster_id", broadcasterID),
+                ("moderator_id", moderatorID),
+                ("message_id", messageID),
+                ("duration_seconds", durationSeconds.map { String(min(max($0, 30), 1800)) }),
+            ]),
+            headers: headers(token: token)
+        )
+    }
+
+    public func unpinMessage(broadcasterID: String, moderatorID: String, messageID: String, token: String) -> HTTPRequest {
+        delete(
+            "chat/pins",
+            items: [
+                ("broadcaster_id", broadcasterID),
+                ("moderator_id", moderatorID),
+                ("message_id", messageID),
+            ],
+            token: token
+        )
+    }
+
+    /// The channel's banned and timed-out users. Passing user IDs filters the answer and makes Twitch ignore paging,
+    /// so the page parameters are left out then.
+    public func bannedUsers(broadcasterID: String, userIDs: [String] = [], first: Int = 20, after: String? = nil, token: String) -> HTTPRequest {
+        get("moderation/banned", items: listItems(broadcasterID: broadcasterID, userIDs: userIDs, first: first, after: after), token: token)
+    }
+
+    public func moderators(broadcasterID: String, userIDs: [String] = [], first: Int = 20, after: String? = nil, token: String) -> HTTPRequest {
+        get("moderation/moderators", items: listItems(broadcasterID: broadcasterID, userIDs: userIDs, first: first, after: after), token: token)
+    }
+
+    public func vips(broadcasterID: String, userIDs: [String] = [], first: Int = 20, after: String? = nil, token: String) -> HTTPRequest {
+        get("channels/vips", items: listItems(broadcasterID: broadcasterID, userIDs: userIDs, first: first, after: after), token: token)
+    }
+
+    /// Changes only the properties set on `update`; Twitch rejects a request where none are.
+    public func modifyChannel(broadcasterID: String, update: ChannelUpdate, token: String) -> HTTPRequest {
+        var requestHeaders = headers(token: token)
+        requestHeaders["Content-Type"] = "application/json"
+        return HTTPRequest(
+            method: .patch,
+            url: makeURL("channels", items: [("broadcaster_id", broadcasterID)]),
+            headers: requestHeaders,
+            body: try? TwitchJSON.encoder.encode(update)
+        )
+    }
+
     func get(_ path: String, items: [(String, String?)], token: String?) -> HTTPRequest {
         HTTPRequest(method: .get, url: makeURL(path, items: items), headers: headers(token: token))
+    }
+
+    private func listItems(broadcasterID: String, userIDs: [String], first: Int, after: String?) -> [(String, String?)] {
+        var items: [(String, String?)] = [("broadcaster_id", broadcasterID)]
+        let filters = userIDs.prefix(100)
+        guard filters.isEmpty else {
+            for userID in filters {
+                items.append(("user_id", userID))
+            }
+            return items
+        }
+        items.append(("first", String(min(max(first, 1), 100))))
+        items.append(("after", after))
+        return items
     }
 
     func post(_ path: String, items: [(String, String?)], body: [String: String], token: String?) -> HTTPRequest {

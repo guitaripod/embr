@@ -79,11 +79,11 @@ public enum DeviceAuthorization {
     }
 
     public static func startRequest(clientID: String, scopes: [String] = scopes) -> HTTPRequest {
-        formPost(deviceURL, fields: [("client_id", clientID), ("scopes", scopes.joined(separator: " "))])
+        OAuthForm.post(deviceURL, fields: [("client_id", clientID), ("scopes", scopes.joined(separator: " "))])
     }
 
     public static func tokenRequest(clientID: String, deviceCode: String, scopes: [String] = scopes) -> HTTPRequest {
-        formPost(tokenURL, fields: [
+        OAuthForm.post(tokenURL, fields: [
             ("client_id", clientID),
             ("scopes", scopes.joined(separator: " ")),
             ("device_code", deviceCode),
@@ -139,15 +139,4 @@ public enum DeviceAuthorization {
         return [decoded.message, decoded.error].compactMap { $0 }.joined(separator: " ").lowercased()
     }
 
-    private static func formPost(_ url: URL, fields: [(String, String)]) -> HTTPRequest {
-        var components = URLComponents()
-        components.queryItems = fields.map { URLQueryItem(name: $0.0, value: $0.1) }
-        let encoded = (components.percentEncodedQuery ?? "").replacingOccurrences(of: "+", with: "%2B")
-        return HTTPRequest(
-            method: .post,
-            url: url,
-            headers: ["Content-Type": "application/x-www-form-urlencoded"],
-            body: Data(encoded.utf8)
-        )
-    }
 }

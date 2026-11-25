@@ -1,11 +1,37 @@
 import Foundation
 
-public struct HelixResponse<T: Decodable & Sendable>: Decodable, Sendable {
+public struct HelixResponse<T: Sendable>: Sendable {
     public let data: [T]
     public let pagination: Pagination?
+    public let total: Int?
+
+    public init(data: [T], pagination: Pagination? = nil, total: Int? = nil) {
+        self.data = data
+        self.pagination = pagination
+        self.total = total
+    }
 
     public struct Pagination: Decodable, Sendable {
         public let cursor: String?
+
+        public init(cursor: String? = nil) {
+            self.cursor = cursor
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case data
+        case pagination
+        case total
+    }
+}
+
+extension HelixResponse: Decodable where T: Decodable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        data = try container.decode([T].self, forKey: .data)
+        pagination = try container.decodeIfPresent(Pagination.self, forKey: .pagination)
+        total = try container.decodeIfPresent(Int.self, forKey: .total)
     }
 }
 
