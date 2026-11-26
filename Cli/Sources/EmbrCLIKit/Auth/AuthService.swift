@@ -17,6 +17,31 @@ public struct AuthContext: Sendable {
     public let login: String?
     public let source: Source
     public let profile: String
+    public let refreshURL: String?
+
+    public init(
+        clientID: String,
+        accessToken: String,
+        refreshToken: String?,
+        scopes: [String],
+        expiresAt: Date?,
+        userID: String?,
+        login: String?,
+        source: Source,
+        profile: String,
+        refreshURL: String? = nil
+    ) {
+        self.clientID = clientID
+        self.accessToken = accessToken
+        self.refreshToken = refreshToken
+        self.scopes = scopes
+        self.expiresAt = expiresAt
+        self.userID = userID
+        self.login = login
+        self.source = source
+        self.profile = profile
+        self.refreshURL = refreshURL
+    }
 
     public var expiresIn: Int? {
         expiresAt.map { Int($0.timeIntervalSinceNow) }
@@ -82,6 +107,7 @@ public struct ConfigProfileSummary: Encodable, Sendable {
     public let login: String?
     public let scopes: [String]
     public let expiresAt: Date?
+    public let refreshURL: String?
 }
 
 public struct ConfigSnapshot: Encodable, Sendable {
@@ -95,9 +121,6 @@ public struct ConfigSnapshot: Encodable, Sendable {
 }
 
 public actor AuthService {
-    private static let embrClientID = "m61yy3c1nkq50qthoyi8k5glugnsqk"
-    private static let embrRefreshURL = URL(string: "https://embr.guitaripod.workers.dev/auth/refresh")!
-
     private let store: CredentialsStore
     private let environment: [String: String]
     private let client: APIClient
@@ -154,6 +177,7 @@ public actor AuthService {
         let scopes = stored.scopes
         let userID = stored.userID
         let login = stored.login
+        let refreshURL = environment["EMBR_REFRESH_URL"] ?? stored.refreshURL
 
         if accessToken == nil, let refreshToken {
             let provisional = AuthContext(
@@ -165,7 +189,8 @@ public actor AuthService {
                 userID: stored.userID,
                 login: stored.login,
                 source: source,
-                profile: profile
+                profile: profile,
+                refreshURL: refreshURL
             )
             guard canRefresh else {
                 throw CLIError.auth("The access token is missing and --dry-run will not refresh one.", hint: "Drop --dry-run, or run `embr auth refresh`.")
@@ -187,7 +212,8 @@ public actor AuthService {
                     userID: userID,
                     login: login,
                     source: source,
-                    profile: profile
+                    profile: profile,
+                    refreshURL: refreshURL
                 )
                 let refreshed = try await performRefresh(provisional)
                 cached = refreshed
@@ -208,7 +234,8 @@ public actor AuthService {
                 userID: userID,
                 login: login,
                 source: source,
-                profile: profile
+                profile: profile,
+                refreshURL: refreshURL
             )
             cached = context
             return context
@@ -263,7 +290,8 @@ public actor AuthService {
                 userID: identity.userID,
                 login: identity.login,
                 source: auth.source,
-                profile: auth.profile
+                profile: auth.profile,
+                refreshURL: auth.refreshURL
             )
         }
         return identity
@@ -326,6 +354,9 @@ public actor AuthService {
             stored.userID = validated?.userID ?? stored.userID
             stored.login = validated?.login ?? stored.login
             stored.tokenKind = "user"
+            if let refreshURL = environment["EMBR_REFRESH_URL"] {
+                stored.refreshURL = refreshURL
+            }
             file.profiles[profile] = stored
         }
 
@@ -338,7 +369,8 @@ public actor AuthService {
             userID: validated?.userID,
             login: validated?.login,
             source: .config,
-            profile: profile
+            profile: profile,
+            refreshURL: environment["EMBR_REFRESH_URL"] ?? store.profile(profile)?.refreshURL
         )
         cached = context
         return context
@@ -443,7 +475,8 @@ public actor AuthService {
                     hasRefreshToken: stored.refreshToken != nil,
                     login: stored.login,
                     scopes: stored.scopes,
-                    expiresAt: stored.expiresAt
+                    expiresAt: stored.expiresAt,
+                    refreshURL: stored.refreshURL
                 )
             },
             environmentOverrides: overrides
@@ -471,7 +504,7 @@ public actor AuthService {
         guard let refreshToken = auth.refreshToken else {
             throw CLIError.auth("The token expired and there is no refresh token.", hint: "Run `embr auth login`.")
         }
-        if let worker = workerRefreshURL(for: auth.clientID) {
+        if let refreshURL = auth.refreshURL, let worker = workerRefreshURL(refreshURL) {
             do {
                 let token = try await refreshThroughWorker(worker, refreshToken: refreshToken)
                 return try persist(token, auth: auth)
@@ -561,7 +594,8 @@ public actor AuthService {
             userID: auth.userID,
             login: auth.login,
             source: auth.source,
-            profile: auth.profile
+            profile: auth.profile,
+            refreshURL: auth.refreshURL
         )
         if auth.source == .config {
             _ = try? store.update(profile) { file in
@@ -580,19 +614,24 @@ public actor AuthService {
 
     public func refreshStrategy() -> String {
         let stored = store.load().profiles[profile] ?? StoredProfile()
-        guard let clientID = resolvedClientID(stored), !clientID.isEmpty else { return "none" }
-        if workerRefreshURL(for: clientID) != nil { return "worker" }
+        let refreshURL = environment["EMBR_REFRESH_URL"] ?? stored.refreshURL
+        if let refreshURL, workerRefreshURL(refreshURL) != nil { return "worker" }
         return environment["EMBR_CLIENT_SECRET"] != nil ? "secret" : "none"
     }
 
-    private func workerRefreshURL(for clientID: String) -> URL? {
+    public func setRefreshURL(_ value: String?) throws {
+        try store.update(profile) { file in
+            var stored = file.profiles[profile] ?? StoredProfile()
+            stored.refreshURL = value
+            file.profiles[profile] = stored
+        }
+        cached = nil
+    }
+
+    private func workerRefreshURL(_ raw: String) -> URL? {
         if environment["EMBR_DISABLE_WORKER_REFRESH"] == "1" {
             return nil
         }
-        if let override = environment["EMBR_REFRESH_URL"], let url = URL(string: override) {
-            return url
-        }
-        guard clientID == Self.embrClientID else { return nil }
-        return Self.embrRefreshURL
+        return URL(string: raw)
     }
 }

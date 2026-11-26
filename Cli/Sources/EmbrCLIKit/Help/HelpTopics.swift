@@ -30,9 +30,9 @@ enum HelpTopics {
     then the config file.
 
     Tokens refresh automatically 60 seconds before expiry and the refreshed tokens rewrite the config
-    file. Embr's client id refreshes through Embr's worker, which holds the app secret; override that
-    with EMBR_REFRESH_URL or disable it with EMBR_DISABLE_WORKER_REFRESH=1. Another confidential app
-    needs EMBR_CLIENT_SECRET; a public app needs only the client id.
+    file. If a profile has a refresh endpoint (set with `embr config set-refresh-url` or
+    EMBR_REFRESH_URL), refresh is sent there; disable it with EMBR_DISABLE_WORKER_REFRESH=1. Another
+    confidential app needs EMBR_CLIENT_SECRET; a public app needs only the client id.
     `embr auth app-token` is the only command that prints a secret; it reads the client secret from
     --client-secret-env or stdin, never from argv.
 

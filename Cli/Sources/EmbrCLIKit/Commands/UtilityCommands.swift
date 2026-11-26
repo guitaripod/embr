@@ -5,6 +5,8 @@ enum UtilityCommands {
     static let specs: [CommandSpec] = [
         configPath,
         configShow,
+        configSetRefreshURL,
+        configClearRefreshURL,
         commands,
         completion,
         doctor
@@ -32,6 +34,33 @@ enum UtilityCommands {
         needsAuth: false
     ) { _, context in
         return CommandResult(await context.authService.configSnapshot())
+    }
+
+    static let configSetRefreshURL = CommandSpec(
+        ["config", "set-refresh-url"],
+        summary: "Store the token-refresh endpoint for this profile.",
+        details: "Use this with Embr's client id to refresh through its worker, or with your own token service. Public users with their own Twitch app do not need it.",
+        positionals: [PositionalSpec("url", "HTTPS endpoint that accepts {refreshToken}.")],
+        examples: ["embr config set-refresh-url https://example.com/auth/refresh"],
+        needsAuth: false
+    ) { invocation, context in
+        let raw = try invocation.require(0, "refresh URL")
+        guard let url = URL(string: raw), let scheme = url.scheme,
+              scheme == "https" || scheme == "http", url.host != nil else {
+            throw CLIError.usage("The refresh URL must be an absolute http(s) URL.")
+        }
+        try await context.authService.setRefreshURL(raw)
+        return CommandResult(RefreshURLView(profile: context.profile, refreshURL: raw))
+    }
+
+    static let configClearRefreshURL = CommandSpec(
+        ["config", "clear-refresh-url"],
+        summary: "Remove the stored token-refresh endpoint.",
+        examples: ["embr config clear-refresh-url"],
+        needsAuth: false
+    ) { _, context in
+        try await context.authService.setRefreshURL(nil)
+        return CommandResult(RefreshURLView(profile: context.profile, refreshURL: nil))
     }
 
     static let commands = CommandSpec(
@@ -150,6 +179,11 @@ private struct ConfigPathView: Encodable {
     let exists: Bool
     let permissions: Int?
     let mode: String?
+}
+
+private struct RefreshURLView: Encodable {
+    let profile: String
+    let refreshURL: String?
 }
 
 private struct CompletionView: Encodable {

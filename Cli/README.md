@@ -55,9 +55,10 @@ Environment variables override the file: `EMBR_CLIENT_ID` (or `TWITCH_CLIENT_ID`
 ### Which Twitch app
 
 Use your own Twitch application (public client, no secret): `embr auth login --client-id <your-id>`.
-Refresh then stays direct and local. If you use Embr's client id, token refresh goes through Embr's
-worker; set `EMBR_REFRESH_URL` to another endpoint or `EMBR_DISABLE_WORKER_REFRESH=1` to keep it local
-(then a confidential app needs `EMBR_CLIENT_SECRET`). See `PRIVACY.md` and `SECURITY.md`.
+Refresh then stays direct and local. If you use Embr's client id, point the CLI at its refresh endpoint
+with `embr config set-refresh-url <endpoint>` or `EMBR_REFRESH_URL`; `EMBR_DISABLE_WORKER_REFRESH=1`
+keeps refresh local (then a confidential app needs `EMBR_CLIENT_SECRET`). See `PRIVACY.md` and
+`SECURITY.md`.
 
 ## Quick start
 

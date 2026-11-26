@@ -266,6 +266,26 @@ struct CommandTests {
         #expect(transport.requests.isEmpty)
     }
 
+    @Test func configStoresTheRefreshEndpointLocally() async throws {
+        let dir = TestRun.make()
+        let transport = fakeTransport()
+        let set = await TestRun.run(
+            ["config", "set-refresh-url", "https://worker.example/refresh", "--json"],
+            transport: transport,
+            configDirectory: dir
+        )
+        #expect(set.code == 0)
+        let store = CredentialsStore(environment: ["EMBR_CONFIG_DIR": dir.path])
+        #expect(store.profile("default")?.refreshURL == "https://worker.example/refresh")
+        let status = await TestRun.run(["auth", "status", "--json"], transport: transport, configDirectory: dir)
+        let data = try #require(status.out.json as? [String: Any])
+        let payload = try #require(data["data"] as? [String: Any])
+        #expect(payload["refresh"] as? String == "worker")
+        let clear = await TestRun.run(["config", "clear-refresh-url", "--json"], transport: transport, configDirectory: dir)
+        #expect(clear.code == 0)
+        #expect(store.profile("default")?.refreshURL == nil)
+    }
+
     @Test func dryRunExplainsALoginLookup() async throws {
         let dir = TestRun.make()
         let transport = fakeTransport()

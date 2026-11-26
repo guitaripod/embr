@@ -86,7 +86,8 @@ struct CredentialsTests {
                 clientID: "cid",
                 accessToken: "old",
                 refreshToken: "refresh-1",
-                expiresAt: Date().addingTimeInterval(-60)
+                expiresAt: Date().addingTimeInterval(-60),
+                refreshURL: "https://worker.example/refresh"
             )
         }
         let transport = FakeTransport { request in
@@ -100,7 +101,7 @@ struct CredentialsTests {
         let client = APIClient(transport: transport)
         let service = AuthService(
             store: store,
-            environment: ["EMBR_REFRESH_URL": "https://worker.example/refresh"],
+            environment: [:],
             client: client,
             profile: "default"
         )

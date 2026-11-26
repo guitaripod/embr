@@ -9,6 +9,7 @@ public struct StoredProfile: Codable, Sendable, Equatable {
     public var userID: String?
     public var login: String?
     public var tokenKind: String?
+    public var refreshURL: String?
 
     public init(
         clientID: String? = nil,
@@ -18,7 +19,8 @@ public struct StoredProfile: Codable, Sendable, Equatable {
         expiresAt: Date? = nil,
         userID: String? = nil,
         login: String? = nil,
-        tokenKind: String? = nil
+        tokenKind: String? = nil,
+        refreshURL: String? = nil
     ) {
         self.clientID = clientID
         self.accessToken = accessToken
@@ -28,6 +30,7 @@ public struct StoredProfile: Codable, Sendable, Equatable {
         self.userID = userID
         self.login = login
         self.tokenKind = tokenKind
+        self.refreshURL = refreshURL
     }
 }
 
